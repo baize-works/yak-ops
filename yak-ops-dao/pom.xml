@@ -34,10 +34,6 @@
             <artifactId>yak-ops-datasource-support</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-dao-plugin-all</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
         </dependency>
