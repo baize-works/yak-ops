@@ -3,7 +3,7 @@ package org.apache.seatunnel.plugin.datasource.api.plugin;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 import java.util.Map;
 

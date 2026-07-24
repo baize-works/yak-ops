@@ -19,6 +19,8 @@
             <artifactId>yak-ops-datasource-api</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web-contract</artifactId></dependency>
     </dependencies>
 
 </project>

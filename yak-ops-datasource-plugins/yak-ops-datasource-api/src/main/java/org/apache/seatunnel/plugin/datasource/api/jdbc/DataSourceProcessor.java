@@ -4,9 +4,9 @@ import org.apache.seatunnel.plugin.datasource.api.analysis.JobDefinitionAnalyzer
 import io.baize.flow.common.config.OptionRule;
 import org.apache.seatunnel.plugin.datasource.api.form.ReflectionFormGenerator;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
-import io.baize.flow.spi.enums.DbType;
-import io.baize.flow.spi.form.FormFieldConfig;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.enums.DbType;
+import io.baize.flow.plugin.spi.form.FormFieldConfig;
 
 import java.util.List;
 

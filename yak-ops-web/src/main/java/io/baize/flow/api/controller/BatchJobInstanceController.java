@@ -9,19 +9,19 @@ import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
 import io.baize.flow.api.service.BatchJobInstanceService;
-import io.baize.flow.spi.bean.dto.SeaTunnelJobInstanceDTO;
-import io.baize.flow.spi.bean.entity.PaginationResult;
-import io.baize.flow.spi.bean.entity.Result;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
-import io.baize.flow.spi.bean.vo.JobTableMetricsVO;
+import io.baize.flow.web.contract.dto.SeaTunnelJobInstanceDTO;
+import io.baize.flow.web.contract.response.PaginationResult;
+import io.baize.flow.web.contract.response.Result;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
+import io.baize.flow.web.contract.vo.JobTableMetricsVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static io.baize.flow.spi.enums.Status.BATCH_JOB_INSTANCE_NOT_EXIST;
-import static io.baize.flow.spi.enums.Status.QUERY_BATCH_JOB_INSTANCE_ERROR;
-import static io.baize.flow.spi.enums.Status.QUERY_BATCH_JOB_INSTANCE_LOG_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.BATCH_JOB_INSTANCE_NOT_EXIST;
+import static io.baize.flow.plugin.spi.enums.Status.QUERY_BATCH_JOB_INSTANCE_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.QUERY_BATCH_JOB_INSTANCE_LOG_ERROR;
 
 /**
  * Batch Job Instance Controller

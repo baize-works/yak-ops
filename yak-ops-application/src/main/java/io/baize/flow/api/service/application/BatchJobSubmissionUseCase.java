@@ -1,6 +1,6 @@
 package io.baize.flow.api.service.application;
 
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
 
 /**
  * Application-facing port for submitting and cancelling an engine job.

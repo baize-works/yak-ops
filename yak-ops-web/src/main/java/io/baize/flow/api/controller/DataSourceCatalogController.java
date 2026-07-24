@@ -8,16 +8,16 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
 import io.baize.flow.api.service.DataSourceCatalogService;
-import io.baize.flow.spi.bean.entity.Result;
+import io.baize.flow.web.contract.response.Result;
 import io.baize.flow.common.QueryResult;
-import io.baize.flow.spi.bean.vo.ColumnOptionVO;
-import io.baize.flow.spi.bean.vo.OptionVO;
+import io.baize.flow.web.contract.vo.ColumnOptionVO;
+import io.baize.flow.web.contract.vo.OptionVO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
-import static io.baize.flow.spi.enums.Status.*;
+import static io.baize.flow.plugin.spi.enums.Status.*;
 
 
 @Slf4j

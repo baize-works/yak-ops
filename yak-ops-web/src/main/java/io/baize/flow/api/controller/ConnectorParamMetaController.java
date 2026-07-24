@@ -8,18 +8,18 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import io.baize.flow.api.exceptions.ApiException;
 import io.baize.flow.api.service.ConnectorParamMetaService;
-import io.baize.flow.spi.bean.dto.ConnectorParamMetaCreateDTO;
-import io.baize.flow.spi.bean.dto.ConnectorParamMetaQueryDTO;
-import io.baize.flow.spi.bean.dto.ConnectorParamMetaUpdateDTO;
-import io.baize.flow.spi.bean.entity.PaginationResult;
-import io.baize.flow.spi.bean.entity.Result;
-import io.baize.flow.spi.bean.vo.ConnectorParamMetaOptionVO;
-import io.baize.flow.spi.bean.vo.ConnectorParamMetaVO;
+import io.baize.flow.web.contract.dto.ConnectorParamMetaCreateDTO;
+import io.baize.flow.web.contract.dto.ConnectorParamMetaQueryDTO;
+import io.baize.flow.web.contract.dto.ConnectorParamMetaUpdateDTO;
+import io.baize.flow.web.contract.response.PaginationResult;
+import io.baize.flow.web.contract.response.Result;
+import io.baize.flow.web.contract.vo.ConnectorParamMetaOptionVO;
+import io.baize.flow.web.contract.vo.ConnectorParamMetaVO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static io.baize.flow.spi.enums.Status.*;
+import static io.baize.flow.plugin.spi.enums.Status.*;
 
 @RestController
 @Tag(name = "CONNECTOR_PARAM_META_TAG")

@@ -14,9 +14,9 @@ import io.baize.flow.dao.repository.JobTableMetricsDao;
 import io.baize.flow.engine.seatunnel.rest.SeaTunnelEngineRestClient;
 import io.baize.flow.spi.bean.entity.Scale;
 import io.baize.flow.spi.bean.entity.TimeWindow;
-import io.baize.flow.spi.bean.vo.ChartDataItemVO;
-import io.baize.flow.spi.bean.vo.OverviewChartsVO;
-import io.baize.flow.spi.bean.vo.OverviewSummaryVO;
+import io.baize.flow.web.contract.vo.ChartDataItemVO;
+import io.baize.flow.web.contract.vo.OverviewChartsVO;
+import io.baize.flow.web.contract.vo.OverviewSummaryVO;
 
 import org.springframework.stereotype.Service;
 

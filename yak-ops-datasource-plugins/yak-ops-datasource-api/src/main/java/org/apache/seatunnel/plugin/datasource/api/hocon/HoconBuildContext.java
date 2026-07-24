@@ -4,7 +4,7 @@ import com.typesafe.config.Config;
 import lombok.Builder;
 import lombok.Getter;
 import io.baize.flow.common.enums.HoconBuildStage;
-import io.baize.flow.spi.bean.dto.config.JobScheduleConfig;
+import io.baize.flow.web.contract.dto.config.JobScheduleConfig;
 
 @Getter
 @Builder

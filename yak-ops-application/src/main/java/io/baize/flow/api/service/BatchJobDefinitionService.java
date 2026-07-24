@@ -1,14 +1,14 @@
 package io.baize.flow.api.service;
 
 import io.baize.flow.common.enums.ReleaseState;
-import io.baize.flow.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import io.baize.flow.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
-import io.baize.flow.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
-import io.baize.flow.spi.bean.dto.batch.BatchScriptJobSaveCommand;
-import io.baize.flow.spi.bean.entity.PaginationResult;
-import io.baize.flow.spi.bean.vo.BatchJobDefinitionVO;
-import io.baize.flow.spi.bean.vo.JobDefinitionEditDetailVO;
-import io.baize.flow.spi.bean.vo.JobDefinitionSaveResultVO;
+import io.baize.flow.web.contract.dto.BatchJobDefinitionQueryDTO;
+import io.baize.flow.web.contract.dto.batch.BatchGuideMultiJobSaveCommand;
+import io.baize.flow.web.contract.dto.batch.BatchGuideSingleJobSaveCommand;
+import io.baize.flow.web.contract.dto.batch.BatchScriptJobSaveCommand;
+import io.baize.flow.web.contract.response.PaginationResult;
+import io.baize.flow.web.contract.vo.BatchJobDefinitionVO;
+import io.baize.flow.web.contract.vo.JobDefinitionEditDetailVO;
+import io.baize.flow.web.contract.vo.JobDefinitionSaveResultVO;
 
 import java.util.List;
 

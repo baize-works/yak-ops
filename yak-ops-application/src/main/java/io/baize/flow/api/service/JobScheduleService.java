@@ -2,7 +2,7 @@ package io.baize.flow.api.service;
 
 import io.baize.flow.domain.enums.ScheduleStatusEnum;
 import io.baize.flow.dao.entity.JobSchedule;
-import io.baize.flow.spi.bean.dto.SeaTunnelJobScheduleDTO;
+import io.baize.flow.web.contract.dto.SeaTunnelJobScheduleDTO;
 
 import java.util.Date;
 import java.util.List;

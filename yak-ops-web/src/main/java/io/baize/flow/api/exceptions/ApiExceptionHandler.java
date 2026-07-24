@@ -2,9 +2,9 @@ package io.baize.flow.api.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import io.baize.flow.core.exceptions.ServiceException;
-import io.baize.flow.spi.bean.entity.Result;
-import io.baize.flow.spi.enums.Status;
+import io.baize.flow.domain.exceptions.ServiceException;
+import io.baize.flow.web.contract.response.Result;
+import io.baize.flow.plugin.spi.enums.Status;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;

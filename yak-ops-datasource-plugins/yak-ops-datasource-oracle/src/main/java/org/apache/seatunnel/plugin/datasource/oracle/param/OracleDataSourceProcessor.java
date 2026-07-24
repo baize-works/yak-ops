@@ -9,8 +9,8 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.*;
 import org.apache.seatunnel.plugin.datasource.oracle.analysis.OracleJobDefinitionAnalyzer;
 import org.apache.seatunnel.plugin.datasource.oracle.connection.OracleConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.oracle.metadata.OracleCatalog;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 @AutoService(DataSourceProcessor.class)
 @Slf4j

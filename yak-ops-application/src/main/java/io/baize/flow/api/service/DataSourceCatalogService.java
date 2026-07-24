@@ -1,8 +1,8 @@
 package io.baize.flow.api.service;
 
 import io.baize.flow.common.QueryResult;
-import io.baize.flow.spi.bean.vo.ColumnOptionVO;
-import io.baize.flow.spi.bean.vo.OptionVO;
+import io.baize.flow.web.contract.vo.ColumnOptionVO;
+import io.baize.flow.web.contract.vo.OptionVO;
 
 import java.util.List;
 import java.util.Map;

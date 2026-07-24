@@ -2,11 +2,11 @@ package io.baize.flow.api.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.baize.flow.dao.entity.SeaTunnelClient;
-import io.baize.flow.spi.bean.dto.ClientDatasourceVerifyDTO;
-import io.baize.flow.spi.bean.dto.SeaTunnelClientDTO;
-import io.baize.flow.spi.bean.dto.SeaTunnelClientEndpointDTO;
-import io.baize.flow.spi.bean.dto.SeaTunnelClientPageDTO;
-import io.baize.flow.spi.bean.vo.*;
+import io.baize.flow.web.contract.dto.ClientDatasourceVerifyDTO;
+import io.baize.flow.web.contract.dto.SeaTunnelClientDTO;
+import io.baize.flow.web.contract.dto.SeaTunnelClientEndpointDTO;
+import io.baize.flow.web.contract.dto.SeaTunnelClientPageDTO;
+import io.baize.flow.web.contract.vo.*;
 
 import java.util.List;
 import java.util.Map;

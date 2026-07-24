@@ -3,10 +3,10 @@ package org.apache.seatunnel.plugin.datasource.oracle.param;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
-import io.baize.flow.spi.enums.DbConnectType;
-import io.baize.flow.spi.form.FieldType;
-import io.baize.flow.spi.form.FormField;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.enums.DbConnectType;
+import io.baize.flow.plugin.spi.form.FieldType;
+import io.baize.flow.plugin.spi.form.FormField;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

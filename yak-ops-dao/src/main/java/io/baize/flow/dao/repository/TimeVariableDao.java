@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.baize.flow.dao.entity.TimeVariable;
-import io.baize.flow.spi.bean.dto.TimeVariablePageReq;
+import io.baize.flow.web.contract.dto.TimeVariablePageReq;
 
 import java.util.List;
 

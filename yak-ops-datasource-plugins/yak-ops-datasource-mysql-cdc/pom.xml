@@ -21,7 +21,7 @@
 
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-spi</artifactId>
+            <artifactId>yak-ops-plugin-spi</artifactId>
         </dependency>
 
     </dependencies>

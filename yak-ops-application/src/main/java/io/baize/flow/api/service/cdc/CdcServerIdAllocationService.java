@@ -9,11 +9,11 @@ import io.baize.flow.dao.entity.DataSource;
 import io.baize.flow.dao.mapper.CdcServerIdAllocationMapper;
 import io.baize.flow.dao.mapper.CdcServerIdPoolMapper;
 import io.baize.flow.dao.repository.DataSourceDao;
-import io.baize.flow.spi.bean.dto.command.GuideMultiJobContentCommand;
-import io.baize.flow.spi.bean.dto.command.GuideSingleJobContentCommand;
-import io.baize.flow.spi.bean.dto.command.JobDefinitionSaveCommand;
-import io.baize.flow.spi.bean.dto.config.GuideMultiJobContent;
-import io.baize.flow.spi.bean.dto.config.JobEnvConfig;
+import io.baize.flow.web.contract.dto.command.GuideMultiJobContentCommand;
+import io.baize.flow.web.contract.dto.command.GuideSingleJobContentCommand;
+import io.baize.flow.web.contract.dto.command.JobDefinitionSaveCommand;
+import io.baize.flow.web.contract.dto.config.GuideMultiJobContent;
+import io.baize.flow.web.contract.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

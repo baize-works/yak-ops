@@ -2,7 +2,7 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import io.baize.flow.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
-import io.baize.flow.spi.bean.vo.OptionVO;
+import io.baize.flow.web.contract.vo.OptionVO;
 
 import java.util.List;
 import java.util.Map;

@@ -1,7 +1,7 @@
 package io.baize.flow.api.exceptions;
 
 
-import io.baize.flow.spi.enums.Status;
+import io.baize.flow.plugin.spi.enums.Status;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

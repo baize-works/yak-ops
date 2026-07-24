@@ -3,7 +3,7 @@ package io.baize.flow.infrastructure.alarm.plugin;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannel;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannelFactory;
-import io.baize.flow.spi.plugin.PrioritySPIFactory;
+import io.baize.flow.plugin.spi.plugin.PrioritySPIFactory;
 import io.baize.flow.api.port.AlarmChannelCatalog;
 import org.springframework.stereotype.Component;
 

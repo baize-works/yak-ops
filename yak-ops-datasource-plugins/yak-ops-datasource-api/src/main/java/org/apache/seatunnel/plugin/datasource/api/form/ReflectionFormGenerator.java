@@ -2,11 +2,11 @@ package org.apache.seatunnel.plugin.datasource.api.form;
 
 import io.baize.flow.common.KeyValuePair;
 import io.baize.flow.common.utils.JSONUtils;
-import io.baize.flow.spi.form.FieldType;
-import io.baize.flow.spi.form.FormField;
-import io.baize.flow.spi.form.FormFieldConfig;
-import io.baize.flow.spi.form.Option;
-import io.baize.flow.spi.form.Rule;
+import io.baize.flow.plugin.spi.form.FieldType;
+import io.baize.flow.plugin.spi.form.FormField;
+import io.baize.flow.plugin.spi.form.FormFieldConfig;
+import io.baize.flow.plugin.spi.form.Option;
+import io.baize.flow.plugin.spi.form.Rule;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

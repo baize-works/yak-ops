@@ -3,7 +3,7 @@ package io.baize.flow.api.service.impl;
 import io.baize.flow.api.service.BatchJobExecutorService;
 import io.baize.flow.api.service.application.job.BatchExecuteJobsUseCase;
 import io.baize.flow.domain.enums.RunMode;
-import io.baize.flow.spi.bean.vo.BatchJobOperateResultVO;
+import io.baize.flow.web.contract.vo.BatchJobOperateResultVO;
 import java.util.List;
 import org.springframework.stereotype.Service;
 /** @deprecated Compatibility facade. New callers should use the job execution use cases. */

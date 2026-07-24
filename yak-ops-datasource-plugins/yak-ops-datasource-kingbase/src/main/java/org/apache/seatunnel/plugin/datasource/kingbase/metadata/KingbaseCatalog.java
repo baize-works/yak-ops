@@ -5,7 +5,7 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.AbstractJdbcCatalog;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.TablePath;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.ResultSet;

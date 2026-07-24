@@ -11,8 +11,8 @@ import org.apache.seatunnel.plugin.datasource.doris.connection.DorisConnectionPr
 import org.apache.seatunnel.plugin.datasource.doris.metadata.DorisCatalog;
 import io.baize.flow.common.config.OptionRule;
 import io.baize.flow.common.config.Options;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 @AutoService(DataSourceProcessor.class)
 @Slf4j

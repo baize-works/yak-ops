@@ -11,7 +11,7 @@ import io.baize.flow.dao.entity.DataSource;
 import io.baize.flow.dao.mapper.DataSourceMapper;
 import io.baize.flow.dao.repository.BaseDao;
 import io.baize.flow.dao.repository.DataSourceDao;
-import io.baize.flow.spi.bean.dto.DataSourceDTO;
+import io.baize.flow.web.contract.dto.DataSourceDTO;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

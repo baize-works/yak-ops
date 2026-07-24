@@ -8,8 +8,8 @@ import io.baize.flow.dao.entity.JobDefinitionEntity;
 import io.baize.flow.dao.mapper.JobDefinitionMapper;
 import io.baize.flow.dao.repository.BaseDao;
 import io.baize.flow.dao.repository.JobDefinitionDao;
-import io.baize.flow.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import io.baize.flow.spi.bean.vo.BatchJobDefinitionVO;
+import io.baize.flow.web.contract.dto.BatchJobDefinitionQueryDTO;
+import io.baize.flow.web.contract.vo.BatchJobDefinitionVO;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;

@@ -13,8 +13,8 @@ import io.baize.flow.plugin.datasource.connection.driver.DefaultDriverStorageStr
 import io.baize.flow.plugin.datasource.connection.driver.DriverProvider;
 import io.baize.flow.plugin.datasource.connection.driver.DriverStorageStrategy;
 import io.baize.flow.plugin.datasource.connection.driver.SimpleSharedClassLoaderStrategy;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
-import io.baize.flow.spi.datasource.ConnectionParam;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.datasource.ConnectionParam;
 
 import org.springframework.util.StringUtils;
 

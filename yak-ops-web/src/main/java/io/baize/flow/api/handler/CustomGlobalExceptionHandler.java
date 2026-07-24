@@ -1,8 +1,8 @@
 package io.baize.flow.api.handler;
 
-import io.baize.flow.spi.bean.entity.Result;
+import io.baize.flow.web.contract.response.Result;
 import io.baize.flow.common.utils.ConvertUtil;
-import io.baize.flow.spi.bean.entity.ResultStatus;
+import io.baize.flow.web.contract.response.ResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;

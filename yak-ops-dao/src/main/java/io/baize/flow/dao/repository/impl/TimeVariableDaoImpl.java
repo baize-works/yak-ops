@@ -10,7 +10,7 @@ import io.baize.flow.dao.entity.TimeVariable;
 import io.baize.flow.dao.mapper.TimeVariableMapper;
 import io.baize.flow.dao.repository.BaseDao;
 import io.baize.flow.dao.repository.TimeVariableDao;
-import io.baize.flow.spi.bean.dto.TimeVariablePageReq;
+import io.baize.flow.web.contract.dto.TimeVariablePageReq;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

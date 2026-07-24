@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import io.baize.flow.spi.bean.dto.SeaTunnelClientEndpointDTO;
+import io.baize.flow.web.contract.dto.SeaTunnelClientEndpointDTO;
 
 import java.util.Date;
 import java.util.List;

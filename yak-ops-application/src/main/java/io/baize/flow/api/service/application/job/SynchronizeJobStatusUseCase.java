@@ -2,7 +2,7 @@ package io.baize.flow.api.service.application.job;
 
 import io.baize.flow.api.service.BatchJobInstanceService;
 import io.baize.flow.dao.entity.JobInstance;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
 import io.baize.flow.domain.enums.JobStatus;
 import io.baize.flow.engine.api.EngineEndpoint;
 import io.baize.flow.engine.api.EngineGatewayRegistry;

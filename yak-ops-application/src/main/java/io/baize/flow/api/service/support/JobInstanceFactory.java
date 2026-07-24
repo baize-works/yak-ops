@@ -4,7 +4,7 @@ import io.baize.flow.domain.enums.JobMode;
 import io.baize.flow.domain.enums.JobStatus;
 import io.baize.flow.domain.enums.RunMode;
 import io.baize.flow.dao.entity.JobInstance;
-import io.baize.flow.spi.bean.dto.command.JobDefinitionSaveCommand;
+import io.baize.flow.web.contract.dto.command.JobDefinitionSaveCommand;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;

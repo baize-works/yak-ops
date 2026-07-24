@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
 
 import java.sql.Connection;
 

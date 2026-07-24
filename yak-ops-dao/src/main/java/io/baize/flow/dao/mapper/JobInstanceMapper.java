@@ -6,8 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import io.baize.flow.dao.entity.JobInstance;
-import io.baize.flow.spi.bean.dto.SeaTunnelJobInstanceDTO;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
+import io.baize.flow.web.contract.dto.SeaTunnelJobInstanceDTO;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
 
 @Mapper
 public interface JobInstanceMapper extends BaseMapper<JobInstance> {

@@ -13,8 +13,8 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcParamConverter;
 import org.apache.seatunnel.plugin.datasource.dameng.analysis.DamengJobDefinitionAnalyzer;
 import org.apache.seatunnel.plugin.datasource.dameng.connection.DamengConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.dameng.metadata.DamengCatalog;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 @AutoService(DataSourceProcessor.class)
 @Slf4j

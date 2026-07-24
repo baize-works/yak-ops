@@ -1,7 +1,7 @@
 package io.baize.flow.api.service;
 
-import io.baize.flow.spi.bean.vo.HoconTemplateVO;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.web.contract.vo.HoconTemplateVO;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 public interface HoconTemplateService {
     HoconTemplateVO getTemplate(

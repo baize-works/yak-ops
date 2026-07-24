@@ -2,11 +2,11 @@ package io.baize.flow.api.service;
 
 import io.baize.flow.domain.enums.RunMode;
 import io.baize.flow.dao.entity.JobInstance;
-import io.baize.flow.spi.bean.dto.SeaTunnelJobInstanceDTO;
-import io.baize.flow.spi.bean.dto.command.JobDefinitionSaveCommand;
-import io.baize.flow.spi.bean.entity.PaginationResult;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
-import io.baize.flow.spi.bean.vo.JobTableMetricsVO;
+import io.baize.flow.web.contract.dto.SeaTunnelJobInstanceDTO;
+import io.baize.flow.web.contract.dto.command.JobDefinitionSaveCommand;
+import io.baize.flow.web.contract.response.PaginationResult;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
+import io.baize.flow.web.contract.vo.JobTableMetricsVO;
 
 import java.util.List;
 

@@ -6,9 +6,9 @@ import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.baize.flow.api.service.HoconTemplateService;
-import io.baize.flow.core.utils.SeaTunnelConfigUtil;
-import io.baize.flow.spi.bean.vo.HoconTemplateVO;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.application.support.utils.SeaTunnelConfigUtil;
+import io.baize.flow.web.contract.vo.HoconTemplateVO;
+import io.baize.flow.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Service;
 
 @Service

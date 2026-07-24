@@ -8,15 +8,15 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
 import io.baize.flow.api.service.JobScheduleService;
-import io.baize.flow.spi.bean.entity.Result;
+import io.baize.flow.web.contract.response.Result;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static io.baize.flow.spi.enums.Status.QUERY_JOB_SCHEDULE_EXECUTION_TIMES_ERROR;
-import static io.baize.flow.spi.enums.Status.START_JOB_SCHEDULE_ERROR;
-import static io.baize.flow.spi.enums.Status.STOP_JOB_SCHEDULE_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.QUERY_JOB_SCHEDULE_EXECUTION_TIMES_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.START_JOB_SCHEDULE_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.STOP_JOB_SCHEDULE_ERROR;
 
 @Slf4j
 @RestController

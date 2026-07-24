@@ -3,8 +3,8 @@ package org.apache.seatunnel.plugin.alarm.webhook;
 import com.google.auto.service.AutoService;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannel;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannelFactory;
-import io.baize.flow.spi.form.FieldType;
-import io.baize.flow.spi.form.FormFieldConfig;
+import io.baize.flow.plugin.spi.form.FieldType;
+import io.baize.flow.plugin.spi.form.FormFieldConfig;
 
 import java.util.List;
 

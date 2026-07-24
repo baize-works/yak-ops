@@ -3,7 +3,7 @@ package io.baize.flow.dao.plugin.h2.monitor;
 import lombok.SneakyThrows;
 import io.baize.flow.dao.plugin.api.monitor.DatabaseMetrics;
 import io.baize.flow.dao.plugin.api.monitor.DatabaseMonitor;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.baize.flow.dao.entity.ConnectorParamMetaEntity;
-import io.baize.flow.spi.bean.dto.ConnectorParamMetaQueryDTO;
+import io.baize.flow.web.contract.dto.ConnectorParamMetaQueryDTO;
 
 import java.util.List;
 

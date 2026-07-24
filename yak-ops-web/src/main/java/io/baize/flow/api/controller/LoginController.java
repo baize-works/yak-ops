@@ -11,8 +11,8 @@ import io.baize.flow.api.security.Authenticator;
 import io.baize.flow.api.service.SessionService;
 import io.baize.flow.api.service.UsersService;
 import io.baize.flow.common.constants.Constants;
-import io.baize.flow.spi.bean.dto.UserDTO;
-import io.baize.flow.spi.bean.entity.Result;
+import io.baize.flow.web.contract.dto.UserDTO;
+import io.baize.flow.web.contract.response.Result;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;

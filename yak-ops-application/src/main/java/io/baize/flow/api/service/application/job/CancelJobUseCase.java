@@ -2,11 +2,11 @@ package io.baize.flow.api.service.application.job;
 
 import io.baize.flow.api.service.BatchJobInstanceService;
 import io.baize.flow.api.service.application.BatchJobSubmissionUseCase;
-import io.baize.flow.core.exceptions.ServiceException;
+import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.dao.entity.JobInstance;
 import io.baize.flow.domain.enums.JobStatus;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
-import io.baize.flow.spi.enums.Status;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
+import io.baize.flow.plugin.spi.enums.Status;
 import java.util.Date;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
