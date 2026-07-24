@@ -8,9 +8,11 @@
             <groupId>io.baize.flow</groupId>
             <artifactId>yak-ops-domain</artifactId>
         </dependency>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-bom</artifactId><version>${project.version}</version><type>pom</type><scope>import</scope></dependency></dependencies></dependencyManagement>
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-bom</artifactId><version>${project.version}</version><type>pom</type><scope>import</scope></dependency>
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web-contract</artifactId></dependency>
+    </dependencies></dependencyManagement>
     <dependencies>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-core</artifactId></dependency>
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-application-support</artifactId></dependency>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-client</artifactId></dependency>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-dao</artifactId></dependency>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-api</artifactId></dependency>

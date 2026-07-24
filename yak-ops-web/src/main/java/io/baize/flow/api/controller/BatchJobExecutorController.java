@@ -9,13 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
 import io.baize.flow.api.service.BatchJobExecutorService;
 import io.baize.flow.domain.enums.RunMode;
-import io.baize.flow.spi.bean.dto.command.BatchJobDefinitionOperateCommand;
-import io.baize.flow.spi.bean.entity.Result;
-import io.baize.flow.spi.bean.vo.BatchJobOperateResultVO;
+import io.baize.flow.web.contract.dto.command.BatchJobDefinitionOperateCommand;
+import io.baize.flow.web.contract.response.Result;
+import io.baize.flow.web.contract.vo.BatchJobOperateResultVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static io.baize.flow.spi.enums.Status.JOB_DEFINITION_EXECUTE_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.JOB_DEFINITION_EXECUTE_ERROR;
 
 @Slf4j
 @RestController

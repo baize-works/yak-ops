@@ -1,10 +1,10 @@
 package io.baize.flow.api.service;
 
 import io.baize.flow.dao.entity.DataSource;
-import io.baize.flow.spi.bean.dto.DataSourceDTO;
-import io.baize.flow.spi.bean.entity.PaginationResult;
-import io.baize.flow.spi.bean.vo.DBOptionVO;
-import io.baize.flow.spi.bean.vo.DataSourceVO;
+import io.baize.flow.web.contract.dto.DataSourceDTO;
+import io.baize.flow.web.contract.response.PaginationResult;
+import io.baize.flow.web.contract.vo.DBOptionVO;
+import io.baize.flow.web.contract.vo.DataSourceVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

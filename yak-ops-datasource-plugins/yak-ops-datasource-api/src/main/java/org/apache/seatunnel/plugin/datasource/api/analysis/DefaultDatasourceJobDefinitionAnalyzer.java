@@ -6,7 +6,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.baize.flow.common.modal.JobDefinitionAnalysisResult;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
 import java.util.*;

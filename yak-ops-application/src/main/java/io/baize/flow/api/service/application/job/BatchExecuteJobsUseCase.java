@@ -6,12 +6,12 @@ import io.baize.flow.api.service.BatchJobDefinitionService;
 import io.baize.flow.api.service.BatchJobInstanceService;
 import io.baize.flow.common.enums.ReleaseState;
 import io.baize.flow.domain.enums.RunMode;
-import io.baize.flow.core.exceptions.ServiceException;
+import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.dao.entity.JobInstance;
-import io.baize.flow.spi.bean.vo.BatchJobDefinitionVO;
-import io.baize.flow.spi.bean.vo.BatchJobOperateResultVO;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
-import io.baize.flow.spi.enums.Status;
+import io.baize.flow.web.contract.vo.BatchJobDefinitionVO;
+import io.baize.flow.web.contract.vo.BatchJobOperateResultVO;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
+import io.baize.flow.plugin.spi.enums.Status;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;

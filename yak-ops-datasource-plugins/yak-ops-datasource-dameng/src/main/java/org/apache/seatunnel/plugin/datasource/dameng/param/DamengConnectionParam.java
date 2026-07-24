@@ -4,9 +4,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.collections4.MapUtils;
 import io.baize.flow.common.KeyValuePair;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
-import io.baize.flow.spi.form.FieldType;
-import io.baize.flow.spi.form.FormField;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.baize.flow.plugin.spi.form.FieldType;
+import io.baize.flow.plugin.spi.form.FormField;
 
 import java.util.ArrayList;
 import java.util.HashMap;

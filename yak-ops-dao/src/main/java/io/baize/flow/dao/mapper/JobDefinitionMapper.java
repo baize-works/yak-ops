@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import io.baize.flow.dao.entity.JobDefinitionEntity;
-import io.baize.flow.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import io.baize.flow.spi.bean.vo.BatchJobDefinitionVO;
+import io.baize.flow.web.contract.dto.BatchJobDefinitionQueryDTO;
+import io.baize.flow.web.contract.vo.BatchJobDefinitionVO;
 
 import java.util.List;
 

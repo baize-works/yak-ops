@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import io.baize.flow.spi.datasource.ConnectionParam;
+import io.baize.flow.plugin.spi.datasource.ConnectionParam;
 
 import java.sql.Connection;
 

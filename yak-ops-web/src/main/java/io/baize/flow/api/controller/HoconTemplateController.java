@@ -2,9 +2,9 @@ package io.baize.flow.api.controller;
 
 import lombok.RequiredArgsConstructor;
 import io.baize.flow.api.service.HoconTemplateService;
-import io.baize.flow.spi.bean.entity.Result;
-import io.baize.flow.spi.bean.vo.HoconTemplateVO;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.web.contract.response.Result;
+import io.baize.flow.web.contract.vo.HoconTemplateVO;
+import io.baize.flow.plugin.spi.enums.DbType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;

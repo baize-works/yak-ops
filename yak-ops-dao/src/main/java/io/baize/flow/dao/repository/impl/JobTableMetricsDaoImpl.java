@@ -6,7 +6,7 @@ import io.baize.flow.dao.entity.JobTableMetrics;
 import io.baize.flow.dao.mapper.JobTableMetricsMapper;
 import io.baize.flow.dao.repository.BaseDao;
 import io.baize.flow.dao.repository.JobTableMetricsDao;
-import io.baize.flow.spi.bean.vo.JobTableMetricsVO;
+import io.baize.flow.web.contract.vo.JobTableMetricsVO;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;

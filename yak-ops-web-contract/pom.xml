@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+  <parent><groupId>io.baize.flow</groupId><artifactId>yak-ops</artifactId><version>1.0.0</version></parent>
+  <artifactId>yak-ops-web-contract</artifactId>
+  <dependencies><dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-plugin-spi</artifactId></dependency><dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId></dependency><dependency><groupId>org.projectlombok</groupId><artifactId>lombok</artifactId></dependency></dependencies>
+</project>

@@ -4,7 +4,7 @@ package io.baize.flow.dao.repository;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.baize.flow.common.enums.ConnStatus;
 import io.baize.flow.dao.entity.DataSource;
-import io.baize.flow.spi.bean.dto.DataSourceDTO;
+import io.baize.flow.web.contract.dto.DataSourceDTO;
 
 import java.util.List;
 

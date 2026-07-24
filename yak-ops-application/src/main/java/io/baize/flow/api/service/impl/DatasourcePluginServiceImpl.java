@@ -10,12 +10,12 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.baize.flow.api.service.DatasourcePluginService;
 import io.baize.flow.common.utils.JSONUtils;
-import io.baize.flow.core.exceptions.ServiceException;
+import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.dao.entity.DataSourcePluginConfig;
 import io.baize.flow.dao.repository.DataSourcePluginConfigDao;
-import io.baize.flow.spi.enums.DbType;
-import io.baize.flow.spi.enums.Status;
-import io.baize.flow.spi.form.*;
+import io.baize.flow.plugin.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.Status;
+import io.baize.flow.plugin.spi.form.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.infrastructure.alarm.event.JobStatusChangedEvent;
 import io.baize.flow.api.service.BatchJobInstanceService;
-import io.baize.flow.api.utils.JobUtils;
+import io.baize.flow.application.support.job.JobUtils;
 import io.baize.flow.common.enums.JobResult;
 import io.baize.flow.domain.enums.JobStatus;
 import io.baize.flow.dao.entity.JobInstance;

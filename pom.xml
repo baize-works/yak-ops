@@ -46,7 +46,6 @@
 
     <modules>
         <module>yak-ops-domain</module>
-        <module>yak-ops-api</module>
         <module>yak-ops-application</module>
         <module>yak-ops-infrastructure</module>
         <module>yak-ops-web</module>
@@ -59,8 +58,10 @@
         <module>yak-ops-dao</module>
         <module>yak-ops-dao-plugin</module>
         <module>yak-ops-bom</module>
+        <module>yak-ops-plugin-spi</module>
+        <module>yak-ops-web-contract</module>
         <module>yak-ops-spi</module>
-        <module>yak-ops-core</module>
+        <module>yak-ops-application-support</module>
         <module>yak-ops-engine-client</module>
         <module>yak-ops-engine-api</module>
         <module>yak-ops-engine-seatunnel</module>
@@ -82,11 +83,6 @@
             <dependency>
                 <groupId>io.baize.flow</groupId>
                 <artifactId>yak-ops-common</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -186,9 +182,11 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-core</artifactId>
+                <artifactId>yak-ops-application-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-plugin-spi</artifactId><version>${project.version}</version></dependency>
+            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web-contract</artifactId><version>${project.version}</version></dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
                 <artifactId>yak-ops-spi</artifactId>

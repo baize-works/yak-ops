@@ -5,10 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.api.service.JobScheduleService;
 import io.baize.flow.domain.enums.ScheduleStatusEnum;
 import io.baize.flow.dao.entity.JobSchedule;
-import io.baize.flow.spi.bean.dto.SeaTunnelJobScheduleDTO;
-import io.baize.flow.spi.bean.dto.command.BatchJobSaveCommand;
-import io.baize.flow.spi.bean.dto.command.JobDefinitionSaveCommand;
-import io.baize.flow.spi.bean.dto.config.JobScheduleConfig;
+import io.baize.flow.web.contract.dto.SeaTunnelJobScheduleDTO;
+import io.baize.flow.web.contract.dto.command.BatchJobSaveCommand;
+import io.baize.flow.web.contract.dto.command.JobDefinitionSaveCommand;
+import io.baize.flow.web.contract.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Service;
 
 @Service

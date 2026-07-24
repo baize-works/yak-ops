@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository;
 
 
 import io.baize.flow.dao.entity.DataSourcePluginConfig;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 public interface DataSourcePluginConfigDao extends IDao<DataSourcePluginConfig> {
 

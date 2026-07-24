@@ -1,8 +1,8 @@
 package org.apache.seatunnel.plugin.alarm.api;
 
-import io.baize.flow.spi.form.FormFieldConfig;
-import io.baize.flow.spi.plugin.PrioritySPI;
-import io.baize.flow.spi.plugin.SPIIdentify;
+import io.baize.flow.plugin.spi.form.FormFieldConfig;
+import io.baize.flow.plugin.spi.plugin.PrioritySPI;
+import io.baize.flow.plugin.spi.plugin.SPIIdentify;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ import java.util.List;
  * A factory declares its identity ({@link #name()} + {@link #getIdentify()}),
  * the config form ({@link #params()}), and produces {@link AlarmChannel}
  * workers via {@link #create()}. Factories are discovered through the
- * project's {@link io.baize.flow.spi.plugin.PrioritySPIFactory}
+ * project's {@link io.baize.flow.plugin.spi.plugin.PrioritySPIFactory}
  * (ServiceLoader + priority conflict resolution).
  * </p>
  *

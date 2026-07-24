@@ -1,6 +1,6 @@
 package io.baize.flow.api.service;
 
-import io.baize.flow.spi.form.PluginConfigResponse;
+import io.baize.flow.plugin.spi.form.PluginConfigResponse;
 
 
 public interface DatasourcePluginService {

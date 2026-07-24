@@ -5,16 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.api.service.application.JobScheduleApplicationService;
 import io.baize.flow.common.utils.ConvertUtil;
-import io.baize.flow.core.exceptions.ServiceException;
-import io.baize.flow.core.job.registry.BatchJobEditCommandBuilderRegistry;
+import io.baize.flow.domain.exceptions.ServiceException;
+import io.baize.flow.application.job.registry.BatchJobEditCommandBuilderRegistry;
 import io.baize.flow.dao.entity.JobDefinitionContentEntity;
 import io.baize.flow.dao.entity.JobDefinitionEntity;
 import io.baize.flow.dao.entity.JobSchedule;
 import io.baize.flow.dao.repository.JobDefinitionDao;
-import io.baize.flow.spi.bean.dto.command.JobDefinitionSaveCommand;
-import io.baize.flow.spi.bean.dto.config.JobScheduleConfig;
-import io.baize.flow.spi.bean.vo.BatchJobDefinitionVO;
-import io.baize.flow.spi.enums.Status;
+import io.baize.flow.web.contract.dto.command.JobDefinitionSaveCommand;
+import io.baize.flow.web.contract.dto.config.JobScheduleConfig;
+import io.baize.flow.web.contract.vo.BatchJobDefinitionVO;
+import io.baize.flow.plugin.spi.enums.Status;
 import org.springframework.stereotype.Component;
 
 @Slf4j

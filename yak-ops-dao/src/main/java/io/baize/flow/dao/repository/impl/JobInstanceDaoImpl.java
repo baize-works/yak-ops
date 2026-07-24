@@ -14,8 +14,8 @@ import io.baize.flow.dao.entity.JobInstance;
 import io.baize.flow.dao.mapper.JobInstanceMapper;
 import io.baize.flow.dao.repository.BaseDao;
 import io.baize.flow.dao.repository.JobInstanceDao;
-import io.baize.flow.spi.bean.dto.SeaTunnelJobInstanceDTO;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
+import io.baize.flow.web.contract.dto.SeaTunnelJobInstanceDTO;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;

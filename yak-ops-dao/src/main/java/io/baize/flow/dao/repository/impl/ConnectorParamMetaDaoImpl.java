@@ -10,7 +10,7 @@ import io.baize.flow.dao.entity.ConnectorParamMetaEntity;
 import io.baize.flow.dao.mapper.ConnectorParamMetaMapper;
 import io.baize.flow.dao.repository.BaseDao;
 import io.baize.flow.dao.repository.ConnectorParamMetaDao;
-import io.baize.flow.spi.bean.dto.ConnectorParamMetaQueryDTO;
+import io.baize.flow.web.contract.dto.ConnectorParamMetaQueryDTO;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

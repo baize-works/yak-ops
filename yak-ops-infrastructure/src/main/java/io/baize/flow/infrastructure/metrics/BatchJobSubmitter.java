@@ -5,13 +5,13 @@ import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.domain.enums.JobSubmitStage;
 import io.baize.flow.domain.exception.JobSubmitException;
 import io.baize.flow.api.service.application.BatchJobSubmissionUseCase;
-import io.baize.flow.core.exceptions.ServiceException;
+import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.engine.api.EngineEndpoint;
 import io.baize.flow.engine.api.EngineGateway;
 import io.baize.flow.engine.api.EngineGatewayRegistry;
 import io.baize.flow.engine.api.EngineSubmitCommand;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
-import io.baize.flow.spi.enums.Status;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
+import io.baize.flow.plugin.spi.enums.Status;
 import org.springframework.stereotype.Component;
 
 

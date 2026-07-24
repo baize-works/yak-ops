@@ -27,7 +27,9 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-        </dependencies>
+
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web-contract</artifactId></dependency>
+    </dependencies>
     </dependencyManagement>
 
     <dependencies>

@@ -10,22 +10,22 @@ import io.baize.flow.api.exceptions.ApiException;
 import io.baize.flow.api.service.BatchJobDefinitionService;
 import io.baize.flow.common.enums.ReleaseState;
 import io.baize.flow.common.utils.CodeGenerateUtils;
-import io.baize.flow.spi.bean.dto.BatchJobDefinitionQueryDTO;
-import io.baize.flow.spi.bean.dto.batch.BatchGuideMultiJobSaveCommand;
-import io.baize.flow.spi.bean.dto.batch.BatchGuideSingleJobSaveCommand;
-import io.baize.flow.spi.bean.dto.batch.BatchScriptJobSaveCommand;
-import io.baize.flow.spi.bean.entity.PaginationResult;
-import io.baize.flow.spi.bean.entity.Result;
-import io.baize.flow.spi.bean.vo.BatchJobDefinitionVO;
-import io.baize.flow.spi.bean.vo.JobDefinitionEditDetailVO;
-import io.baize.flow.spi.bean.vo.JobDefinitionSaveResultVO;
+import io.baize.flow.web.contract.dto.BatchJobDefinitionQueryDTO;
+import io.baize.flow.web.contract.dto.batch.BatchGuideMultiJobSaveCommand;
+import io.baize.flow.web.contract.dto.batch.BatchGuideSingleJobSaveCommand;
+import io.baize.flow.web.contract.dto.batch.BatchScriptJobSaveCommand;
+import io.baize.flow.web.contract.response.PaginationResult;
+import io.baize.flow.web.contract.response.Result;
+import io.baize.flow.web.contract.vo.BatchJobDefinitionVO;
+import io.baize.flow.web.contract.vo.JobDefinitionEditDetailVO;
+import io.baize.flow.web.contract.vo.JobDefinitionSaveResultVO;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static io.baize.flow.spi.enums.Status.DELETE_BATCH_JOB_DEFINITION_ERROR;
-import static io.baize.flow.spi.enums.Status.GET_BATCH_JOB_UNIQUE_ID_ERROR;
-import static io.baize.flow.spi.enums.Status.QUERY_BATCH_JOB_DEFINITION_ERROR;
-import static io.baize.flow.spi.enums.Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.DELETE_BATCH_JOB_DEFINITION_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.GET_BATCH_JOB_UNIQUE_ID_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.QUERY_BATCH_JOB_DEFINITION_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.SAVE_OR_UPDATE_BATCH_JOB_DEFINITION_ERROR;
 
 @Slf4j
 @RestController

@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository;
 
 
 import io.baize.flow.dao.entity.JobTableMetrics;
-import io.baize.flow.spi.bean.vo.JobTableMetricsVO;
+import io.baize.flow.web.contract.vo.JobTableMetricsVO;
 
 import java.util.List;
 

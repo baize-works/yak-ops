@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.baize.flow.domain.enums.JobMode;
 import io.baize.flow.domain.enums.JobStatus;
 import io.baize.flow.dao.entity.JobInstance;
-import io.baize.flow.spi.bean.dto.SeaTunnelJobInstanceDTO;
-import io.baize.flow.spi.bean.vo.JobInstanceVO;
+import io.baize.flow.web.contract.dto.SeaTunnelJobInstanceDTO;
+import io.baize.flow.web.contract.vo.JobInstanceVO;
 
 import java.util.Date;
 import java.util.List;

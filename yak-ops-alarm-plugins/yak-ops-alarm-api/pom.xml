@@ -26,7 +26,7 @@
              DolphinScheduler where alert-api depends on dolphinscheduler-spi. -->
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-spi</artifactId>
+            <artifactId>yak-ops-plugin-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
 

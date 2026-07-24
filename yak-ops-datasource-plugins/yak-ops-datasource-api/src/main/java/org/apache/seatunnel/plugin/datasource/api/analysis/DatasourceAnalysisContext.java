@@ -4,7 +4,7 @@ import com.typesafe.config.Config;
 import lombok.Builder;
 import lombok.Data;
 import io.baize.flow.common.enums.JobDefinitionMode;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 import java.util.Map;
 

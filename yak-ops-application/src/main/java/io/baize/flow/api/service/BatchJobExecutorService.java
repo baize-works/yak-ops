@@ -1,7 +1,7 @@
 package io.baize.flow.api.service;
 
 import io.baize.flow.domain.enums.RunMode;
-import io.baize.flow.spi.bean.vo.BatchJobOperateResultVO;
+import io.baize.flow.web.contract.vo.BatchJobOperateResultVO;
 
 import java.util.List;
 

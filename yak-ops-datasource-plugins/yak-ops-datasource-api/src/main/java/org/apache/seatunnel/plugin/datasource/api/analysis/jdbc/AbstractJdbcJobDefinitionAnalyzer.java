@@ -10,8 +10,8 @@ import org.apache.seatunnel.plugin.datasource.api.analysis.JobDefinitionAnalyzer
 import io.baize.flow.common.enums.JobDefinitionMode;
 import io.baize.flow.common.modal.JobDefinitionAnalysisResult;
 import io.baize.flow.common.utils.JSONUtils;
-import io.baize.flow.spi.bean.dto.config.GuideMultiJobContent;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.web.contract.dto.config.GuideMultiJobContent;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 import java.util.ArrayList;
 import java.util.Collections;

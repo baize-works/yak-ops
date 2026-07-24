@@ -9,13 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
 import io.baize.flow.api.service.JobMetricsService;
 import io.baize.flow.common.enums.TimeRange;
-import io.baize.flow.spi.bean.entity.Result;
-import io.baize.flow.spi.bean.vo.OverviewChartsVO;
-import io.baize.flow.spi.bean.vo.OverviewSummaryVO;
+import io.baize.flow.web.contract.response.Result;
+import io.baize.flow.web.contract.vo.OverviewChartsVO;
+import io.baize.flow.web.contract.vo.OverviewSummaryVO;
 import org.springframework.web.bind.annotation.*;
 
-import static io.baize.flow.spi.enums.Status.QUERY_JOB_METRICS_CHARTS_ERROR;
-import static io.baize.flow.spi.enums.Status.QUERY_JOB_METRICS_SUMMARY_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.QUERY_JOB_METRICS_CHARTS_ERROR;
+import static io.baize.flow.plugin.spi.enums.Status.QUERY_JOB_METRICS_SUMMARY_ERROR;
 
 @Slf4j
 @RestController

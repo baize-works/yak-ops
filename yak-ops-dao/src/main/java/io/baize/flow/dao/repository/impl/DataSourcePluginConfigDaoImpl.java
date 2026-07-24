@@ -7,7 +7,7 @@ import io.baize.flow.dao.entity.DataSourcePluginConfig;
 import io.baize.flow.dao.mapper.DatasourcePluginConfigMapper;
 import io.baize.flow.dao.repository.BaseDao;
 import io.baize.flow.dao.repository.DataSourcePluginConfigDao;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Repository;
 
 @Repository

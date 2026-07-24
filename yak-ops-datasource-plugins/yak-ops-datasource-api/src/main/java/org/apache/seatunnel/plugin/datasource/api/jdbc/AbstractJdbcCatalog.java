@@ -6,8 +6,8 @@ import org.apache.seatunnel.plugin.datasource.api.utils.SqlTimeVariableParser;
 import io.baize.flow.common.FrontedTableColumn;
 import io.baize.flow.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
-import io.baize.flow.spi.bean.vo.OptionVO;
-import io.baize.flow.spi.datasource.BaseConnectionParam;
+import io.baize.flow.web.contract.vo.OptionVO;
+import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
 
 import java.sql.*;
 import java.util.ArrayList;

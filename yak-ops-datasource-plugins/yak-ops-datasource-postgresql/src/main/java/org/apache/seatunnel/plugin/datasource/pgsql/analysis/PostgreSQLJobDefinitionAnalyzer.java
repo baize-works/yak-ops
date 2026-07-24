@@ -2,7 +2,7 @@ package org.apache.seatunnel.plugin.datasource.pgsql.analysis;
 
 
 import org.apache.seatunnel.plugin.datasource.api.analysis.jdbc.AbstractJdbcJobDefinitionAnalyzer;
-import io.baize.flow.spi.enums.DbType;
+import io.baize.flow.plugin.spi.enums.DbType;
 
 public class PostgreSQLJobDefinitionAnalyzer extends AbstractJdbcJobDefinitionAnalyzer {
 

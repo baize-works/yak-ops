@@ -25,5 +25,7 @@
             <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web-contract</artifactId></dependency>
     </dependencies>
 </project>
