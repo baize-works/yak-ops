@@ -7,12 +7,34 @@
     <dependencies>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web</artifactId></dependency>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-infrastructure</artifactId></dependency>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-all</artifactId></dependency>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-alarm-all</artifactId></dependency>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-all</artifactId></dependency>
+        <!-- Runtime adapters are assembled here rather than leaking into core modules. -->
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-seatunnel</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webflux</artifactId></dependency>
         <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId></dependency>
     </dependencies>
-    <build><finalName>${project.artifactId}</finalName><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>io.baize.flow.api.BaizeFlowApplication</mainClass></configuration><executions><execution><goals><goal>repackage</goal></goals></execution></executions></plugin></plugins></build>
+    <profiles>
+        <!-- Fast, self-contained developer runtime: H2 plus the most common plugins. -->
+        <profile>
+            <id>local</id>
+            <activation><activeByDefault>true</activeByDefault></activation>
+            <dependencies>
+                <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-dao-h2</artifactId><version>${project.version}</version></dependency>
+                <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-mysql</artifactId></dependency>
+                <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-alarm-webhook</artifactId></dependency>
+            </dependencies>
+        </profile>
+        <!-- No optional datasource, alarm, or DAO implementation plugins. -->
+        <profile><id>minimal</id></profile>
+        <!-- Production distribution containing every supported runtime plugin. -->
+        <profile>
+            <id>full</id>
+            <dependencies>
+                <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-all</artifactId></dependency>
+                <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-alarm-all</artifactId></dependency>
+                <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-dao-plugin-all</artifactId></dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+    <build><finalName>${project.artifactId}</finalName><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>io.baize.flow.boot.BaizeFlowApplication</mainClass></configuration><executions><execution><goals><goal>repackage</goal></goals></execution></executions></plugin></plugins></build>
 </project>

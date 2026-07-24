@@ -1,4 +1,4 @@
-package io.baize.flow.api.config;
+package io.baize.flow.boot.config;
 
 import io.baize.flow.engine.seatunnel.rest.SeaTunnelClientProperties;
 import io.baize.flow.engine.seatunnel.rest.SeaTunnelClientResolver;
