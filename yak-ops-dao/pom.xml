@@ -44,7 +44,7 @@
 
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-datasource-all</artifactId>
+            <artifactId>yak-ops-datasource-support</artifactId>
         </dependency>
         <dependency>
             <groupId>io.baize.flow</groupId>

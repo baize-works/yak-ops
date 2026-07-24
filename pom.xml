@@ -62,9 +62,10 @@
         <module>yak-ops-web-contract</module>
         <module>yak-ops-spi</module>
         <module>yak-ops-application-support</module>
-        <module>yak-ops-engine-client</module>
-        <module>yak-ops-engine-api</module>
+        <module>yak-ops-engine-runtime</module>
+        <module>yak-ops-engine-spi</module>
         <module>yak-ops-engine-seatunnel</module>
+        <module>yak-ops-engine-all</module>
         <module>yak-ops-dist</module>
     </modules>
 
@@ -117,7 +118,7 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-api</artifactId>
+                <artifactId>yak-ops-datasource-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -157,7 +158,7 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-alarm-api</artifactId>
+                <artifactId>yak-ops-alarm-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -194,11 +195,14 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-engine-client</artifactId>
+                <artifactId>yak-ops-engine-runtime</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-api</artifactId><version>${project.version}</version></dependency>
+            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-spi</artifactId><version>${project.version}</version></dependency>
             <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-seatunnel</artifactId><version>${project.version}</version></dependency>
+            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-all</artifactId><version>${project.version}</version></dependency>
+            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-alarm-runtime</artifactId><version>${project.version}</version></dependency>
+            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-spi</artifactId><version>${project.version}</version></dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
                 <artifactId>yak-ops-dao-api</artifactId>

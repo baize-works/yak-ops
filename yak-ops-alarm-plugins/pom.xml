@@ -16,7 +16,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>yak-ops-alarm-api</module>
+        <module>yak-ops-alarm-spi</module>
+        <module>yak-ops-alarm-runtime</module>
         <module>yak-ops-alarm-webhook</module>
         <module>yak-ops-alarm-all</module>
     </modules>

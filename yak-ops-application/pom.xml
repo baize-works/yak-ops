@@ -13,11 +13,11 @@
     </dependencies></dependencyManagement>
     <dependencies>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-application-support</artifactId></dependency>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-client</artifactId></dependency>
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-runtime</artifactId></dependency>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-dao</artifactId></dependency>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-api</artifactId></dependency>
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-alarm-api</artifactId></dependency>
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-support</artifactId></dependency>
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-alarm-spi</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-aop</artifactId></dependency>
-            <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-seatunnel</artifactId></dependency>
+
     </dependencies>
 </project>

@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-datasource-api</artifactId>
+            <artifactId>yak-ops-datasource-support</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

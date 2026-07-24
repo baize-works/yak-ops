@@ -10,15 +10,41 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>yak-ops-datasource-dameng</artifactId>
+    <artifactId>yak-ops-datasource-support</artifactId>
     <version>1.0.0</version>
 
     <dependencies>
+        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-datasource-spi</artifactId></dependency>
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-datasource-support</artifactId>
+            <artifactId>yak-ops-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>io.baize.flow</groupId>
+            <artifactId>yak-ops-plugin-spi</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.baize.flow</groupId>
+            <artifactId>yak-ops-datasource-connection</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.0.1-jre</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.2.20</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -28,4 +54,6 @@
 
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web-contract</artifactId></dependency>
     </dependencies>
+
+
 </project>

@@ -17,7 +17,8 @@
 
     <modules>
         <module>yak-ops-datasource-all</module>
-        <module>yak-ops-datasource-api</module>
+        <module>yak-ops-datasource-spi</module>
+        <module>yak-ops-datasource-support</module>
         <module>yak-ops-datasource-mysql</module>
         <module>yak-ops-datasource-mysql-cdc</module>
         <module>yak-ops-datasource-oracle</module>
