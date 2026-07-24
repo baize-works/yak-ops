@@ -1,4 +1,4 @@
-package io.baize.flow.api.config;
+package io.baize.flow.boot.config;
 
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.api.security.AuthenticationType;

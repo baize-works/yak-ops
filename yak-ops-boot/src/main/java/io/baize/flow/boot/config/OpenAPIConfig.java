@@ -1,4 +1,4 @@
-package io.baize.flow.api.config;
+package io.baize.flow.boot.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
