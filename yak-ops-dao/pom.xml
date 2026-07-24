@@ -1,37 +1,25 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>io.baize.flow</groupId>
         <artifactId>yak-ops</artifactId>
         <version>1.0.0</version>
     </parent>
-
     <artifactId>yak-ops-dao</artifactId>
     <name>${project.artifactId}</name>
-
     <dependencyManagement>
         <dependencies>
-        <dependency>
-            <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-domain</artifactId>
-        </dependency>
-
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-bom</artifactId>
-                <version>${project.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <artifactId>yak-ops-domain</artifactId>
             </dependency>
-
-        <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web-contract</artifactId></dependency>
-    </dependencies>
+            <dependency>
+                <groupId>io.baize.flow</groupId>
+                <artifactId>yak-ops-web-contract</artifactId>
+            </dependency>
+        </dependencies>
     </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>io.baize.flow</groupId>
@@ -41,7 +29,6 @@
             <groupId>io.baize.flow</groupId>
             <artifactId>yak-ops-common</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.baize.flow</groupId>
             <artifactId>yak-ops-datasource-support</artifactId>
@@ -53,7 +40,6 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus</artifactId>
-            <version>3.5.16</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -63,8 +49,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -79,6 +69,4 @@
             </plugin>
         </plugins>
     </build>
-
-
 </project>
