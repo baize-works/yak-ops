@@ -24,6 +24,7 @@
         <java.version>8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <file_encoding>UTF-8</file_encoding>
+        <architecture.check.skip>false</architecture.check.skip>
     </properties>
     <!--
       Module migration matrix (old -> owner):
@@ -279,6 +280,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
+                            <skip>${architecture.check.skip}</skip>
                             <executable>python3</executable>
                             <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
                             <arguments>
@@ -293,6 +295,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
+                            <skip>${architecture.check.skip}</skip>
                             <executable>bash</executable>
                             <arguments>
                                 <argument>${maven.multiModuleProjectDirectory}/tools/verify-module-boundaries.sh
@@ -329,4 +332,17 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <properties>
+                <architecture.check.skip>true</architecture.check.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>
