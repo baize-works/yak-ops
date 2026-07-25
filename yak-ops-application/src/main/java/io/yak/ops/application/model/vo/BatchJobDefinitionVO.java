@@ -1,11 +1,13 @@
 package io.yak.ops.application.model.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.yak.ops.common.enums.ReleaseState;
 import lombok.*;
 import io.yak.ops.common.enums.JobDefinitionMode;
 import io.yak.ops.domain.enums.JobMode;
 import io.yak.ops.domain.enums.RunMode;
 import io.yak.ops.domain.enums.ScheduleStatusEnum;
+import io.yak.ops.common.enums.SyncModeEnum;
 
 import java.util.Date;
 
