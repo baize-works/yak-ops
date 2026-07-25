@@ -1,3 +1,3 @@
-const WorkflowManagementPage = () => <div>good</div>;
+const WorkflowManagementPage = () => null;
 
 export default WorkflowManagementPage;

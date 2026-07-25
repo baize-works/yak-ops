@@ -1,3 +1,3 @@
-const DataQualityPage = () => <div>good</div>;
+const ConnectorPage = () => null;
 
-export default DataQualityPage;
+export default ConnectorPage;

@@ -1,3 +1,3 @@
-const DataQualityPage = () => <div>good</div>;
+const WorkflowInstancePage = () => null;
 
-export default DataQualityPage;
+export default WorkflowInstancePage;

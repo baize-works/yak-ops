@@ -1,3 +1,3 @@
-const DataQualityPage = () => <div>good</div>;
+const DataQualityPage = () => null;
 
 export default DataQualityPage;

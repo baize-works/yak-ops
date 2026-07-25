@@ -1,3 +1,3 @@
-const DataQualityPage = () => <div>good</div>;
+const RealtimeLinkUpPage = () => null;
 
-export default DataQualityPage;
+export default RealtimeLinkUpPage;
