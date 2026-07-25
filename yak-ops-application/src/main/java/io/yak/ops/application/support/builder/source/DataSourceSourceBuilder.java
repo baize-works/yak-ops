@@ -95,10 +95,7 @@ public class DataSourceSourceBuilder implements SourceNodeConfigBuilder {
     private Config renderTimeVariablesIfNecessary(Config config,
                                                   DataSourceHoconBuilder hoconBuilder,
                                                   JobScheduleConfig scheduleConfig) {
-        /*
-         * 这里先只处理 JDBC SQL 类场景。
-         * CDC 一般不需要渲染 sql / where_condition。
-         */
+        // Render scheduled variables in SQL fragments when those fields are present.
         Map<String, Object> extra = new HashMap<>();
 
         renderSqlFragmentIfNecessary(config, hoconBuilder, scheduleConfig, KEY_SQL, extra);

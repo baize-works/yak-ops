@@ -16,5 +16,4 @@ export const timeFormatOptions = [
 
 export const connectorNameOptions = [
   { label: "Jdbc", value: "Jdbc" },
-  { label: "MySQL-CDC", value: "MySQL-CDC" },
 ];

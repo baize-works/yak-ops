@@ -71,7 +71,6 @@ Yak Ops 支持多种任务创建方式，包括可视化向导配置和脚本模
 统一管理常用数据源，包括：
 
 * MySQL
-* MySQL CDC
 * PostgreSQL
 * Oracle
 * 其他兼容 JDBC 的数据源

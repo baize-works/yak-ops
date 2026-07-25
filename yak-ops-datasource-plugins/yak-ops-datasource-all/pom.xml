@@ -23,10 +23,6 @@
         </dependency>
         <dependency>
             <groupId>io.yak.ops</groupId>
-            <artifactId>yak-ops-datasource-vendor-mysql-cdc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.yak.ops</groupId>
             <artifactId>yak-ops-datasource-vendor-oracle</artifactId>
         </dependency>
         <dependency>

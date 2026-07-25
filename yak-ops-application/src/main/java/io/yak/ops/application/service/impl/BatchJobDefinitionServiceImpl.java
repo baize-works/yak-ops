@@ -9,7 +9,6 @@ import io.yak.ops.application.service.BatchJobDefinitionService;
 import io.yak.ops.application.service.BatchJobInstanceService;
 import io.yak.ops.application.service.JobScheduleService;
 import io.yak.ops.application.service.application.JobScheduleApplicationService;
-import io.yak.ops.application.service.cdc.CdcServerIdAllocationService;
 import io.yak.ops.common.enums.ReleaseState;
 import io.yak.ops.common.modal.JobDefinitionAnalysisResult;
 import io.yak.ops.common.utils.JSONUtils;
@@ -73,9 +72,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     private JobScheduleService jobScheduleService;
 
     @Resource
-    private CdcServerIdAllocationService cdcServerIdAllocationService;
-
-    @Resource
     private ObjectMapper objectMapper;
 
     /**
@@ -110,8 +106,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
             normalizePersistState(entity, nextVersion);
 
             jobDefinitionDao.saveOrUpdate(entity);
-
-            cdcServerIdAllocationService.prepare(command, entity.getId());
 
             String definitionContent = handler.serializeDefinition(command);
 
@@ -226,7 +220,6 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         validateDelete(definition.getId());
 
         try {
-            cdcServerIdAllocationService.release(jobDefinitionId);
             scheduleApplicationService.removeSchedule(jobDefinitionId);
             jobInstanceService.removeAllByDefinitionId(jobDefinitionId);
             jobDefinitionContentDao.deleteByJobDefinitionId(jobDefinitionId);
