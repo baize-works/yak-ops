@@ -4,8 +4,8 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.yak.ops.dao.mapper.JobInstanceMapper">
 
-    <resultMap id="JobInstancePageVOResultMap"
-               type="io.yak.ops.spi.bean.vo.JobInstanceVO">
+    <resultMap id="JobInstanceResultMap"
+               type="io.yak.ops.dao.model.result.JobInstanceResult">
         <id property="id" column="id"/>
 
         <result property="jobDefinitionId" column="jobDefinitionId"/>
@@ -112,7 +112,7 @@
     </sql>
 
     <select id="selectDetailById"
-            resultMap="JobInstancePageVOResultMap">
+            resultMap="JobInstanceResultMap">
 
         SELECT
         <include refid="BaseSelectColumns"/>
@@ -153,7 +153,7 @@
     </select>
 
     <select id="pageWithDefinition"
-            resultMap="JobInstancePageVOResultMap">
+            resultMap="JobInstanceResultMap">
 
         SELECT
         <include refid="BaseSelectColumns"/>
@@ -188,43 +188,43 @@
         ON i.job_definition_id = s.job_definition_id
 
         <where>
-            <if test="dto != null">
+            <if test="query != null">
 
-                <if test="dto.id != null">
-                    AND i.id = #{dto.id}
+                <if test="query.id != null">
+                    AND i.id = #{query.id}
                 </if>
 
-                <if test="dto.jobDefinitionId != null">
-                    AND i.job_definition_id = #{dto.jobDefinitionId}
+                <if test="query.jobDefinitionId != null">
+                    AND i.job_definition_id = #{query.jobDefinitionId}
                 </if>
 
-                <if test="dto.jobStatus != null and dto.jobStatus != ''">
-                    AND i.job_status = #{dto.jobStatus}
+                <if test="query.jobStatus != null and query.jobStatus != ''">
+                    AND i.job_status = #{query.jobStatus}
                 </if>
 
-                <if test="dto.runMode != null and dto.runMode != ''">
-                    AND i.run_mode = #{dto.runMode}
+                <if test="query.runMode != null and query.runMode != ''">
+                    AND i.run_mode = #{query.runMode}
                 </if>
 
-                <if test="dto.jobType != null and dto.jobType != ''">
-                    AND d.job_type = #{dto.jobType}
+                <if test="query.jobType != null and query.jobType != ''">
+                    AND d.job_type = #{query.jobType}
                 </if>
 
-                <if test="dto.keyword != null and dto.keyword != ''">
+                <if test="query.keyword != null and query.keyword != ''">
                     AND (
-                    d.job_name LIKE CONCAT('%', #{dto.keyword}, '%')
-                    OR CAST(i.engine_job_id AS CHAR) LIKE CONCAT('%', #{dto.keyword}, '%')
-                    OR i.error_message LIKE CONCAT('%', #{dto.keyword}, '%')
-                    OR i.log_path LIKE CONCAT('%', #{dto.keyword}, '%')
+                    d.job_name LIKE CONCAT('%', #{query.keyword}, '%')
+                    OR CAST(i.engine_job_id AS CHAR) LIKE CONCAT('%', #{query.keyword}, '%')
+                    OR i.error_message LIKE CONCAT('%', #{query.keyword}, '%')
+                    OR i.log_path LIKE CONCAT('%', #{query.keyword}, '%')
                     )
                 </if>
 
-                <if test="dto.queryStartTime != null">
-                    AND i.create_time <![CDATA[ >= ]]> #{dto.queryStartTime}
+                <if test="query.queryStartTime != null">
+                    AND i.create_time <![CDATA[ >= ]]> #{query.queryStartTime}
                 </if>
 
-                <if test="dto.queryEndTime != null">
-                    AND i.create_time <![CDATA[ <= ]]> #{dto.queryEndTime}
+                <if test="query.queryEndTime != null">
+                    AND i.create_time <![CDATA[ <= ]]> #{query.queryEndTime}
                 </if>
 
             </if>

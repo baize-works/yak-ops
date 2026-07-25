@@ -7,8 +7,10 @@ import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.application.service.TimeVariableService;
 import io.yak.ops.common.enums.TimeVariableSource;
 import io.yak.ops.common.enums.TimeVariableValueType;
+import io.yak.ops.common.utils.ConvertUtil;
 import io.yak.ops.domain.exceptions.ServiceException;
 import io.yak.ops.application.support.time.TimeExpressionEvaluator;
+import io.yak.ops.dao.model.query.TimeVariablePageQuery;
 import io.yak.ops.dao.entity.TimeVariable;
 import io.yak.ops.dao.repository.TimeVariableDao;
 import io.yak.ops.web.contract.dto.*;
@@ -150,7 +152,8 @@ public class TimeVariableServiceImpl implements TimeVariableService {
         }
 
         try {
-            IPage<TimeVariable> pageResult = timeVariableDao.queryPage(req);
+            TimeVariablePageQuery query = ConvertUtil.sourceToTarget(req, TimeVariablePageQuery.class);
+            IPage<TimeVariable> pageResult = timeVariableDao.queryPage(query);
 
             List<TimeVariableVO> records = pageResult.getRecords()
                     .stream()

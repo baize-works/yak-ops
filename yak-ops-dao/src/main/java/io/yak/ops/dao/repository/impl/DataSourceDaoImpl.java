@@ -11,7 +11,7 @@ import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.dao.mapper.DataSourceMapper;
 import io.yak.ops.dao.repository.BaseDao;
 import io.yak.ops.dao.repository.DataSourceDao;
-import io.yak.ops.web.contract.dto.DataSourceDTO;
+import io.yak.ops.dao.model.query.DataSourceQuery;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -42,14 +42,14 @@ public class DataSourceDaoImpl extends BaseDao<DataSource, DataSourceMapper> imp
     }
 
     @Override
-    public IPage<DataSource> queryPage(DataSourceDTO dto) {
+    public IPage<DataSource> queryPage(DataSourceQuery query) {
         LambdaQueryWrapper<DataSource> wrapper = new LambdaQueryWrapper<DataSource>()
-                .eq(StringUtils.isNotBlank(dto.getName()), DataSource::getName, dto.getName())
-                .eq(dto.getDbType() != null, DataSource::getDbType, dto.getDbType())
-                .eq(dto.getEnvironment() != null, DataSource::getEnvironment, dto.getEnvironment())
+                .eq(StringUtils.isNotBlank(query.getName()), DataSource::getName, query.getName())
+                .eq(query.getDbType() != null, DataSource::getDbType, query.getDbType())
+                .eq(query.getEnvironment() != null, DataSource::getEnvironment, query.getEnvironment())
                 .orderByDesc(DataSource::getCreateTime);
 
-        IPage<DataSource> page = new Page<>(dto.getPageNo(), dto.getPageSize());
+        IPage<DataSource> page = new Page<>(query.getPageNo(), query.getPageSize());
         return dataSourceMapper.selectPage(page, wrapper);
     }
 

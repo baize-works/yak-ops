@@ -5,7 +5,7 @@
 <mapper namespace="io.yak.ops.dao.mapper.JobDefinitionMapper">
 
     <select id="selectPageWithLatestInstance"
-            resultType="io.yak.ops.spi.bean.vo.BatchJobDefinitionVO">
+            resultType="io.yak.ops.dao.model.result.JobDefinitionResult">
 
         SELECT
         d.id AS id,
@@ -60,29 +60,29 @@
         SELECT *
         FROM t_baize_flow_job_definition
         <where>
-            <if test="dto.id != null">
-                AND id = #{dto.id}
+            <if test="query.id != null">
+                AND id = #{query.id}
             </if>
-            <if test="dto.jobName != null and dto.jobName != ''">
-                AND job_name LIKE CONCAT('%', #{dto.jobName}, '%')
+            <if test="query.jobName != null and query.jobName != ''">
+                AND job_name LIKE CONCAT('%', #{query.jobName}, '%')
             </if>
-            <if test="dto.createTimeStart != null">
-                AND create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            <if test="query.createTimeStart != null">
+                AND create_time <![CDATA[ >= ]]> #{query.createTimeStart}
             </if>
-            <if test="dto.createTimeEnd != null">
-                AND create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            <if test="query.createTimeEnd != null">
+                AND create_time <![CDATA[ <= ]]> #{query.createTimeEnd}
             </if>
-            <if test="dto.sourceType != null and dto.sourceType != ''">
-                AND source_type = #{dto.sourceType}
+            <if test="query.sourceType != null and query.sourceType != ''">
+                AND source_type = #{query.sourceType}
             </if>
-            <if test="dto.sinkType != null and dto.sinkType != ''">
-                AND sink_type = #{dto.sinkType}
+            <if test="query.sinkType != null and query.sinkType != ''">
+                AND sink_type = #{query.sinkType}
             </if>
-            <if test="dto.sourceTable != null and dto.sourceTable != ''">
-                AND source_table LIKE CONCAT('%', #{dto.sourceTable}, '%')
+            <if test="query.sourceTable != null and query.sourceTable != ''">
+                AND source_table LIKE CONCAT('%', #{query.sourceTable}, '%')
             </if>
-            <if test="dto.sinkTable != null and dto.sinkTable != ''">
-                AND sink_table LIKE CONCAT('%', #{dto.sinkTable}, '%')
+            <if test="query.sinkTable != null and query.sinkTable != ''">
+                AND sink_table LIKE CONCAT('%', #{query.sinkTable}, '%')
             </if>
         </where>
         ORDER BY create_time DESC
@@ -117,8 +117,8 @@
         ON d.sink_datasource_id = ds_sink.id
 
         <where>
-            <if test="dto.status != null and dto.status != ''">
-                AND i.job_status = #{dto.status}
+            <if test="query.status != null and query.status != ''">
+                AND i.job_status = #{query.status}
             </if>
         </where>
 
@@ -152,40 +152,40 @@
         )
 
         <where>
-            <if test="dto.id != null">
-                AND d.id = #{dto.id}
+            <if test="query.id != null">
+                AND d.id = #{query.id}
             </if>
 
-            <if test="dto.jobName != null and dto.jobName != ''">
-                AND d.job_name LIKE CONCAT('%', #{dto.jobName}, '%')
+            <if test="query.jobName != null and query.jobName != ''">
+                AND d.job_name LIKE CONCAT('%', #{query.jobName}, '%')
             </if>
 
-            <if test="dto.createTimeStart != null">
-                AND d.create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            <if test="query.createTimeStart != null">
+                AND d.create_time <![CDATA[ >= ]]> #{query.createTimeStart}
             </if>
 
-            <if test="dto.createTimeEnd != null">
-                AND d.create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            <if test="query.createTimeEnd != null">
+                AND d.create_time <![CDATA[ <= ]]> #{query.createTimeEnd}
             </if>
 
-            <if test="dto.status != null and dto.status != ''">
-                AND i.job_status = #{dto.status}
+            <if test="query.status != null and query.status != ''">
+                AND i.job_status = #{query.status}
             </if>
 
-            <if test="dto.sourceType != null and dto.sourceType != ''">
-                AND d.source_type = #{dto.sourceType}
+            <if test="query.sourceType != null and query.sourceType != ''">
+                AND d.source_type = #{query.sourceType}
             </if>
 
-            <if test="dto.sinkType != null and dto.sinkType != ''">
-                AND d.sink_type = #{dto.sinkType}
+            <if test="query.sinkType != null and query.sinkType != ''">
+                AND d.sink_type = #{query.sinkType}
             </if>
 
-            <if test="dto.sourceTable != null and dto.sourceTable != ''">
-                AND d.source_table LIKE CONCAT('%', #{dto.sourceTable}, '%')
+            <if test="query.sourceTable != null and query.sourceTable != ''">
+                AND d.source_table LIKE CONCAT('%', #{query.sourceTable}, '%')
             </if>
 
-            <if test="dto.sinkTable != null and dto.sinkTable != ''">
-                AND d.sink_table LIKE CONCAT('%', #{dto.sinkTable}, '%')
+            <if test="query.sinkTable != null and query.sinkTable != ''">
+                AND d.sink_table LIKE CONCAT('%', #{query.sinkTable}, '%')
             </if>
         </where>
 
