@@ -11,8 +11,8 @@ import io.yak.ops.application.security.Authenticator;
 import io.yak.ops.application.service.SessionService;
 import io.yak.ops.application.service.UsersService;
 import io.yak.ops.common.constants.Constants;
-import io.yak.ops.web.contract.dto.UserDTO;
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.dto.UserDTO;
+import io.yak.ops.application.model.response.Result;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;

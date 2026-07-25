@@ -4,8 +4,8 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.dao.entity.SeaTunnelClient;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyItemVO;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyVO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyItemVO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 

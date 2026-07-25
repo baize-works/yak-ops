@@ -11,7 +11,7 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.yak.ops.common.enums.JobDefinitionMode;
 import io.yak.ops.common.modal.JobDefinitionAnalysisResult;
-import io.yak.ops.web.contract.dto.config.GuideMultiJobContent;
+import io.yak.ops.application.model.dto.config.GuideMultiJobContent;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 

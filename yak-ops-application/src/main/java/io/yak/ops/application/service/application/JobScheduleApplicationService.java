@@ -5,10 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.application.service.JobScheduleService;
 import io.yak.ops.domain.enums.ScheduleStatusEnum;
 import io.yak.ops.dao.entity.JobSchedule;
-import io.yak.ops.web.contract.dto.SeaTunnelJobScheduleDTO;
-import io.yak.ops.web.contract.dto.command.BatchJobSaveCommand;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.config.JobScheduleConfig;
+import io.yak.ops.application.model.dto.SeaTunnelJobScheduleDTO;
+import io.yak.ops.application.model.dto.command.BatchJobSaveCommand;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Service;
 
 @Service

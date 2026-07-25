@@ -8,8 +8,8 @@ import io.yak.ops.infrastructure.verify.job.ConnectivityTestJob;
 import io.yak.ops.infrastructure.verify.job.ConnectivityTestJobFactory;
 import io.yak.ops.infrastructure.verify.modal.DatasourceVerifyContext;
 import io.yak.ops.infrastructure.verify.support.ConnectivityVerifyResultAssembler;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyItemVO;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyVO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyItemVO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 

@@ -8,9 +8,9 @@ import io.yak.ops.common.enums.ReleaseState;
 import io.yak.ops.domain.enums.RunMode;
 import io.yak.ops.domain.exceptions.ServiceException;
 import io.yak.ops.dao.entity.JobInstance;
-import io.yak.ops.web.contract.vo.BatchJobDefinitionVO;
-import io.yak.ops.web.contract.vo.BatchJobOperateResultVO;
-import io.yak.ops.web.contract.vo.JobInstanceVO;
+import io.yak.ops.application.model.vo.BatchJobDefinitionVO;
+import io.yak.ops.application.model.vo.BatchJobOperateResultVO;
+import io.yak.ops.application.model.vo.JobInstanceVO;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Service;
 

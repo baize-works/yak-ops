@@ -1,5 +1,6 @@
 package io.yak.ops.engine.legacy;
 
+import io.yak.ops.engine.api.EngineRuntimeClientPort;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -7,7 +8,7 @@ import java.util.Map;
 
 @Component("legacyEngineRuntimeClient")
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class LegacyRuntimeRestClient {
+public class LegacyRuntimeRestClient implements EngineRuntimeClientPort {
 
     @Resource
     private LegacyRestClient seatunnelRestClient;

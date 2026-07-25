@@ -1,6 +1,6 @@
 package io.yak.ops.application.service.application;
 
-import io.yak.ops.web.contract.vo.JobInstanceVO;
+import io.yak.ops.application.model.vo.JobInstanceVO;
 
 /**
  * Application-facing port for submitting and cancelling an engine job.

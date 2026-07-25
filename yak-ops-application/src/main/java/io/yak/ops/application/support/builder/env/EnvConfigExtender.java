@@ -1,6 +1,6 @@
 package io.yak.ops.application.support.builder.env;
 
-import io.yak.ops.web.contract.dto.config.JobEnvConfig;
+import io.yak.ops.application.model.dto.config.JobEnvConfig;
 
 import java.util.Map;
 

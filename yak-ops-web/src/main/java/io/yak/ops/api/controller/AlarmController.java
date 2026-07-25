@@ -14,7 +14,7 @@ import io.yak.ops.dao.entity.AlarmChannelEntity;
 import io.yak.ops.dao.entity.AlarmRecordEntity;
 import io.yak.ops.dao.entity.AlarmRuleChannelEntity;
 import io.yak.ops.dao.entity.AlarmRuleEntity;
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.response.Result;
 import io.yak.ops.plugin.spi.form.FormFieldConfig;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

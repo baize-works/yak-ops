@@ -2,8 +2,8 @@ package io.yak.ops.api.controller;
 
 import lombok.RequiredArgsConstructor;
 import io.yak.ops.application.service.HoconTemplateService;
-import io.yak.ops.web.contract.response.Result;
-import io.yak.ops.web.contract.vo.HoconTemplateVO;
+import io.yak.ops.application.model.response.Result;
+import io.yak.ops.application.model.vo.HoconTemplateVO;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

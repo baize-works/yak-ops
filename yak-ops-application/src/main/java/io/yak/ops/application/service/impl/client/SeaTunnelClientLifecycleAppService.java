@@ -19,10 +19,10 @@ import io.yak.ops.dao.entity.SeaTunnelClientNode;
 import io.yak.ops.dao.repository.JobDefinitionDao;
 import io.yak.ops.dao.repository.SeaTunnelClientDao;
 import io.yak.ops.dao.repository.SeaTunnelClientNodeDao;
-import io.yak.ops.engine.legacy.LegacyClientAuthentication;
-import io.yak.ops.engine.legacy.LegacyRestClient;
-import io.yak.ops.web.contract.dto.SeaTunnelClientDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientEndpointDTO;
+import io.yak.ops.engine.api.EngineClientAuthentication;
+import io.yak.ops.engine.api.EngineClientPort;
+import io.yak.ops.application.model.dto.SeaTunnelClientDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientEndpointDTO;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -55,7 +55,7 @@ public class SeaTunnelClientLifecycleAppService {
     private SeaTunnelClientNodeDao seaTunnelClientNodeDao;
 
     @Resource
-    private LegacyRestClient seaTunnelRestClient;
+    private EngineClientPort seaTunnelRestClient;
 
     @Resource
     private SeaTunnelClientTopologyBuilder topologyBuilder;
@@ -644,8 +644,8 @@ public class SeaTunnelClientLifecycleAppService {
     /**
      * Builds authentication information used when calling SeaTunnel REST API.
      */
-    private LegacyClientAuthentication buildAuth(SeaTunnelClient entity) {
-        LegacyClientAuthentication auth = new LegacyClientAuthentication();
+    private EngineClientAuthentication buildAuth(SeaTunnelClient entity) {
+        EngineClientAuthentication auth = new EngineClientAuthentication();
 
         if (entity == null) {
             return auth;

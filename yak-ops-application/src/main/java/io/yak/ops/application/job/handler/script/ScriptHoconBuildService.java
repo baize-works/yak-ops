@@ -2,8 +2,8 @@ package io.yak.ops.application.job.handler.script;
 
 import com.typesafe.config.Config;
 import io.yak.ops.application.support.utils.SeaTunnelConfigUtil;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.config.ScriptJobContent;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.config.ScriptJobContent;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

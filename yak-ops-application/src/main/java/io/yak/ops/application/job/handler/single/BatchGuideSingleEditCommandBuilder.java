@@ -6,11 +6,11 @@ import io.yak.ops.common.utils.JSONUtils;
 import io.yak.ops.application.job.handler.BatchJobEditCommandBuilder;
 import io.yak.ops.dao.entity.JobDefinitionContentEntity;
 import io.yak.ops.dao.entity.JobDefinitionEntity;
-import io.yak.ops.web.contract.dto.batch.BatchGuideSingleJobSaveCommand;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.config.BatchJobEnvConfig;
-import io.yak.ops.web.contract.dto.config.JobBasicConfig;
-import io.yak.ops.web.contract.dto.config.JobScheduleConfig;
+import io.yak.ops.application.model.dto.batch.BatchGuideSingleJobSaveCommand;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.config.BatchJobEnvConfig;
+import io.yak.ops.application.model.dto.config.JobBasicConfig;
+import io.yak.ops.application.model.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;

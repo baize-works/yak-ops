@@ -10,9 +10,9 @@ import io.yak.ops.application.support.builder.source.SourceNodeConfigBuilder;
 import io.yak.ops.application.support.builder.transform.TransformNodeConfigBuilder;
 import io.yak.ops.domain.dag.DagGraph;
 import io.yak.ops.application.support.utils.SeaTunnelConfigUtil;
-import io.yak.ops.web.contract.dto.config.BatchJobEnvConfig;
-import io.yak.ops.web.contract.dto.config.JobEnvConfig;
-import io.yak.ops.web.contract.dto.config.JobScheduleConfig;
+import io.yak.ops.application.model.dto.config.BatchJobEnvConfig;
+import io.yak.ops.application.model.dto.config.JobEnvConfig;
+import io.yak.ops.application.model.dto.config.JobScheduleConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;

@@ -12,9 +12,9 @@ import io.yak.ops.application.client.model.SeaTunnelClientSpec;
 import io.yak.ops.domain.exceptions.ServiceException;
 import io.yak.ops.dao.entity.SeaTunnelClient;
 import io.yak.ops.dao.entity.SeaTunnelClientNode;
-import io.yak.ops.web.contract.dto.SeaTunnelClientDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientEndpointDTO;
-import io.yak.ops.web.contract.vo.OptionVO;
+import io.yak.ops.application.model.dto.SeaTunnelClientDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientEndpointDTO;
+import io.yak.ops.application.model.vo.OptionVO;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Component;
 

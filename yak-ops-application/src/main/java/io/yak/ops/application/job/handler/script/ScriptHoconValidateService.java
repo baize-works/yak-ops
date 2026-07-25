@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import io.yak.ops.common.config.ConfigValidator;
 import io.yak.ops.common.config.ReadonlyConfig;
-import io.yak.ops.web.contract.dto.config.ScriptJobContent;
+import io.yak.ops.application.model.dto.config.ScriptJobContent;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

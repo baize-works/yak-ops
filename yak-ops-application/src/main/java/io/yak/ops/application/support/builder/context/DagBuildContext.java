@@ -3,7 +3,7 @@ package io.yak.ops.application.support.builder.context;
 import com.typesafe.config.Config;
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.domain.dag.DagGraph;
-import io.yak.ops.web.contract.dto.config.JobScheduleConfig;
+import io.yak.ops.application.model.dto.config.JobScheduleConfig;
 
 import java.util.HashMap;
 import java.util.List;

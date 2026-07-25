@@ -4,7 +4,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import io.yak.ops.application.support.builder.env.EnvConfigExtender;
-import io.yak.ops.web.contract.dto.config.JobEnvConfig;
+import io.yak.ops.application.model.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;

@@ -1,6 +1,8 @@
 package io.yak.ops.engine.legacy;
 
 import io.yak.ops.engine.legacy.internal.vendor.rest.SeaTunnelClientResolver;
+import io.yak.ops.engine.api.EngineClientAuthentication;
+import io.yak.ops.engine.api.EngineClientPort;
 import io.yak.ops.engine.legacy.internal.vendor.exception.SeaTunnelClientException;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpEntity;
@@ -18,7 +20,7 @@ import java.util.Map;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Service("legacyEngineRestClient")
-public class LegacyRestClient {
+public class LegacyRestClient implements EngineClientPort {
     private static final String REST_ROOT = "/hazelcast/rest";
     private final RestTemplate restTemplate;
     private final SeaTunnelClientResolver resolver;
@@ -40,7 +42,7 @@ public class LegacyRestClient {
             String baseUrl,
             String contextPath,
             Map<String, String> tags,
-            LegacyClientAuthentication auth) {
+            EngineClientAuthentication auth) {
         return get(baseUrl, contextPath, tags, auth, "/maps/overview", Map.class);
     }
 
@@ -162,9 +164,9 @@ public class LegacyRestClient {
     }
 
     private <T> T get(Long clientId, String path, Map<String, String> query, Class<T> type) { return get(resolver.resolveBaseApiUrl(clientId), resolver.resolveContextPath(clientId), query, resolver.resolveAuth(clientId), path, type); }
-    private <T> T get(String baseUrl, String contextPath, Map<String, String> query, LegacyClientAuthentication auth, String path, Class<T> type) { return exchange(baseUrl, contextPath, path, HttpMethod.GET, null, null, query, auth, type); }
+    private <T> T get(String baseUrl, String contextPath, Map<String, String> query, EngineClientAuthentication auth, String path, Class<T> type) { return exchange(baseUrl, contextPath, path, HttpMethod.GET, null, null, query, auth, type); }
     private <T> T post(Long clientId, String path, Object body, MediaType contentType, Map<String, String> query, Class<T> type) { return exchange(resolver.resolveBaseApiUrl(clientId), resolver.resolveContextPath(clientId), path, HttpMethod.POST, body, contentType, query, resolver.resolveAuth(clientId), type); }
-    private <T> T exchange(String baseUrl, String contextPath, String path, HttpMethod method, Object body, MediaType contentType, Map<String, String> query, LegacyClientAuthentication auth, Class<T> type) {
+    private <T> T exchange(String baseUrl, String contextPath, String path, HttpMethod method, Object body, MediaType contentType, Map<String, String> query, EngineClientAuthentication auth, Class<T> type) {
         HttpHeaders headers = new HttpHeaders(); if (contentType != null) headers.setContentType(contentType); if (auth != null && Boolean.TRUE.equals(auth.getAuthEnabled())) headers.setBasicAuth(auth.getUsername(), auth.getPassword());
         String root = trim(baseUrl) + normalize(contextPath) + REST_ROOT + path;
         UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(root); query.forEach((key, value) -> { if (value != null) uri.queryParam(key, value); });

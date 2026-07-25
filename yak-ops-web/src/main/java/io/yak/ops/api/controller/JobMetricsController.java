@@ -9,9 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import io.yak.ops.api.exceptions.ApiException;
 import io.yak.ops.application.service.JobMetricsService;
 import io.yak.ops.common.enums.TimeRange;
-import io.yak.ops.web.contract.response.Result;
-import io.yak.ops.web.contract.vo.OverviewChartsVO;
-import io.yak.ops.web.contract.vo.OverviewSummaryVO;
+import io.yak.ops.application.model.response.Result;
+import io.yak.ops.application.model.vo.OverviewChartsVO;
+import io.yak.ops.application.model.vo.OverviewSummaryVO;
 import org.springframework.web.bind.annotation.*;
 
 import static io.yak.ops.plugin.spi.enums.Status.QUERY_JOB_METRICS_CHARTS_ERROR;

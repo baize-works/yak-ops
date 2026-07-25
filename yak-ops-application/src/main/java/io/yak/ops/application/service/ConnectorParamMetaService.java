@@ -1,11 +1,11 @@
 package io.yak.ops.application.service;
 
-import io.yak.ops.web.contract.dto.ConnectorParamMetaCreateDTO;
-import io.yak.ops.web.contract.dto.ConnectorParamMetaQueryDTO;
-import io.yak.ops.web.contract.dto.ConnectorParamMetaUpdateDTO;
-import io.yak.ops.web.contract.response.PaginationResult;
-import io.yak.ops.web.contract.vo.ConnectorParamMetaOptionVO;
-import io.yak.ops.web.contract.vo.ConnectorParamMetaVO;
+import io.yak.ops.application.model.dto.ConnectorParamMetaCreateDTO;
+import io.yak.ops.application.model.dto.ConnectorParamMetaQueryDTO;
+import io.yak.ops.application.model.dto.ConnectorParamMetaUpdateDTO;
+import io.yak.ops.application.model.response.PaginationResult;
+import io.yak.ops.application.model.vo.ConnectorParamMetaOptionVO;
+import io.yak.ops.application.model.vo.ConnectorParamMetaVO;
 
 import java.util.List;
 

@@ -1,8 +1,8 @@
 package io.yak.ops.api.handler;
 
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.response.Result;
 import io.yak.ops.common.utils.ConvertUtil;
-import io.yak.ops.web.contract.response.ResultStatus;
+import io.yak.ops.application.model.response.ResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.DefaultMessageSourceResolvable;

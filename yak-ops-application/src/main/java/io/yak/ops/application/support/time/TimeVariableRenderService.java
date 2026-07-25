@@ -1,8 +1,8 @@
 package io.yak.ops.application.support.time;
 
 import io.yak.ops.dao.entity.TimeVariable;
-import io.yak.ops.web.contract.dto.TimeVariableRenderReq;
-import io.yak.ops.web.contract.vo.TimeVariableRenderVO;
+import io.yak.ops.application.model.dto.TimeVariableRenderReq;
+import io.yak.ops.application.model.vo.TimeVariableRenderVO;
 
 import java.util.List;
 

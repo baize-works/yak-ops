@@ -3,7 +3,7 @@ package io.yak.ops.api.exceptions;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import io.yak.ops.domain.exceptions.ServiceException;
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.response.Result;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;

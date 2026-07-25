@@ -11,7 +11,7 @@ import io.yak.ops.engine.api.ExecutionEngine;
 import io.yak.ops.engine.api.EngineGateway;
 import io.yak.ops.engine.api.EngineGatewayRegistry;
 import io.yak.ops.engine.api.JobSubmitCommand;
-import io.yak.ops.web.contract.vo.JobInstanceVO;
+import io.yak.ops.application.model.vo.JobInstanceVO;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Component;
 

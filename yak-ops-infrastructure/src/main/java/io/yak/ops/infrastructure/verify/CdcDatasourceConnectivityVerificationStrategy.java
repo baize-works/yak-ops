@@ -7,8 +7,8 @@ import org.apache.seatunnel.plugin.datasource.api.cdc.CdcDatasourcePrecheckProvi
 import org.apache.seatunnel.plugin.datasource.api.cdc.CdcDatasourcePrecheckProviderFactory;
 import org.apache.seatunnel.plugin.datasource.api.cdc.CdcDatasourcePrecheckResult;
 import io.yak.ops.infrastructure.verify.modal.DatasourceVerifyContext;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyItemVO;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyVO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyItemVO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

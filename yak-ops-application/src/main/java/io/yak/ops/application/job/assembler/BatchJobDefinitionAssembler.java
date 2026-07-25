@@ -3,9 +3,9 @@ package io.yak.ops.application.job.assembler;
 import io.yak.ops.common.enums.ReleaseState;
 import io.yak.ops.common.modal.JobDefinitionAnalysisResult;
 import io.yak.ops.dao.entity.JobDefinitionEntity;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.config.JobBasicConfig;
-import io.yak.ops.web.contract.dto.config.JobEnvConfig;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.config.JobBasicConfig;
+import io.yak.ops.application.model.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;

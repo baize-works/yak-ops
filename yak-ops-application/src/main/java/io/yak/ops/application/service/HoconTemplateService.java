@@ -1,6 +1,6 @@
 package io.yak.ops.application.service;
 
-import io.yak.ops.web.contract.vo.HoconTemplateVO;
+import io.yak.ops.application.model.vo.HoconTemplateVO;
 import io.yak.ops.plugin.spi.enums.DbType;
 
 public interface HoconTemplateService {

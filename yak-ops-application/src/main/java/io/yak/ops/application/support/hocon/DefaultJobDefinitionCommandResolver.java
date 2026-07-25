@@ -12,12 +12,12 @@ import io.yak.ops.dao.entity.JobSchedule;
 import io.yak.ops.dao.repository.JobDefinitionContentDao;
 import io.yak.ops.dao.repository.JobDefinitionDao;
 import io.yak.ops.dao.repository.JobScheduleDao;
-import io.yak.ops.web.contract.dto.*;
-import io.yak.ops.web.contract.dto.batch.BatchGuideMultiJobSaveCommand;
-import io.yak.ops.web.contract.dto.batch.BatchGuideSingleJobSaveCommand;
-import io.yak.ops.web.contract.dto.batch.BatchScriptJobSaveCommand;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.config.*;
+import io.yak.ops.application.model.dto.*;
+import io.yak.ops.application.model.dto.batch.BatchGuideMultiJobSaveCommand;
+import io.yak.ops.application.model.dto.batch.BatchGuideSingleJobSaveCommand;
+import io.yak.ops.application.model.dto.batch.BatchScriptJobSaveCommand;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.config.*;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Component;
 

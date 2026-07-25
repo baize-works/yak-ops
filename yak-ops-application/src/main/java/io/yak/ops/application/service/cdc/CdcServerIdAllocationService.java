@@ -9,11 +9,11 @@ import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.dao.mapper.CdcServerIdAllocationMapper;
 import io.yak.ops.dao.mapper.CdcServerIdPoolMapper;
 import io.yak.ops.dao.repository.DataSourceDao;
-import io.yak.ops.web.contract.dto.command.GuideMultiJobContentCommand;
-import io.yak.ops.web.contract.dto.command.GuideSingleJobContentCommand;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.config.GuideMultiJobContent;
-import io.yak.ops.web.contract.dto.config.JobEnvConfig;
+import io.yak.ops.application.model.dto.command.GuideMultiJobContentCommand;
+import io.yak.ops.application.model.dto.command.GuideSingleJobContentCommand;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.config.GuideMultiJobContent;
+import io.yak.ops.application.model.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

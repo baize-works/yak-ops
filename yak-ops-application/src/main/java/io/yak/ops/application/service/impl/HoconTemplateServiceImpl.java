@@ -7,7 +7,7 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.yak.ops.application.service.HoconTemplateService;
 import io.yak.ops.application.support.utils.SeaTunnelConfigUtil;
-import io.yak.ops.web.contract.vo.HoconTemplateVO;
+import io.yak.ops.application.model.vo.HoconTemplateVO;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Service;
 
