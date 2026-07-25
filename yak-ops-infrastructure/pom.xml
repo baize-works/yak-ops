@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-engine-api</artifactId>
+            <artifactId>yak-ops-engine-contract</artifactId>
         </dependency>
         <dependency>
             <groupId>io.baize.flow</groupId>

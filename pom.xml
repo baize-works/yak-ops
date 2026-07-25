@@ -26,8 +26,8 @@
       Module migration matrix (old -> owner):
       yak-ops-core          -> yak-ops-domain + yak-ops-application + yak-ops-infrastructure (never recreate)
       yak-ops-api           -> yak-ops-web + yak-ops-web-contract (never recreate; application contracts are not HTTP APIs)
-      yak-ops-engine-client -> yak-ops-engine-api + yak-ops-engine-support + vendor adapters (never recreate)
-      yak-ops-engine-spi    -> yak-ops-engine-api
+      yak-ops-engine-client -> yak-ops-engine-contract + yak-ops-engine-support + vendor adapters (never recreate)
+      yak-ops-engine-spi    -> yak-ops-engine-contract
       yak-ops-engine-runtime-> yak-ops-engine-support
       yak-ops-spi           -> yak-ops-plugin-spi (compatibility facade removed)
       yak-ops-application-support -> application logic in yak-ops-application; vendor/config adapters in adapters
@@ -49,7 +49,8 @@
         <module>yak-ops-plugin-spi</module>
         <module>yak-ops-web-contract</module>
         <module>yak-ops-engine-support</module>
-        <module>yak-ops-engine-api</module>
+        <module>yak-ops-engine-contract</module>
+        <module>yak-ops-engine-contract-testkit</module>
         <module>yak-ops-engine-seatunnel</module>
         <module>yak-ops-engine-all</module>
         <module>yak-ops-dist</module>
@@ -140,7 +141,12 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-engine-api</artifactId>
+                <artifactId>yak-ops-engine-contract</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.baize.flow</groupId>
+                <artifactId>yak-ops-engine-contract-testkit</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

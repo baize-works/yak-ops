@@ -1,24 +1,21 @@
 package io.baize.flow.engine.seatunnel;
 
-import io.baize.flow.domain.job.JobExecutionStatus;
-import io.baize.flow.engine.api.EngineJobStatus;
+import io.baize.flow.engine.api.JobExecutionStatus;
+import java.util.Locale;
 
-/** Maps SeaTunnel adapter outcomes to Yak Ops' engine-neutral execution lifecycle. */
+/** The only place where SeaTunnel lifecycle values enter the platform contract. */
 public final class SeaTunnelExecutionStatusMapper {
     private SeaTunnelExecutionStatusMapper() { }
-    public static JobExecutionStatus submitted() { return JobExecutionStatus.SUBMITTED; }
-    public static JobExecutionStatus submitting() { return JobExecutionStatus.SUBMITTING; }
-    public static JobExecutionStatus submissionFailed() { return JobExecutionStatus.FAILED; }
-    public static JobExecutionStatus unreachable() { return JobExecutionStatus.UNKNOWN; }
-    public static JobExecutionStatus map(EngineJobStatus status) {
-        if (status == null) return JobExecutionStatus.UNKNOWN;
-        return switch (status) {
-            case SUBMITTED -> JobExecutionStatus.SUBMITTED;
-            case RUNNING -> JobExecutionStatus.RUNNING;
-            case FINISHED -> JobExecutionStatus.SUCCEEDED;
-            case FAILED -> JobExecutionStatus.FAILED;
-            case CANCELED -> JobExecutionStatus.CANCELED;
-            case UNKNOWN -> JobExecutionStatus.UNKNOWN;
+    public static JobExecutionStatus map(String vendorStatus) {
+        if (vendorStatus == null) return JobExecutionStatus.UNKNOWN;
+        return switch (vendorStatus.toUpperCase(Locale.ROOT)) {
+            case "CREATED", "SUBMITTED", "QUEUED" -> JobExecutionStatus.SUBMITTED;
+            case "INITIALIZING", "RUNNING", "RESTARTING" -> JobExecutionStatus.RUNNING;
+            case "CANCELLING", "CANCELING" -> JobExecutionStatus.CANCELLING;
+            case "CANCELED", "CANCELLED" -> JobExecutionStatus.CANCELED;
+            case "FINISHED", "SUCCESS", "SUCCEEDED" -> JobExecutionStatus.SUCCEEDED;
+            case "FAILED", "ERROR" -> JobExecutionStatus.FAILED;
+            default -> JobExecutionStatus.UNKNOWN;
         };
     }
 }
