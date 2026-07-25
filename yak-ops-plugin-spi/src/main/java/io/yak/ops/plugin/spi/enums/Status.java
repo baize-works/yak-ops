@@ -1,6 +1,7 @@
 package io.yak.ops.plugin.spi.enums;
 
 import lombok.Getter;
+import io.yak.ops.domain.exceptions.DomainErrorCode;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -8,7 +9,7 @@ import java.util.Optional;
 /**
  * status enum
  */
-public enum Status {
+public enum Status implements DomainErrorCode {
 
     SUCCESS(0, "success", "成功"),
 

@@ -1,4 +1,4 @@
-package io.yak.ops.domain.dag;
+package io.yak.ops.application.support.dag;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

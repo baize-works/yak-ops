@@ -1,44 +1,20 @@
 package io.yak.ops.domain.exceptions;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import io.yak.ops.plugin.spi.enums.Status;
-
 import java.text.MessageFormat;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
+/** Application-visible exception carrying a domain-owned error contract. */
 public class ServiceException extends RuntimeException {
-
-    private int code;
-
-    public ServiceException() {
-        this(Status.INTERNAL_SERVER_ERROR_ARGS);
+    private final int code;
+    public ServiceException() { this(DomainErrors.INTERNAL_SERVER_ERROR); }
+    public ServiceException(DomainErrorCode error) { this(error.getCode(), error.getMsg()); }
+    public ServiceException(DomainErrorCode error, Object... formatter) {
+        this(error.getCode(), MessageFormat.format(error.getMsg(), formatter));
     }
-
-    public ServiceException(Status status) {
-        this(status.getCode(), status.getMsg());
+    public ServiceException(String message) { this(DomainErrors.INTERNAL_SERVER_ERROR, message); }
+    public ServiceException(int code, String message) { this(code, message, null); }
+    public ServiceException(int code, String message, Exception cause) { super(message, cause); this.code = code; }
+    public ServiceException(String message, Exception cause) {
+        this(DomainErrors.INTERNAL_SERVER_ERROR.getCode(), message, cause);
     }
-
-    public ServiceException(Status status, Object... formatter) {
-        this(status.getCode(), MessageFormat.format(status.getMsg(), formatter));
-    }
-
-    public ServiceException(String message) {
-        this(Status.INTERNAL_SERVER_ERROR_ARGS, message);
-    }
-
-    public ServiceException(int code, String message) {
-        this(code, message, null);
-    }
-
-    public ServiceException(int code, String message, Exception cause) {
-        super(message, cause);
-        this.code = code;
-    }
-
-    public ServiceException(String message, Exception exception) {
-        this(Status.INTERNAL_SERVER_ERROR_ARGS, message, exception);
-    }
-
+    public int getCode() { return code; }
 }
