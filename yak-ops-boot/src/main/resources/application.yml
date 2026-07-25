@@ -90,7 +90,7 @@ management:
 # Mybatis-plus configuration, you don't need to change it
 mybatis-plus:
   mapper-locations: classpath:org/apache/seatunnel/web/dao/mapper/*Mapper.xml
-  type-aliases-package: io.baize.flow.dao.entity
+  type-aliases-package: io.yak.ops.dao.entity
   configuration:
     cache-enabled: false
     call-setters-on-nulls: true

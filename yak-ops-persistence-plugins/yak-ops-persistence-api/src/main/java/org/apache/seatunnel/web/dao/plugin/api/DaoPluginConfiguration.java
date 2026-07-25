@@ -1,8 +1,8 @@
-package io.baize.flow.dao.plugin.api;
+package io.yak.ops.dao.plugin.api;
 
 import com.baomidou.mybatisplus.annotation.DbType;
-import io.baize.flow.dao.plugin.api.dialect.DatabaseDialect;
-import io.baize.flow.dao.plugin.api.monitor.DatabaseMonitor;
+import io.yak.ops.dao.plugin.api.dialect.DatabaseDialect;
+import io.yak.ops.dao.plugin.api.monitor.DatabaseMonitor;
 
 /**
  * DaoPluginConfiguration used to configure the dao plugin.

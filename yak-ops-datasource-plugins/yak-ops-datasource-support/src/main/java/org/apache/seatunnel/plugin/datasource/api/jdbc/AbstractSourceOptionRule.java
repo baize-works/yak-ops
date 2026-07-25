@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import io.baize.flow.common.config.OptionRule;
+import io.yak.ops.common.config.OptionRule;
 
 import static org.apache.seatunnel.plugin.datasource.api.option.JdbcOptions.*;
 import static org.apache.seatunnel.plugin.datasource.api.option.JdbcSourceOptions.*;

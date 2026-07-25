@@ -1,18 +1,18 @@
-package io.baize.flow.dao.plugin.postgresql;
+package io.yak.ops.dao.plugin.postgresql;
 
 import com.baomidou.mybatisplus.annotation.DbType;
-import io.baize.flow.dao.plugin.api.DaoPluginConfiguration;
-import io.baize.flow.dao.plugin.api.dialect.DatabaseDialect;
-import io.baize.flow.dao.plugin.api.monitor.DatabaseMonitor;
-import io.baize.flow.dao.plugin.postgresql.dialect.PostgresqlDialect;
-import io.baize.flow.dao.plugin.postgresql.monitor.PostgresqlMonitor;
+import io.yak.ops.dao.plugin.api.DaoPluginConfiguration;
+import io.yak.ops.dao.plugin.api.dialect.DatabaseDialect;
+import io.yak.ops.dao.plugin.api.monitor.DatabaseMonitor;
+import io.yak.ops.dao.plugin.postgresql.dialect.PostgresqlDialect;
+import io.yak.ops.dao.plugin.postgresql.monitor.PostgresqlMonitor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(prefix = "baize.flow.database", name = "type", havingValue = "postgresql")
+@ConditionalOnProperty(prefix = "yak.ops.database", name = "type", havingValue = "postgresql")
 public class PostgresqlDaoPluginAutoConfiguration implements DaoPluginConfiguration {
 
     private final DatabaseMonitor databaseMonitor;

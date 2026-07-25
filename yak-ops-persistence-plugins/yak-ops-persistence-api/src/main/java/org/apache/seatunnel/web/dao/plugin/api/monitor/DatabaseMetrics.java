@@ -1,9 +1,9 @@
-package io.baize.flow.dao.plugin.api.monitor;
+package io.yak.ops.dao.plugin.api.monitor;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 import java.util.Date;
 

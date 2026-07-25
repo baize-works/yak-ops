@@ -9,8 +9,8 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.*;
 import org.apache.seatunnel.plugin.datasource.mysql.analysis.MySQLJobDefinitionAnalyzer;
 import org.apache.seatunnel.plugin.datasource.mysql.connection.MySQLConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.mysql.metadata.MySQLCatalog;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 @AutoService(DataSourceProcessor.class)
 @Slf4j

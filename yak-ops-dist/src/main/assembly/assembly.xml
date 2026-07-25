@@ -14,7 +14,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>libs</outputDirectory>
             <includes>
-                <include>io.baize.flow:yak-ops-boot</include>
+                <include>io.yak.ops:yak-ops-boot</include>
             </includes>
             <outputFileNameMapping>yak-ops-boot.jar</outputFileNameMapping>
         </dependencySet>

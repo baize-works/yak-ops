@@ -1,7 +1,7 @@
 package org.apache.seatunnel.plugin.datasource.api.cdc;
 
 import lombok.extern.slf4j.Slf4j;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 import java.util.ArrayList;
 import java.util.List;

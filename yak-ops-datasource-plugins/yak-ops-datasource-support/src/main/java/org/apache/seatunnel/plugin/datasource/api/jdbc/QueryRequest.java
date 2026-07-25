@@ -2,7 +2,7 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import lombok.Data;
 import org.apache.seatunnel.plugin.datasource.api.enums.TaskExecutionTypeEnum;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
 
 import java.util.Map;
 

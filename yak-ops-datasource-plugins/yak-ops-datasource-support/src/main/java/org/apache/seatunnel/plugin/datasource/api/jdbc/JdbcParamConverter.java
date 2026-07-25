@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
 
 /**
  * Converter for JDBC connection parameters.

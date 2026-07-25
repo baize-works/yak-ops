@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  io.baize.flow.dao.plugin.mysql.MysqlDaoPluginAutoConfiguration
+  io.yak.ops.dao.plugin.mysql.MysqlDaoPluginAutoConfiguration

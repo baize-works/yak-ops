@@ -3,8 +3,8 @@ package org.apache.seatunnel.plugin.datasource.api.hocon.table;
 import com.typesafe.config.Config;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConfigReaders;
-import io.baize.flow.common.enums.HoconBuildStage;
-import io.baize.flow.common.modal.JdbcQueryRenderContext;
+import io.yak.ops.common.enums.HoconBuildStage;
+import io.yak.ops.common.modal.JdbcQueryRenderContext;
 
 import java.util.List;
 import java.util.Map;

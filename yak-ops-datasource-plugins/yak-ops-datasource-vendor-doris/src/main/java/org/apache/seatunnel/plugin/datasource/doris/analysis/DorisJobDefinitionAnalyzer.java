@@ -6,10 +6,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.analysis.DatasourceAnalysisContext;
 import org.apache.seatunnel.plugin.datasource.api.analysis.DatasourceAnalysisRole;
 import org.apache.seatunnel.plugin.datasource.api.analysis.JobDefinitionAnalyzer;
-import io.baize.flow.common.enums.JobDefinitionMode;
-import io.baize.flow.common.modal.JobDefinitionAnalysisResult;
-import io.baize.flow.common.utils.JSONUtils;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.common.enums.JobDefinitionMode;
+import io.yak.ops.common.modal.JobDefinitionAnalysisResult;
+import io.yak.ops.common.utils.JSONUtils;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 import java.util.ArrayList;
 import java.util.Collections;

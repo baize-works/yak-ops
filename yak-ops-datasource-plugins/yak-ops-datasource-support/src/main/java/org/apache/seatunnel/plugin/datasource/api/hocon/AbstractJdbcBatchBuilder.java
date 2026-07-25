@@ -54,7 +54,7 @@ public abstract class AbstractJdbcBatchBuilder extends AbstractJdbcHoconBuilder
         this.extraOptionAppender = new JdbcExtraOptionAppender();
     }
 
-    protected String handleQuery(String query, io.baize.flow.common.modal.JdbcQueryRenderContext context) {
+    protected String handleQuery(String query, io.yak.ops.common.modal.JdbcQueryRenderContext context) {
         return query;
     }
 

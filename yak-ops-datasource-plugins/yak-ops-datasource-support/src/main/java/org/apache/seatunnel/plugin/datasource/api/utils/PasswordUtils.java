@@ -83,7 +83,7 @@ public class PasswordUtils {
     private static byte[] resolveKey() throws Exception {
         String configuredKey = System.getenv(DATASOURCE_MASTER_KEY_ENV);
         if (StringUtils.isBlank(configuredKey)) {
-            configuredKey = System.getProperty("baize.flow.datasource.master-key");
+            configuredKey = System.getProperty("yak.ops.datasource.master-key");
         }
         if (StringUtils.isBlank(configuredKey)) {
             throw new IllegalStateException("Missing datasource master key. Set " + DATASOURCE_MASTER_KEY_ENV);

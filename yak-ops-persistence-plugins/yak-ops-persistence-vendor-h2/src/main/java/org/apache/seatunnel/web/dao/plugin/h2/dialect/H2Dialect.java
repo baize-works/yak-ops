@@ -1,7 +1,7 @@
-package io.baize.flow.dao.plugin.h2.dialect;
+package io.yak.ops.dao.plugin.h2.dialect;
 
 
-import io.baize.flow.dao.plugin.api.dialect.DatabaseDialect;
+import io.yak.ops.dao.plugin.api.dialect.DatabaseDialect;
 
 public class H2Dialect implements DatabaseDialect {
 

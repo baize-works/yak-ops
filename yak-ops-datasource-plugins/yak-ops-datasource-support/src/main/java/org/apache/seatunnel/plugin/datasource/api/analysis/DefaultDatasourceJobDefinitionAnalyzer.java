@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
-import io.baize.flow.common.modal.JobDefinitionAnalysisResult;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.common.modal.JobDefinitionAnalysisResult;
+import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
 import java.util.*;

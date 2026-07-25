@@ -13,8 +13,8 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcParamConverter;
 import org.apache.seatunnel.plugin.datasource.kingbase.analysis.KingbaseJobDefinitionAnalyzer;
 import org.apache.seatunnel.plugin.datasource.kingbase.connection.KingbaseConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.kingbase.metadata.KingbaseCatalog;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 @AutoService(DataSourceProcessor.class)
 @Slf4j

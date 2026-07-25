@@ -1,18 +1,18 @@
-package io.baize.flow.dao.plugin.h2;
+package io.yak.ops.dao.plugin.h2;
 
 import com.baomidou.mybatisplus.annotation.DbType;
-import io.baize.flow.dao.plugin.api.DaoPluginConfiguration;
-import io.baize.flow.dao.plugin.api.dialect.DatabaseDialect;
-import io.baize.flow.dao.plugin.api.monitor.DatabaseMonitor;
-import io.baize.flow.dao.plugin.h2.dialect.H2Dialect;
-import io.baize.flow.dao.plugin.h2.monitor.H2Monitor;
+import io.yak.ops.dao.plugin.api.DaoPluginConfiguration;
+import io.yak.ops.dao.plugin.api.dialect.DatabaseDialect;
+import io.yak.ops.dao.plugin.api.monitor.DatabaseMonitor;
+import io.yak.ops.dao.plugin.h2.dialect.H2Dialect;
+import io.yak.ops.dao.plugin.h2.monitor.H2Monitor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(prefix = "baize.flow.database", name = "type", havingValue = "h2")
+@ConditionalOnProperty(prefix = "yak.ops.database", name = "type", havingValue = "h2")
 public class H2DaoPluginAutoConfiguration implements DaoPluginConfiguration {
 
     private final DatabaseMonitor databaseMonitor;

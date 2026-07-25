@@ -3,10 +3,10 @@ package org.apache.seatunnel.plugin.datasource.oracle.param;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.constants.DataSourceConstants;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcParamConverter;
-import io.baize.flow.common.utils.JSONUtils;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
-import io.baize.flow.plugin.spi.enums.DbConnectType;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.common.utils.JSONUtils;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.enums.DbConnectType;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 public class OracleParamConverter implements JdbcParamConverter {
 
