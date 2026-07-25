@@ -10,7 +10,6 @@ import org.apache.seatunnel.plugin.datasource.api.analysis.JobDefinitionAnalyzer
 import io.baize.flow.common.enums.JobDefinitionMode;
 import io.baize.flow.common.modal.JobDefinitionAnalysisResult;
 import io.baize.flow.common.utils.JSONUtils;
-import io.baize.flow.web.contract.dto.config.GuideMultiJobContent;
 import io.baize.flow.plugin.spi.enums.DbType;
 
 import java.util.ArrayList;
@@ -110,14 +109,6 @@ public abstract class AbstractJdbcJobDefinitionAnalyzer implements JobDefinition
             result.addAll(getStringList(config, "tableList"));
             result.addAll(getStringList(data, "table_list"));
             result.addAll(getStringList(data, "tableList"));
-        }
-
-        if (CollectionUtils.isEmpty(result)
-                && context.getRawContent() instanceof GuideMultiJobContent) {
-            GuideMultiJobContent content = (GuideMultiJobContent) context.getRawContent();
-            if (content.getTableMatch() != null) {
-                result.addAll(cleanTables(content.getTableMatch().getTables()));
-            }
         }
 
         return distinct(result);

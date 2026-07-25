@@ -44,7 +44,7 @@
         <module>yak-ops-alarm-plugins</module>
         <module>yak-ops-ui</module>
         <module>yak-ops-dao</module>
-        <module>yak-ops-dao-plugin</module>
+        <module>yak-ops-persistence-plugins</module>
         <module>yak-ops-bom</module>
         <module>yak-ops-plugin-spi</module>
         <module>yak-ops-web-contract</module>
@@ -121,7 +121,7 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-dao-plugin</artifactId>
+                <artifactId>yak-ops-persistence-plugins</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -166,12 +166,12 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-alarm-spi</artifactId>
+                <artifactId>yak-ops-alarm-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-alarm-webhook</artifactId>
+                <artifactId>yak-ops-alarm-vendor-webhook</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -191,22 +191,22 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-mysql</artifactId>
+                <artifactId>yak-ops-datasource-vendor-mysql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-postgresql</artifactId>
+                <artifactId>yak-ops-datasource-vendor-postgresql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-oracle</artifactId>
+                <artifactId>yak-ops-datasource-vendor-oracle</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-spi</artifactId>
+                <artifactId>yak-ops-datasource-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -216,47 +216,47 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-mysql-cdc</artifactId>
+                <artifactId>yak-ops-datasource-vendor-mysql-cdc</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-kingbase</artifactId>
+                <artifactId>yak-ops-datasource-vendor-kingbase</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-dameng</artifactId>
+                <artifactId>yak-ops-datasource-vendor-dameng</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-datasource-doris</artifactId>
+                <artifactId>yak-ops-datasource-vendor-doris</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-dao-mysql</artifactId>
+                <artifactId>yak-ops-persistence-vendor-mysql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-dao-h2</artifactId>
+                <artifactId>yak-ops-persistence-vendor-h2</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-dao-plugin-all</artifactId>
+                <artifactId>yak-ops-persistence-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-dao-postgresql</artifactId>
+                <artifactId>yak-ops-persistence-vendor-postgresql</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-dao-api</artifactId>
+                <artifactId>yak-ops-persistence-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

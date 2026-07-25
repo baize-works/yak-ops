@@ -4,7 +4,6 @@ import com.typesafe.config.Config;
 import lombok.Builder;
 import lombok.Getter;
 import io.baize.flow.common.enums.HoconBuildStage;
-import io.baize.flow.web.contract.dto.config.JobScheduleConfig;
 
 @Getter
 @Builder
@@ -33,7 +32,7 @@ public class HoconBuildContext {
     /**
      * Schedule config, used by time variable rendering if needed.
      */
-    private final JobScheduleConfig scheduleConfig;
+    private final Object scheduleConfig;
 
     /**
      * Whether current DAG contains transform nodes.

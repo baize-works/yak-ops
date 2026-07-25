@@ -6,7 +6,7 @@ import org.apache.seatunnel.plugin.datasource.api.utils.SqlTimeVariableParser;
 import io.baize.flow.common.FrontedTableColumn;
 import io.baize.flow.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
-import io.baize.flow.web.contract.vo.OptionVO;
+import org.apache.seatunnel.plugin.datasource.api.model.DatasourceOption;
 import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
 
 import java.sql.*;
@@ -73,7 +73,7 @@ public abstract class AbstractJdbcCatalog implements JdbcCatalog {
         }
     }
 
-    public List<OptionVO> listTableOptions() {
+    public List<DatasourceOption> listTableOptions() {
         try {
             return queryOptionList(getListTableSql(this.param.getDatabase()), this::buildTableOption);
         } catch (Exception e) {
@@ -82,23 +82,23 @@ public abstract class AbstractJdbcCatalog implements JdbcCatalog {
         }
     }
 
-    protected OptionVO buildTableOption(ResultSet rs) throws SQLException {
+    protected DatasourceOption buildTableOption(ResultSet rs) throws SQLException {
         String tableName = getTableName(rs);
 
-        OptionVO option = new OptionVO();
+        DatasourceOption option = new DatasourceOption();
         option.setValue(tableName);
         option.setLabel(tableName);
         option.setDescription(null);
         return option;
     }
 
-    protected List<OptionVO> queryOptionList(String sql, ResultSetConsumer<OptionVO> consumer)
+    protected List<DatasourceOption> queryOptionList(String sql, ResultSetConsumer<DatasourceOption> consumer)
             throws SQLException {
         try (PreparedStatement ps = getConnection().prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            List<OptionVO> result = new ArrayList<>();
+            List<DatasourceOption> result = new ArrayList<>();
             while (rs.next()) {
-                OptionVO value = consumer.apply(rs);
+                DatasourceOption value = consumer.apply(rs);
                 if (value != null) {
                     result.add(value);
                 }
