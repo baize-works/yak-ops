@@ -14,6 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TOKEN = re.compile(rb"seatunnel|sea_tunnel|zeta", re.IGNORECASE)
 ZERO_SCOPES = ("yak-ops-domain/", "yak-ops-engine-contract/")
+BASELINE_FILE = ROOT / "tools/engine-neutrality-baseline.json"
+INVENTORY_EXCLUDES = {"tools/engine-neutrality-baseline.json"}
 
 
 def tracked_files() -> list[str]:
@@ -43,6 +45,9 @@ def category(path: str) -> str:
 def matches() -> dict[str, int]:
     result: dict[str, int] = {}
     for name in tracked_files():
+        # The snapshot contains matching path names by design and must not inventory itself.
+        if name in INVENTORY_EXCLUDES:
+            continue
         try:
             count = len(TOKEN.findall((ROOT / name).read_bytes()))
         except OSError:
@@ -55,6 +60,30 @@ def matches() -> dict[str, int]:
 def load_allowlist() -> list[re.Pattern[str]]:
     lines = (ROOT / "tools/engine-neutrality-allowlist.txt").read_text().splitlines()
     return [re.compile(line) for line in lines if line and not line.startswith("#")]
+
+
+def load_baseline() -> dict[str, int]:
+    data = json.loads(BASELINE_FILE.read_text())
+    if not isinstance(data, dict) or any(
+        not isinstance(path, str) or not isinstance(count, int) or count < 1
+        for path, count in data.items()
+    ):
+        raise ValueError(f"invalid engine-neutrality baseline: {BASELINE_FILE}")
+    return data
+
+
+def growth_errors(
+    found: dict[str, int], baseline: dict[str, int], allowlist: list[re.Pattern[str]]
+) -> list[str]:
+    """Return findings that add vendor vocabulary outside a compatibility boundary."""
+    errors: list[str] = []
+    for path, count in sorted(found.items()):
+        if any(pattern.search(path) for pattern in allowlist):
+            continue
+        previous = baseline.get(path, 0)
+        if count > previous:
+            errors.append(f"vendor-token debt grew in {path}: {count} > {previous}")
+    return errors
 
 
 def main() -> int:
@@ -73,14 +102,9 @@ def main() -> int:
         if scoped:
             errors.append(f"zero-match scope {scope}: {', '.join(scoped)}")
 
-    # Application is still being migrated. Freeze its current debt so every change can only
-    # reduce it; changing this number requires an explicit review of the generated ledger.
-    application_total = sum(count for path, count in found.items() if path.startswith("yak-ops-application/"))
-    baseline = 595
-    if application_total > baseline:
-        errors.append(f"application vendor-token debt grew: {application_total} > {baseline}")
-
     allowlist = load_allowlist()
+    baseline = load_baseline()
+    errors.extend(growth_errors(found, baseline, allowlist))
     for pattern in allowlist:
         if not any(pattern.search(path) for path in found):
             errors.append(f"stale allowlist entry: {pattern.pattern}")
@@ -88,7 +112,10 @@ def main() -> int:
     if errors:
         print("Engine-neutrality gate failed:\n- " + "\n- ".join(errors), file=sys.stderr)
         return 1
-    print(f"Engine-neutrality gate passed (application staged debt: {application_total}/{baseline}).")
+    print(
+        "Engine-neutrality gate passed "
+        f"(staged debt: {sum(found.values())}/{sum(baseline.values())})."
+    )
     return 0
 
 
