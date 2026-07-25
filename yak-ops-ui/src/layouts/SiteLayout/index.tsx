@@ -9,24 +9,29 @@ import {
   type NavigationRoute,
 } from "@/config/navigation";
 import {
-  ApartmentOutlined,
-  ApiOutlined,
-  AppstoreOutlined,
-  BellOutlined,
-  CheckCircleOutlined,
-  CloudServerOutlined,
-  DatabaseOutlined,
-  DeploymentUnitOutlined,
-  DownOutlined,
-  HomeOutlined,
-  LineChartOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  PieChartOutlined,
-  PlusSquareOutlined,
-  QuestionCircleOutlined,
-  ReadOutlined,
-} from "@ant-design/icons";
+  Activity,
+  ArrowLeftRight,
+  Bell,
+  BookOpen,
+  Braces,
+  ChartLine,
+  ChartPie,
+  ChevronDown,
+  CircleCheck,
+  CircleHelp,
+  Database,
+  FileText,
+  Folder,
+  Grid2X2,
+  History,
+  House,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plug,
+  Server,
+  SquarePlus,
+  Workflow,
+} from 'lucide-react';
 import { history, Outlet, useLocation, useModel } from "@umijs/max";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -35,18 +40,109 @@ const HEADER_HEIGHT = 48;
 const SIDEBAR_WIDTH = 200;
 const COLLAPSED_SIDEBAR_WIDTH = 64;
 
-const navigationIcons: Record<NavigationIconKey, ReactNode> = {
-  home: <HomeOutlined />,
-  database: <DatabaseOutlined />,
-  sync: <ApartmentOutlined />,
-  client: <CloudServerOutlined />,
-  workflow: <DeploymentUnitOutlined />,
-  quality: <CheckCircleOutlined />,
-  monitor: <LineChartOutlined />,
-  alarm: <BellOutlined />,
-  knowledge: <ReadOutlined />,
-  api: <ApiOutlined />,
-  insight: <PieChartOutlined />,
+const NAVIGATION_ICON_SIZE = 17;
+const NAVIGATION_ICON_STROKE_WIDTH = 1.8;
+
+const navigationIcons: Record<
+  NavigationIconKey,
+  ReactNode
+> = {
+  home: (
+    <House
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  database: (
+    <Database
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  sync: (
+    <ArrowLeftRight
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  realtime: (
+    <Activity
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  client: (
+    <Server
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  connector: (
+    <Plug
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  workflow: (
+    <Workflow
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  project: (
+    <Folder
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  instance: (
+    <History
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  quality: (
+    <CircleCheck
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  report: (
+    <FileText
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  monitor: (
+    <ChartLine
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  alarm: (
+    <Bell
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  knowledge: (
+    <BookOpen
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  api: (
+    <Braces
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  insight: (
+    <ChartPie
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
 };
 
 const standaloneRoutes = getStandaloneNavigationRoutes();
@@ -436,10 +532,9 @@ export default function SiteLayout() {
     : 'w-full justify-start rounded-md px-3',
 ].join(' ')}
           >
-            <PlusSquareOutlined
-              className="
-                shrink-0 text-[16px]
-              "
+            <SquarePlus
+              className="h-4 w-4 shrink-0"
+              strokeWidth={2}
             />
 
             {!compact && (
@@ -454,9 +549,9 @@ export default function SiteLayout() {
                   快速创建
                 </span>
 
-                <DownOutlined
+                <ChevronDown
                   className={[
-                    "shrink-0 text-[9px]",
+                    "h-3 w-3 shrink-0",
                     "transition-transform duration-200",
                     quickCreateOpen ? "rotate-180" : "rotate-0",
                   ].join(" ")}
@@ -504,7 +599,7 @@ export default function SiteLayout() {
                       {route.iconKey ? (
                         navigationIcons[route.iconKey]
                       ) : (
-                        <PlusSquareOutlined />
+                        <SquarePlus className="h-4 w-4" strokeWidth={1.8} />
                       )}
                     </span>
 
@@ -539,10 +634,16 @@ export default function SiteLayout() {
         >
           <div>
             {standaloneRoutes.length > 0 && (
-              <div className="mb-3 border-b border-[rgba(37,38,50,0.12)] pb-3">
+              <div
+                className={[
+                  "mb-3 border-b pb-3",
+                  "border-[rgba(37,38,50,0.10)]",
+                ].join(" ")}
+              >
                 {standaloneRoutes.map(renderStandaloneItem)}
               </div>
             )}
+
             {navigationGroups.map((group, groupIndex) => {
               const open = openGroupIds.has(group.id);
 
@@ -550,18 +651,20 @@ export default function SiteLayout() {
                 (route) => route.id === activeNavigationId
               );
 
-              const isLast = groupIndex === navigationGroups.length - 1;
+              const previousGroup = navigationGroups[groupIndex - 1];
+
+              const showSectionDivider =
+                previousGroup && previousGroup.section !== group.section;
 
               return (
                 <section
                   key={group.id}
                   className={[
                     "mb-3",
-                    !isLast
+                    showSectionDivider
                       ? [
-                          "border-b",
-                          "border-[rgba(37,38,50,0.12)]",
-                          "pb-3",
+                          "mt-3 border-t pt-3",
+                          "border-[rgba(37,38,50,0.10)]",
                         ].join(" ")
                       : "",
                   ].join(" ")}
@@ -616,9 +719,9 @@ export default function SiteLayout() {
                           {group.title}
                         </span>
 
-                        <DownOutlined
+                        <ChevronDown
                           className={[
-                            "text-[9px]",
+                            "h-3 w-3 shrink-0",
                             "text-[rgba(22,24,35,0.35)]",
                             "transition-transform",
                             "duration-200",
@@ -685,7 +788,7 @@ export default function SiteLayout() {
               compact ? "justify-center px-0" : "justify-start px-0",
             ].join(" ")}
           >
-            <QuestionCircleOutlined className="text-[16px]" />
+            <CircleHelp className="h-4 w-4" strokeWidth={1.8} />
 
             {!compact && (
               <span
@@ -735,7 +838,11 @@ export default function SiteLayout() {
               md:flex
             "
           >
-            {compact ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            {compact ? (
+              <PanelLeftOpen className="h-4 w-4" strokeWidth={1.8} />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" strokeWidth={1.8} />
+            )}
           </button>
 
           <div
@@ -763,9 +870,16 @@ export default function SiteLayout() {
             items-center pr-5
           "
         >
-          <HeaderAction icon={<BellOutlined />} label="通知" badge />
+          <HeaderAction
+            icon={<Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />}
+            label="通知"
+            badge
+          />
 
-          <HeaderAction icon={<AppstoreOutlined />} label="应用" />
+          <HeaderAction
+            icon={<Grid2X2 className="h-[17px] w-[17px]" strokeWidth={1.8} />}
+            label="应用"
+          />
 
           <div
             className="
