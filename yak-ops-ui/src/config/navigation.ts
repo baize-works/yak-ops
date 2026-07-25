@@ -155,6 +155,28 @@ export const appRoutes: readonly NavigationRoute[] = [
     parentId: 'batch-link-up',
   },
 
+  // 流程编排
+  {
+    id: 'workflow-management',
+    path: '/workflow-management',
+    title: '流程管理',
+    component: './workflow-management',
+    iconKey: 'workflow',
+    menuGroup: 'workflow',
+    order: 10,
+  },
+
+  // 数据质量
+  {
+    id: 'data-quality',
+    path: '/data-quality',
+    title: '质量管理',
+    component: './data-quality',
+    iconKey: 'quality',
+    menuGroup: 'quality',
+    order: 10,
+  },
+
   // 运维中心
   {
     id: 'metrics',
