@@ -9,6 +9,10 @@
     <artifactId>yak-ops-persistence-api</artifactId>
     <dependencies>
         <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-annotation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.yak.ops</groupId>
             <artifactId>yak-ops-plugin-spi</artifactId>
         </dependency>
