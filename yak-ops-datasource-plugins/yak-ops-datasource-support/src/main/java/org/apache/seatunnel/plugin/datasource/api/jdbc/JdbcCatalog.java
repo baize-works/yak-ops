@@ -2,7 +2,7 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import io.baize.flow.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
-import io.baize.flow.web.contract.vo.OptionVO;
+import org.apache.seatunnel.plugin.datasource.api.model.DatasourceOption;
 
 import java.util.List;
 import java.util.Map;
@@ -24,7 +24,7 @@ public interface JdbcCatalog {
      *
      * @return table name list
      */
-    List<OptionVO> listTableOptions();
+    List<DatasourceOption> listTableOptions();
 
     /**
      * List columns of the specified table.

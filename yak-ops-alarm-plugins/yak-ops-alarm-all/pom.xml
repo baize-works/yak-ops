@@ -11,7 +11,15 @@
     <dependencies>
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-alarm-webhook</artifactId>
+            <artifactId>yak-ops-alarm-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.baize.flow</groupId>
+            <artifactId>yak-ops-alarm-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.baize.flow</groupId>
+            <artifactId>yak-ops-alarm-vendor-webhook</artifactId>
         </dependency>
     </dependencies>
 </project>

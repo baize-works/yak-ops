@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcCatalog;
+import org.apache.seatunnel.plugin.datasource.api.model.DatasourceOption;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.baize.flow.application.service.DataSourceCatalogService;
@@ -57,13 +58,23 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
 
         try {
-            return getJdbcCatalog(dataSource, connectionParam).listTableOptions();
+            return getJdbcCatalog(dataSource, connectionParam).listTableOptions().stream()
+                    .map(this::toOptionVO)
+                    .collect(Collectors.toList());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
             log.error("Failed to list tables, datasourceId={}", datasourceId, e);
             throw new ServiceException(Status.DATASOURCE_METADATA_ERROR, e.getMessage());
         }
+    }
+
+    private OptionVO toOptionVO(DatasourceOption source) {
+        OptionVO target = new OptionVO();
+        target.setValue(source.getValue());
+        target.setLabel(source.getLabel());
+        target.setDescription(source.getDescription());
+        return target;
     }
 
     @Override
