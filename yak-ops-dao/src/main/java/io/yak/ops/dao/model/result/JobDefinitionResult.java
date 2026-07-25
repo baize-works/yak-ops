@@ -3,6 +3,7 @@ package io.yak.ops.dao.model.result;
 import io.yak.ops.common.enums.*;
 import io.yak.ops.domain.enums.JobMode;
 import io.yak.ops.domain.enums.RunMode;
+import io.yak.ops.domain.enums.ScheduleStatusEnum;
 import lombok.Data;
 import java.util.Date;
 
