@@ -1,6 +1,6 @@
 package io.baize.flow.application.support.time;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.enums.TimeVariableValueType;
@@ -45,7 +45,7 @@ public class DefaultTimeVariableRenderService implements TimeVariableRenderServi
             LocalDateTime baseTime = parseBaseTime(req.getBaseTime());
 
             Map<String, String> overrideVariables = req.getOverrideVariables() == null
-                    ? Collections.emptyMap()
+                    ? java.util.Collections.emptyMap()
                     : req.getOverrideVariables();
 
             Map<String, TimeVariable> variableMap = getAllEnabledVariables()

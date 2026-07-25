@@ -23,29 +23,29 @@ import java.util.Map;
 
 @AutoService(DataSourceHoconBuilder.class)
 public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
-    
+
     private final JdbcSourceTargetBuilder pgSingleSourceBuilder;
     private final JdbcSourceTargetBuilder pgMultiSourceBuilder;
 //    private final JdbcSinkTargetBuilder pgSingleSinkBuilder;
-    
+
     public PgSQLBatchBuilder() {
         super();
-        
+
         JdbcTableNameResolver tableNameResolver = new JdbcTableNameResolver();
-        
+
         // PostgreSQL-specific source builders (already handled by parent)
         this.pgSingleSourceBuilder = null; // Use parent's
         this.pgMultiSourceBuilder = null;  // Use parent's
-        
+
         // PostgreSQL-specific sink builder with schema.table format
 //        this.pgSingleSinkBuilder = new PgSQLSingleSinkTargetBuilder(tableNameResolver);
     }
-    
+
     @Override
     protected String defaultDriver() {
         return DataSourceConstants.ORG_POSTGRESQL_DRIVER;
     }
-    
+
     @Override
     protected String buildTablePath(String database, String schemaName, String table) {
         // PostgreSQL requires schema in table path: database.schema.table
@@ -53,7 +53,7 @@ public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
         String schema = StringUtils.isNotBlank(schemaName) ? schemaName : "public";
         return String.format("%s.%s.%s", database, schema, table);
     }
-    
+
 //    @Override
 //    public Config buildSinkHocon(String connectionParam, Config config) {
 //        Config conn = ConfigFactory.parseString(connectionParam);
@@ -69,7 +69,7 @@ public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
 //
 //        return ConfigFactory.parseMap(map);
 //    }
-    
+
     private void appendSinkOptions(Config config, Map<String, Object> map) {
         // Add common sink options
         if (!map.containsKey(JdbcBatchConstants.GENERATE_SINK_SQL)) {
@@ -79,7 +79,7 @@ public class PgSQLBatchBuilder extends AbstractJdbcBatchBuilder {
             map.put(JdbcBatchConstants.BATCH_SIZE, 1000);
         }
     }
-    
+
     @Override
     public String pluginName() {
         return "JDBC-POSTGRESQL";

@@ -1,6 +1,6 @@
 package io.baize.flow.api.aspect;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.constants.Constants;
 import io.baize.flow.application.model.User;

@@ -2,7 +2,7 @@ package io.baize.flow.application.support.builder;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.application.support.builder.context.DagBuildContext;
 import io.baize.flow.application.support.builder.sink.SinkNodeConfigBuilder;

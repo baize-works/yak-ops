@@ -1,8 +1,8 @@
 package io.baize.flow.application.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.application.service.BatchJobInstanceService;
@@ -259,7 +259,7 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     @Override
     public List<JobInstance> listRunningInstanceByDefinitionIds(List<Long> definitionIds) {
         if (definitionIds == null || definitionIds.isEmpty()) {
-            return List.of();
+            return java.util.Collections.emptyList();
         }
 
         try {

@@ -2,7 +2,7 @@ package io.baize.flow.api.controller;
 
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 import static io.baize.flow.common.constants.Constants.*;
 

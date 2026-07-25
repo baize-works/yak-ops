@@ -110,7 +110,7 @@ public class BatchExecuteJobsUseCase {
                 instanceService.listRunningInstanceByDefinitionIds(distinctIds);
 
         Map<Long, List<JobInstance>> instanceMap = Optional.ofNullable(runningInstances)
-                .orElse(Collections.emptyList())
+                .orElse(java.util.Collections.emptyList())
                 .stream()
                 .collect(Collectors.groupingBy(JobInstance::getJobDefinitionId));
 
@@ -143,7 +143,7 @@ public class BatchExecuteJobsUseCase {
         List<Long> ids = jobDefinitionIds.stream()
                 .filter(id -> id != null && id > 0)
                 .distinct()
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (CollectionUtils.isEmpty(ids)) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "jobDefinitionIds");
@@ -172,7 +172,7 @@ public class BatchExecuteJobsUseCase {
 
         List<Long> notExistsIds = jobDefinitionIds.stream()
                 .filter(id -> !existsIds.contains(id))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (CollectionUtils.isNotEmpty(notExistsIds)) {
             throw new ServiceException(
@@ -191,7 +191,7 @@ public class BatchExecuteJobsUseCase {
         List<Long> offlineIds = definitions.stream()
                 .filter(item -> !isOnline(item.getReleaseState()))
                 .map(BatchJobDefinitionVO::getId)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (CollectionUtils.isNotEmpty(offlineIds)) {
             throw new ServiceException(
@@ -207,7 +207,7 @@ public class BatchExecuteJobsUseCase {
     private void validateNoRunningJobs(List<Long> jobDefinitionIds) {
         List<Long> runningIds = jobDefinitionIds.stream()
                 .filter(instanceService::existsRunningInstance)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (CollectionUtils.isNotEmpty(runningIds)) {
             throw new ServiceException(
@@ -225,7 +225,7 @@ public class BatchExecuteJobsUseCase {
         List<Long> notRunningIds = jobDefinitionIds.stream()
                 .filter(id -> !instanceMap.containsKey(id)
                         || CollectionUtils.isEmpty(instanceMap.get(id)))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (CollectionUtils.isNotEmpty(notRunningIds)) {
             throw new ServiceException(

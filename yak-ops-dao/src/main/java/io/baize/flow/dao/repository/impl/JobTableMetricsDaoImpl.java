@@ -1,6 +1,6 @@
 package io.baize.flow.dao.repository.impl;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import io.baize.flow.dao.entity.JobTableMetrics;
 import io.baize.flow.dao.mapper.JobTableMetricsMapper;
@@ -26,7 +26,7 @@ public class JobTableMetricsDaoImpl extends BaseDao<JobTableMetrics, JobTableMet
     @Override
     public List<JobTableMetricsVO> selectByInstanceId(Long instanceId) {
         if (instanceId == null || instanceId <= 0) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return jobTableMetricsMapper.selectByInstanceId(instanceId);

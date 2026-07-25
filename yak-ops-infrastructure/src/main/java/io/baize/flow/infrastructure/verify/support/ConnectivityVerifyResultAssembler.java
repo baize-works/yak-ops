@@ -8,7 +8,7 @@ import io.baize.flow.dao.entity.SeaTunnelClient;
 import io.baize.flow.web.contract.vo.ClientDatasourceVerifyVO;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 
 @Component
 public class ConnectivityVerifyResultAssembler {

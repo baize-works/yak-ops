@@ -111,7 +111,7 @@ public class GuideSingleWorkflowValidator {
                 return true;
             }
 
-            for (String next : graph.getOrDefault(current, Collections.emptyList())) {
+            for (String next : graph.getOrDefault(current, java.util.Collections.emptyList())) {
                 if (visited.add(next)) {
                     queue.offer(next);
                 }

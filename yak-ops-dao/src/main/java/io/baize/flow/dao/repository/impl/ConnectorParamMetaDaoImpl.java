@@ -3,7 +3,7 @@ package io.baize.flow.dao.repository.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.dao.entity.ConnectorParamMetaEntity;

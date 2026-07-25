@@ -1,6 +1,6 @@
 package io.baize.flow.application.support.time;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
@@ -115,7 +115,7 @@ public class TimeVariableJdbcSqlRenderService {
                                     DataSourceHoconBuilder hoconBuilder) {
         Map<String, TimeVariableRenderVO.VariableItem> renderedVariableMap =
                 renderVO.getVariables() == null
-                        ? Collections.emptyMap()
+                        ? java.util.Collections.emptyMap()
                         : renderVO.getVariables()
                         .stream()
                         .collect(Collectors.toMap(
@@ -165,7 +165,7 @@ public class TimeVariableJdbcSqlRenderService {
         List<TimeVariable> variables = timeVariableRenderService.getAllEnabledVariables();
 
         if (CollectionUtils.isEmpty(variables)) {
-            return Collections.emptyMap();
+            return java.util.Collections.emptyMap();
         }
 
         return variables.stream()
@@ -181,7 +181,7 @@ public class TimeVariableJdbcSqlRenderService {
     private Map<String, JobScheduleConfig.ScheduleParamItem> buildScheduleParamIdMap(
             JobScheduleConfig scheduleConfig) {
         if (scheduleConfig == null || CollectionUtils.isEmpty(scheduleConfig.getParamsList())) {
-            return Collections.emptyMap();
+            return java.util.Collections.emptyMap();
         }
 
         return scheduleConfig.getParamsList()
@@ -199,7 +199,7 @@ public class TimeVariableJdbcSqlRenderService {
                                                    Map<String, TimeVariable> variableNameMap) {
         List<String> notExists = referencedVariables.stream()
                 .filter(name -> !variableNameMap.containsKey(name))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (CollectionUtils.isNotEmpty(notExists)) {
             throw new ServiceException(
@@ -222,7 +222,7 @@ public class TimeVariableJdbcSqlRenderService {
 
                     return !scheduleParamIdMap.containsKey(String.valueOf(variable.getId()));
                 })
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (CollectionUtils.isNotEmpty(notConfigured)) {
             throw new ServiceException(

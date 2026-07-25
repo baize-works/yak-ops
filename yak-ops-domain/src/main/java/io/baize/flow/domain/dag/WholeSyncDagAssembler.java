@@ -214,7 +214,7 @@ public final class WholeSyncDagAssembler {
         JsonNode extractNode(JsonNode root) {
             return requireNode(root, FIELD_TARGET);
         }
-        
+
         @Override
         void fillCustomFields(
                 ObjectNode data,

@@ -146,12 +146,12 @@ public class GuideMultiJobAnalyzer {
 
     private List<String> resolveTableList(GuideMultiJobContent content) {
         if (content == null || content.getTableMatch() == null) {
-            return java.util.Collections.emptyList();
+            return java.util.java.util.Collections.emptyList();
         }
 
         List<String> tables = content.getTableMatch().getTables();
         if (CollectionUtils.isEmpty(tables)) {
-            return java.util.Collections.emptyList();
+            return java.util.java.util.Collections.emptyList();
         }
 
         return tables;

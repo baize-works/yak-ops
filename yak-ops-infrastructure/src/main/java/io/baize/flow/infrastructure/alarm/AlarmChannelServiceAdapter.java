@@ -1,7 +1,7 @@
 package io.baize.flow.infrastructure.alarm;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannel;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannelFactory;
 import org.apache.seatunnel.plugin.alarm.api.AlarmData;

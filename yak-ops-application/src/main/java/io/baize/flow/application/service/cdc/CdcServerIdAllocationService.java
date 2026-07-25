@@ -1,6 +1,6 @@
 package io.baize.flow.application.service.cdc;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.dao.entity.CdcServerIdAllocation;
@@ -74,11 +74,11 @@ public class CdcServerIdAllocationService {
         if (command instanceof GuideMultiJobContentCommand) {
             GuideMultiJobContent content = ((GuideMultiJobContentCommand) command).getContent();
             if (content == null || content.getSource() == null) {
-                return Collections.emptyList();
+                return java.util.Collections.emptyList();
             }
             GuideMultiJobContent.WorkflowSourceConfig source = content.getSource();
             if (!isMysqlCdc(source.getPluginName())) {
-                return Collections.emptyList();
+                return java.util.Collections.emptyList();
             }
             return Collections.singletonList(new GuideMultiSourceConfigAccessor(source));
         }
@@ -88,18 +88,18 @@ public class CdcServerIdAllocationService {
             return resolveSingleWorkflowSources(workflow);
         }
 
-        return Collections.emptyList();
+        return java.util.Collections.emptyList();
     }
 
     @SuppressWarnings("unchecked")
     private List<SourceConfigAccessor> resolveSingleWorkflowSources(Map<String, Object> workflow) {
         if (workflow == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Object nodesValue = workflow.get("nodes");
         if (!(nodesValue instanceof List)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<SourceConfigAccessor> sources = new ArrayList<>();
@@ -197,7 +197,7 @@ public class CdcServerIdAllocationService {
         }
 
         List<Long> occupied = allocationMapper.selectActiveServerIdsByPoolForUpdate(pool.getId());
-        Set<Long> occupiedSet = new HashSet<>(occupied == null ? Collections.emptyList() : occupied);
+        Set<Long> occupiedSet = new HashSet<>(occupied == null ? java.util.Collections.emptyList() : occupied);
         List<Long> allocated = new ArrayList<>();
         for (long current = pool.getMinServerId(); current <= pool.getMaxServerId(); current++) {
             if (!occupiedSet.contains(current)) {

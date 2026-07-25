@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import io.baize.flow.domain.enums.JobMode;
 import io.baize.flow.domain.enums.JobStatus;
@@ -112,7 +112,7 @@ public class JobInstanceDaoImpl
                 .orderByDesc(JobInstance::getCreateTime);
 
         List<JobInstance> records = jobInstanceMapper.selectList(wrapper);
-        return records == null ? Collections.emptyList() : records;
+        return records == null ? java.util.Collections.emptyList() : records;
     }
 
     @Override
@@ -125,7 +125,7 @@ public class JobInstanceDaoImpl
                 .set(JobInstance::getJobStatus, status)
                 .set(JobInstance::getUpdateTime, now);
 
-        if (errorMessage != null && !errorMessage.isBlank()) {
+        if (errorMessage != null && !errorMessage.trim().isEmpty()) {
             wrapper.set(JobInstance::getErrorMessage, truncate(errorMessage, 2000));
         }
         if (endState) {
@@ -145,7 +145,7 @@ public class JobInstanceDaoImpl
                 .set(JobInstance::getJobStatus, status)
                 .set(JobInstance::getUpdateTime, now);
 
-        if (engineJobId != null && !engineJobId.isBlank()) {
+        if (engineJobId != null && !engineJobId.trim().isEmpty()) {
             wrapper.set(JobInstance::getEngineJobId, engineJobId);
         }
         if (endState) {
@@ -177,7 +177,7 @@ public class JobInstanceDaoImpl
     @Override
     public List<JobInstanceVO> listRunningByJobType(JobMode jobMode) {
         if (jobMode == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         LambdaQueryWrapper<JobInstance> wrapper = new LambdaQueryWrapper<>();
@@ -197,27 +197,27 @@ public class JobInstanceDaoImpl
         List<JobInstance> records = jobInstanceMapper.selectList(wrapper);
 
         if (records == null || records.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return records.stream()
                 .map(item -> ConvertUtil.sourceToTarget(item, JobInstanceVO.class))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
     public List<JobInstance> selectRunningInstanceByDefinitionIds(List<Long> definitionIds) {
         if (definitionIds == null || definitionIds.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<Long> validDefinitionIds = definitionIds.stream()
                 .filter(id -> id != null && id > 0)
                 .distinct()
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (validDefinitionIds.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         LambdaQueryWrapper<JobInstance> wrapper = new LambdaQueryWrapper<>();
@@ -235,7 +235,7 @@ public class JobInstanceDaoImpl
 
         List<JobInstance> records = jobInstanceMapper.selectList(wrapper);
         if (records == null || records.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return records;

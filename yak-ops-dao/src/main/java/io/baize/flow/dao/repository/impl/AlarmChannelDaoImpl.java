@@ -31,7 +31,7 @@ public class AlarmChannelDaoImpl extends BaseDao<AlarmChannelEntity, AlarmChanne
     @Override
     public List<AlarmChannelEntity> listEnabledByIds(Collection<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         LambdaQueryWrapper<AlarmChannelEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(AlarmChannelEntity::getId, ids)

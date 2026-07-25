@@ -12,15 +12,16 @@
     <name>Yak Ops Dependency BOM</name>
 
     <properties>
-        <spring-boot.version>3.3.13</spring-boot.version>
+        <spring-boot.version>2.7.18</spring-boot.version>
         <auto-service.version>1.0.1</auto-service.version>
         <typesafe-config.version>1.4.3</typesafe-config.version>
         <jsqlparser.version>4.9</jsqlparser.version>
         <cron-utils.version>9.1.6</cron-utils.version>
         <druid.version>1.2.20</druid.version>
-        <mybatis-plus.version>3.5.16</mybatis-plus.version>
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <sockjs-client.version>1.5.1</sockjs-client.version>
         <stomp-websocket.version>2.3.4</stomp-websocket.version>
+        <swagger-core.version>2.2.20</swagger-core.version>
     </properties>
 
     <dependencyManagement>
@@ -34,6 +35,8 @@
             </dependency>
 
             <!-- Dependencies not managed by spring-boot-dependencies. -->
+            <dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-annotations</artifactId><version>${swagger-core.version}</version></dependency>
+            <dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-models</artifactId><version>${swagger-core.version}</version></dependency>
             <dependency><groupId>com.google.auto.service</groupId><artifactId>auto-service</artifactId><version>${auto-service.version}</version></dependency>
             <dependency><groupId>com.typesafe</groupId><artifactId>config</artifactId><version>${typesafe-config.version}</version></dependency>
             <dependency><groupId>com.github.jsqlparser</groupId><artifactId>jsqlparser</artifactId><version>${jsqlparser.version}</version></dependency>
@@ -42,7 +45,7 @@
             <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus</artifactId><version>${mybatis-plus.version}</version></dependency>
             <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-jsqlparser</artifactId><version>${mybatis-plus.version}</version></dependency>
             <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-extension</artifactId><version>${mybatis-plus.version}</version></dependency>
-            <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-spring-boot3-starter</artifactId><version>${mybatis-plus.version}</version></dependency>
+            <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-boot-starter</artifactId><version>${mybatis-plus.version}</version></dependency>
             <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-annotation</artifactId><version>${mybatis-plus.version}</version></dependency>
             <dependency><groupId>org.webjars</groupId><artifactId>sockjs-client</artifactId><version>${sockjs-client.version}</version></dependency>
             <dependency><groupId>org.webjars</groupId><artifactId>stomp-websocket</artifactId><version>${stomp-websocket.version}</version></dependency>

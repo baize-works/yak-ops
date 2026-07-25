@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.client.gateway;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.application.client.port.SeaTunnelClientRuntimeGateway;
 import io.baize.flow.engine.legacy.LegacyRestClient;
 import org.springframework.stereotype.Component;

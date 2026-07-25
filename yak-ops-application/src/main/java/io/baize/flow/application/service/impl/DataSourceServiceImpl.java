@@ -1,7 +1,7 @@
 package io.baize.flow.application.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
@@ -174,7 +174,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
             List<Long> distinctIds = ids.stream()
                     .filter(id -> id != null && id > 0)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
 
             if (distinctIds.isEmpty()) {
                 throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "ids");
@@ -301,7 +301,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
             List<DataSource> entities = dataSourceDao.queryByDbType(dbType);
             return entities.stream()
                     .map(this::toOptionVO)
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
         } catch (Exception e) {
             log.error("Query data source options failed, dbType={}", dbType, e);
             throw new ServiceException(Status.INTERNAL_SERVER_ERROR_ARGS, e.getMessage());
@@ -321,7 +321,7 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
         List<Long> batchReferencedIds = jobDefinitionDao.selectReferencedDatasourceIds(datasourceIds);
         List<Long> referencedIds = batchReferencedIds.stream()
                 .distinct()
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (!referencedIds.isEmpty()) {
             throw new ServiceException(

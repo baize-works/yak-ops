@@ -8,7 +8,7 @@ final class SeaTunnelMetricsMapper {
     private SeaTunnelMetricsMapper() { }
     static EngineMetrics map(Map<?, ?> source) {
         Map<String, Number> values = new LinkedHashMap<>();
-        if (source != null) for (Map.Entry<?, ?> entry : source.entrySet()) if (entry.getValue() instanceof Number value) values.put(String.valueOf(entry.getKey()), value);
+        if (source != null) for (Map.Entry<?, ?> entry : source.entrySet()) if (entry.getValue() instanceof Number) values.put(String.valueOf(entry.getKey()), (Number) entry.getValue());
         return new EngineMetrics(values);
     }
 }

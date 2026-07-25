@@ -22,10 +22,10 @@ public class LegacyEngineAdapter implements EngineGateway, EngineMetricsGateway 
         try {
             String file = command.runtimeParameters().getOrDefault("fileName", "job.conf");
             SeaTunnelSubmitResponse response = client.submit(clientId(command.endpoint()), command.definition().getBytes(StandardCharsets.UTF_8), file);
-            if (response == null || response.jobId() == null || response.jobId().isBlank())
-                throw new EngineSubmissionException("SeaTunnel submit response does not contain an execution id", java.util.Map.of("vendor", "seatunnel", "vendor.error_code", "INVALID_RESPONSE"));
+            if (response == null || response.jobId() == null || response.jobId().trim().isEmpty())
+                throw new EngineSubmissionException("SeaTunnel submit response does not contain an execution id", java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap() {{ put("vendor", "seatunnel"); put("vendor.error_code", "INVALID_RESPONSE"); }}));
             java.time.Instant now = java.time.Instant.now();
-            JobExecution execution = new JobExecution(command.idempotencyKey(), response.jobId(), JobExecutionStatus.SUBMITTED, now, null, null, now, null, java.util.Map.of());
+            JobExecution execution = new JobExecution(command.idempotencyKey(), response.jobId(), JobExecutionStatus.SUBMITTED, now, null, null, now, null, java.util.java.util.Collections.emptyMap());
             JobExecution raced = idempotentSubmissions.putIfAbsent(submissionKey, execution);
             return raced == null ? execution : raced;
         } catch (EngineContractException e) { throw e; } catch (Exception e) { throw SeaTunnelErrorMapper.submission(e); }
@@ -35,8 +35,8 @@ public class LegacyEngineAdapter implements EngineGateway, EngineMetricsGateway 
         try { SeaTunnelJobResponse info = client.job(clientId(endpoint), jobId); if (info == null) throw SeaTunnelErrorMapper.unavailable("query", new IllegalStateException("empty response"));
             SeaTunnelExecutionStatusMapper.StatusResolution status = SeaTunnelExecutionStatusMapper.resolve(info.status());
             java.util.Map<String, String> metadata = status.rawStatus() == null
-                    ? java.util.Map.of()
-                    : java.util.Map.of("vendor.raw_status", status.rawStatus());
+                    ? java.util.java.util.Collections.emptyMap()
+                    : java.util.Collections.singletonMap("vendor.raw_status", status.rawStatus());
             java.time.Instant now=java.time.Instant.now(); return new JobExecution(platformId, jobId, status.status(), null, null, null, now, info.errorMessage(), metadata); }
         catch (EngineContractException e) { throw e; } catch (Exception e) { throw SeaTunnelErrorMapper.unavailable("query", e); }
     }

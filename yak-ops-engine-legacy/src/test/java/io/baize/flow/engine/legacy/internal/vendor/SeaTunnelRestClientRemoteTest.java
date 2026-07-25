@@ -56,7 +56,7 @@ class LegacyRestClientRemoteTest {
         String baseApiUrl = resolveBaseApiUrl();
 
         assumeTrue(
-                baseApiUrl != null && !baseApiUrl.isBlank(),
+                baseApiUrl != null && !baseApiUrl.trim().isEmpty(),
                 () -> String.format(
                         "Remote Zeta tests are skipped because neither "
                                 + "environment variable %s nor JVM property %s is configured.",
@@ -86,7 +86,7 @@ class LegacyRestClientRemoteTest {
     void shouldCallOverview() {
         Map<?, ?> result = seaTunnelRestClient.overview(
                 CLIENT_ID,
-                Collections.emptyMap()
+                java.util.Collections.emptyMap()
         );
 
         assertNotNull(result);
@@ -152,31 +152,29 @@ class LegacyRestClientRemoteTest {
     }
 
     private String simpleFakeSourceToConsoleJob() {
-        return """
-                env {
-                    job.mode = "BATCH"
-                    parallelism = 1
-                }
-
-                source {
-                    FakeSource {
-                        result_table_name = "fake"
-                        row.num = 10
-                        schema = {
-                            fields {
-                                id = int
-                                name = string
-                            }
-                        }
-                    }
-                }
-
-                sink {
-                    Console {
-                        source_table_name = "fake"
-                    }
-                }
-                """;
+        return "env {\n"
+                + "    job.mode = \"BATCH\"\n"
+                + "    parallelism = 1\n"
+                + "}\n"
+                + "\n"
+                + "source {\n"
+                + "    FakeSource {\n"
+                + "        result_table_name = \"fake\"\n"
+                + "        row.num = 10\n"
+                + "        schema = {\n"
+                + "            fields {\n"
+                + "                id = int\n"
+                + "                name = string\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n"
+                + "\n"
+                + "sink {\n"
+                + "    Console {\n"
+                + "        source_table_name = \"fake\"\n"
+                + "    }\n"
+                + "}";
     }
 
     /**
@@ -212,71 +210,69 @@ class LegacyRestClientRemoteTest {
     }
 
     private String mysqlCdcFullDatabaseToJdbcJob() {
-        return """
-                env {
-                    job {
-                        mode = STREAMING
-                    }
-
-                    parallelism = 1
-                    checkpoint.interval = 30000
-                }
-
-                source {
-                    MySQL-CDC {
-                        url = "jdbc:mysql://127.0.0.1:3306/test1?allowPublicKeyRetrieval=true&useSSL=false"
-                        username = "root"
-                        password = "123456"
-
-                        hostname = "127.0.0.1"
-                        port = 3306
-
-                        database-names = [
-                            "test1"
-                        ]
-
-                        table-pattern = "test1\\\\..*"
-
-                        startup {
-                            mode = initial
-                        }
-
-                        server-id = "5400-5408"
-                    }
-                }
-
-                transform {
-                }
-
-                sink {
-                    Jdbc {
-                        url = "jdbc:mysql://127.0.0.1:3306/test2?allowPublicKeyRetrieval=true&useSSL=false&rewriteBatchedStatements=true"
-                        driver = "com.mysql.cj.jdbc.Driver"
-                        username = "root"
-                        password = "123456"
-
-                        database = "test2"
-                        table = "${table_name}"
-
-                        generate_sink_sql = true
-                        primary_keys = ["${primary_key}"]
-
-                        schema_save_mode = "CREATE_SCHEMA_WHEN_NOT_EXIST"
-                        data_save_mode = "APPEND_DATA"
-
-                        enable_upsert = true
-                        batch_size = 1000
-                        max_retries = 3
-                    }
-                }
-                """;
+        return "env {\n"
+                + "    job {\n"
+                + "        mode = STREAMING\n"
+                + "    }\n"
+                + "\n"
+                + "    parallelism = 1\n"
+                + "    checkpoint.interval = 30000\n"
+                + "}\n"
+                + "\n"
+                + "source {\n"
+                + "    MySQL-CDC {\n"
+                + "        url = \"jdbc:mysql://127.0.0.1:3306/test1?allowPublicKeyRetrieval=true&useSSL=false\"\n"
+                + "        username = \"root\"\n"
+                + "        password = \"123456\"\n"
+                + "\n"
+                + "        hostname = \"127.0.0.1\"\n"
+                + "        port = 3306\n"
+                + "\n"
+                + "        database-names = [\n"
+                + "            \"test1\"\n"
+                + "        ]\n"
+                + "\n"
+                + "        table-pattern = \"test1\\\\\\\\..*\"\n"
+                + "\n"
+                + "        startup {\n"
+                + "            mode = initial\n"
+                + "        }\n"
+                + "\n"
+                + "        server-id = \"5400-5408\"\n"
+                + "    }\n"
+                + "}\n"
+                + "\n"
+                + "transform {\n"
+                + "}\n"
+                + "\n"
+                + "sink {\n"
+                + "    Jdbc {\n"
+                + "        url = \"jdbc:mysql://127.0.0.1:3306/test2?allowPublicKeyRetrieval=true&useSSL=false&rewriteBatchedStatements=true\"\n"
+                + "        driver = \"com.mysql.cj.jdbc.Driver\"\n"
+                + "        username = \"root\"\n"
+                + "        password = \"123456\"\n"
+                + "\n"
+                + "        database = \"test2\"\n"
+                + "        table = \"${table_name}\"\n"
+                + "\n"
+                + "        generate_sink_sql = true\n"
+                + "        primary_keys = [\"${primary_key}\"]\n"
+                + "\n"
+                + "        schema_save_mode = \"CREATE_SCHEMA_WHEN_NOT_EXIST\"\n"
+                + "        data_save_mode = \"APPEND_DATA\"\n"
+                + "\n"
+                + "        enable_upsert = true\n"
+                + "        batch_size = 1000\n"
+                + "        max_retries = 3\n"
+                + "    }\n"
+                + "}";
     }
 
     private String resolveBaseApiUrl() {
         String systemProperty =
                 System.getProperty(BASE_API_URL_PROPERTY);
 
-        if (systemProperty != null && !systemProperty.isBlank()) {
+        if (systemProperty != null && !systemProperty.trim().isEmpty()) {
             return systemProperty.trim();
         }
 
@@ -284,7 +280,7 @@ class LegacyRestClientRemoteTest {
                 System.getenv(BASE_API_URL_ENV);
 
         if (environmentVariable != null
-                && !environmentVariable.isBlank()) {
+                && !environmentVariable.trim().isEmpty()) {
             return environmentVariable.trim();
         }
 

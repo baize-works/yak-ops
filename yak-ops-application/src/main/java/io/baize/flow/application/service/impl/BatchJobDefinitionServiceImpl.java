@@ -1,7 +1,7 @@
 package io.baize.flow.application.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -311,7 +311,7 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
     @Override
     public List<BatchJobDefinitionVO> listByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            return List.of();
+            return java.util.Collections.emptyList();
         }
 
         List<Long> validIds = ids.stream()
@@ -320,14 +320,14 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
                 .collect(java.util.stream.Collectors.toList());
 
         if (validIds.isEmpty()) {
-            return List.of();
+            return java.util.Collections.emptyList();
         }
 
         try {
             List<JobDefinitionEntity> records = jobDefinitionDao.listByIds(validIds);
 
             if (records == null || records.isEmpty()) {
-                return List.of();
+                return java.util.Collections.emptyList();
             }
 
             return records.stream()

@@ -20,5 +20,5 @@ final class RestTemplateSeaTunnelEngineClient implements SeaTunnelEngineClient {
     @Override public void cancel(long id, String jobId) { client.stopJob(id, jobId, false); }
     @Override public void probe(long id) { client.runningJobs(id); }
     private static String string(Object value) { return value == null ? null : value.toString(); }
-    private static List<Map<?, ?>> maps(Object value) { if (!(value instanceof List<?> list)) return List.of(); return list.stream().filter(Map.class::isInstance).map(Map.class::cast).toList(); }
+    private static List<Map<?, ?>> maps(Object value) { if (!(value instanceof List<?>)) return java.util.Collections.emptyList(); List<?> list = (List<?>) value; return list.stream().filter(Map.class::isInstance).map(Map.class::cast).collect(java.util.stream.Collectors.toList()); }
 }

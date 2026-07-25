@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.security.impl;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.application.security.Authenticator;
 import io.baize.flow.application.security.SecurityConfiguration;
 import io.baize.flow.application.model.User;

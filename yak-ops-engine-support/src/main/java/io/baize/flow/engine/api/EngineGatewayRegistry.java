@@ -11,7 +11,7 @@ public final class EngineGatewayRegistry {
             if (registered.put(gateway.engine().key(), gateway) != null)
                 throw new IllegalArgumentException("Duplicate engine gateway: " + gateway.engine().key());
         }
-        this.gateways = Map.copyOf(registered);
+        this.gateways = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(registered));
     }
     public EngineGateway get(ExecutionEngine engine) {
         EngineGateway gateway = gateways.get(engine.key());

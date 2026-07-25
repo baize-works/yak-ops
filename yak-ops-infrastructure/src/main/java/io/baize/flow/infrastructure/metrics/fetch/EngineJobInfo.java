@@ -16,9 +16,9 @@ public class EngineJobInfo {
 
     private String jobStatus;
 
-    private Map<String, Object> rawJobInfo = Collections.emptyMap();
+    private Map<String, Object> rawJobInfo = java.util.Collections.emptyMap();
 
-    private Map<String, Object> rawMetrics = Collections.emptyMap();
+    private Map<String, Object> rawMetrics = java.util.Collections.emptyMap();
 
     public boolean hasMetrics() {
         return rawMetrics != null && !rawMetrics.isEmpty();

@@ -7,7 +7,7 @@ public abstract class EngineContractException extends RuntimeException {
     private final Map<String, String> diagnosticMetadata;
     protected EngineContractException(String message, Throwable cause, Map<String, String> metadata) {
         super(message, cause);
-        diagnosticMetadata = metadata == null ? Map.of() : Map.copyOf(metadata);
+        diagnosticMetadata = metadata == null ? java.util.Collections.emptyMap() : java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(metadata));
     }
     public Map<String, String> diagnosticMetadata() { return diagnosticMetadata; }
 }

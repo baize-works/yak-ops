@@ -19,8 +19,8 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
  @Override public JobExecutionResult executeAndWait(SeaTunnelClient client, ConnectivityTestJob job, long timeoutMs, long pollIntervalMs) {
   long started=System.currentTimeMillis(); JobExecutionResult result=new JobExecutionResult(); String jobId=null;
   try {
-   EngineEndpoint endpoint=new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(client.getId()), client.getBaseUrl(), null, java.util.Map.of()); EngineGateway gateway=gateways.get(endpoint.engine());
-   jobId=gateway.submit(new JobSubmitCommand(endpoint,job.getJobConfig(),java.util.Map.of("fileName",job.getJobName()+".conf"),"connectivity-"+started)).externalExecutionId(); result.setJobId(jobId);
+   EngineEndpoint endpoint=new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(client.getId()), client.getBaseUrl(), null, java.util.java.util.Collections.emptyMap()); EngineGateway gateway=gateways.get(endpoint.engine());
+   jobId=gateway.submit(new JobSubmitCommand(endpoint,job.getJobConfig(),java.util.Collections.singletonMap("fileName", job.getJobName()+".conf"),"connectivity-"+started)).externalExecutionId(); result.setJobId(jobId);
    long deadline=started+timeoutMs; JobExecutionStatus status=JobExecutionStatus.UNKNOWN;
    while(System.currentTimeMillis()<deadline) { status=gateway.execution(endpoint,"connectivity-"+started,jobId).status(); if(isTerminal(status)) break; Thread.sleep(pollIntervalMs); }
    result.setFinalStatus(status == JobExecutionStatus.UNKNOWN ? "TIMEOUT" : status.name());

@@ -48,23 +48,23 @@ public class LegacyRestClient {
             String baseUrl,
             String contextPath,
             LegacyClientAuthentication auth) {
-        return get(baseUrl, contextPath, Map.of(), auth, "/maps/system-monitoring-information", List.class);
+        return get(baseUrl, contextPath, java.util.Collections.emptyMap(), auth, "/maps/system-monitoring-information", List.class);
     }
 
     public List runningJobs(Long clientId) {
-        return get(clientId, "/maps/running-jobs", Map.of(), List.class);
+        return get(clientId, "/maps/running-jobs", java.util.Collections.emptyMap(), List.class);
     }
 
     public Map jobInfo(Long clientId, String jobId) {
-        return get(clientId, "/maps/job-info/" + jobId, Map.of(), Map.class);
+        return get(clientId, "/maps/job-info/" + jobId, java.util.Collections.emptyMap(), Map.class);
     }
 
     public List finishedJobs(Long clientId, String state) {
-        return get(clientId, "/maps/finished-jobs", state == null ? Map.of() : Map.of("state", state), List.class);
+        return get(clientId, "/maps/finished-jobs", state == null ? java.util.Collections.emptyMap() : java.util.Collections.singletonMap("state", state), List.class);
     }
 
     public List systemMonitoringInformation(Long clientId) {
-        return get(clientId, "/maps/system-monitoring-information", Map.of(), List.class);
+        return get(clientId, "/maps/system-monitoring-information", java.util.Collections.emptyMap(), List.class);
     }
 
     public String logs(
@@ -82,11 +82,11 @@ public class LegacyRestClient {
     }
 
     public String nodeLogs(Long clientId) {
-        return get(clientId, "/node-logs", Map.of(), String.class);
+        return get(clientId, "/node-logs", java.util.Collections.emptyMap(), String.class);
     }
 
     public String metrics(Long clientId, boolean openMetrics) {
-        return get(clientId, "/metrics", Map.of("openMetrics", Boolean.toString(openMetrics)), String.class);
+        return get(clientId, "/metrics", java.util.Collections.singletonMap("openMetrics", Boolean.toString(openMetrics)), String.class);
     }
 
     public Map submitJobText(
@@ -130,20 +130,20 @@ public class LegacyRestClient {
     public List submitJobsBatch(
             Long clientId,
             List jobConfigs) {
-        return post(clientId, "/job/submit-batch", jobConfigs, MediaType.APPLICATION_JSON, Map.of(), List.class);
+        return post(clientId, "/job/submit-batch", jobConfigs, MediaType.APPLICATION_JSON, java.util.Collections.emptyMap(), List.class);
     }
 
     public Map stopJob(
             Long clientId,
             String jobId,
             boolean isStopWithSavePoint) {
-        return post(clientId, "/job/stop/" + jobId, null, MediaType.APPLICATION_JSON, Map.of("isStopWithSavePoint", Boolean.toString(isStopWithSavePoint)), Map.class);
+        return post(clientId, "/job/stop/" + jobId, null, MediaType.APPLICATION_JSON, java.util.Collections.singletonMap("isStopWithSavePoint", Boolean.toString(isStopWithSavePoint)), Map.class);
     }
 
     public Map checkpointOverview(
             Long clientId,
             Long jobId) {
-        return get(clientId, "/maps/checkpoint-overview/" + jobId, Map.of(), Map.class);
+        return get(clientId, "/maps/checkpoint-overview/" + jobId, java.util.Collections.emptyMap(), Map.class);
     }
 
     public List checkpointHistory(
@@ -158,7 +158,7 @@ public class LegacyRestClient {
     public List stopJobsBatch(
             Long clientId,
             List<Map<String, Object>> items) {
-        return post(clientId, "/job/stop-batch", items, MediaType.APPLICATION_JSON, Map.of(), List.class);
+        return post(clientId, "/job/stop-batch", items, MediaType.APPLICATION_JSON, java.util.Collections.emptyMap(), List.class);
     }
 
     private <T> T get(Long clientId, String path, Map<String, String> query, Class<T> type) { return get(resolver.resolveBaseApiUrl(clientId), resolver.resolveContextPath(clientId), query, resolver.resolveAuth(clientId), path, type); }
@@ -172,7 +172,7 @@ public class LegacyRestClient {
         catch (RestClientResponseException e) { throw new SeaTunnelClientException("SeaTunnel returned HTTP " + e.getRawStatusCode(), e.getRawStatusCode(), e.getResponseBodyAsString(), e); }
         catch (Exception e) { throw new SeaTunnelClientException("SeaTunnel request failed", 0, null, e); }
     }
-    private static String trim(String value) { if (value == null || value.isBlank()) throw new IllegalArgumentException("SeaTunnel base URL must not be blank"); return value.replaceAll("/+$", ""); }
-    private static String normalize(String value) { return value == null || value.isBlank() ? "" : "/" + value.replaceAll("^/+|/+$", ""); }
+    private static String trim(String value) { if (value == null || value.trim().isEmpty()) throw new IllegalArgumentException("SeaTunnel base URL must not be blank"); return value.replaceAll("/+$", ""); }
+    private static String normalize(String value) { return value == null || value.trim().isEmpty() ? "" : "/" + value.replaceAll("^/+|/+$", ""); }
     private static Map<String, String> query(Object... values) { java.util.LinkedHashMap<String, String> result = new java.util.LinkedHashMap<>(); for (int i = 0; i < values.length; i += 2) if (values[i + 1] != null) result.put((String) values[i], String.valueOf(values[i + 1])); return result; }
 }

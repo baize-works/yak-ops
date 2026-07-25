@@ -1,7 +1,7 @@
 package io.baize.flow.application.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.application.service.TimeVariableService;
@@ -155,7 +155,7 @@ public class TimeVariableServiceImpl implements TimeVariableService {
             List<TimeVariableVO> records = pageResult.getRecords()
                     .stream()
                     .map(this::toVO)
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
 
             return PaginationResult.buildSuc(records, pageResult);
         } catch (ServiceException e) {

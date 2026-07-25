@@ -7,12 +7,12 @@ import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 
 @AutoService(DataSourceHoconBuilder.class)
 public class MysqlBatchBuilder extends AbstractJdbcBatchBuilder {
-    
+
     @Override
     protected String defaultDriver() {
         return DataSourceConstants.COM_MYSQL_JDBC_DRIVER;
     }
-    
+
     @Override
     public String pluginName() {
         return "JDBC-MYSQL";

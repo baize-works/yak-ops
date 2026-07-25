@@ -8,6 +8,7 @@
     </parent>
     <artifactId>yak-ops-web-contract</artifactId>
     <dependencies>
+        <dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-annotations</artifactId></dependency>
         <dependency>
             <groupId>io.baize.flow</groupId>
             <artifactId>yak-ops-plugin-spi</artifactId>

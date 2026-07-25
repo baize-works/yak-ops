@@ -195,7 +195,7 @@ public abstract class AbstractJdbcJobDefinitionAnalyzer implements JobDefinition
             log.debug("Read jdbc job definition table list failed, dbType={}, path={}", dbType(), path, e);
         }
 
-        return Collections.emptyList();
+        return java.util.Collections.emptyList();
     }
 
     @SuppressWarnings("unchecked")
@@ -203,18 +203,18 @@ public abstract class AbstractJdbcJobDefinitionAnalyzer implements JobDefinition
         if (value instanceof Map) {
             return (Map<String, Object>) value;
         }
-        return Collections.emptyMap();
+        return java.util.Collections.emptyMap();
     }
 
     @SuppressWarnings("unchecked")
     protected List<String> getStringList(Map<String, Object> map, String key) {
         if (map == null || map.isEmpty() || StringUtils.isBlank(key)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Object value = map.get(key);
         if (!(value instanceof List)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<Object> values = (List<Object>) value;
@@ -231,7 +231,7 @@ public abstract class AbstractJdbcJobDefinitionAnalyzer implements JobDefinition
 
     protected List<String> cleanTables(List<String> tables) {
         if (CollectionUtils.isEmpty(tables)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<String> result = new ArrayList<>();
@@ -246,7 +246,7 @@ public abstract class AbstractJdbcJobDefinitionAnalyzer implements JobDefinition
 
     protected List<String> distinct(List<String> values) {
         if (CollectionUtils.isEmpty(values)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<String> result = new ArrayList<>();

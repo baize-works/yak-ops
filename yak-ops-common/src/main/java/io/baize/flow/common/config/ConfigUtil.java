@@ -67,12 +67,12 @@ public class ConfigUtil {
             return ((List<?>) rawValue)
                     .stream()
                             .map(value -> convertValue(convertToJsonString(value), clazz))
-                            .collect(Collectors.toList());
+                            .collect(java.util.stream.Collectors.toList());
         }
         return Arrays.stream(rawValue.toString().split(","))
                 .map(String::trim)
                 .map(value -> convertValue(value, clazz))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")

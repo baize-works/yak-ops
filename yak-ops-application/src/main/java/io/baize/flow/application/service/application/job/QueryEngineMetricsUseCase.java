@@ -13,7 +13,8 @@ public final class QueryEngineMetricsUseCase {
         EngineEndpoint endpoint=endpoints.findById(endpointId).orElseThrow(() -> new IllegalArgumentException("Engine endpoint does not exist: "+endpointId));
         EngineGateway gateway=gateways.get(endpoint.engine());
         gateway.capabilities().require(EngineCapabilities.Capability.METRICS);
-        if (!(gateway instanceof EngineMetricsGateway metrics)) throw new IllegalStateException("Adapter advertises METRICS without implementing its sub-port");
+        if (!(gateway instanceof EngineMetricsGateway)) throw new IllegalStateException("Adapter advertises METRICS without implementing its sub-port");
+        EngineMetricsGateway metrics = (EngineMetricsGateway) gateway;
         return metrics.metrics(endpoint, externalExecutionId);
     }
 }

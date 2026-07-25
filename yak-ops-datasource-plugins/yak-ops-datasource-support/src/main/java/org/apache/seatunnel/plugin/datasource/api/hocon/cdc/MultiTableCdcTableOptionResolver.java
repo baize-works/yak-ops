@@ -149,7 +149,7 @@ public class MultiTableCdcTableOptionResolver implements CdcTableOptionResolver 
             return splitByComma(sourceTable);
         }
 
-        return Collections.emptyList();
+        return java.util.Collections.emptyList();
     }
 
     private List<String> buildFullTableNames(String database, List<String> tables) {
@@ -228,7 +228,7 @@ public class MultiTableCdcTableOptionResolver implements CdcTableOptionResolver 
 
     private List<String> splitByComma(String value) {
         if (StringUtils.isBlank(value)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         String[] array = value.split(",");
@@ -247,12 +247,12 @@ public class MultiTableCdcTableOptionResolver implements CdcTableOptionResolver 
 
     private List<String> getStringList(Config config, String key) {
         if (config == null || !config.hasPath(key)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Object value = config.getValue(key).unwrapped();
         if (!(value instanceof List)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<?> rawList = (List<?>) value;

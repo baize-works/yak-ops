@@ -14,7 +14,7 @@ public class GuideMultiTableMatchResolver {
 
     public List<String> resolveSourceTables(GuideMultiJobContent content) {
         if (content == null || content.getTableMatch() == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         GuideMultiJobContent.TableMatchConfig tableMatch = content.getTableMatch();
@@ -30,7 +30,7 @@ public class GuideMultiTableMatchResolver {
          * 例如：
          * dataSourceCatalogApi.listTable(source.datasourceId, keyword)
          */
-        return Collections.emptyList();
+        return java.util.Collections.emptyList();
     }
 
     public List<String> resolveSinkTables(GuideMultiJobContent content) {

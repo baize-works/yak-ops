@@ -24,7 +24,7 @@ public class AlarmRuleChannelDaoImpl extends BaseDao<AlarmRuleChannelEntity, Ala
     @Override
     public List<AlarmRuleChannelEntity> listByRuleId(Long ruleId) {
         if (ruleId == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         LambdaQueryWrapper<AlarmRuleChannelEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(AlarmRuleChannelEntity::getRuleId, ruleId);
@@ -34,7 +34,7 @@ public class AlarmRuleChannelDaoImpl extends BaseDao<AlarmRuleChannelEntity, Ala
     @Override
     public List<AlarmRuleChannelEntity> listByRuleIds(Collection<Long> ruleIds) {
         if (CollectionUtils.isEmpty(ruleIds)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         LambdaQueryWrapper<AlarmRuleChannelEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(AlarmRuleChannelEntity::getRuleId, ruleIds);

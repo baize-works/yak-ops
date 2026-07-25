@@ -1,6 +1,6 @@
 package io.baize.flow.application.service.application;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.application.service.JobScheduleService;
 import io.baize.flow.domain.enums.ScheduleStatusEnum;

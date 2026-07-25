@@ -34,7 +34,7 @@ public abstract class BaseDao<ENTITY, MYBATIS_MAPPER extends BaseMapper<ENTITY>>
     @Override
     public List<ENTITY> queryByIds(Collection<? extends Serializable> ids) {
         if (CollectionUtils.isEmpty(ids)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         return mybatisMapper.selectBatchIds(ids);
     }

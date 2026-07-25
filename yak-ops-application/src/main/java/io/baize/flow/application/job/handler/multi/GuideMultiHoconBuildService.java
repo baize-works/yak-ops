@@ -1,6 +1,6 @@
 package io.baize.flow.application.job.handler.multi;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.utils.JSONUtils;
@@ -89,11 +89,11 @@ public class GuideMultiHoconBuildService {
          * 自定义 / 精准匹配仍然走 tableMatchResolver，生成 table-names。
          */
         List<String> sourceTables = patternMode
-                ? Collections.emptyList()
+                ? java.util.Collections.emptyList()
                 : tableMatchResolver.resolveSourceTables(content);
 
         List<String> sinkTables = patternMode
-                ? Collections.emptyList()
+                ? java.util.Collections.emptyList()
                 : tableMatchResolver.resolveSinkTables(content);
 
         validateTables(tableMatch, sourceTables, sinkTables);

@@ -1,7 +1,7 @@
 package io.baize.flow.api.controller;
 
-import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import io.baize.flow.api.aspect.AccessLogAnnotation;
 import io.baize.flow.application.model.User;
 import io.baize.flow.application.service.SessionService;
@@ -48,7 +48,7 @@ public class UsersController extends BaseController {
         User loginUser = (User) request.getAttribute(Constants.SESSION_USER);
 
         if (loginUser == null) {
-            var session = sessionService.getSession(request);
+            Session session = sessionService.getSession(request);
             if (session == null) {
                 return Result.buildFailure("NOT_LOGIN");
             }

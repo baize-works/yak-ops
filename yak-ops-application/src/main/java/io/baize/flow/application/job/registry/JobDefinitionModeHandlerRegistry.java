@@ -1,6 +1,6 @@
 package io.baize.flow.application.job.registry;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.common.enums.JobDefinitionMode;
 import io.baize.flow.application.job.handler.JobDefinitionModeHandler;
 import org.springframework.stereotype.Component;

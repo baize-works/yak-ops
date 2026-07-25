@@ -2,7 +2,7 @@ package io.baize.flow.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.application.service.TimeVariableService;
 import io.baize.flow.application.support.time.DefaultTimeVariableRenderService;
 import io.baize.flow.dao.entity.TimeVariable;
@@ -86,7 +86,7 @@ public class TimeVariableController {
             option.setLabel(timeVariable.getParamName());
             option.setDescription(timeVariable.getExpression());
             return option;
-        }).collect(Collectors.toList());
+        }).collect(java.util.stream.Collectors.toList());
 
         return Result.buildSuc(optionVOList);
     }

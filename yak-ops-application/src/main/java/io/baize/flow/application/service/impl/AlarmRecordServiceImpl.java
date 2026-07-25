@@ -1,7 +1,7 @@
 package io.baize.flow.application.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.application.service.AlarmRecordService;
 import io.baize.flow.dao.entity.AlarmRecordEntity;
 import io.baize.flow.dao.repository.AlarmRecordDao;

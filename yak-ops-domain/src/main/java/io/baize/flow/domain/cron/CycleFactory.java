@@ -56,7 +56,7 @@ public class CycleFactory {
     public static AbstractCycle month(Cron cron) {
       return new MonthCycle(cron);
     }
-    
+
     /**
      * year
      * @param cron cron
@@ -268,7 +268,7 @@ public class CycleFactory {
           return null;
         }
   }
-    
+
     /**
      * year cycle
      */
@@ -276,7 +276,7 @@ public class CycleFactory {
         public YearCycle(Cron cron) {
             super(cron);
         }
-        
+
         /**
          * get cycle
          * @return CycleEnum
@@ -295,14 +295,14 @@ public class CycleFactory {
                             && dayofWeekFieldIsSetAll()
                             && monthFieldIsSetAll()
                             && yearFieldIsEvery());
-            
+
             if (flag) {
                 return CycleEnum.YEAR;
             }
-            
+
             return null;
         }
-        
+
         /**
          * get mini cycle
          * @return CycleEnum
@@ -312,7 +312,7 @@ public class CycleFactory {
             if (yearFieldIsEvery()) {
                 return CycleEnum.YEAR;
             }
-            
+
             return null;
         }
     }

@@ -54,7 +54,7 @@ public class SeaTunnelClientTopologyBuilder {
             return SeaTunnelClientTopology.builder()
                     .deployMode(SeaTunnelClientDeployMode.SINGLE)
                     .masters(Collections.singletonList(master))
-                    .workers(Collections.emptyList())
+                    .workers(java.util.Collections.emptyList())
                     .build();
         }
 
@@ -113,7 +113,7 @@ public class SeaTunnelClientTopologyBuilder {
             String contextPath
     ) {
         if (endpoints == null || endpoints.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Map<String, SeaTunnelClientEndpoint> endpointMap = new LinkedHashMap<>();

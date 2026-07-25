@@ -22,6 +22,6 @@ public class SeaTunnelClientResolver {
     }
     private EngineConnectionConfig connection(Long clientId) {
         if (clientId == null) throw new IllegalArgumentException("SeaTunnel client id must not be null");
-        return connections.connectionFor(new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(clientId), null, null, java.util.Map.of()));
+        return connections.connectionFor(new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(clientId), null, null, java.util.java.util.Collections.emptyMap()));
     }
 }

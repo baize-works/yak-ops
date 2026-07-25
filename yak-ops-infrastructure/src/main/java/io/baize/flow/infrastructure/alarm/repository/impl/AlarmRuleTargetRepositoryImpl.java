@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.alarm.repository.impl;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.infrastructure.alarm.repository.AlarmRuleTargetRepository;
 import io.baize.flow.infrastructure.alarm.repository.AlarmTarget;
 import io.baize.flow.dao.entity.AlarmChannelEntity;
@@ -40,29 +40,29 @@ public class AlarmRuleTargetRepositoryImpl implements AlarmRuleTargetRepository 
 
     @Override
     public List<AlarmTarget> findMatchedTargets(Long jobDefinitionId, String newStatus) {
-        if (newStatus == null || newStatus.isBlank()) {
-            return Collections.emptyList();
+        if (newStatus == null || newStatus.trim().isEmpty()) {
+            return java.util.Collections.emptyList();
         }
 
         List<AlarmRuleEntity> rules = ruleDao.listEnabled();
         if (rules == null || rules.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<AlarmRuleEntity> matched = rules.stream()
                 .filter(r -> statusMatches(r.getTriggerStatuses(), newStatus))
                 .filter(r -> targetJobsMatches(r.getTargetJobs(), jobDefinitionId))
                 .filter(r -> !excludesContains(r.getExcludes(), jobDefinitionId))
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
         if (matched.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
-        List<Long> ruleIds = matched.stream().map(AlarmRuleEntity::getId).collect(Collectors.toList());
+        List<Long> ruleIds = matched.stream().map(AlarmRuleEntity::getId).collect(java.util.stream.Collectors.toList());
 
         List<AlarmRuleChannelEntity> links = ruleChannelDao.listByRuleIds(ruleIds);
         if (links == null || links.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Map<Long, List<AlarmRuleChannelEntity>> linksByRule = links.stream()
@@ -77,10 +77,10 @@ public class AlarmRuleTargetRepositoryImpl implements AlarmRuleTargetRepository 
                 .collect(Collectors.toMap(AlarmChannelEntity::getId, c -> c));
 
         return matched.stream()
-                .map(rule -> buildTarget(rule, linksByRule.getOrDefault(rule.getId(), Collections.emptyList()),
+                .map(rule -> buildTarget(rule, linksByRule.getOrDefault(rule.getId(), java.util.Collections.emptyList()),
                         channelMap))
                 .filter(t -> t.getChannels() != null && !t.getChannels().isEmpty())
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -104,7 +104,7 @@ public class AlarmRuleTargetRepositoryImpl implements AlarmRuleTargetRepository 
                         .channelType(c.getChannelType())
                         .configJson(c.getConfigJson())
                         .build())
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         return AlarmTarget.builder()
                 .ruleId(rule.getId())
@@ -115,7 +115,7 @@ public class AlarmRuleTargetRepositoryImpl implements AlarmRuleTargetRepository 
     }
 
     private boolean statusMatches(String triggerStatuses, String newStatus) {
-        if (triggerStatuses == null || triggerStatuses.isBlank()) {
+        if (triggerStatuses == null || triggerStatuses.trim().isEmpty()) {
             return false;
         }
         return Arrays.stream(triggerStatuses.split(","))
@@ -124,7 +124,7 @@ public class AlarmRuleTargetRepositoryImpl implements AlarmRuleTargetRepository 
     }
 
     private boolean excludesContains(String excludes, Long jobDefinitionId) {
-        if (excludes == null || excludes.isBlank() || jobDefinitionId == null) {
+        if (excludes == null || excludes.trim().isEmpty() || jobDefinitionId == null) {
             return false;
         }
         return Arrays.stream(excludes.split(","))
@@ -139,7 +139,7 @@ public class AlarmRuleTargetRepositoryImpl implements AlarmRuleTargetRepository 
      * targetJobs is a comma-separated list → matches if it contains jobDefinitionId.
      */
     private boolean targetJobsMatches(String targetJobs, Long jobDefinitionId) {
-        if (targetJobs == null || targetJobs.isBlank()) {
+        if (targetJobs == null || targetJobs.trim().isEmpty()) {
             return true;
         }
         if (jobDefinitionId == null) {

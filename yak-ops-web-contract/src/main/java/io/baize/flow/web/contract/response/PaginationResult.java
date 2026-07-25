@@ -7,7 +7,6 @@ import lombok.ToString;
 import io.baize.flow.common.constants.PaginationConstant;
 import io.baize.flow.web.contract.dto.pagination.PaginationBaseDTO;
 
-import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +21,6 @@ import java.util.List;
 @Deprecated(since = "1.0.0", forRemoval = true)
 public class PaginationResult<T> extends BaseResult {
 
-    @Serial
     private static final long serialVersionUID = -7850208355453831640L;
 
     @Schema(description = "Response data")
@@ -38,7 +36,7 @@ public class PaginationResult<T> extends BaseResult {
             this.data.setPagination(new Pagination(0, PaginationConstant.DEFAULT_PAGE_NO, PaginationConstant.DEFAULT_PAGE_SIZE));
         }
 
-        this.data.setBizData(Collections.emptyList());
+        this.data.setBizData(java.util.Collections.emptyList());
         this.setCode(ResultStatus.SUCCESS.getCode());
         this.setMessage(ResultStatus.SUCCESS.getMessage());
     }

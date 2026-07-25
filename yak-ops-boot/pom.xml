@@ -8,6 +8,7 @@
     </parent>
     <artifactId>yak-ops-boot</artifactId>
     <dependencies>
+        <dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-models</artifactId></dependency>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-web</artifactId></dependency>
         <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-infrastructure</artifactId></dependency>
         <!-- Runtime adapters are assembled here rather than leaking into core modules. -->

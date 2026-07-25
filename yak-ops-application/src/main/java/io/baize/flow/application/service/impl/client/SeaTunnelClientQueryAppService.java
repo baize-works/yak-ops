@@ -3,7 +3,7 @@ package io.baize.flow.application.service.impl.client;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.enums.SeaTunnelClientHealthStatusEnum;
 import io.baize.flow.common.enums.SeaTunnelClientNodeRole;
@@ -60,12 +60,12 @@ public class SeaTunnelClientQueryAppService {
         List<SeaTunnelClient> entities = seaTunnelClientDao.selectList(wrapper);
 
         if (entities == null || entities.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return entities.stream()
                 .map(assembler::toOptionVO)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -110,12 +110,12 @@ public class SeaTunnelClientQueryAppService {
                 seaTunnelClientNodeDao.selectByClientId(clientId);
 
         if (nodes == null || nodes.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return nodes.stream()
                 .map(assembler::toEndpointDTO)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -134,8 +134,8 @@ public class SeaTunnelClientQueryAppService {
                     seaTunnelClientNodeDao.selectByClientId(client.getId());
 
             if (nodes == null || nodes.isEmpty()) {
-                client.setMasterEndpoints(Collections.emptyList());
-                client.setWorkerEndpoints(Collections.emptyList());
+                client.setMasterEndpoints(java.util.Collections.emptyList());
+                client.setWorkerEndpoints(java.util.Collections.emptyList());
                 continue;
             }
 
@@ -145,7 +145,7 @@ public class SeaTunnelClientQueryAppService {
                             SeaTunnelClientNodeRole.MASTER
                     ))
                     .map(assembler::toEndpointDTO)
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
 
             List<SeaTunnelClientEndpointDTO> workers = nodes.stream()
                     .filter(node -> StringUtils.equalsIgnoreCase(
@@ -153,7 +153,7 @@ public class SeaTunnelClientQueryAppService {
                             SeaTunnelClientNodeRole.WORKER
                     ))
                     .map(assembler::toEndpointDTO)
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
 
             client.setMasterEndpoints(masters);
             client.setWorkerEndpoints(workers);

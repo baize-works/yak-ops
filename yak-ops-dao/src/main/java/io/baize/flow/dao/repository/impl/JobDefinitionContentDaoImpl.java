@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository.impl;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import io.baize.flow.dao.entity.JobDefinitionContentEntity;
 import io.baize.flow.dao.mapper.JobDefinitionContentMapper;

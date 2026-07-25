@@ -342,7 +342,7 @@ public abstract class AbstractJdbcConnectionProvider<
                         .filter(StringUtils::hasText)
                         .map(this::resolveDriverPath)
                         .map(Path::toString)
-                        .collect(Collectors.toList());
+                        .collect(java.util.stream.Collectors.toList());
 
         if (jarPaths.isEmpty()) {
             throw new IllegalArgumentException(

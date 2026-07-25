@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.verify.job;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.dao.entity.DataSource;
 import io.baize.flow.dao.entity.SeaTunnelClient;
 import org.springframework.stereotype.Component;

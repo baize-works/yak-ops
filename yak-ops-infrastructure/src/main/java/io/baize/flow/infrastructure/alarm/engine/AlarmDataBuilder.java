@@ -46,7 +46,7 @@ public final class AlarmDataBuilder {
         if (engineJobId != null) {
             content.append("引擎任务ID: ").append(engineJobId).append("\n");
         }
-        if (event.getErrorMessage() != null && !event.getErrorMessage().isBlank()) {
+        if (event.getErrorMessage() != null && !event.getErrorMessage().trim().isEmpty()) {
             content.append("错误信息: ").append(event.getErrorMessage());
         }
 

@@ -95,12 +95,12 @@ public class DorisConnectionParam extends BaseConnectionParam {
      */
     public List<String> parseFenodesList() {
         if (fenodes == null || fenodes.trim().isEmpty()) {
-            return List.of();
+            return java.util.Collections.emptyList();
         }
         return Arrays.stream(fenodes.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -117,7 +117,7 @@ public class DorisConnectionParam extends BaseConnectionParam {
                     String[] parts = node.split(":");
                     return parts[0].trim() + ":" + qp;
                 })
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**

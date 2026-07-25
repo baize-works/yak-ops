@@ -7,13 +7,13 @@ import java.util.Set;
 public final class EngineCapabilities {
     public enum Capability { PAUSE, RESUME, METRICS, LOGS, CHECKPOINT }
     private final Set<Capability> supported;
-    private EngineCapabilities(Set<Capability> supported) { this.supported = Set.copyOf(supported); }
+    private EngineCapabilities(Set<Capability> supported) { this.supported = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(supported)); }
     public static EngineCapabilities of(Capability... capabilities) {
         EnumSet<Capability> values = EnumSet.noneOf(Capability.class);
         if (capabilities != null) java.util.Collections.addAll(values, capabilities);
         return new EngineCapabilities(values);
     }
-    public static EngineCapabilities none() { return new EngineCapabilities(Set.of()); }
+    public static EngineCapabilities none() { return new EngineCapabilities(java.util.Collections.emptySet()); }
     public boolean supports(Capability capability) { return supported.contains(capability); }
     public Set<Capability> supported() { return supported; }
     public void require(Capability capability) {
