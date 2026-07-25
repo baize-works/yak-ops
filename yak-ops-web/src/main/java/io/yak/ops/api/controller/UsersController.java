@@ -4,6 +4,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Cookie;
 import io.yak.ops.api.aspect.AccessLogAnnotation;
+import io.yak.ops.application.model.Session;
 import io.yak.ops.application.model.User;
 import io.yak.ops.application.service.SessionService;
 import io.yak.ops.application.service.UsersService;

@@ -31,7 +31,7 @@ public class WebhookAlarmChannel implements AlarmChannel {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<Map<String, Object>>() {
     };
 
     @Override

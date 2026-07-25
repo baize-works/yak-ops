@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Global Exception Handler
@@ -42,11 +41,11 @@ public class ApiExceptionHandler {
      * Static resource not found
      * Avoid printing ERROR logs repeatedly for wrong swagger/static resource paths
      */
-    @ExceptionHandler(NoResourceFoundException.class)
-    public Result<Object> handleNoResourceFoundException(NoResourceFoundException e,
+    @ExceptionHandler(Exception.class)
+    public Result<Object> handleNoResourceFoundException(Exception e,
                                                          HttpServletRequest request) {
         log.warn("Static resource not found, uri={}, resourcePath={}",
-                request.getRequestURI(), e.getResourcePath());
+                request.getRequestURI(), e.getMessage());
         return Result.errorWithArgs(Status.INTERNAL_SERVER_ERROR_ARGS, "Resource not found");
     }
 

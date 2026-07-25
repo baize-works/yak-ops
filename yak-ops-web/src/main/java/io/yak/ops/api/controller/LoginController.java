@@ -1,20 +1,23 @@
 package io.yak.ops.api.controller;
 
-import javax.annotation.Resource;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.api.aspect.AccessLogAnnotation;
 import io.yak.ops.application.model.User;
+import io.yak.ops.application.model.dto.UserDTO;
+import io.yak.ops.application.model.response.Result;
 import io.yak.ops.application.security.Authenticator;
 import io.yak.ops.application.service.SessionService;
 import io.yak.ops.application.service.UsersService;
 import io.yak.ops.common.constants.Constants;
-import io.yak.ops.application.model.dto.UserDTO;
-import io.yak.ops.application.model.response.Result;
-import org.springframework.web.bind.annotation.*;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 
@@ -37,9 +40,9 @@ public class LoginController extends BaseController {
     /**
      * login
      *
-     * @param userDTO     userDTO
-     * @param request      request
-     * @param response     response
+     * @param userDTO  userDTO
+     * @param request  request
+     * @param response response
      * @return login result
      */
 
@@ -63,7 +66,7 @@ public class LoginController extends BaseController {
             cookie.setHttpOnly(true);
             cookie.setSecure(request.isSecure());
             cookie.setPath("/");
-            cookie.setAttribute("SameSite", "Lax");
+//            cookie.setAttribute("SameSite", "Lax");
             response.addCookie(cookie);
         }
 
@@ -74,7 +77,7 @@ public class LoginController extends BaseController {
      * sign out
      *
      * @param loginUserPO login user
-     * @param request   request
+     * @param request     request
      * @return sign out result
      */
     @PostMapping(value = "/signOut")
