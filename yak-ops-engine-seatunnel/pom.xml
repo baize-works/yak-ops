@@ -10,7 +10,7 @@
     <dependencies>
         <dependency>
             <groupId>io.baize.flow</groupId>
-            <artifactId>yak-ops-engine-spi</artifactId>
+            <artifactId>yak-ops-engine-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.baize.flow</groupId>
@@ -34,5 +34,6 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency><groupId>com.typesafe</groupId><artifactId>config</artifactId></dependency>
     </dependencies>
 </project>

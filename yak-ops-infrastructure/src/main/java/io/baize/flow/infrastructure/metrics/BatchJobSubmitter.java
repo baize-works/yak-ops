@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.domain.enums.JobSubmitStage;
 import io.baize.flow.domain.exception.JobSubmitException;
-import io.baize.flow.api.service.application.BatchJobSubmissionUseCase;
+import io.baize.flow.application.service.application.BatchJobSubmissionUseCase;
 import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.engine.api.EngineEndpoint;
 import io.baize.flow.engine.api.ExecutionEngine;

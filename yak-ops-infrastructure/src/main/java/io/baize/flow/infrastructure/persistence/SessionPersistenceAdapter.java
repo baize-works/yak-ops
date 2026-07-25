@@ -1,8 +1,8 @@
 package io.baize.flow.infrastructure.persistence;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.baize.flow.api.model.Session;
-import io.baize.flow.api.port.SessionRepository;
+import io.baize.flow.application.model.Session;
+import io.baize.flow.application.port.SessionRepository;
 import io.baize.flow.dao.mapper.SessionMapper;
 import java.util.List;
 import java.util.Optional;

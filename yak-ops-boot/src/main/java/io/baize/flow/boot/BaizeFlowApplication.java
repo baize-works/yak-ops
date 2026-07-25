@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @ComponentScan(basePackages = {
+        "io.baize.flow.application",
         "io.baize.flow.api",
         "io.baize.flow.application",
         "io.baize.flow.infrastructure",

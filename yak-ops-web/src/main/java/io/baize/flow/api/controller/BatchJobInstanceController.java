@@ -8,7 +8,7 @@ import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
-import io.baize.flow.api.service.BatchJobInstanceService;
+import io.baize.flow.application.service.BatchJobInstanceService;
 import io.baize.flow.web.contract.dto.SeaTunnelJobInstanceDTO;
 import io.baize.flow.web.contract.response.PaginationResult;
 import io.baize.flow.web.contract.response.Result;

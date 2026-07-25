@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
-import io.baize.flow.api.service.BatchJobDefinitionService;
+import io.baize.flow.application.service.BatchJobDefinitionService;
 import io.baize.flow.common.enums.ReleaseState;
 import io.baize.flow.common.utils.CodeGenerateUtils;
 import io.baize.flow.web.contract.dto.BatchJobDefinitionQueryDTO;

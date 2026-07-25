@@ -1,3 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
-<parent><groupId>io.baize.flow</groupId><artifactId>yak-ops</artifactId><version>1.0.0</version></parent><artifactId>yak-ops-spi</artifactId><name>Deprecated compatibility facade for yak-ops-plugin-spi</name><dependencies><dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-plugin-spi</artifactId></dependency></dependencies></project>

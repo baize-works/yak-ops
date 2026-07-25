@@ -3,7 +3,7 @@ package io.baize.flow.api.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import jakarta.annotation.Resource;
-import io.baize.flow.api.service.SeaTunnelClientService;
+import io.baize.flow.application.service.SeaTunnelClientService;
 import io.baize.flow.dao.entity.SeaTunnelClient;
 import io.baize.flow.web.contract.dto.ClientDatasourceVerifyDTO;
 import io.baize.flow.web.contract.dto.SeaTunnelClientDTO;

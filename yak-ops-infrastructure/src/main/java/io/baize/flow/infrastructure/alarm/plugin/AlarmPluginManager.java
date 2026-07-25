@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.alarm.plugin;
 
-import io.baize.flow.api.port.AlarmChannelCatalog;
+import io.baize.flow.application.port.AlarmChannelCatalog;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannel;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannelFactory;
 import org.apache.seatunnel.plugin.alarm.runtime.AlarmChannelRegistry;

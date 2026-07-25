@@ -1,7 +1,7 @@
 package io.baize.flow.api.websocket;
 
 import jakarta.annotation.Resource;
-import io.baize.flow.api.port.WorkflowMetricsPublisher;
+import io.baize.flow.application.port.WorkflowMetricsPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 

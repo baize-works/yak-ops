@@ -10,7 +10,7 @@ import org.apache.seatunnel.plugin.alarm.api.AlarmResult;
 import org.apache.seatunnel.plugin.alarm.api.AlarmSeverity;
 import io.baize.flow.infrastructure.alarm.engine.AlarmConfigParser;
 import io.baize.flow.infrastructure.alarm.plugin.AlarmPluginManager;
-import io.baize.flow.api.service.AlarmChannelService;
+import io.baize.flow.application.service.AlarmChannelService;
 import io.baize.flow.dao.entity.AlarmChannelEntity;
 import io.baize.flow.dao.entity.AlarmRecordEntity;
 import io.baize.flow.dao.repository.AlarmChannelDao;

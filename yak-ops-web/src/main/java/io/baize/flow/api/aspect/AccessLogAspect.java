@@ -3,7 +3,7 @@ package io.baize.flow.api.aspect;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.constants.Constants;
-import io.baize.flow.api.model.User;
+import io.baize.flow.application.model.User;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
