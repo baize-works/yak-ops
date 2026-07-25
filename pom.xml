@@ -15,6 +15,7 @@
         <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
         <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
         <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
+        <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <java.version>21</java.version>
@@ -257,6 +258,28 @@
         </dependencies>
     </dependencyManagement>
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>check-hexagonal-architecture</id>
+                        <phase>validate</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>python3</executable>
+                            <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
+                            <arguments>
+                                <argument>tools/architecture_check.py</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
