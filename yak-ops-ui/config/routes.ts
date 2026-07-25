@@ -19,7 +19,7 @@ export default [
     routes: [
       {
         path: '/',
-        redirect: '/data-source',
+        redirect: '/home',
       },
       ...appRoutes.map(({ path, component, hidden }) => ({
         path,
