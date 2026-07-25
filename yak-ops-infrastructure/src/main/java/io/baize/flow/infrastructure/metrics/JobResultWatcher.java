@@ -4,7 +4,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.domain.enums.JobStatus;
-import io.baize.flow.engine.seatunnel.rest.SeaTunnelRestClient;
+import io.baize.flow.engine.legacy.LegacyRestClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +31,7 @@ public class JobResultWatcher {
     private JobResultHandler resultHandler;
 
     @Resource
-    private SeaTunnelRestClient seatunnelRestClient;
+    private LegacyRestClient seatunnelRestClient;
 
     @Value("${seatunnel.result.poll-interval-ms:2000}")
     private long pollIntervalMs;

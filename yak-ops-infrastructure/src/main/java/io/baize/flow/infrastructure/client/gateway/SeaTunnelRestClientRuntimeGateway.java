@@ -2,7 +2,7 @@ package io.baize.flow.infrastructure.client.gateway;
 
 import jakarta.annotation.Resource;
 import io.baize.flow.application.client.port.SeaTunnelClientRuntimeGateway;
-import io.baize.flow.engine.seatunnel.rest.SeaTunnelRestClient;
+import io.baize.flow.engine.legacy.LegacyRestClient;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * REST-based implementation of {@link SeaTunnelClientRuntimeGateway}.
  *
- * <p>This gateway delegates SeaTunnel runtime operations to {@link SeaTunnelRestClient},
+ * <p>This gateway delegates SeaTunnel runtime operations to {@link LegacyRestClient},
  * such as querying metrics, job logs, checkpoint overview, and checkpoint history.</p>
  *
  * <p>This class belongs to the engine client adapter layer. The core client module
@@ -22,7 +22,7 @@ import java.util.Map;
 public class SeaTunnelRestClientRuntimeGateway implements SeaTunnelClientRuntimeGateway {
 
     @Resource
-    private SeaTunnelRestClient seaTunnelRestClient;
+    private LegacyRestClient seaTunnelRestClient;
 
     /**
      * Queries runtime metrics of the specified SeaTunnel client.

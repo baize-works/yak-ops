@@ -8,7 +8,7 @@ import io.baize.flow.dao.entity.JobInstance;
 import io.baize.flow.dao.entity.SeaTunnelClient;
 import io.baize.flow.dao.repository.JobInstanceDao;
 import io.baize.flow.dao.repository.SeaTunnelClientDao;
-import io.baize.flow.engine.seatunnel.rest.SeaTunnelRestClient;
+import io.baize.flow.engine.legacy.LegacyRestClient;
 import io.baize.flow.web.contract.vo.SeaTunnelClientMetricsVO;
 import io.baize.flow.plugin.spi.enums.Status;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class SeaTunnelClientRuntimeAppService {
 
 
     @Resource
-    private SeaTunnelRestClient seaTunnelRestClient;
+    private LegacyRestClient seaTunnelRestClient;
 
     /**
      * Queries runtime metrics of a SeaTunnel client.

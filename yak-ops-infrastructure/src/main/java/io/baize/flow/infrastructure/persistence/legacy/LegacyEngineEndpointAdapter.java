@@ -29,7 +29,7 @@ public final class LegacyEngineEndpointAdapter
         if (client == null) return Optional.empty();
         Map<String, String> attributes = client.getContextPath() == null
                 ? Map.of() : Map.of("contextPath", client.getContextPath());
-        return Optional.of(new EngineEndpoint(new ExecutionEngine("seatunnel"), engineEndpointId,
+        return Optional.of(new EngineEndpoint(new ExecutionEngine("legacy"), engineEndpointId,
                 client.getBaseUrl(), "legacy-client:" + engineEndpointId, attributes));
     }
 

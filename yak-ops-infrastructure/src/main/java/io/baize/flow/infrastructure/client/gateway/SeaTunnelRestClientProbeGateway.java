@@ -8,8 +8,8 @@ import io.baize.flow.application.client.model.SeaTunnelClientEndpoint;
 import io.baize.flow.application.client.model.SeaTunnelClientProbeResult;
 import io.baize.flow.application.client.port.SeaTunnelClientProbeGateway;
 import io.baize.flow.application.support.utils.MetricValueParser;
-import io.baize.flow.engine.seatunnel.model.SeaTunnelClientAuth;
-import io.baize.flow.engine.seatunnel.rest.SeaTunnelRestClient;
+import io.baize.flow.engine.legacy.LegacyClientAuthentication;
+import io.baize.flow.engine.legacy.LegacyRestClient;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -47,7 +47,7 @@ public class SeaTunnelRestClientProbeGateway implements SeaTunnelClientProbeGate
     private static final String IS_MASTER_KEY = "isMaster";
 
     @Resource
-    private SeaTunnelRestClient seaTunnelRestClient;
+    private LegacyRestClient seaTunnelRestClient;
 
     /**
      * Probes a SeaTunnel endpoint through the REST overview API.
@@ -79,7 +79,7 @@ public class SeaTunnelRestClientProbeGateway implements SeaTunnelClientProbeGate
             );
         }
 
-        SeaTunnelClientAuth clientAuth = buildAuth(auth);
+        LegacyClientAuthentication clientAuth = buildAuth(auth);
 
         try {
             Map<String, Object> overview = seaTunnelRestClient.overview(
@@ -141,7 +141,7 @@ public class SeaTunnelRestClientProbeGateway implements SeaTunnelClientProbeGate
      */
     private void resolveActiveMasterSafely(
             SeaTunnelClientEndpoint endpoint,
-            SeaTunnelClientAuth auth
+            LegacyClientAuthentication auth
     ) {
         if (endpoint == null || StringUtils.isBlank(endpoint.getBaseUrl())) {
             return;
@@ -229,8 +229,8 @@ public class SeaTunnelRestClientProbeGateway implements SeaTunnelClientProbeGate
      * @param authInfo core authentication information
      * @return SeaTunnel REST client authentication model
      */
-    private SeaTunnelClientAuth buildAuth(SeaTunnelClientAuthInfo authInfo) {
-        SeaTunnelClientAuth auth = new SeaTunnelClientAuth();
+    private LegacyClientAuthentication buildAuth(SeaTunnelClientAuthInfo authInfo) {
+        LegacyClientAuthentication auth = new LegacyClientAuthentication();
 
         if (authInfo == null) {
             return auth;
