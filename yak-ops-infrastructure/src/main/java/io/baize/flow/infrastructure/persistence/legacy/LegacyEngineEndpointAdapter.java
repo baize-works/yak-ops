@@ -6,7 +6,6 @@ import io.baize.flow.dao.repository.SeaTunnelClientDao;
 import io.baize.flow.engine.api.EngineConnectionConfig;
 import io.baize.flow.engine.api.EngineConnectionConfigProvider;
 import io.baize.flow.engine.api.EngineEndpoint;
-import io.baize.flow.engine.api.EngineException;
 import io.baize.flow.engine.api.ExecutionEngine;
 import java.util.Map;
 import java.util.Optional;
@@ -47,8 +46,7 @@ public final class LegacyEngineEndpointAdapter
         catch (RuntimeException exception) { throw invalid("Invalid legacy engine endpoint id", exception); }
     }
 
-    private EngineException invalid(String message, Throwable cause) {
-        return cause == null ? new EngineException(EngineException.Code.ENDPOINT_INVALID, message)
-                : new EngineException(EngineException.Code.ENDPOINT_INVALID, message, cause);
+    private IllegalArgumentException invalid(String message, Throwable cause) {
+        return cause == null ? new IllegalArgumentException(message) : new IllegalArgumentException(message, cause);
     }
 }

@@ -10,7 +10,7 @@ import io.baize.flow.engine.api.EngineEndpoint;
 import io.baize.flow.engine.api.ExecutionEngine;
 import io.baize.flow.engine.api.EngineGateway;
 import io.baize.flow.engine.api.EngineGatewayRegistry;
-import io.baize.flow.engine.api.EngineSubmitCommand;
+import io.baize.flow.engine.api.JobSubmitCommand;
 import io.baize.flow.web.contract.vo.JobInstanceVO;
 import io.baize.flow.plugin.spi.enums.Status;
 import org.springframework.stereotype.Component;
@@ -80,8 +80,8 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
             String filename = "batch-job-" + instanceId + ".conf";
 
             EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("seatunnel"), String.valueOf(clientId), null, null, java.util.Map.of());
-            EngineGateway gateway = engineGatewayRegistry.get(endpoint.engineType());
-            engineId = gateway.submit(endpoint, new EngineSubmitCommand(safeConfig(hoconConfig), filename, instance.getJobName())).jobId();
+            EngineGateway gateway = engineGatewayRegistry.get(endpoint.engine());
+            engineId = gateway.submit(new JobSubmitCommand(endpoint, safeConfig(hoconConfig), java.util.Map.of("fileName", filename, "jobName", instance.getJobName()), "job-instance-" + instanceId)).externalExecutionId();
             submitted = true;
 
             log.info("Submit batch job response received, instanceId={}, engineId={}", instanceId, engineId);
@@ -132,7 +132,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
                 instanceId, clientId, engineJobId);
 
         EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("seatunnel"), String.valueOf(clientId), null, null, java.util.Map.of());
-        engineGatewayRegistry.get(endpoint.engineType()).stop(endpoint, engineJobId);
+        engineGatewayRegistry.get(endpoint.engine()).cancel(endpoint, engineJobId);
 
         log.info("Stop batch engine job response: instanceId={}, clientId={}, engineJobId={}",
                 instanceId, clientId, engineJobId);

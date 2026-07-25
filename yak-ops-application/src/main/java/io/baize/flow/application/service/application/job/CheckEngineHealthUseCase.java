@@ -19,7 +19,7 @@ public class CheckEngineHealthUseCase {
     public boolean check(String engineEndpointId) {
         EngineEndpoint endpoint = endpoints.findById(engineEndpointId)
                 .orElseThrow(() -> new IllegalArgumentException("Engine endpoint does not exist: " + engineEndpointId));
-        return gateways.get(endpoint.engineType()).health(endpoint).healthy();
+        return gateways.get(endpoint.engine()).health(endpoint).healthy();
     }
 
     public boolean check(Long engineEndpointId) { return check(String.valueOf(engineEndpointId)); }

@@ -1,19 +1,21 @@
 package io.baize.flow.engine.api;
 
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.Map;
 
 public final class EngineGatewayRegistry {
-    private final Map<EngineType, EngineGateway> gateways;
+    private final Map<String, EngineGateway> gateways;
     public EngineGatewayRegistry(Collection<? extends EngineGateway> gateways) {
-        Map<EngineType, EngineGateway> registered = new EnumMap<>(EngineType.class);
-        for (EngineGateway gateway : gateways) registered.put(gateway.engineType(), gateway);
+        Map<String, EngineGateway> registered = new java.util.HashMap<>();
+        for (EngineGateway gateway : gateways) {
+            if (registered.put(gateway.engine().key(), gateway) != null)
+                throw new IllegalArgumentException("Duplicate engine gateway: " + gateway.engine().key());
+        }
         this.gateways = Map.copyOf(registered);
     }
-    public EngineGateway get(EngineType type) {
-        EngineGateway gateway = gateways.get(type);
-        if (gateway == null) throw new EngineException(EngineException.Code.ENDPOINT_INVALID, "No engine gateway registered for " + type);
+    public EngineGateway get(ExecutionEngine engine) {
+        EngineGateway gateway = gateways.get(engine.key());
+        if (gateway == null) throw new IllegalArgumentException("No engine gateway registered for " + engine.key());
         return gateway;
     }
 }
