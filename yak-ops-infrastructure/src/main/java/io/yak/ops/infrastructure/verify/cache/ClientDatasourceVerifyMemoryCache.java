@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class ClientDatasourceVerifyMemoryCache {
+public class ClientDatasourceVerifyMemoryCache implements io.yak.ops.application.port.verify.DatasourceVerificationCache {
 
     /**
      * 自动连通性测试缓存时间。

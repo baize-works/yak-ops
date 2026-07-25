@@ -1,2 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion><parent><groupId>io.yak.ops</groupId><artifactId>yak-ops</artifactId><version>1.0.0</version></parent><artifactId>yak-ops-engine-contract</artifactId><name>Yak Ops Engine Contract</name></project>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.yak.ops</groupId>
+        <artifactId>yak-ops</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>yak-ops-engine-contract</artifactId>
+    <name>Yak Ops Engine Contract</name>
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

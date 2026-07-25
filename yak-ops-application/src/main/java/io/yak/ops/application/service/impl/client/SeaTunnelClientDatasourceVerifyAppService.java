@@ -4,10 +4,10 @@ import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.application.service.DataSourceService;
 import io.yak.ops.domain.exceptions.ServiceException;
-import io.yak.ops.infrastructure.verify.DatasourceConnectivityVerificationStrategy;
-import io.yak.ops.infrastructure.verify.DatasourceConnectivityVerificationStrategyFactory;
-import io.yak.ops.infrastructure.verify.cache.ClientDatasourceVerifyMemoryCache;
-import io.yak.ops.infrastructure.verify.modal.DatasourceVerifyContext;
+import io.yak.ops.application.port.verify.DatasourceVerificationStrategy;
+import io.yak.ops.application.port.verify.DatasourceVerificationStrategyResolver;
+import io.yak.ops.application.port.verify.DatasourceVerificationCache;
+import io.yak.ops.application.port.verify.model.DatasourceVerifyContext;
 import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.dao.entity.SeaTunnelClient;
 import io.yak.ops.dao.repository.SeaTunnelClientDao;
@@ -47,10 +47,10 @@ public class SeaTunnelClientDatasourceVerifyAppService {
     private DataSourceService dataSourceService;
 
     @Resource
-    private ClientDatasourceVerifyMemoryCache verifyMemoryCache;
+    private DatasourceVerificationCache verifyMemoryCache;
 
     @Resource
-    private DatasourceConnectivityVerificationStrategyFactory strategyFactory;
+    private DatasourceVerificationStrategyResolver strategyFactory;
 
     /**
      * Verifies datasource connectivity through the specified SeaTunnel client.
@@ -116,7 +116,7 @@ public class SeaTunnelClientDatasourceVerifyAppService {
         }
 
         // Select the proper verification strategy based on datasource and connector context.
-        DatasourceConnectivityVerificationStrategy strategy =
+        DatasourceVerificationStrategy strategy =
                 strategyFactory.getStrategy(context);
 
         ClientDatasourceVerifyVO result = strategy.verify(context);

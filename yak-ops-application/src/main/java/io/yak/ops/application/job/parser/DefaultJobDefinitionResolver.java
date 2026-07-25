@@ -3,7 +3,7 @@ package io.yak.ops.application.job.parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
-import io.yak.ops.spi.bean.entity.NodeTypes;
+import io.yak.ops.application.job.model.NodeTypes;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
