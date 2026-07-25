@@ -45,8 +45,7 @@ public class JdbcDatasourceVerificationStrategy
             return false;
         }
 
-        return SUPPORTED.contains(context.getDbType())
-                && !isCdcPlugin(context.getPluginName());
+        return SUPPORTED.contains(context.getDbType());
     }
 
     @Override
@@ -54,12 +53,7 @@ public class JdbcDatasourceVerificationStrategy
         return doVerify(context);
     }
 
-    /**
-     * 给 CDC 策略复用。
-     *
-     * CDC 场景也需要先确认客户端能通过 LinkUp 访问该数据源。
-     */
-    public ClientDatasourceVerifyVO doVerify(DatasourceVerifyContext context) {
+    private ClientDatasourceVerifyVO doVerify(DatasourceVerifyContext context) {
         ConnectivityTestJob testJob = connectivityTestJobFactory.build(
                 context.getClient(),
                 context.getDatasource()
@@ -108,7 +102,4 @@ public class JdbcDatasourceVerificationStrategy
         );
     }
 
-    private boolean isCdcPlugin(String pluginName) {
-        return StringUtils.containsIgnoreCase(pluginName, "CDC");
-    }
 }

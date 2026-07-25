@@ -14,7 +14,7 @@ interface Props {
 
   /**
    * source 域要查询的数据源类型
-   * 例如：MYSQL / MYSQL_CDC / POSTGRESQL / ORACLE
+   * 例如：MYSQL / POSTGRESQL / ORACLE
    */
   sourceDbType?: string;
 

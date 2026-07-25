@@ -86,19 +86,6 @@ export const generateDataSourceOptions = (): DataSourceType[] => [
   },
 ];
 
-export const generateCDCDataSourceOptions = (): DataSourceType[] => [
-  {
-    value: "MYSQL",
-    connectorType: "Jdbc",
-    pluginName: "MySQL-CDC",
-    label: (
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <MysqlIcon height="24px" width="24px" />
-        <span style={{ marginLeft: 8 }}>MySQL-CDC</span>
-      </div>
-    ),
-  },
-];
 
 // 数据源选择器组件
 interface DataSourceSelectProps {

@@ -19,7 +19,7 @@ public class ClientDatasourceVerifyDTO {
 
     /**
      * 前端当前选择的连接器类型。
-     * 例如：Jdbc、CDC
+     * 例如：Jdbc
      */
     private String connectorType;
 

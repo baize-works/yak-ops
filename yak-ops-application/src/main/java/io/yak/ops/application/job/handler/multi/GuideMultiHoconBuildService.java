@@ -80,14 +80,7 @@ public class GuideMultiHoconBuildService {
         String matchMode = resolveMatchMode(tableMatch);
         boolean patternMode = isPatternMode(matchMode);
 
-        /*
-         * 正则匹配 / 整库同步不再提前解析所有表。
-         *
-         * mode = 2: MySQL-CDC source 使用 table-pattern
-         * mode = 4: MySQL-CDC source 使用 table-pattern = db\..*
-         *
-         * 自定义 / 精准匹配仍然走 tableMatchResolver，生成 table-names。
-         */
+        // Pattern-based modes do not resolve every source table in advance.
         List<String> sourceTables = patternMode
                 ? java.util.Collections.emptyList()
                 : tableMatchResolver.resolveSourceTables(content);
@@ -144,10 +137,7 @@ public class GuideMultiHoconBuildService {
 
         config.put("readMode", "table");
 
-        /*
-         * 正则匹配 / 整库同步不需要 table / table_path。
-         * 否则后面的 CDC resolver 容易误判成单表或多表列表模式。
-         */
+        // Pattern-based modes do not target one concrete table.
         if (!patternMode) {
             putIfNotBlank(config, "table", firstSourceTable);
             putIfNotBlank(config, "table_path", firstSourceTable);
@@ -158,22 +148,13 @@ public class GuideMultiHoconBuildService {
         putIfNotBlank(config, KEY_MATCH_MODE, matchMode);
         putIfNotBlank(config, KEY_MATCH_MODE_UNDERLINE, matchMode);
 
-        /*
-         * mode = 2 正则匹配：
-         * 把前端输入的 keyword 透传给 CDC resolver。
-         *
-         * MultiTableCdcTableOptionResolver 里根据 matchMode=2
-         * 生成 LinkUp CDC 原生 table-pattern。
-         */
+        // Preserve the pattern supplied by the client for regex matching.
         if (MATCH_MODE_REGEX.equals(matchMode)) {
             putIfNotBlank(config, KEY_SOURCE_TABLE, keyword);
             putIfNotBlank(config, KEY_TABLE_KEYWORD, keyword);
         }
 
-        /*
-         * 自定义 / 精准匹配才需要 table list。
-         * 正则 / 整库同步不要塞 source_table_list，避免后续又生成 table-names。
-         */
+        // Concrete matching modes carry the resolved table list.
         if (!patternMode) {
             putListIfNotEmpty(config, KEY_TABLE_LIST, sourceTables);
             putListIfNotEmpty(config, KEY_SOURCE_TABLE_LIST, sourceTables);
@@ -245,7 +226,7 @@ public class GuideMultiHoconBuildService {
 
         /*
          * 多表 / 正则 / 整库同步统一走动态表名。
-         * Source CDC 会带出 table_name，Sink 使用 ${table_name} 自动写入对应表。
+         * Dynamic sources expose table_name so the sink can target ${table_name}.
          */
         if (multiTable) {
             config.put(KEY_TABLE_PATTERN, "${table_name}");
@@ -393,7 +374,7 @@ public class GuideMultiHoconBuildService {
         }
 
         /*
-         * 整库同步：直接交给 CDC table-pattern = db\..*
+         * 整库同步不要求提前解析出所有表。
          * 不要求 sourceTables / sinkTables。
          */
         if (MATCH_MODE_WHOLE_DATABASE.equals(matchMode)) {

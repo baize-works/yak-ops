@@ -20,7 +20,6 @@
         <module>yak-ops-datasource-api</module>
         <module>yak-ops-datasource-support</module>
         <module>yak-ops-datasource-vendor-mysql</module>
-        <module>yak-ops-datasource-vendor-mysql-cdc</module>
         <module>yak-ops-datasource-vendor-oracle</module>
         <module>yak-ops-datasource-vendor-postgresql</module>
         <module>yak-ops-datasource-vendor-doris</module>

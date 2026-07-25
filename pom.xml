@@ -220,11 +220,6 @@
             </dependency>
             <dependency>
                 <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-datasource-vendor-mysql-cdc</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
                 <artifactId>yak-ops-datasource-vendor-kingbase</artifactId>
                 <version>${project.version}</version>
             </dependency>
