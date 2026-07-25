@@ -12,6 +12,11 @@ and status constants. Each matching file is classified as Java, POM, configurati
 log, API, documentation, or other. The JSON output is the ledger of record rather than a stale
 hand-maintained list.
 
+CI compares every non-allowlisted file with `tools/engine-neutrality-baseline.json`. A new
+matching file or an increased count in an existing file fails the build; reductions are always
+accepted. This per-file snapshot prevents vocabulary from moving between modules while keeping
+the staged cleanup monotonic. Compatibility adapter paths are the only explicit exemptions.
+
 ## Gates and staged retirement
 
 Domain and engine-contract sources are zero-match gates. Application debt is frozen at its
