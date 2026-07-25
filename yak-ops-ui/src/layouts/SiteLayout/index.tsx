@@ -8,6 +8,7 @@ import {
   type NavigationIconKey,
   type NavigationRoute,
 } from "@/config/navigation";
+import { history, Outlet, useLocation, useModel } from "@umijs/max";
 import {
   Activity,
   ArrowLeftRight,
@@ -31,8 +32,7 @@ import {
   Server,
   SquarePlus,
   Workflow,
-} from 'lucide-react';
-import { history, Outlet, useLocation, useModel } from "@umijs/max";
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -43,10 +43,7 @@ const COLLAPSED_SIDEBAR_WIDTH = 64;
 const NAVIGATION_ICON_SIZE = 17;
 const NAVIGATION_ICON_STROKE_WIDTH = 1.8;
 
-const navigationIcons: Record<
-  NavigationIconKey,
-  ReactNode
-> = {
+const navigationIcons: Record<NavigationIconKey, ReactNode> = {
   home: (
     <House
       size={NAVIGATION_ICON_SIZE}
@@ -149,6 +146,19 @@ const standaloneRoutes = getStandaloneNavigationRoutes();
 const navigationGroups = getMainNavigationGroups();
 const quickCreateRoutes = getQuickCreateRoutes();
 
+/**
+ * 首页单独作为第一菜单区域。
+ */
+const homeRoutes = standaloneRoutes.filter((route) => route.id === "home");
+
+/**
+ * 数据源管理等业务一级菜单，
+ * 显示在首页分割线之后、数据集成之前。
+ */
+const businessStandaloneRoutes = standaloneRoutes.filter(
+  (route) => route.id !== "home"
+);
+
 interface HeaderActionProps {
   icon: ReactNode;
   label: string;
@@ -210,6 +220,7 @@ function BrandLogo({ compact }: { compact: boolean }) {
     <button
       type="button"
       aria-label="返回数据源管理"
+      style={{ marginTop: 12, marginBottom: 6 }}
       onClick={() => history.push("/data-source")}
       className={[
         "flex h-12 w-full items-center border-0 ",
@@ -290,7 +301,7 @@ export default function SiteLayout() {
         </span>
 
         {!compact && (
-          <span className="min-w-0 flex-1 truncate text-[13px]">
+          <span className="min-w-0 flex-1 truncate text-[14px]">
             {route.title}
           </span>
         )}
@@ -433,7 +444,7 @@ export default function SiteLayout() {
             ? "font-semibold text-[#161823]"
             : [
                 "font-normal",
-                "text-[rgba(22,24,35,0.5)]",
+                "text-[rgba(37,38,50,.6)]",
                 "hover:text-[#161823]",
               ].join(" "),
         ].join(" ")}
@@ -476,7 +487,7 @@ export default function SiteLayout() {
           <span
             className="
               min-w-0 flex-1 truncate
-              text-[13px] leading-5
+              text-[14px] leading-5
             "
           >
             {route.title}
@@ -521,28 +532,25 @@ export default function SiteLayout() {
             title={compact ? "快速创建" : undefined}
             onClick={() => setQuickCreateOpen((current) => !current)}
             className={[
-  'flex h-10 items-center border-0 text-white',
-  'bg-[linear-gradient(102deg,#fe516e_0%,#fe2c55_100%)]',
-  'shadow-[0_6px_16px_rgba(254,44,85,0.22)]',
-  'transition-all duration-200',
-  'ease-[cubic-bezier(0.62,0.05,0.36,0.95)]',
-  'hover:brightness-[0.97] active:brightness-95',
-  compact
-    ? 'w-10 justify-center rounded-full px-0'
-    : 'w-full justify-start rounded-md px-3',
-].join(' ')}
+              "flex h-10 items-center border-0 text-white",
+              "bg-[linear-gradient(102deg,#fe516e_0%,#fe2c55_100%)]",
+              "shadow-[0_6px_16px_rgba(254,44,85,0.22)]",
+              "transition-all duration-200",
+              "ease-[cubic-bezier(0.62,0.05,0.36,0.95)]",
+              "hover:brightness-[0.97] active:brightness-95",
+              compact
+                ? "w-10 justify-center rounded-full px-0"
+                : "w-full justify-start rounded-md px-3",
+            ].join(" ")}
           >
-            <SquarePlus
-              className="h-4 w-4 shrink-0"
-              strokeWidth={2}
-            />
+            <SquarePlus className="h-4 w-4 shrink-0" strokeWidth={2} />
 
             {!compact && (
               <>
                 <span
                   className="
                     ml-2 min-w-0 flex-1
-                    truncate text-left text-[13px]
+                    truncate text-left text-[14px]
                     font-semibold
                   "
                 >
@@ -581,7 +589,7 @@ export default function SiteLayout() {
                     className="
                         flex h-9 w-full items-center
                         rounded-md border-0 bg-transparent
-                        px-2.5 text-left text-[13px]
+                        px-2.5 text-left text-[14px]
                         text-[#1c1f23]
                         transition-colors duration-150
                         hover:bg-[#f5f5f6]
@@ -633,14 +641,20 @@ export default function SiteLayout() {
           }}
         >
           <div>
-            {standaloneRoutes.length > 0 && (
+            {homeRoutes.length > 0 && (
               <div
                 className={[
                   "mb-3 border-b pb-3",
                   "border-[rgba(37,38,50,0.10)]",
                 ].join(" ")}
               >
-                {standaloneRoutes.map(renderStandaloneItem)}
+                {homeRoutes.map(renderStandaloneItem)}
+              </div>
+            )}
+
+            {businessStandaloneRoutes.length > 0 && (
+              <div className="mb-1">
+                {businessStandaloneRoutes.map(renderStandaloneItem)}
               </div>
             )}
 
@@ -713,7 +727,7 @@ export default function SiteLayout() {
                         <span
                           className="
                               ml-3 min-w-0 flex-1
-                              truncate text-[13px]
+                              truncate text-[14px]
                             "
                         >
                           {group.title}
@@ -793,7 +807,7 @@ export default function SiteLayout() {
             {!compact && (
               <span
                 className="
-                  ml-3 text-[13px]
+                  ml-3 text-[14px]
                   font-medium
                 "
               >

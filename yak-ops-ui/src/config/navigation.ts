@@ -274,16 +274,7 @@ export const appRoutes: readonly NavigationRoute[] = [
     title: '数据源管理',
     component: './data-source',
     iconKey: 'database',
-    menuGroup: 'resources',
     order: 10,
-  },
-  {
-    id: 'data-source-detail',
-    path: '/data-source/:id/detail',
-    title: '数据源详情',
-    component: './data-source/detail',
-    hidden: true,
-    parentId: 'data-source',
   },
 
   {
@@ -404,22 +395,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     title: '知识管理',
     component: './knowledge-management',
     iconKey: 'knowledge',
-    hidden: true,
-  },
-  {
-    id: 'open-api',
-    path: '/open-api',
-    title: 'Open API',
-    component: './open-api',
-    iconKey: 'api',
-    hidden: true,
-  },
-  {
-    id: 'bi',
-    path: '/bi',
-    title: '数据洞察',
-    component: './bi',
-    iconKey: 'insight',
     hidden: true,
   },
 ];
