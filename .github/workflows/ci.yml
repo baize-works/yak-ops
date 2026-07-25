@@ -19,6 +19,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  engine-neutrality:
+    name: Engine neutrality
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Enforce vendor-token ledger
+        run: |
+          rg -i 'seatunnel|zeta' --glob '!tools/engine-neutrality-allowlist.txt' > /tmp/engine-vendor-inventory.txt || true
+          python3 tools/check-engine-neutrality.py
+
   backend:
     name: Backend
     runs-on: ubuntu-latest
