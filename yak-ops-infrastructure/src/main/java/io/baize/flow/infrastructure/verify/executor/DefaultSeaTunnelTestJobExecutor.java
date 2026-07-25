@@ -4,6 +4,7 @@ import io.baize.flow.infrastructure.verify.job.ConnectivityTestJob;
 import io.baize.flow.dao.entity.SeaTunnelClient;
 import io.baize.flow.domain.enums.JobStatus;
 import io.baize.flow.engine.api.EngineEndpoint;
+import io.baize.flow.engine.api.ExecutionEngine;
 import io.baize.flow.engine.api.EngineGateway;
 import io.baize.flow.engine.api.EngineGatewayRegistry;
 import io.baize.flow.engine.api.EngineJobStatus;
@@ -18,7 +19,7 @@ public class DefaultSeaTunnelTestJobExecutor implements SeaTunnelTestJobExecutor
  @Override public JobExecutionResult executeAndWait(SeaTunnelClient client, ConnectivityTestJob job, long timeoutMs, long pollIntervalMs) {
   long started=System.currentTimeMillis(); JobExecutionResult result=new JobExecutionResult(); String jobId=null;
   try {
-   EngineEndpoint endpoint=EngineEndpoint.seatunnel(client.getId()); EngineGateway gateway=gateways.get(endpoint.engineType());
+   EngineEndpoint endpoint=new EngineEndpoint(new ExecutionEngine("seatunnel"), String.valueOf(client.getId()), client.getBaseUrl(), null, java.util.Map.of()); EngineGateway gateway=gateways.get(endpoint.engineType());
    jobId=gateway.submit(endpoint,new EngineSubmitCommand(job.getJobConfig(), job.getJobName()+".conf", job.getJobName())).jobId(); result.setJobId(jobId);
    long deadline=started+timeoutMs; EngineJobStatus status=EngineJobStatus.UNKNOWN;
    while(System.currentTimeMillis()<deadline) { status=gateway.job(endpoint,jobId).status(); if(isTerminal(status)) break; Thread.sleep(pollIntervalMs); }

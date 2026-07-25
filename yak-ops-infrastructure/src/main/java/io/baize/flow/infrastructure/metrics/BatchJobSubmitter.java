@@ -7,6 +7,7 @@ import io.baize.flow.domain.exception.JobSubmitException;
 import io.baize.flow.api.service.application.BatchJobSubmissionUseCase;
 import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.engine.api.EngineEndpoint;
+import io.baize.flow.engine.api.ExecutionEngine;
 import io.baize.flow.engine.api.EngineGateway;
 import io.baize.flow.engine.api.EngineGatewayRegistry;
 import io.baize.flow.engine.api.EngineSubmitCommand;
@@ -78,7 +79,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
 
             String filename = "batch-job-" + instanceId + ".conf";
 
-            EngineEndpoint endpoint = EngineEndpoint.seatunnel(clientId);
+            EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("seatunnel"), String.valueOf(clientId), null, null, java.util.Map.of());
             EngineGateway gateway = engineGatewayRegistry.get(endpoint.engineType());
             engineId = gateway.submit(endpoint, new EngineSubmitCommand(safeConfig(hoconConfig), filename, instance.getJobName())).jobId();
             submitted = true;
@@ -130,7 +131,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
         log.info("Stopping batch SeaTunnel job: instanceId={}, clientId={}, engineJobId={}",
                 instanceId, clientId, engineJobId);
 
-        EngineEndpoint endpoint = EngineEndpoint.seatunnel(clientId);
+        EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("seatunnel"), String.valueOf(clientId), null, null, java.util.Map.of());
         engineGatewayRegistry.get(endpoint.engineType()).stop(endpoint, engineJobId);
 
         log.info("Stop batch engine job response: instanceId={}, clientId={}, engineJobId={}",

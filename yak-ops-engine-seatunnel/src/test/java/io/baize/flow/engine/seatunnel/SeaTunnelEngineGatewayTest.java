@@ -8,7 +8,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class SeaTunnelEngineGatewayTest {
-    private static final EngineEndpoint ENDPOINT = EngineEndpoint.seatunnel(1L);
+    private static final EngineEndpoint ENDPOINT = new EngineEndpoint(new ExecutionEngine("seatunnel"), "1", null, null, java.util.Map.of());
 
     @Test void maps_submit_job_status_and_metrics_without_exposing_vendor_types() {
         SeaTunnelEngineGateway gateway = gateway(new SeaTunnelEngineClient() {

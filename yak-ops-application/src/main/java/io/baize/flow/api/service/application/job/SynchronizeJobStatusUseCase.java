@@ -1,6 +1,7 @@
 package io.baize.flow.api.service.application.job;
 
 import io.baize.flow.api.service.BatchJobInstanceService;
+import io.baize.flow.api.port.EngineEndpointRepository;
 import io.baize.flow.dao.entity.JobInstance;
 import io.baize.flow.web.contract.vo.JobInstanceVO;
 import io.baize.flow.domain.enums.JobStatus;
@@ -14,12 +15,13 @@ import org.springframework.stereotype.Component;
 /** Synchronizes a persisted execution from an engine-neutral snapshot. */
 @Component
 public class SynchronizeJobStatusUseCase {
- private final BatchJobInstanceService instances; private final EngineGatewayRegistry gateways;
- public SynchronizeJobStatusUseCase(BatchJobInstanceService instances, EngineGatewayRegistry gateways){this.instances=instances;this.gateways=gateways;}
+ private final BatchJobInstanceService instances; private final EngineEndpointRepository endpoints; private final EngineGatewayRegistry gateways;
+ public SynchronizeJobStatusUseCase(BatchJobInstanceService instances, EngineEndpointRepository endpoints, EngineGatewayRegistry gateways){this.instances=instances;this.endpoints=endpoints;this.gateways=gateways;}
  public EngineJobSnapshot synchronize(Long instanceId) {
   JobInstanceVO instance=instances.selectById(instanceId);
   if(instance==null || instance.getClientId()==null || instance.getEngineJobId()==null) throw new IllegalArgumentException("Execution has no engine identity: "+instanceId);
-  EngineEndpoint endpoint=EngineEndpoint.seatunnel(instance.getClientId());
+  String engineEndpointId=String.valueOf(instance.getClientId());
+  EngineEndpoint endpoint=endpoints.findById(engineEndpointId).orElseThrow(() -> new IllegalArgumentException("Engine endpoint does not exist"));
   EngineJobSnapshot snapshot=gateways.get(endpoint.engineType()).job(endpoint,instance.getEngineJobId());
   if (isTerminal(snapshot.status())) { JobInstance update=new JobInstance(); update.setId(instanceId); update.setJobStatus(toLocal(snapshot.status())); update.setErrorMessage(snapshot.errorMessage()); update.setEndTime(new Date()); instances.updateById(update); }
   return snapshot;

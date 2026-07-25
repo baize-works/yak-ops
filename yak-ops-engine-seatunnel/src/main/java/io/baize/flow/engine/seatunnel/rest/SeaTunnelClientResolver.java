@@ -3,7 +3,7 @@ package io.baize.flow.engine.seatunnel.rest;
 import io.baize.flow.engine.api.EngineConnectionConfig;
 import io.baize.flow.engine.api.EngineConnectionConfigProvider;
 import io.baize.flow.engine.api.EngineEndpoint;
-import io.baize.flow.engine.api.EngineType;
+import io.baize.flow.engine.api.ExecutionEngine;
 import io.baize.flow.engine.seatunnel.model.SeaTunnelClientAuth;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +22,6 @@ public class SeaTunnelClientResolver {
     }
     private EngineConnectionConfig connection(Long clientId) {
         if (clientId == null) throw new IllegalArgumentException("SeaTunnel client id must not be null");
-        return connections.connectionFor(EngineEndpoint.seatunnel(clientId));
+        return connections.connectionFor(new EngineEndpoint(new ExecutionEngine("seatunnel"), String.valueOf(clientId), null, null, java.util.Map.of()));
     }
 }
