@@ -47,6 +47,10 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
         <!-- Select complete plugin families; concrete vendors stay behind aggregators. -->
         <dependency>
             <groupId>io.yak.ops</groupId>
