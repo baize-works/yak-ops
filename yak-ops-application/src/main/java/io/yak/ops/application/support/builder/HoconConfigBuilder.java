@@ -40,7 +40,7 @@ public class HoconConfigBuilder {
     public String build(DagGraph dagGraph, JobEnvConfig envConfig) {
         DagBuildContext context = DagBuildContext.from(dagGraph);
 
-        NodeGroup group = groupNodes(dagGraph.getNodesAsConfig(), context);
+        NodeGroup group = groupNodes(io.yak.ops.application.support.dag.DagConfigMapper.nodes(dagGraph), context);
 
         return SeaTunnelConfigUtil.generateConfig(
                 envConfigBuilder.build(envConfig),
@@ -112,7 +112,7 @@ public class HoconConfigBuilder {
     public String build(DagGraph dagGraph, JobEnvConfig envConfig, JobScheduleConfig scheduleConfig) {
         DagBuildContext context = DagBuildContext.from(dagGraph, scheduleConfig);
 
-        NodeGroup group = groupNodes(dagGraph.getNodesAsConfig(), context);
+        NodeGroup group = groupNodes(io.yak.ops.application.support.dag.DagConfigMapper.nodes(dagGraph), context);
 
         return SeaTunnelConfigUtil.generateConfig(
                 envConfigBuilder.build(envConfig),

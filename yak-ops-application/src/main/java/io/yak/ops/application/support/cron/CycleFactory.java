@@ -1,4 +1,4 @@
-package io.yak.ops.domain.cron;
+package io.yak.ops.application.support.cron;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.field.expression.Always;

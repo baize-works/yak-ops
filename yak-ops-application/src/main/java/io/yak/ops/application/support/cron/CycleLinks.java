@@ -1,4 +1,4 @@
-package io.yak.ops.domain.cron;
+package io.yak.ops.application.support.cron;
 
 import com.cronutils.model.Cron;
 import io.yak.ops.common.enums.CycleEnum;

@@ -1,17 +1,15 @@
-package io.yak.ops.domain.cron;
+package io.yak.ops.application.support.cron;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import lombok.NonNull;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.common.constants.Constants;
 import io.yak.ops.common.enums.CycleEnum;
 import io.yak.ops.common.lifecycle.ServerLifeCycleManager;
 import io.yak.ops.common.utils.DateUtils;
-import io.yak.ops.dao.entity.JobSchedule;
 import io.yak.ops.domain.exceptions.CronParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +22,7 @@ import java.util.stream.Collectors;
 import static com.cronutils.model.CronType.QUARTZ;
 import static io.yak.ops.common.constants.CommandKeyConstants.CMD_PARAM_COMPLEMENT_DATA_SCHEDULE_DATE_LIST;
 import static io.yak.ops.common.constants.Constants.COMMA;
-import static io.yak.ops.domain.cron.CycleFactory.*;
+import static io.yak.ops.application.support.cron.CycleFactory.*;
 
 /**
  * // todo: this utils is heavy, it rely on quartz and corn-utils.
@@ -179,11 +177,11 @@ public class CronUtils {
 
     public static List<Date> getSelfFireDateList(@NonNull final Date startTime,
                                                  @NonNull final Date endTime,
-                                                 @NonNull final List<JobSchedule> schedules) throws CronParseException {
+                                                 @NonNull final List<String> cronExpressions) throws CronParseException {
         ZonedDateTime zonedDateTimeStart = ZonedDateTime.ofInstant(startTime.toInstant(), ZoneId.systemDefault());
         ZonedDateTime zonedDateTimeEnd = ZonedDateTime.ofInstant(endTime.toInstant(), ZoneId.systemDefault());
 
-        return getSelfFireDateList(zonedDateTimeStart, zonedDateTimeEnd, schedules).stream()
+        return getSelfFireDateList(zonedDateTimeStart, zonedDateTimeEnd, cronExpressions).stream()
                 .map(zonedDateTime -> new Date(zonedDateTime.toInstant().toEpochMilli()))
                 .collect(java.util.stream.Collectors.toList());
     }
@@ -194,7 +192,7 @@ public class CronUtils {
      */
     public static List<ZonedDateTime> getSelfFireDateList(@NonNull final ZonedDateTime startTime,
                                                           @NonNull final ZonedDateTime endTime,
-                                                          @NonNull final List<JobSchedule> schedules) throws CronParseException {
+                                                          @NonNull final List<String> cronExpressions) throws CronParseException {
         List<ZonedDateTime> result = new ArrayList<>();
         if (startTime.equals(endTime)) {
             result.add(startTime);
@@ -205,15 +203,12 @@ public class CronUtils {
         ZonedDateTime from = startTime.minusSeconds(1L);
         ZonedDateTime to = endTime.plusSeconds(1L);
 
-        List<JobSchedule> listSchedule = new ArrayList<>();
-        listSchedule.addAll(schedules);
-        if (CollectionUtils.isEmpty(listSchedule)) {
-            JobSchedule schedule = new JobSchedule();
-            schedule.setCronExpression(Constants.DEFAULT_CRON_STRING);
-            listSchedule.add(schedule);
+        List<String> expressions = new ArrayList<>(cronExpressions);
+        if (expressions.isEmpty()) {
+            expressions.add(Constants.DEFAULT_CRON_STRING);
         }
-        for (JobSchedule schedule : listSchedule) {
-            result.addAll(CronUtils.getFireDateList(from, to, schedule.getCronExpression()));
+        for (String expression : expressions) {
+            result.addAll(CronUtils.getFireDateList(from, to, expression));
         }
         return result;
     }

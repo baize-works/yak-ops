@@ -67,7 +67,7 @@ public class DagBuildContext {
             return empty(scheduleConfig);
         }
 
-        List<Config> nodes = dagGraph.getNodesAsConfig();
+        List<Config> nodes = io.yak.ops.application.support.dag.DagConfigMapper.nodes(dagGraph);
 
         boolean hasTransform = nodes.stream()
                 .map(DagBuildContext::getNodeData)

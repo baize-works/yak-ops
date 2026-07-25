@@ -8,7 +8,7 @@ import io.yak.ops.application.support.builder.HoconConfigBuilder;
 import io.yak.ops.domain.dag.DagGraph;
 import io.yak.ops.application.job.handler.JobRuntimeContext;
 import io.yak.ops.application.job.handler.JobRuntimeContextFactory;
-import io.yak.ops.domain.utils.DagUtil;
+import io.yak.ops.application.support.dag.DagUtil;
 import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
 import org.springframework.stereotype.Service;
 

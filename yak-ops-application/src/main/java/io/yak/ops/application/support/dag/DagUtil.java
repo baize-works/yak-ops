@@ -1,4 +1,4 @@
-package io.yak.ops.domain.utils;
+package io.yak.ops.application.support.dag;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -57,11 +57,7 @@ public final class DagUtil {
 
         ObjectNode dagJson = parseJsonObject(json);
 
-        DagGraph graph = new DagGraph();
-        graph.setNodes(jsonArrayToList(dagJson.get("nodes")));
-        graph.setEdges(jsonArrayToList(dagJson.get("edges")));
-
-        return graph;
+        return toDomainGraph(dagJson);
     }
 
     /**
@@ -79,10 +75,8 @@ public final class DagUtil {
         try {
             ObjectNode dagJson = parseJsonObject(json);
 
-            List<ObjectNode> nodes = jsonArrayToList(dagJson.get("nodes"));
-            List<ObjectNode> edges = jsonArrayToList(dagJson.get("edges"));
-
-            return performValidation(nodes, edges, validators);
+            DagGraph graph = toDomainGraph(dagJson);
+            return performValidation(graph, validators);
 
         } catch (Exception e) {
             DagCheckResult result = new DagCheckResult();
@@ -95,8 +89,7 @@ public final class DagUtil {
      * Execute validators.
      */
     private static DagCheckResult performValidation(
-            List<ObjectNode> nodes,
-            List<ObjectNode> edges,
+            DagGraph graph,
             List<DagValidator> validators) {
 
         DagCheckResult result = new DagCheckResult();
@@ -113,7 +106,7 @@ public final class DagUtil {
             }
 
             try {
-                validator.validate(nodes, edges, result);
+                validator.validate(graph, result);
             } catch (Exception e) {
                 result.addError("Validator execution failed: " + e.getMessage());
                 log.error("Validator {} failed",
@@ -138,29 +131,35 @@ public final class DagUtil {
         return (ObjectNode) node;
     }
 
-    /**
-     * Convert JsonNode array to List<ObjectNode>.
-     */
-    private static List<ObjectNode> jsonArrayToList(JsonNode node) {
-
-        if (node == null || !node.isArray()) {
-            return java.util.Collections.emptyList();
-        }
-
-        ArrayNode array = (ArrayNode) node;
-        List<ObjectNode> list = new ArrayList<>(array.size());
-
-        for (JsonNode element : array) {
-
-            if (!element.isObject()) {
-                continue;
+    private static DagGraph toDomainGraph(ObjectNode root) {
+        List<DagNode> nodes = new ArrayList<DagNode>();
+        JsonNode nodeArray = root.get("nodes");
+        if (nodeArray != null && nodeArray.isArray()) {
+            for (JsonNode item : nodeArray) {
+                if (!item.isObject()) continue;
+                JsonNode data = item.get("data");
+                Map<String, Object> attributes = data == null
+                        ? Collections.<String, Object>emptyMap()
+                        : JSONUtils.parseObject(JSONUtils.toJsonString(data), Map.class);
+                nodes.add(new DagNode(text(item, "id"), first(text(item, "name"), text(data, "title")),
+                        text(data, "nodeType"), attributes));
             }
-
-            list.add((ObjectNode) element);
         }
-
-        return list;
+        List<DagEdge> edges = new ArrayList<DagEdge>();
+        JsonNode edgeArray = root.get("edges");
+        if (edgeArray != null && edgeArray.isArray()) {
+            for (JsonNode item : edgeArray) if (item.isObject())
+                edges.add(new DagEdge(text(item, "id"), text(item, "source"), text(item, "target")));
+        }
+        return new DagGraph(nodes, edges);
     }
+
+    private static String text(JsonNode node, String field) {
+        if (node == null || node.get(field) == null || node.get(field).isNull()) return null;
+        return node.get(field).asText();
+    }
+
+    private static String first(String first, String second) { return first == null ? second : first; }
 
     /**
      * Custom exception for DAG validation failures.
