@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.alarm.runtime;
 
-import io.baize.flow.plugin.spi.plugin.PrioritySPIFactory;
+import io.yak.ops.plugin.spi.plugin.PrioritySPIFactory;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannel;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannelFactory;
 

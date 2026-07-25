@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.cdc;
 
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 
 public interface CdcDatasourcePrecheckProvider {

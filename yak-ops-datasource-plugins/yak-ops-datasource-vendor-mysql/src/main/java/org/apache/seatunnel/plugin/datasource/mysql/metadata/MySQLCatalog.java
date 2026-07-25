@@ -7,7 +7,7 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.TablePath;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
 import org.apache.seatunnel.plugin.datasource.api.model.DatasourceOption;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

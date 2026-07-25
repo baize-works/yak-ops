@@ -2,7 +2,7 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import lombok.extern.slf4j.Slf4j;
-import io.baize.flow.common.config.OptionRule;
+import io.yak.ops.common.config.OptionRule;
 import org.apache.seatunnel.plugin.datasource.api.option.DataSaveMode;
 
 import static org.apache.seatunnel.plugin.datasource.api.option.JdbcOptions.*;

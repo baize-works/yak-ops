@@ -3,7 +3,7 @@ package org.apache.seatunnel.plugin.datasource.api.hocon.table;
 import com.typesafe.config.Config;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import io.baize.flow.common.enums.HoconBuildStage;
+import io.yak.ops.common.enums.HoconBuildStage;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

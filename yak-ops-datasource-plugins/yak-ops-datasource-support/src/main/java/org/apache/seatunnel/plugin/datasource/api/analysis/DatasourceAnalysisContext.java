@@ -3,8 +3,8 @@ package org.apache.seatunnel.plugin.datasource.api.analysis;
 import com.typesafe.config.Config;
 import lombok.Builder;
 import lombok.Data;
-import io.baize.flow.common.enums.JobDefinitionMode;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.common.enums.JobDefinitionMode;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 import java.util.Map;
 

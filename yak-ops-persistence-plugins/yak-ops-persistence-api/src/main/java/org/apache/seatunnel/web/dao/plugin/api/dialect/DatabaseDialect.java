@@ -1,4 +1,4 @@
-package io.baize.flow.dao.plugin.api.dialect;
+package io.yak.ops.dao.plugin.api.dialect;
 
 public interface DatabaseDialect {
 

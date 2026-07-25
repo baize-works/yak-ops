@@ -1,4 +1,4 @@
-package io.baize.flow.dao.plugin.api.monitor;
+package io.yak.ops.dao.plugin.api.monitor;
 
 public interface DatabaseMonitor {
 

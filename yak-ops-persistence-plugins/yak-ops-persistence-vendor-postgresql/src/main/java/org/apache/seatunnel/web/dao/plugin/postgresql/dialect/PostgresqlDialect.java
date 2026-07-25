@@ -1,7 +1,7 @@
-package io.baize.flow.dao.plugin.postgresql.dialect;
+package io.yak.ops.dao.plugin.postgresql.dialect;
 
 import lombok.SneakyThrows;
-import io.baize.flow.dao.plugin.api.dialect.DatabaseDialect;
+import io.yak.ops.dao.plugin.api.dialect.DatabaseDialect;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

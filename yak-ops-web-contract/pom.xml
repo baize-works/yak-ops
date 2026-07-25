@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.baize.flow</groupId>
+        <groupId>io.yak.ops</groupId>
         <artifactId>yak-ops</artifactId>
         <version>1.0.0</version>
     </parent>
@@ -10,7 +10,7 @@
     <dependencies>
         <dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-annotations</artifactId></dependency>
         <dependency>
-            <groupId>io.baize.flow</groupId>
+            <groupId>io.yak.ops</groupId>
             <artifactId>yak-ops-plugin-spi</artifactId>
         </dependency>
         <dependency>

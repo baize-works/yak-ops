@@ -1,7 +1,7 @@
 package org.apache.seatunnel.plugin.datasource.mysql.analysis;
 
 import org.apache.seatunnel.plugin.datasource.api.analysis.jdbc.AbstractJdbcJobDefinitionAnalyzer;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 public class MySQLJobDefinitionAnalyzer extends AbstractJdbcJobDefinitionAnalyzer {
 

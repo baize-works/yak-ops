@@ -16,7 +16,7 @@ import org.apache.seatunnel.plugin.datasource.api.hocon.table.JdbcSinkTargetBuil
 import org.apache.seatunnel.plugin.datasource.api.hocon.table.JdbcSourceTargetBuilder;
 import org.apache.seatunnel.plugin.datasource.api.hocon.table.JdbcTableNameResolver;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.JdbcConnectionProvider;
-import io.baize.flow.common.enums.HoconBuildStage;
+import io.yak.ops.common.enums.HoconBuildStage;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,9 +1,9 @@
-package io.baize.flow.dao.plugin.mysql.monitor;
+package io.yak.ops.dao.plugin.mysql.monitor;
 
 import lombok.SneakyThrows;
-import io.baize.flow.dao.plugin.api.monitor.DatabaseMetrics;
-import io.baize.flow.dao.plugin.api.monitor.DatabaseMonitor;
-import io.baize.flow.plugin.spi.enums.DbType;
+import io.yak.ops.dao.plugin.api.monitor.DatabaseMetrics;
+import io.yak.ops.dao.plugin.api.monitor.DatabaseMonitor;
+import io.yak.ops.plugin.spi.enums.DbType;
 
 import javax.sql.DataSource;
 import java.sql.Connection;

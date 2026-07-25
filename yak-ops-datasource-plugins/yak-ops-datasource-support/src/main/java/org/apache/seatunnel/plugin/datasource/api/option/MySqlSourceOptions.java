@@ -1,8 +1,8 @@
 package org.apache.seatunnel.plugin.datasource.api.option;
 
 
-import io.baize.flow.common.config.Options;
-import io.baize.flow.common.config.SingleChoiceOption;
+import io.yak.ops.common.config.Options;
+import io.yak.ops.common.config.SingleChoiceOption;
 
 import java.util.Arrays;
 

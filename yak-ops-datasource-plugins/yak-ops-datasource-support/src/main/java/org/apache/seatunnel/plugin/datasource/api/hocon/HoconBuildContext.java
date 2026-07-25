@@ -3,7 +3,7 @@ package org.apache.seatunnel.plugin.datasource.api.hocon;
 import com.typesafe.config.Config;
 import lombok.Builder;
 import lombok.Getter;
-import io.baize.flow.common.enums.HoconBuildStage;
+import io.yak.ops.common.enums.HoconBuildStage;
 
 @Getter
 @Builder

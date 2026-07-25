@@ -51,7 +51,7 @@ def java_import_violations():
         if owner not in adapter_packages:
             continue
         for imported in IMPORT.findall(path.read_text(encoding="utf-8")):
-            prefix = "io.baize.flow.infrastructure."
+            prefix = "io.yak.ops.infrastructure."
             if imported.startswith(prefix):
                 target = imported[len(prefix):].split(".", 1)[0]
                 if target in adapter_packages and target != owner:
@@ -66,7 +66,7 @@ def dependencies(pom):
     for dependency in node.findall("m:dependency", NS):
         group = dependency.findtext("m:groupId", "", NS)
         artifact = dependency.findtext("m:artifactId", "", NS)
-        if group == "io.baize.flow":
+        if group == "io.yak.ops":
             yield artifact
 
 

@@ -1,6 +1,6 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
-import io.baize.flow.common.QueryResult;
+import io.yak.ops.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
 import org.apache.seatunnel.plugin.datasource.api.model.DatasourceOption;
 

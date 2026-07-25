@@ -1,12 +1,12 @@
 package org.apache.seatunnel.plugin.datasource.api.jdbc;
 
 import org.apache.seatunnel.plugin.datasource.api.analysis.JobDefinitionAnalyzer;
-import io.baize.flow.common.config.OptionRule;
+import io.yak.ops.common.config.OptionRule;
 import org.apache.seatunnel.plugin.datasource.api.form.ReflectionFormGenerator;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
-import io.baize.flow.plugin.spi.enums.DbType;
-import io.baize.flow.plugin.spi.form.FormFieldConfig;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.enums.DbType;
+import io.yak.ops.plugin.spi.form.FormFieldConfig;
 
 import java.util.List;
 

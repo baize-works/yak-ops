@@ -4,9 +4,9 @@ import com.google.auto.service.AutoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.AbstractSourceOptionRule;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.SourceOptionRule;
-import io.baize.flow.common.config.Option;
-import io.baize.flow.common.config.OptionRule;
-import io.baize.flow.common.config.Options;
+import io.yak.ops.common.config.Option;
+import io.yak.ops.common.config.OptionRule;
+import io.yak.ops.common.config.Options;
 
 @AutoService(SourceOptionRule.class)
 @Slf4j

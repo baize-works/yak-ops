@@ -42,7 +42,7 @@ fi
 
 exec "${JAVA_BIN}" \
   "${JAVA_ARGS[@]}" \
-  -Dbaize.flow.home="${YAK_OPS_HOME}" \
+  -Dyak.ops.home="${YAK_OPS_HOME}" \
   -Dlogging.config="${CONF_DIR}/logback-spring.xml" \
   -jar "${YAK_OPS_HOME}/libs/yak-ops-api.jar" \
   --spring.config.location="${CONF_DIR}/application.yml" \

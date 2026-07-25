@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Kept standalone so the reactor parent can import this BOM without an import cycle. -->
-    <groupId>io.baize.flow</groupId>
+    <groupId>io.yak.ops</groupId>
     <artifactId>yak-ops-bom</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>

@@ -1,8 +1,8 @@
 package org.apache.seatunnel.plugin.datasource.api.option;
 
 
-import io.baize.flow.common.config.Option;
-import io.baize.flow.common.config.Options;
+import io.yak.ops.common.config.Option;
+import io.yak.ops.common.config.Options;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public interface JdbcSourceOptions {

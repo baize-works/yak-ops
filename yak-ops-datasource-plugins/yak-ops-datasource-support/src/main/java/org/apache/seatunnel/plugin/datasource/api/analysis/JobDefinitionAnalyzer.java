@@ -1,7 +1,7 @@
 package org.apache.seatunnel.plugin.datasource.api.analysis;
 
 
-import io.baize.flow.common.modal.JobDefinitionAnalysisResult;
+import io.yak.ops.common.modal.JobDefinitionAnalysisResult;
 
 /**
  * Analyze SeaTunnel job definition and extract datasource-related metadata.

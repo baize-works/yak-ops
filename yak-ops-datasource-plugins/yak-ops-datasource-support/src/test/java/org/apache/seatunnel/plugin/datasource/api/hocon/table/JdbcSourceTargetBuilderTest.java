@@ -2,7 +2,7 @@ package org.apache.seatunnel.plugin.datasource.api.hocon.table;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.baize.flow.common.enums.HoconBuildStage;
+import io.yak.ops.common.enums.HoconBuildStage;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;

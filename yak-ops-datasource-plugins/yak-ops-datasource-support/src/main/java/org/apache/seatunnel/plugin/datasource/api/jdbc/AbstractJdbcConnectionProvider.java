@@ -3,18 +3,18 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import io.baize.flow.plugin.datasource.connection.DefaultConnectionManager;
-import io.baize.flow.plugin.datasource.connection.api.DataSourceConfig;
-import io.baize.flow.plugin.datasource.connection.api.DataSourceId;
-import io.baize.flow.plugin.datasource.connection.api.DriverDescriptor;
-import io.baize.flow.plugin.datasource.connection.driver.ClassLoaderStrategy;
-import io.baize.flow.plugin.datasource.connection.driver.DefaultDriverProvider;
-import io.baize.flow.plugin.datasource.connection.driver.DefaultDriverStorageStrategy;
-import io.baize.flow.plugin.datasource.connection.driver.DriverProvider;
-import io.baize.flow.plugin.datasource.connection.driver.DriverStorageStrategy;
-import io.baize.flow.plugin.datasource.connection.driver.SimpleSharedClassLoaderStrategy;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
-import io.baize.flow.plugin.spi.datasource.ConnectionParam;
+import io.yak.ops.plugin.datasource.connection.DefaultConnectionManager;
+import io.yak.ops.plugin.datasource.connection.api.DataSourceConfig;
+import io.yak.ops.plugin.datasource.connection.api.DataSourceId;
+import io.yak.ops.plugin.datasource.connection.api.DriverDescriptor;
+import io.yak.ops.plugin.datasource.connection.driver.ClassLoaderStrategy;
+import io.yak.ops.plugin.datasource.connection.driver.DefaultDriverProvider;
+import io.yak.ops.plugin.datasource.connection.driver.DefaultDriverStorageStrategy;
+import io.yak.ops.plugin.datasource.connection.driver.DriverProvider;
+import io.yak.ops.plugin.datasource.connection.driver.DriverStorageStrategy;
+import io.yak.ops.plugin.datasource.connection.driver.SimpleSharedClassLoaderStrategy;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.datasource.ConnectionParam;
 
 import org.springframework.util.StringUtils;
 
@@ -70,10 +70,10 @@ public abstract class AbstractJdbcConnectionProvider<
      *
      * 示例：
      *
-     * -Dbaize.flow.jdbc-driver-dir=/opt/yak-ops/jdbc-drivers
+     * -Dyak.ops.jdbc-driver-dir=/opt/yak-ops/jdbc-drivers
      */
     private static final String JDBC_DRIVER_DIRECTORY_PROPERTY =
-            "baize.flow.jdbc-driver-dir";
+            "yak.ops.jdbc-driver-dir";
 
     /**
      * 自定义 JDBC 驱动目录环境变量。
@@ -400,7 +400,7 @@ public abstract class AbstractJdbcConnectionProvider<
         /*
          * 1. JVM 参数：
          *
-         * -Dbaize.flow.jdbc-driver-dir=...
+         * -Dyak.ops.jdbc-driver-dir=...
          */
         String configuredDirectory =
                 System.getProperty(

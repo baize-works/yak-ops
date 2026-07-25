@@ -47,7 +47,7 @@ export interface FormFieldOption {
 
 /**
  * 动态表单字段配置，由后端 SPI 通过 /channel-types 接口下发。
- * 对应 io.baize.flow.spi.form.FormFieldConfig
+ * 对应 io.yak.ops.spi.form.FormFieldConfig
  */
 export interface FormFieldConfig {
   key: string;

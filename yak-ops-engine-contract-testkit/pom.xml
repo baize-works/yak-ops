@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
-  <parent><groupId>io.baize.flow</groupId><artifactId>yak-ops</artifactId><version>1.0.0</version></parent>
+  <parent><groupId>io.yak.ops</groupId><artifactId>yak-ops</artifactId><version>1.0.0</version></parent>
   <artifactId>yak-ops-engine-contract-testkit</artifactId><name>Yak Ops Engine Contract Test Kit</name>
   <dependencies>
-    <dependency><groupId>io.baize.flow</groupId><artifactId>yak-ops-engine-contract</artifactId></dependency>
+    <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-engine-contract</artifactId></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter-api</artifactId></dependency>
   </dependencies>
 </project>

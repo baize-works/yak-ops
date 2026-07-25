@@ -3,11 +3,11 @@ package org.apache.seatunnel.plugin.datasource.mysql.param;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import io.baize.flow.common.KeyValuePair;
-import io.baize.flow.common.deserializer.KeyValuePairListDeserializer;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
-import io.baize.flow.plugin.spi.form.FieldType;
-import io.baize.flow.plugin.spi.form.FormField;
+import io.yak.ops.common.KeyValuePair;
+import io.yak.ops.common.deserializer.KeyValuePairListDeserializer;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.form.FieldType;
+import io.yak.ops.plugin.spi.form.FormField;
 
 import java.util.HashMap;
 import java.util.List;

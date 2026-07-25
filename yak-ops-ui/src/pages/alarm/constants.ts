@@ -44,7 +44,7 @@ export const SEVERITY_OPTIONS = [
 ];
 
 /**
- * JobStatus 选项，对应后端 io.baize.flow.common.enums.JobStatus。
+ * JobStatus 选项，对应后端 io.yak.ops.common.enums.JobStatus。
  * 用于规则的 triggerStatuses 多选。
  */
 export const JOB_STATUS_OPTIONS = [

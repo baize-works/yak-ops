@@ -3,11 +3,11 @@ package org.apache.seatunnel.plugin.datasource.api.jdbc;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.utils.SqlTimeVariableParser;
-import io.baize.flow.common.FrontedTableColumn;
-import io.baize.flow.common.QueryResult;
+import io.yak.ops.common.FrontedTableColumn;
+import io.yak.ops.common.QueryResult;
 import org.apache.seatunnel.plugin.datasource.api.modal.DataSourceTableColumn;
 import org.apache.seatunnel.plugin.datasource.api.model.DatasourceOption;
-import io.baize.flow.plugin.spi.datasource.BaseConnectionParam;
+import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
 
 import java.sql.*;
 import java.util.ArrayList;
