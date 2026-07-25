@@ -1,14 +1,15 @@
 package io.yak.ops.engine.legacy;
 
-import io.yak.ops.engine.legacy.internal.vendor.rest.SeaTunnelClientResolver;
 import io.yak.ops.engine.api.EngineClientAuthentication;
 import io.yak.ops.engine.api.EngineClientPort;
 import io.yak.ops.engine.legacy.internal.vendor.exception.SeaTunnelClientException;
-import org.springframework.stereotype.Service;
+import io.yak.ops.engine.legacy.internal.vendor.rest.SeaTunnelClientResolver;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientResponseException;
@@ -25,7 +26,12 @@ public class LegacyRestClient implements EngineClientPort {
     private final RestTemplate restTemplate;
     private final SeaTunnelClientResolver resolver;
 
-    public LegacyRestClient(RestTemplate restTemplate, SeaTunnelClientResolver resolver) {
+
+    public LegacyRestClient(
+            @Qualifier("legacyEngineRestTemplate")
+                    RestTemplate restTemplate,
+            SeaTunnelClientResolver resolver) {
+
         this.restTemplate = restTemplate;
         this.resolver = resolver;
     }
@@ -125,7 +131,12 @@ public class LegacyRestClient implements EngineClientPort {
             String jobName,
             Boolean isStartWithSavePoint) {
         MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
-        form.add("file", new org.springframework.core.io.ByteArrayResource(fileBytes) { @Override public String getFilename() { return filename; } });
+        form.add("file", new org.springframework.core.io.ByteArrayResource(fileBytes) {
+            @Override
+            public String getFilename() {
+                return filename;
+            }
+        });
         return post(clientId, "/job/upload", form, MediaType.MULTIPART_FORM_DATA, query("jobId", jobId, "jobName", jobName, "isStartWithSavePoint", isStartWithSavePoint), Map.class);
     }
 
@@ -163,18 +174,51 @@ public class LegacyRestClient implements EngineClientPort {
         return post(clientId, "/job/stop-batch", items, MediaType.APPLICATION_JSON, java.util.Collections.emptyMap(), List.class);
     }
 
-    private <T> T get(Long clientId, String path, Map<String, String> query, Class<T> type) { return get(resolver.resolveBaseApiUrl(clientId), resolver.resolveContextPath(clientId), query, resolver.resolveAuth(clientId), path, type); }
-    private <T> T get(String baseUrl, String contextPath, Map<String, String> query, EngineClientAuthentication auth, String path, Class<T> type) { return exchange(baseUrl, contextPath, path, HttpMethod.GET, null, null, query, auth, type); }
-    private <T> T post(Long clientId, String path, Object body, MediaType contentType, Map<String, String> query, Class<T> type) { return exchange(resolver.resolveBaseApiUrl(clientId), resolver.resolveContextPath(clientId), path, HttpMethod.POST, body, contentType, query, resolver.resolveAuth(clientId), type); }
-    private <T> T exchange(String baseUrl, String contextPath, String path, HttpMethod method, Object body, MediaType contentType, Map<String, String> query, EngineClientAuthentication auth, Class<T> type) {
-        HttpHeaders headers = new HttpHeaders(); if (contentType != null) headers.setContentType(contentType); if (auth != null && Boolean.TRUE.equals(auth.getAuthEnabled())) headers.setBasicAuth(auth.getUsername(), auth.getPassword());
-        String root = trim(baseUrl) + normalize(contextPath) + REST_ROOT + path;
-        UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(root); query.forEach((key, value) -> { if (value != null) uri.queryParam(key, value); });
-        try { return restTemplate.exchange(uri.toUriString(), method, new HttpEntity<>(body, headers), type).getBody(); }
-        catch (RestClientResponseException e) { throw new SeaTunnelClientException("SeaTunnel returned HTTP " + e.getRawStatusCode(), e.getRawStatusCode(), e.getResponseBodyAsString(), e); }
-        catch (Exception e) { throw new SeaTunnelClientException("SeaTunnel request failed", 0, null, e); }
+    private <T> T get(Long clientId, String path, Map<String, String> query, Class<T> type) {
+        return get(resolver.resolveBaseApiUrl(clientId), resolver.resolveContextPath(clientId), query, resolver.resolveAuth(clientId), path, type);
     }
-    private static String trim(String value) { if (value == null || value.trim().isEmpty()) throw new IllegalArgumentException("SeaTunnel base URL must not be blank"); return value.replaceAll("/+$", ""); }
-    private static String normalize(String value) { return value == null || value.trim().isEmpty() ? "" : "/" + value.replaceAll("^/+|/+$", ""); }
-    private static Map<String, String> query(Object... values) { java.util.LinkedHashMap<String, String> result = new java.util.LinkedHashMap<>(); for (int i = 0; i < values.length; i += 2) if (values[i + 1] != null) result.put((String) values[i], String.valueOf(values[i + 1])); return result; }
+
+    private <T> T get(String baseUrl, String contextPath, Map<String, String> query, EngineClientAuthentication auth, String path, Class<T> type) {
+        return exchange(baseUrl, contextPath, path, HttpMethod.GET, null, null, query, auth, type);
+    }
+
+    private <T> T post(Long clientId, String path, Object body, MediaType contentType, Map<String, String> query, Class<T> type) {
+        return exchange(resolver.resolveBaseApiUrl(clientId), resolver.resolveContextPath(clientId), path, HttpMethod.POST, body, contentType, query, resolver.resolveAuth(clientId), type);
+    }
+
+    private <T> T exchange(String baseUrl, String contextPath, String path, HttpMethod method, Object body, MediaType contentType, Map<String, String> query, EngineClientAuthentication auth, Class<T> type) {
+        HttpHeaders headers = new HttpHeaders();
+        if (contentType != null) headers.setContentType(contentType);
+        if (auth != null && Boolean.TRUE.equals(auth.getAuthEnabled()))
+            headers.setBasicAuth(auth.getUsername(), auth.getPassword());
+        String root = trim(baseUrl) + normalize(contextPath) + REST_ROOT + path;
+        UriComponentsBuilder uri = UriComponentsBuilder.fromHttpUrl(root);
+        query.forEach((key, value) -> {
+            if (value != null) uri.queryParam(key, value);
+        });
+        try {
+            return restTemplate.exchange(uri.toUriString(), method, new HttpEntity<>(body, headers), type).getBody();
+        } catch (RestClientResponseException e) {
+            throw new SeaTunnelClientException("SeaTunnel returned HTTP " + e.getRawStatusCode(), e.getRawStatusCode(), e.getResponseBodyAsString(), e);
+        } catch (Exception e) {
+            throw new SeaTunnelClientException("SeaTunnel request failed", 0, null, e);
+        }
+    }
+
+    private static String trim(String value) {
+        if (value == null || value.trim().isEmpty())
+            throw new IllegalArgumentException("SeaTunnel base URL must not be blank");
+        return value.replaceAll("/+$", "");
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.trim().isEmpty() ? "" : "/" + value.replaceAll("^/+|/+$", "");
+    }
+
+    private static Map<String, String> query(Object... values) {
+        java.util.LinkedHashMap<String, String> result = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < values.length; i += 2)
+            if (values[i + 1] != null) result.put((String) values[i], String.valueOf(values[i + 1]));
+        return result;
+    }
 }
