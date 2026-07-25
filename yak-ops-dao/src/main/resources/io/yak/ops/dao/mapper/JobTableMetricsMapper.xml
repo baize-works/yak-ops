@@ -5,8 +5,8 @@
 
 <mapper namespace="io.yak.ops.dao.mapper.JobTableMetricsMapper">
 
-    <resultMap id="JobTableMetricsVOResultMap"
-               type="io.yak.ops.spi.bean.vo.JobTableMetricsVO">
+    <resultMap id="JobTableMetricsResultMap"
+               type="io.yak.ops.dao.model.result.JobTableMetricsResult">
         <id property="id" column="id"/>
         <result property="jobInstanceId" column="jobInstanceId"/>
         <result property="jobDefinitionId" column="jobDefinitionId"/>
@@ -27,7 +27,7 @@
         <result property="updateTime" column="updateTime"/>
     </resultMap>
 
-    <select id="selectByInstanceId" resultMap="JobTableMetricsVOResultMap">
+    <select id="selectByInstanceId" resultMap="JobTableMetricsResultMap">
         SELECT
             id AS id,
             job_instance_id AS jobInstanceId,

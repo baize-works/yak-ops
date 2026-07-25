@@ -13,6 +13,7 @@ import io.yak.ops.dao.entity.SeaTunnelClientNode;
 import io.yak.ops.dao.repository.SeaTunnelClientDao;
 import io.yak.ops.dao.repository.SeaTunnelClientNodeDao;
 import io.yak.ops.web.contract.dto.SeaTunnelClientEndpointDTO;
+import io.yak.ops.dao.model.result.SeaTunnelClientEndpoint;
 import io.yak.ops.web.contract.dto.SeaTunnelClientPageDTO;
 import io.yak.ops.web.contract.vo.OptionVO;
 import io.yak.ops.plugin.spi.enums.Status;
@@ -139,20 +140,20 @@ public class SeaTunnelClientQueryAppService {
                 continue;
             }
 
-            List<SeaTunnelClientEndpointDTO> masters = nodes.stream()
+            List<SeaTunnelClientEndpoint> masters = nodes.stream()
                     .filter(node -> StringUtils.equalsIgnoreCase(
                             node.getNodeRole(),
                             SeaTunnelClientNodeRole.MASTER
                     ))
-                    .map(assembler::toEndpointDTO)
+                    .map(assembler::toPersistenceEndpoint)
                     .collect(java.util.stream.Collectors.toList());
 
-            List<SeaTunnelClientEndpointDTO> workers = nodes.stream()
+            List<SeaTunnelClientEndpoint> workers = nodes.stream()
                     .filter(node -> StringUtils.equalsIgnoreCase(
                             node.getNodeRole(),
                             SeaTunnelClientNodeRole.WORKER
                     ))
-                    .map(assembler::toEndpointDTO)
+                    .map(assembler::toPersistenceEndpoint)
                     .collect(java.util.stream.Collectors.toList());
 
             client.setMasterEndpoints(masters);

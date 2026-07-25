@@ -11,6 +11,7 @@ import io.yak.ops.common.enums.ConnStatus;
 import io.yak.ops.common.utils.ConvertUtil;
 import io.yak.ops.common.utils.JSONUtils;
 import io.yak.ops.domain.exceptions.ServiceException;
+import io.yak.ops.dao.model.query.DataSourceQuery;
 import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.dao.repository.DataSourceDao;
 import io.yak.ops.dao.repository.JobDefinitionDao;
@@ -131,7 +132,8 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
     @Override
     public PaginationResult<DataSourceVO> queryDataSourceListPaging(DataSourceDTO dto) {
         try {
-            IPage<DataSource> pageResult = dataSourceDao.queryPage(dto);
+            DataSourceQuery query = ConvertUtil.sourceToTarget(dto, DataSourceQuery.class);
+            IPage<DataSource> pageResult = dataSourceDao.queryPage(query);
             List<DataSourceVO> records =
                     ConvertUtil.sourceListToTarget(pageResult.getRecords(), DataSourceVO.class);
 

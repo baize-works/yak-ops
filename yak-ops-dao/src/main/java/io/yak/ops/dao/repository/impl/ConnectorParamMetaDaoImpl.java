@@ -10,7 +10,7 @@ import io.yak.ops.dao.entity.ConnectorParamMetaEntity;
 import io.yak.ops.dao.mapper.ConnectorParamMetaMapper;
 import io.yak.ops.dao.repository.BaseDao;
 import io.yak.ops.dao.repository.ConnectorParamMetaDao;
-import io.yak.ops.web.contract.dto.ConnectorParamMetaQueryDTO;
+import io.yak.ops.dao.model.query.ConnectorParamMetaQuery;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -47,15 +47,15 @@ public class ConnectorParamMetaDaoImpl
     }
 
     @Override
-    public IPage<ConnectorParamMetaEntity> queryPage(ConnectorParamMetaQueryDTO dto) {
+    public IPage<ConnectorParamMetaEntity> queryPage(ConnectorParamMetaQuery query) {
         LambdaQueryWrapper<ConnectorParamMetaEntity> wrapper = new LambdaQueryWrapper<ConnectorParamMetaEntity>()
-                .eq(StringUtils.isNotBlank(dto.getType()), ConnectorParamMetaEntity::getType, dto.getType())
-                .eq(StringUtils.isNotBlank(dto.getConnectorName()), ConnectorParamMetaEntity::getConnectorName, dto.getConnectorName())
-                .like(StringUtils.isNotBlank(dto.getParamName()), ConnectorParamMetaEntity::getParamName, dto.getParamName())
+                .eq(StringUtils.isNotBlank(query.getType()), ConnectorParamMetaEntity::getType, query.getType())
+                .eq(StringUtils.isNotBlank(query.getConnectorName()), ConnectorParamMetaEntity::getConnectorName, query.getConnectorName())
+                .like(StringUtils.isNotBlank(query.getParamName()), ConnectorParamMetaEntity::getParamName, query.getParamName())
                 .orderByDesc(ConnectorParamMetaEntity::getUpdateTime)
                 .orderByDesc(ConnectorParamMetaEntity::getId);
 
-        IPage<ConnectorParamMetaEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+        IPage<ConnectorParamMetaEntity> page = new Page<>(query.getPageNum(), query.getPageSize());
         return connectorParamMetaMapper.selectPage(page, wrapper);
     }
 

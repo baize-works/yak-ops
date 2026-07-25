@@ -19,6 +19,9 @@ import io.yak.ops.dao.entity.JobInstance;
 import io.yak.ops.dao.repository.JobInstanceDao;
 import io.yak.ops.dao.repository.JobMetricsDao;
 import io.yak.ops.dao.repository.JobTableMetricsDao;
+import io.yak.ops.dao.model.query.JobInstanceQuery;
+import io.yak.ops.dao.model.result.JobInstanceResult;
+import io.yak.ops.dao.model.result.JobTableMetricsResult;
 import io.yak.ops.web.contract.dto.SeaTunnelJobInstanceDTO;
 import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
 import io.yak.ops.web.contract.response.PaginationResult;
@@ -98,13 +101,16 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         validatePagingRequest(dto);
 
         try {
-            IPage<JobInstanceVO> pageResult = jobInstanceDao.pageWithDefinition(dto);
+            JobInstanceQuery query = ConvertUtil.sourceToTarget(dto, JobInstanceQuery.class);
+            IPage<JobInstanceResult> pageResult = jobInstanceDao.pageWithDefinition(query);
+            List<JobInstanceVO> records = ConvertUtil.sourceListToTarget(
+                    pageResult.getRecords(), JobInstanceVO.class);
 
-            if (pageResult.getRecords() != null) {
-                pageResult.getRecords().forEach(this::maskSensitiveFields);
+            if (records != null) {
+                records.forEach(this::maskSensitiveFields);
             }
 
-            return PaginationResult.buildSuc(pageResult.getRecords(), pageResult);
+            return PaginationResult.buildSuc(records, pageResult);
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -132,7 +138,9 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         validateInstanceId(id);
 
         try {
-            JobInstanceVO vo = jobInstanceDao.selectDetailById(id);
+            JobInstanceResult result = jobInstanceDao.selectDetailById(id);
+            JobInstanceVO vo = result == null ? null :
+                    ConvertUtil.sourceToTarget(result, JobInstanceVO.class);
             if (vo == null) {
                 throw new ServiceException(Status.BATCH_JOB_INSTANCE_NOT_EXIST);
             }
@@ -249,7 +257,8 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
         validateInstanceId(instanceId);
 
         try {
-            return jobTableMetricsDao.selectByInstanceId(instanceId);
+            List<JobTableMetricsResult> results = jobTableMetricsDao.selectByInstanceId(instanceId);
+            return ConvertUtil.sourceListToTarget(results, JobTableMetricsVO.class);
         } catch (Exception e) {
             log.error("Query table metrics failed, instanceId={}", instanceId, e);
             throw new ServiceException(Status.QUERY_BATCH_JOB_INSTANCE_ERROR);

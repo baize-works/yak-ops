@@ -6,7 +6,7 @@ import io.yak.ops.dao.entity.JobTableMetrics;
 import io.yak.ops.dao.mapper.JobTableMetricsMapper;
 import io.yak.ops.dao.repository.BaseDao;
 import io.yak.ops.dao.repository.JobTableMetricsDao;
-import io.yak.ops.web.contract.vo.JobTableMetricsVO;
+import io.yak.ops.dao.model.result.JobTableMetricsResult;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
@@ -24,7 +24,7 @@ public class JobTableMetricsDaoImpl extends BaseDao<JobTableMetrics, JobTableMet
     }
 
     @Override
-    public List<JobTableMetricsVO> selectByInstanceId(Long instanceId) {
+    public List<JobTableMetricsResult> selectByInstanceId(Long instanceId) {
         if (instanceId == null || instanceId <= 0) {
             return java.util.Collections.emptyList();
         }

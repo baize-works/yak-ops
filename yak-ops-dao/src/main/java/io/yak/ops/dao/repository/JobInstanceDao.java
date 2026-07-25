@@ -4,17 +4,17 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.yak.ops.domain.enums.JobMode;
 import io.yak.ops.domain.enums.JobStatus;
 import io.yak.ops.dao.entity.JobInstance;
-import io.yak.ops.web.contract.dto.SeaTunnelJobInstanceDTO;
-import io.yak.ops.web.contract.vo.JobInstanceVO;
+import io.yak.ops.dao.model.query.JobInstanceQuery;
+import io.yak.ops.dao.model.result.JobInstanceResult;
 
 import java.util.Date;
 import java.util.List;
 
 public interface JobInstanceDao extends IDao<JobInstance> {
 
-    IPage<JobInstanceVO> pageWithDefinition(SeaTunnelJobInstanceDTO dto);
+    IPage<JobInstanceResult> pageWithDefinition(JobInstanceQuery query);
 
-    JobInstanceVO selectDetailById(Long id);
+    JobInstanceResult selectDetailById(Long id);
 
     boolean existsRunningInstance(Long definitionId);
 
@@ -30,7 +30,7 @@ public interface JobInstanceDao extends IDao<JobInstance> {
 
     void updateSubmitResult(Long instanceId, String engineJobId, JobStatus submitStatus, Date submitTime);
 
-    List<JobInstanceVO> listRunningByJobType(JobMode jobMode);
+    List<JobInstance> listRunningByJobType(JobMode jobMode);
 
     List<JobInstance> selectRunningInstanceByDefinitionIds(List<Long> definitionIds);
 }

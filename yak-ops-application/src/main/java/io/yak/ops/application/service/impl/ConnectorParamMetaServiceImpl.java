@@ -5,7 +5,9 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.application.service.ConnectorParamMetaService;
+import io.yak.ops.common.utils.ConvertUtil;
 import io.yak.ops.domain.exceptions.ServiceException;
+import io.yak.ops.dao.model.query.ConnectorParamMetaQuery;
 import io.yak.ops.dao.entity.ConnectorParamMetaEntity;
 import io.yak.ops.dao.repository.ConnectorParamMetaDao;
 import io.yak.ops.web.contract.dto.ConnectorParamMetaCreateDTO;
@@ -135,7 +137,8 @@ public class ConnectorParamMetaServiceImpl implements ConnectorParamMetaService 
         }
 
         try {
-            IPage<ConnectorParamMetaEntity> pageResult = connectorParamMetaDao.queryPage(dto);
+            ConnectorParamMetaQuery query = ConvertUtil.sourceToTarget(dto, ConnectorParamMetaQuery.class);
+            IPage<ConnectorParamMetaEntity> pageResult = connectorParamMetaDao.queryPage(query);
             List<ConnectorParamMetaVO> records = pageResult.getRecords()
                     .stream()
                     .map(this::toVO)

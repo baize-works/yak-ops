@@ -8,20 +8,18 @@ import javax.annotation.Resource;
 import lombok.NonNull;
 import io.yak.ops.domain.enums.JobMode;
 import io.yak.ops.domain.enums.JobStatus;
-import io.yak.ops.common.utils.ConvertUtil;
 import io.yak.ops.domain.status.JobStatusHelper;
 import io.yak.ops.dao.entity.JobInstance;
 import io.yak.ops.dao.mapper.JobInstanceMapper;
 import io.yak.ops.dao.repository.BaseDao;
 import io.yak.ops.dao.repository.JobInstanceDao;
-import io.yak.ops.web.contract.dto.SeaTunnelJobInstanceDTO;
-import io.yak.ops.web.contract.vo.JobInstanceVO;
+import io.yak.ops.dao.model.query.JobInstanceQuery;
+import io.yak.ops.dao.model.result.JobInstanceResult;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Repository
 public class JobInstanceDaoImpl
@@ -36,12 +34,12 @@ public class JobInstanceDaoImpl
     }
 
     @Override
-    public IPage<JobInstanceVO> pageWithDefinition(SeaTunnelJobInstanceDTO dto) {
-        long pageNo = dto.getPageNo() == null || dto.getPageNo() < 1 ? 1 : dto.getPageNo();
-        long pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 10 : dto.getPageSize();
+    public IPage<JobInstanceResult> pageWithDefinition(JobInstanceQuery query) {
+        long pageNo = query.getPageNo() == null || query.getPageNo() < 1 ? 1 : query.getPageNo();
+        long pageSize = query.getPageSize() == null || query.getPageSize() < 1 ? 10 : query.getPageSize();
 
-        Page<JobInstanceVO> page = new Page<>(pageNo, pageSize);
-        return jobInstanceMapper.pageWithDefinition(page, dto);
+        Page<JobInstanceResult> page = new Page<>(pageNo, pageSize);
+        return jobInstanceMapper.pageWithDefinition(page, query);
     }
 
     @Override
@@ -64,7 +62,7 @@ public class JobInstanceDaoImpl
     }
 
     @Override
-    public JobInstanceVO selectDetailById(Long id) {
+    public JobInstanceResult selectDetailById(Long id) {
         if (id == null || id <= 0) {
             return null;
         }
@@ -175,7 +173,7 @@ public class JobInstanceDaoImpl
     }
 
     @Override
-    public List<JobInstanceVO> listRunningByJobType(JobMode jobMode) {
+    public List<JobInstance> listRunningByJobType(JobMode jobMode) {
         if (jobMode == null) {
             return java.util.Collections.emptyList();
         }
@@ -200,9 +198,7 @@ public class JobInstanceDaoImpl
             return java.util.Collections.emptyList();
         }
 
-        return records.stream()
-                .map(item -> ConvertUtil.sourceToTarget(item, JobInstanceVO.class))
-                .collect(java.util.stream.Collectors.toList());
+        return records;
     }
 
     @Override

@@ -8,8 +8,8 @@ import io.yak.ops.dao.entity.JobDefinitionEntity;
 import io.yak.ops.dao.mapper.JobDefinitionMapper;
 import io.yak.ops.dao.repository.BaseDao;
 import io.yak.ops.dao.repository.JobDefinitionDao;
-import io.yak.ops.web.contract.dto.BatchJobDefinitionQueryDTO;
-import io.yak.ops.web.contract.vo.BatchJobDefinitionVO;
+import io.yak.ops.dao.model.query.JobDefinitionQuery;
+import io.yak.ops.dao.model.result.JobDefinitionResult;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
@@ -34,17 +34,17 @@ public class JobDefinitionDaoImpl
     }
 
     @Override
-    public List<BatchJobDefinitionVO> selectPageWithLatestInstance(
-            BatchJobDefinitionQueryDTO dto,
+    public List<JobDefinitionResult> selectPageWithLatestInstance(
+            JobDefinitionQuery query,
             int offset,
             int pageSize
     ) {
-        return jobDefinitionMapper.selectPageWithLatestInstance(dto, offset, pageSize);
+        return jobDefinitionMapper.selectPageWithLatestInstance(query, offset, pageSize);
     }
 
     @Override
-    public Long count(BatchJobDefinitionQueryDTO dto) {
-        return jobDefinitionMapper.selectDefinitionCount(dto);
+    public Long count(JobDefinitionQuery query) {
+        return jobDefinitionMapper.selectDefinitionCount(query);
     }
 
     public boolean updateReleaseState(Long id, ReleaseState releaseState) {

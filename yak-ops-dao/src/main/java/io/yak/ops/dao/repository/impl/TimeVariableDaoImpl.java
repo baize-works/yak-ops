@@ -10,7 +10,7 @@ import io.yak.ops.dao.entity.TimeVariable;
 import io.yak.ops.dao.mapper.TimeVariableMapper;
 import io.yak.ops.dao.repository.BaseDao;
 import io.yak.ops.dao.repository.TimeVariableDao;
-import io.yak.ops.web.contract.dto.TimeVariablePageReq;
+import io.yak.ops.dao.model.query.TimeVariablePageQuery;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public class TimeVariableDaoImpl
     }
 
     @Override
-    public IPage<TimeVariable> queryPage(TimeVariablePageReq req) {
+    public IPage<TimeVariable> queryPage(TimeVariablePageQuery req) {
         LambdaQueryWrapper<TimeVariable> wrapper = new LambdaQueryWrapper<>();
 
         if (StringUtils.isNotBlank(req.getKeyword())) {

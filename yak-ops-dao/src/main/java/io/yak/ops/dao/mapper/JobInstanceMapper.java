@@ -6,15 +6,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import io.yak.ops.dao.entity.JobInstance;
-import io.yak.ops.web.contract.dto.SeaTunnelJobInstanceDTO;
-import io.yak.ops.web.contract.vo.JobInstanceVO;
+import io.yak.ops.dao.model.query.JobInstanceQuery;
+import io.yak.ops.dao.model.result.JobInstanceResult;
 
 @Mapper
 public interface JobInstanceMapper extends BaseMapper<JobInstance> {
-    IPage<JobInstanceVO> pageWithDefinition(
+    IPage<JobInstanceResult> pageWithDefinition(
             Page<?> page,
-            @Param("dto") SeaTunnelJobInstanceDTO dto);
+            @Param("query") JobInstanceQuery query);
 
-    JobInstanceVO selectDetailById(@Param("id") Long id);
+    JobInstanceResult selectDetailById(@Param("id") Long id);
 
 }

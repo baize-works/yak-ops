@@ -180,6 +180,23 @@ public class SeaTunnelClientAssembler {
         return dto;
     }
 
+    /** Converts a persisted node to the DAO projection attached to a client record. */
+    public io.yak.ops.dao.model.result.SeaTunnelClientEndpoint toPersistenceEndpoint(
+            SeaTunnelClientNode node) {
+        io.yak.ops.dao.model.result.SeaTunnelClientEndpoint endpoint =
+                new io.yak.ops.dao.model.result.SeaTunnelClientEndpoint();
+        endpoint.setId(node.getId());
+        endpoint.setHost(node.getHost());
+        endpoint.setHostname(node.getHostname());
+        endpoint.setPort(node.getPort());
+        endpoint.setRole(node.getNodeRole());
+        endpoint.setBaseUrl(node.getBaseUrl());
+        endpoint.setActiveMaster(Boolean.TRUE.equals(node.getActiveMaster()));
+        endpoint.setHealthStatus(resolveHealthStatusName(node.getHealthStatus()));
+        endpoint.setLastError(node.getLastError());
+        return endpoint;
+    }
+
     /**
      * Converts a client entity to an option item.
      *

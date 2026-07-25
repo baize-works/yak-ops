@@ -22,6 +22,9 @@ import io.yak.ops.dao.entity.JobDefinitionEntity;
 import io.yak.ops.dao.entity.JobSchedule;
 import io.yak.ops.dao.repository.JobDefinitionContentDao;
 import io.yak.ops.dao.repository.JobDefinitionDao;
+import io.yak.ops.dao.model.query.JobDefinitionQuery;
+import io.yak.ops.dao.model.result.JobDefinitionResult;
+import io.yak.ops.common.utils.ConvertUtil;
 import io.yak.ops.web.contract.dto.BatchJobDefinitionQueryDTO;
 import io.yak.ops.web.contract.dto.batch.BatchGuideMultiJobSaveCommand;
 import io.yak.ops.web.contract.dto.batch.BatchGuideSingleJobSaveCommand;
@@ -193,10 +196,13 @@ public class BatchJobDefinitionServiceImpl extends BaseServiceImpl implements Ba
         try {
             int offset = (dto.getPageNo() - 1) * dto.getPageSize();
 
+            JobDefinitionQuery query = ConvertUtil.sourceToTarget(dto, JobDefinitionQuery.class);
+            List<JobDefinitionResult> results =
+                    jobDefinitionDao.selectPageWithLatestInstance(query, offset, dto.getPageSize());
             List<BatchJobDefinitionVO> records =
-                    jobDefinitionDao.selectPageWithLatestInstance(dto, offset, dto.getPageSize());
+                    ConvertUtil.sourceListToTarget(results, BatchJobDefinitionVO.class);
 
-            Long total = jobDefinitionDao.count(dto);
+            Long total = jobDefinitionDao.count(query);
 
             if (records != null) {
                 records.forEach(vo -> fillScheduleFields(vo.getId(), vo));

@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import io.yak.ops.web.contract.dto.SeaTunnelClientEndpointDTO;
+import io.yak.ops.dao.model.result.SeaTunnelClientEndpoint;
 
 import java.util.Date;
 import java.util.List;
@@ -57,8 +57,8 @@ public class SeaTunnelClient {
     private Date updateTime;
 
     @TableField(exist = false)
-    private List<SeaTunnelClientEndpointDTO> masterEndpoints;
+    private List<SeaTunnelClientEndpoint> masterEndpoints;
 
     @TableField(exist = false)
-    private List<SeaTunnelClientEndpointDTO> workerEndpoints;
+    private List<SeaTunnelClientEndpoint> workerEndpoints;
 }

@@ -6,12 +6,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 /**
  * An alarm rule: which jobs, on which statuses, with which severity, trigger
  * an alarm. Linked to channels through {@link AlarmRuleChannelEntity}.
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
