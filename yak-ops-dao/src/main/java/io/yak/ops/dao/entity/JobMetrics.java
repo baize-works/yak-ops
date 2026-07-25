@@ -10,7 +10,7 @@ import java.util.Date;
  * SeaTunnel job / pipeline level metrics.
  */
 @Data
-@TableName("t_baize_flow_job_metrics")
+@TableName("t_yak_ops_job_metrics")
 public class JobMetrics {
 
     private Long id;

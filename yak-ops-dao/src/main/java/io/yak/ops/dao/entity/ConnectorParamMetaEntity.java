@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("t_baize_flow_connector_param_meta")
+@TableName("t_yak_ops_connector_param_meta")
 public class ConnectorParamMetaEntity extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;

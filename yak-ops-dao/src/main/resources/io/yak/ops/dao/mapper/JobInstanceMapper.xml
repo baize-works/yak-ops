@@ -117,9 +117,9 @@
         SELECT
         <include refid="BaseSelectColumns"/>
 
-        FROM t_baize_flow_job_instance i
+        FROM t_yak_ops_job_instance i
 
-        LEFT JOIN t_baize_flow_job_definition d
+        LEFT JOIN t_yak_ops_job_definition d
         ON i.job_definition_id = d.id
 
         LEFT JOIN (
@@ -138,12 +138,12 @@
         AVG(loss_rate) AS loss_rate,
         AVG(avg_row_size) AS avg_row_size,
         MAX(record_delay) AS record_delay
-        FROM t_baize_flow_job_metrics
+        FROM t_yak_ops_job_metrics
         GROUP BY job_instance_id
         ) m
         ON i.id = m.job_instance_id
 
-        LEFT JOIN t_baize_flow_job_schedule s
+        LEFT JOIN t_yak_ops_job_schedule s
         ON i.job_definition_id = s.job_definition_id
 
         WHERE i.id = #{id}
@@ -158,9 +158,9 @@
         SELECT
         <include refid="BaseSelectColumns"/>
 
-        FROM t_baize_flow_job_instance i
+        FROM t_yak_ops_job_instance i
 
-        LEFT JOIN t_baize_flow_job_definition d
+        LEFT JOIN t_yak_ops_job_definition d
         ON i.job_definition_id = d.id
 
         LEFT JOIN (
@@ -179,12 +179,12 @@
         AVG(loss_rate) AS loss_rate,
         AVG(avg_row_size) AS avg_row_size,
         MAX(record_delay) AS record_delay
-        FROM t_baize_flow_job_metrics
+        FROM t_yak_ops_job_metrics
         GROUP BY job_instance_id
         ) m
         ON i.id = m.job_instance_id
 
-        LEFT JOIN t_baize_flow_job_schedule s
+        LEFT JOIN t_yak_ops_job_schedule s
         ON i.job_definition_id = s.job_definition_id
 
         <where>

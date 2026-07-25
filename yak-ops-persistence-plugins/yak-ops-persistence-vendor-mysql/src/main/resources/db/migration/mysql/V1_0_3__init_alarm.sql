@@ -2,7 +2,7 @@
 -- Alarm channels (SPI instances), rules (who/when), rule-channel links, and
 -- delivery records. All tables use utf8mb4 with utf8mb4_unicode_ci.
 
-CREATE TABLE `t_baize_flow_alarm_channel`
+CREATE TABLE `t_yak_ops_alarm_channel`
 (
     `id`          bigint       NOT NULL COMMENT '主键ID',
     `name`        varchar(128) NOT NULL COMMENT '渠道名称',
@@ -17,7 +17,7 @@ CREATE TABLE `t_baize_flow_alarm_channel`
     KEY           `idx_enabled` (`enabled`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='告警渠道实例表';
 
-CREATE TABLE `t_baize_flow_alarm_rule`
+CREATE TABLE `t_yak_ops_alarm_rule`
 (
     `id`                bigint       NOT NULL COMMENT '主键ID',
     `name`              varchar(128) NOT NULL COMMENT '规则名称',
@@ -34,7 +34,7 @@ CREATE TABLE `t_baize_flow_alarm_rule`
     KEY                 `idx_enabled` (`enabled`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='告警规则表';
 
-CREATE TABLE `t_baize_flow_alarm_rule_channel`
+CREATE TABLE `t_yak_ops_alarm_rule_channel`
 (
     `id`          bigint   NOT NULL COMMENT '主键ID',
     `rule_id`     bigint   NOT NULL COMMENT '规则ID',
@@ -46,7 +46,7 @@ CREATE TABLE `t_baize_flow_alarm_rule_channel`
     KEY          `idx_channel_id` (`channel_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='告警规则-渠道关联表';
 
-CREATE TABLE `t_baize_flow_alarm_record`
+CREATE TABLE `t_yak_ops_alarm_record`
 (
     `id`                bigint       NOT NULL COMMENT '主键ID',
     `rule_id`           bigint                DEFAULT NULL COMMENT '规则ID',

@@ -8,7 +8,7 @@ import java.util.Date;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("t_baize_flow_cdc_server_id_allocation")
+@TableName("t_yak_ops_cdc_server_id_allocation")
 public class CdcServerIdAllocation extends BaseEntity {
 
     private Long poolId;

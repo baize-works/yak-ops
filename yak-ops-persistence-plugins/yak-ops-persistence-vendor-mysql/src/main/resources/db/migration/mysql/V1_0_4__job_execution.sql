@@ -23,4 +23,4 @@ CREATE TABLE `job_execution` (
   KEY `idx_job_execution_status` (`execution_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- Java has always treated this ID as String; widen legacy numeric projection without losing values.
-ALTER TABLE `t_baize_flow_job_instance` MODIFY COLUMN `engine_job_id` varchar(255) DEFAULT NULL COMMENT 'Latest execution external job ID compatibility projection';
+ALTER TABLE `t_yak_ops_job_instance` MODIFY COLUMN `engine_job_id` varchar(255) DEFAULT NULL COMMENT 'Latest execution external job ID compatibility projection';

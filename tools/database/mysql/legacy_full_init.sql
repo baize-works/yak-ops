@@ -2,12 +2,12 @@
 -- WARNING: this script drops and recreates all Yak Ops and Quartz tables.
 
 CREATE
-DATABASE IF NOT EXISTS `baize_flow`
+DATABASE IF NOT EXISTS `yak_ops`
     DEFAULT CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 
 USE
-`baize_flow`;
+`yak_ops`;
 
 SET NAMES utf8mb4;
 SET
@@ -17,8 +17,8 @@ FOREIGN_KEY_CHECKS = 0;
 -- 1. Yak Ops business tables
 -- ============================================================
 
-DROP TABLE IF EXISTS `t_baize_flow_connector_param_meta`;
-CREATE TABLE `t_baize_flow_connector_param_meta`
+DROP TABLE IF EXISTS `t_yak_ops_connector_param_meta`;
+CREATE TABLE `t_yak_ops_connector_param_meta`
 (
     `id`             bigint       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `type`           varchar(32)  NOT NULL COMMENT '参数类型，如 connector/time',
@@ -41,8 +41,8 @@ CREATE TABLE `t_baize_flow_connector_param_meta`
     KEY              `idx_param_name` (`param_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='连接器参数元数据表';
 
-DROP TABLE IF EXISTS `t_baize_flow_client`;
-CREATE TABLE `t_baize_flow_client`
+DROP TABLE IF EXISTS `t_yak_ops_client`;
+CREATE TABLE `t_yak_ops_client`
 (
     `id`                    bigint       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `client_name`           varchar(128) NOT NULL COMMENT 'Client名称',
@@ -70,8 +70,8 @@ CREATE TABLE `t_baize_flow_client`
     KEY                     `idx_heartbeat_time` (`heartbeat_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client 表';
 
-DROP TABLE IF EXISTS `t_baize_flow_client_node`;
-CREATE TABLE `t_baize_flow_client_node`
+DROP TABLE IF EXISTS `t_yak_ops_client_node`;
+CREATE TABLE `t_yak_ops_client_node`
 (
     `id`                  bigint       NOT NULL COMMENT '主键 ID',
     `client_id`           bigint       NOT NULL COMMENT '客户端 ID',
@@ -95,8 +95,8 @@ CREATE TABLE `t_baize_flow_client_node`
     KEY                   `idx_health_status` (`health_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client 节点表';
 
-DROP TABLE IF EXISTS `t_baize_flow_datasource`;
-CREATE TABLE `t_baize_flow_datasource`
+DROP TABLE IF EXISTS `t_yak_ops_datasource`;
+CREATE TABLE `t_yak_ops_datasource`
 (
     `id`                bigint NOT NULL COMMENT '主键',
     `name`              varchar(64)   DEFAULT NULL COMMENT '数据源名称',
@@ -111,8 +111,8 @@ CREATE TABLE `t_baize_flow_datasource`
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据集成-数据源表';
 
-DROP TABLE IF EXISTS `t_baize_flow_datasource_plugin_config`;
-CREATE TABLE `t_baize_flow_datasource_plugin_config`
+DROP TABLE IF EXISTS `t_yak_ops_datasource_plugin_config`;
+CREATE TABLE `t_yak_ops_datasource_plugin_config`
 (
     `id`            varchar(32) NOT NULL COMMENT '主键',
     `plugin_type`   varchar(50) NOT NULL COMMENT '插件类型，如 mysql、postgresql、oracle 等',
@@ -122,8 +122,8 @@ CREATE TABLE `t_baize_flow_datasource_plugin_config`
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据源插件动态配置表';
 
-DROP TABLE IF EXISTS `t_baize_flow_cdc_server_id_pool`;
-CREATE TABLE `t_baize_flow_cdc_server_id_pool`
+DROP TABLE IF EXISTS `t_yak_ops_cdc_server_id_pool`;
+CREATE TABLE `t_yak_ops_cdc_server_id_pool`
 (
     `id`            bigint                                                        NOT NULL COMMENT 'primary key',
     `datasource_id` bigint                                                        NOT NULL COMMENT 'datasource id for this MySQL CDC server-id pool',
@@ -138,8 +138,8 @@ CREATE TABLE `t_baize_flow_cdc_server_id_pool`
     KEY             `idx_cdc_server_id_pool_datasource` (`datasource_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='MySQL CDC server-id allocation pool';
 
-DROP TABLE IF EXISTS `t_baize_flow_cdc_server_id_allocation`;
-CREATE TABLE `t_baize_flow_cdc_server_id_allocation`
+DROP TABLE IF EXISTS `t_yak_ops_cdc_server_id_allocation`;
+CREATE TABLE `t_yak_ops_cdc_server_id_allocation`
 (
     `id`                bigint                                                       NOT NULL COMMENT 'primary key',
     `pool_id`           bigint                                                       NOT NULL COMMENT 'server-id pool id',
@@ -158,8 +158,8 @@ CREATE TABLE `t_baize_flow_cdc_server_id_allocation`
     KEY                 `idx_cdc_server_id_job_instance` (`job_instance_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='MySQL CDC server-id allocation records';
 
-DROP TABLE IF EXISTS `t_baize_flow_user`;
-CREATE TABLE `t_baize_flow_user`
+DROP TABLE IF EXISTS `t_yak_ops_user`;
+CREATE TABLE `t_yak_ops_user`
 (
     `id`            int NOT NULL COMMENT '用户ID',
     `user_name`     varchar(64)  DEFAULT NULL COMMENT '用户名',
@@ -173,8 +173,8 @@ CREATE TABLE `t_baize_flow_user`
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
-DROP TABLE IF EXISTS `t_baize_flow_session`;
-CREATE TABLE `t_baize_flow_session`
+DROP TABLE IF EXISTS `t_yak_ops_session`;
+CREATE TABLE `t_yak_ops_session`
 (
     `id`              varchar(64) NOT NULL COMMENT '会话ID',
     `user_id`         int         DEFAULT NULL COMMENT '关联用户ID',
@@ -183,8 +183,8 @@ CREATE TABLE `t_baize_flow_session`
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户会话表';
 
-DROP TABLE IF EXISTS `t_baize_flow_time_variable`;
-CREATE TABLE `t_baize_flow_time_variable`
+DROP TABLE IF EXISTS `t_yak_ops_time_variable`;
+CREATE TABLE `t_yak_ops_time_variable`
 (
     `id`              bigint       NOT NULL COMMENT '主键ID',
     `param_name`      varchar(128) NOT NULL COMMENT '变量名称，如 biz_date、start_time、end_time',
@@ -203,8 +203,8 @@ CREATE TABLE `t_baize_flow_time_variable`
     UNIQUE KEY `uk_param_name` (`param_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel时间变量表';
 
-DROP TABLE IF EXISTS `t_baize_flow_job_definition`;
-CREATE TABLE `t_baize_flow_job_definition`
+DROP TABLE IF EXISTS `t_yak_ops_job_definition`;
+CREATE TABLE `t_yak_ops_job_definition`
 (
     `id`                   bigint       NOT NULL COMMENT '主键ID',
     `job_name`             varchar(255) NOT NULL COMMENT '任务名称',
@@ -231,8 +231,8 @@ CREATE TABLE `t_baize_flow_job_definition`
     KEY                    `idx_sink_datasource_id` (`sink_datasource_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务定义主表';
 
-DROP TABLE IF EXISTS `t_baize_flow_job_definition_content`;
-CREATE TABLE `t_baize_flow_job_definition_content`
+DROP TABLE IF EXISTS `t_yak_ops_job_definition_content`;
+CREATE TABLE `t_yak_ops_job_definition_content`
 (
     `id`                     bigint      NOT NULL AUTO_INCREMENT COMMENT '主键',
     `job_definition_id`      bigint      NOT NULL COMMENT '任务定义ID',
@@ -247,8 +247,8 @@ CREATE TABLE `t_baize_flow_job_definition_content`
     KEY                      `idx_job_definition_id` (`job_definition_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务定义内容版本表';
 
-DROP TABLE IF EXISTS `t_baize_flow_job_instance`;
-CREATE TABLE `t_baize_flow_job_instance`
+DROP TABLE IF EXISTS `t_yak_ops_job_instance`;
+CREATE TABLE `t_yak_ops_job_instance`
 (
     `id`                bigint      NOT NULL COMMENT '主键ID',
     `job_definition_id` bigint      NOT NULL COMMENT '任务定义ID',
@@ -275,8 +275,8 @@ CREATE TABLE `t_baize_flow_job_instance`
     KEY                 `idx_definition_status` (`job_definition_id`, `job_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务运行实例表';
 
-DROP TABLE IF EXISTS `t_baize_flow_job_schedule`;
-CREATE TABLE `t_baize_flow_job_schedule`
+DROP TABLE IF EXISTS `t_yak_ops_job_schedule`;
+CREATE TABLE `t_yak_ops_job_schedule`
 (
     `id`                 bigint      NOT NULL COMMENT '主键ID',
     `job_definition_id`  bigint      NOT NULL COMMENT '任务定义ID',
@@ -293,8 +293,8 @@ CREATE TABLE `t_baize_flow_job_schedule`
     KEY                  `idx_next_schedule_time` (`next_schedule_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务调度表';
 
-DROP TABLE IF EXISTS `t_baize_flow_job_metrics`;
-CREATE TABLE `t_baize_flow_job_metrics`
+DROP TABLE IF EXISTS `t_yak_ops_job_metrics`;
+CREATE TABLE `t_yak_ops_job_metrics`
 (
     `id`                      bigint NOT NULL COMMENT '主键ID',
     `job_instance_id`         bigint NOT NULL COMMENT '任务实例ID',
@@ -322,8 +322,8 @@ CREATE TABLE `t_baize_flow_job_metrics`
     KEY                       `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务运行汇总指标表';
 
-DROP TABLE IF EXISTS `t_baize_flow_job_table_metrics`;
-CREATE TABLE `t_baize_flow_job_table_metrics`
+DROP TABLE IF EXISTS `t_yak_ops_job_table_metrics`;
+CREATE TABLE `t_yak_ops_job_table_metrics`
 (
     `id`                bigint NOT NULL COMMENT '主键ID',
     `job_instance_id`   bigint NOT NULL COMMENT '任务实例ID',
@@ -352,8 +352,8 @@ CREATE TABLE `t_baize_flow_job_table_metrics`
     KEY                 `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务表级运行指标表';
 
-DROP TABLE IF EXISTS `t_baize_flow_streaming_job_definition`;
-CREATE TABLE `t_baize_flow_streaming_job_definition`
+DROP TABLE IF EXISTS `t_yak_ops_streaming_job_definition`;
+CREATE TABLE `t_yak_ops_streaming_job_definition`
 (
     `id`                   bigint NOT NULL COMMENT '主键ID',
     `job_name`             varchar(255)  DEFAULT NULL COMMENT '任务名称',
@@ -380,8 +380,8 @@ CREATE TABLE `t_baize_flow_streaming_job_definition`
     KEY                    `idx_streaming_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='实时任务定义表';
 
-DROP TABLE IF EXISTS `t_baize_flow_streaming_job_definition_content`;
-CREATE TABLE `t_baize_flow_streaming_job_definition_content`
+DROP TABLE IF EXISTS `t_yak_ops_streaming_job_definition_content`;
+CREATE TABLE `t_yak_ops_streaming_job_definition_content`
 (
     `id`                     bigint NOT NULL COMMENT '主键ID',
     `job_definition_id`      bigint NOT NULL COMMENT '任务定义ID',
@@ -400,8 +400,8 @@ CREATE TABLE `t_baize_flow_streaming_job_definition_content`
     KEY                      `idx_streaming_content_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='实时任务定义内容表';
 
-DROP TABLE IF EXISTS `t_baize_flow_streaming_job_instance`;
-CREATE TABLE `t_baize_flow_streaming_job_instance`
+DROP TABLE IF EXISTS `t_yak_ops_streaming_job_instance`;
+CREATE TABLE `t_yak_ops_streaming_job_instance`
 (
     `id`                bigint      NOT NULL COMMENT '主键ID',
     `job_definition_id` bigint      NOT NULL COMMENT '实时任务定义ID',
@@ -430,8 +430,8 @@ CREATE TABLE `t_baize_flow_streaming_job_instance`
     KEY                 `idx_streaming_instance_definition_status` (`job_definition_id`, `job_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='实时任务运行实例表';
 
-DROP TABLE IF EXISTS `t_baize_flow_streaming_job_metrics_current`;
-CREATE TABLE `t_baize_flow_streaming_job_metrics_current`
+DROP TABLE IF EXISTS `t_yak_ops_streaming_job_metrics_current`;
+CREATE TABLE `t_yak_ops_streaming_job_metrics_current`
 (
     `job_instance_id`         bigint         NOT NULL COMMENT 'Web侧实例ID',
     `job_definition_id`       bigint         NOT NULL COMMENT '任务定义ID',
@@ -462,8 +462,8 @@ CREATE TABLE `t_baize_flow_streaming_job_metrics_current`
     KEY                       `idx_streaming_current_update_time` (`update_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='实时任务当前汇总指标表';
 
-DROP TABLE IF EXISTS `t_baize_flow_streaming_job_metrics_snapshot`;
-CREATE TABLE `t_baize_flow_streaming_job_metrics_snapshot`
+DROP TABLE IF EXISTS `t_yak_ops_streaming_job_metrics_snapshot`;
+CREATE TABLE `t_yak_ops_streaming_job_metrics_snapshot`
 (
     `collect_time_ms`         bigint         NOT NULL COMMENT '采集时间戳，单位：毫秒',
     `job_instance_id`         bigint         NOT NULL COMMENT 'Web侧实例ID',
@@ -490,8 +490,8 @@ CREATE TABLE `t_baize_flow_streaming_job_metrics_snapshot`
     KEY                       `idx_streaming_metrics_engine_time` (`engine_job_id`, `collect_time_ms`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='实时任务指标快照表';
 
-DROP TABLE IF EXISTS `t_baize_flow_streaming_job_table_metrics_current`;
-CREATE TABLE `t_baize_flow_streaming_job_table_metrics_current`
+DROP TABLE IF EXISTS `t_yak_ops_streaming_job_table_metrics_current`;
+CREATE TABLE `t_yak_ops_streaming_job_table_metrics_current`
 (
     `job_instance_id`      bigint         NOT NULL COMMENT 'Web侧实例ID',
     `job_definition_id`    bigint         NOT NULL COMMENT '任务定义ID',
@@ -676,7 +676,7 @@ CREATE TABLE `QRTZ_LOCKS`
 -- 3. Initial data
 -- ============================================================
 
-INSERT INTO `t_baize_flow_time_variable`
+INSERT INTO `t_yak_ops_time_variable`
 (`id`, `param_name`, `param_desc`, `variable_source`, `value_type`, `time_format`, `default_value`, `expression`,
  `example_value`, `enabled`, `remark`)
 VALUES (10001, 'now', '当前时间', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd HH:mm:ss', NULL, 'now', '2026-05-02 09:30:00', 1,
@@ -690,7 +690,7 @@ VALUES (10001, 'now', '当前时间', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd HH:mm:ss'
        (10005, 'end_time', '同步结束时间，默认取调度当天零点', 'SYSTEM', 'DYNAMIC', 'yyyy-MM-dd HH:mm:ss', NULL,
         'schedule_time@day_start', '2026-05-02 00:00:00', 1, '系统内置变量');
 
-INSERT INTO `t_baize_flow_user`
+INSERT INTO `t_yak_ops_user`
 (`id`, `user_name`, `user_password`, `user_type`, `email`, `phone`, `create_time`, `update_time`, `state`)
 VALUES (1, 'admin', '$2a$10$7EqJtq98hPqEX7fNZaFWoOhi4iFP1Zc2l1N9CifJmJ4PrGiHeq.8K', 0, NULL, NULL, NULL, NULL, 1);
 
@@ -703,7 +703,7 @@ FOREIGN_KEY_CHECKS = 1;
 -- 生成内容：Jdbc Source + Jdbc Sink
 -- 注意：参数名以用户提供的 SeaTunnel 配置项为准，例如 fetch_size、split.size。
 
-ALTER TABLE `t_baize_flow_connector_param_meta`
+ALTER TABLE `t_yak_ops_connector_param_meta`
 DROP
 INDEX `uk_connector_param`,
   ADD UNIQUE KEY `uk_connector_param`
@@ -712,7 +712,7 @@ INDEX `uk_connector_param`,
 START TRANSACTION;
 
 -- ==================== Jdbc Source：31 个参数 ====================
-INSERT INTO `t_baize_flow_connector_param_meta`
+INSERT INTO `t_yak_ops_connector_param_meta`
 (`type`, `connector_name`, `connector_type`, `param_name`, `param_desc`,
  `param_type`, `required_flag`, `default_value`, `example_value`, `param_context`,
  `remark`, `deleted`)
@@ -825,7 +825,7 @@ VALUES (`remark`),
     `update_time` = CURRENT_TIMESTAMP;
 
 -- ==================== Jdbc Sink：31 个参数 ====================
-INSERT INTO `t_baize_flow_connector_param_meta`
+INSERT INTO `t_yak_ops_connector_param_meta`
 (`type`, `connector_name`, `connector_type`, `param_name`, `param_desc`,
  `param_type`, `required_flag`, `default_value`, `example_value`, `param_context`,
  `remark`, `deleted`)
@@ -948,7 +948,7 @@ COMMIT;
 
 START TRANSACTION;
 
-INSERT INTO `baize_flow`.`t_baize_flow_connector_param_meta`
+INSERT INTO `yak_ops`.`t_yak_ops_connector_param_meta`
 (`type`, `connector_name`, `connector_type`, `param_name`, `param_desc`,
  `param_type`, `required_flag`, `default_value`, `example_value`, `param_context`,
  `remark`, `deleted`)
@@ -1049,7 +1049,7 @@ COMMIT;
 
 -- 校验 MySQL-CDC Source 参数数量
 SELECT `connector_name`, `connector_type`, COUNT(*) AS `param_count`
-FROM `baize_flow`.`t_baize_flow_connector_param_meta`
+FROM `yak_ops`.`t_yak_ops_connector_param_meta`
 WHERE `type` = 'connector'
   AND `connector_name` = 'MySQL-CDC'
   AND `connector_type` = 'source'

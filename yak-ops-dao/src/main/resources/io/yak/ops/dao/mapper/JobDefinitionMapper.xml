@@ -58,7 +58,7 @@
         FROM
         (
         SELECT *
-        FROM t_baize_flow_job_definition
+        FROM t_yak_ops_job_definition
         <where>
             <if test="query.id != null">
                 AND id = #{query.id}
@@ -88,13 +88,13 @@
         ORDER BY create_time DESC
         LIMIT #{offset}, #{pageSize}
         ) d
-        LEFT JOIN t_baize_flow_job_instance i
+        LEFT JOIN t_yak_ops_job_instance i
         ON i.id = (
         SELECT t1.id
-        FROM t_baize_flow_job_instance t1
+        FROM t_yak_ops_job_instance t1
         INNER JOIN (
         SELECT job_definition_id, MAX(start_time) AS max_start_time
-        FROM t_baize_flow_job_instance
+        FROM t_yak_ops_job_instance
         GROUP BY job_definition_id
         ) t2
         ON t1.job_definition_id = t2.job_definition_id
@@ -104,16 +104,16 @@
         LIMIT 1
         )
 
-        LEFT JOIN t_baize_flow_job_metrics m
+        LEFT JOIN t_yak_ops_job_metrics m
         ON i.id = m.job_instance_id
 
-        LEFT JOIN t_baize_flow_job_schedule s
+        LEFT JOIN t_yak_ops_job_schedule s
         ON d.id = s.job_definition_id
 
-        LEFT JOIN t_baize_flow_datasource ds_source
+        LEFT JOIN t_yak_ops_datasource ds_source
         ON d.source_datasource_id = ds_source.id
 
-        LEFT JOIN t_baize_flow_datasource ds_sink
+        LEFT JOIN t_yak_ops_datasource ds_sink
         ON d.sink_datasource_id = ds_sink.id
 
         <where>
@@ -133,15 +133,15 @@
     <select id="selectDefinitionCount" resultType="java.lang.Long">
 
         SELECT COUNT(1)
-        FROM t_baize_flow_job_definition d
+        FROM t_yak_ops_job_definition d
 
-        LEFT JOIN t_baize_flow_job_instance i
+        LEFT JOIN t_yak_ops_job_instance i
         ON i.id = (
         SELECT t1.id
-        FROM t_baize_flow_job_instance t1
+        FROM t_yak_ops_job_instance t1
         INNER JOIN (
         SELECT job_definition_id, MAX(start_time) AS max_start_time
-        FROM t_baize_flow_job_instance
+        FROM t_yak_ops_job_instance
         GROUP BY job_definition_id
         ) t2
         ON t1.job_definition_id = t2.job_definition_id

@@ -4,4 +4,4 @@ CREATE TABLE job_execution (
 CREATE INDEX idx_job_execution_external_job_id ON job_execution(external_job_id);
 CREATE INDEX idx_job_execution_last_synced_at ON job_execution(last_synced_at);
 CREATE INDEX idx_job_execution_status ON job_execution(execution_status);
-ALTER TABLE t_baize_flow_job_instance ALTER COLUMN engine_job_id TYPE VARCHAR(255) USING engine_job_id::VARCHAR;
+ALTER TABLE t_yak_ops_job_instance ALTER COLUMN engine_job_id TYPE VARCHAR(255) USING engine_job_id::VARCHAR;

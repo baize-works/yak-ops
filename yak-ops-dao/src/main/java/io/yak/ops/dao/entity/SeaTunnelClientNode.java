@@ -12,7 +12,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("t_baize_flow_client_node")
+@TableName("t_yak_ops_client_node")
 public class SeaTunnelClientNode {
 
     @TableId(type = IdType.INPUT)

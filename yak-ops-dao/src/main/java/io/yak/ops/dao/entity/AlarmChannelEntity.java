@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@TableName("t_baize_flow_alarm_channel")
+@TableName("t_yak_ops_alarm_channel")
 public class AlarmChannelEntity extends BaseEntity {
 
     private String name;

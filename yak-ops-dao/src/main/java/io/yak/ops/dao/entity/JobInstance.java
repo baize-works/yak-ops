@@ -15,7 +15,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@TableName("t_baize_flow_job_instance")
+@TableName("t_yak_ops_job_instance")
 public class JobInstance {
 
     @TableId(type = IdType.INPUT)

@@ -8,7 +8,7 @@
 
 START TRANSACTION;
 
-INSERT INTO `t_baize_flow_connector_param_meta`
+INSERT INTO `t_yak_ops_connector_param_meta`
 (`type`, `connector_name`, `connector_type`, `param_name`, `param_desc`,
  `param_type`, `required_flag`, `default_value`, `example_value`, `param_context`,
  `remark`, `deleted`)

@@ -31,8 +31,8 @@ ENV YAK_OPS_HOME=/opt/yak-ops \
     YAK_OPS_DATABASE_TYPE=mysql \
     YAK_OPS_DATABASE_HOST=mysql \
     YAK_OPS_DATABASE_PORT=3306 \
-    YAK_OPS_DATABASE_NAME=baize_flow \
-    SPRING_DATASOURCE_URL="jdbc:mysql://mysql:3306/baize_flow?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true" \
+    YAK_OPS_DATABASE_NAME=yak_ops \
+    SPRING_DATASOURCE_URL="jdbc:mysql://mysql:3306/yak_ops?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true" \
     SPRING_DATASOURCE_USERNAME=seatunnel \
     SPRING_DATASOURCE_PASSWORD=seatunnel
 

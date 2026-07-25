@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@TableName("t_baize_flow_alarm_rule_channel")
+@TableName("t_yak_ops_alarm_rule_channel")
 public class AlarmRuleChannelEntity extends BaseEntity {
 
     private Long ruleId;

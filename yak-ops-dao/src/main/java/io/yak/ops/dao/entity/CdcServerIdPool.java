@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("t_baize_flow_cdc_server_id_pool")
+@TableName("t_yak_ops_cdc_server_id_pool")
 public class CdcServerIdPool extends BaseEntity {
 
     private Long datasourceId;

@@ -19,7 +19,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@TableName("t_baize_flow_alarm_record")
+@TableName("t_yak_ops_alarm_record")
 public class AlarmRecordEntity extends BaseEntity {
 
     private Long ruleId;

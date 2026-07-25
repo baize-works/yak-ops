@@ -47,7 +47,7 @@
             error_msg AS errorMsg,
             create_time AS createTime,
             update_time AS updateTime
-        FROM t_baize_flow_job_table_metrics
+        FROM t_yak_ops_job_table_metrics
         WHERE job_instance_id = #{instanceId}
         ORDER BY
             pipeline_id ASC,
@@ -56,7 +56,7 @@
     </select>
 
     <delete id="deleteByDefinitionId">
-        DELETE FROM t_baize_flow_job_table_metrics
+        DELETE FROM t_yak_ops_job_table_metrics
         WHERE job_definition_id = #{definitionId}
     </delete>
 

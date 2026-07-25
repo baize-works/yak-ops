@@ -9,7 +9,7 @@ import io.yak.ops.common.enums.UserType;
 import java.util.Date;
 
 @Data
-@TableName("t_baize_flow_user")
+@TableName("t_yak_ops_user")
 public class User {
 
     @TableId(value = "id", type = IdType.AUTO)
