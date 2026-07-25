@@ -39,7 +39,7 @@ public class JobScheduleServiceAdapter implements JobScheduleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createTaskSchedule(SeaTunnelJobScheduleDTO dto) throws SchedulerException {
+    public Long createTaskSchedule(SeaTunnelJobScheduleDTO dto) {
         log.info("Creating job schedule: {}", dto);
 
         if (dto == null || dto.getJobDefinitionId() == null) {
@@ -70,7 +70,7 @@ public class JobScheduleServiceAdapter implements JobScheduleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateTaskSchedule(SeaTunnelJobScheduleDTO dto) throws SchedulerException {
+    public boolean updateTaskSchedule(SeaTunnelJobScheduleDTO dto) {
         log.info("Updating task schedule: {}", dto);
 
         if (dto == null || dto.getId() == null) {
@@ -192,7 +192,7 @@ public class JobScheduleServiceAdapter implements JobScheduleService {
     }
 
     @Override
-    public boolean triggerSchedule(Long taskScheduleId) throws SchedulerException {
+    public boolean triggerSchedule(Long taskScheduleId) {
         log.info("Triggering task schedule immediately: {}", taskScheduleId);
 
         JobSchedule taskSchedule = jobScheduleDao.queryById(taskScheduleId);
@@ -201,11 +201,17 @@ public class JobScheduleServiceAdapter implements JobScheduleService {
         }
 
         JobKey jobKey = buildJobKey(taskScheduleId);
-        if (!scheduler.checkExists(jobKey)) {
-            throw new RuntimeException("Schedule has not been started yet");
-        }
+        try {
+            if (!scheduler.checkExists(jobKey)) {
+                throw new RuntimeException("Schedule has not been started yet");
+            }
 
-        scheduler.triggerJob(jobKey);
+            scheduler.triggerJob(jobKey);
+        } catch (SchedulerException e) {
+            log.error("Failed to trigger schedule, scheduleId={}", taskScheduleId, e);
+            throw new IllegalStateException(
+                    "Failed to trigger schedule, scheduleId=" + taskScheduleId, e);
+        }
 
         log.info("Task schedule triggered successfully: {}", taskScheduleId);
         return true;
@@ -213,7 +219,7 @@ public class JobScheduleServiceAdapter implements JobScheduleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateScheduleTime(Long taskScheduleId, String cronExpression) throws SchedulerException {
+    public boolean updateScheduleTime(Long taskScheduleId, String cronExpression) {
         log.info("Updating schedule time: {}, Cron: {}", taskScheduleId, cronExpression);
 
         if (StringUtils.isBlank(cronExpression)) {

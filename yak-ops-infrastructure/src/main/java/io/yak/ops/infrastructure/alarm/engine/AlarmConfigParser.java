@@ -24,7 +24,8 @@ import java.util.Map;
 @Slf4j
 public final class AlarmConfigParser {
 
-    private static final TypeReference<Map<String, Object>> CONFIG_TYPE = new TypeReference<>() {
+    private static final TypeReference<Map<String, Object>> CONFIG_TYPE =
+            new TypeReference<Map<String, Object>>() {
     };
 
     private AlarmConfigParser() {
