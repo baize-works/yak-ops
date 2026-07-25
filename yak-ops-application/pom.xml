@@ -7,18 +7,6 @@
         <version>1.0.0</version>
     </parent>
     <artifactId>yak-ops-application</artifactId>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-domain</artifactId>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-web-contract</artifactId>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>

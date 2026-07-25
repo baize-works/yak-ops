@@ -22,6 +22,9 @@
         <sockjs-client.version>1.5.1</sockjs-client.version>
         <stomp-websocket.version>2.3.4</stomp-websocket.version>
         <swagger-core.version>2.2.20</swagger-core.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
+        <commons-io.version>2.15.1</commons-io.version>
+        <guava.version>32.1.3-jre</guava.version>
     </properties>
 
     <dependencyManagement>
@@ -49,6 +52,9 @@
             <dependency><groupId>com.baomidou</groupId><artifactId>mybatis-plus-annotation</artifactId><version>${mybatis-plus.version}</version></dependency>
             <dependency><groupId>org.webjars</groupId><artifactId>sockjs-client</artifactId><version>${sockjs-client.version}</version></dependency>
             <dependency><groupId>org.webjars</groupId><artifactId>stomp-websocket</artifactId><version>${stomp-websocket.version}</version></dependency>
+            <dependency><groupId>org.apache.commons</groupId><artifactId>commons-collections4</artifactId><version>${commons-collections4.version}</version></dependency>
+            <dependency><groupId>commons-io</groupId><artifactId>commons-io</artifactId><version>${commons-io.version}</version></dependency>
+            <dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId><version>${guava.version}</version></dependency>
         </dependencies>
     </dependencyManagement>
 </project>

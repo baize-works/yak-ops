@@ -8,14 +8,6 @@
     </parent>
     <artifactId>yak-ops-engine-support</artifactId>
     <name>Yak Ops Engine Support</name>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-domain</artifactId>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
