@@ -2,7 +2,7 @@ package io.yak.ops.application.support.utils;
 
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.common.utils.JSONUtils;
-import io.yak.ops.engine.client.transfrom.domain.*;
+import io.yak.ops.engine.transform.domain.*;
 
 import java.io.IOException;
 

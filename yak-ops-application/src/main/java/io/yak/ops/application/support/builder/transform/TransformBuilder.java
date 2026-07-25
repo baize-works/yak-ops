@@ -3,9 +3,9 @@ package io.yak.ops.application.support.builder.transform;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
 import io.yak.ops.application.support.utils.TaskOptionUtils;
-import io.yak.ops.engine.client.transfrom.TransformConfigSwitcherUtils;
-import io.yak.ops.engine.client.transfrom.domain.Transform;
-import io.yak.ops.engine.client.transfrom.domain.TransformOptions;
+import io.yak.ops.engine.transform.TransformConfigSwitcherUtils;
+import io.yak.ops.engine.transform.domain.Transform;
+import io.yak.ops.engine.transform.domain.TransformOptions;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
