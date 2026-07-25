@@ -61,8 +61,6 @@
   "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/JobScheduleApplicationService.java:io.baize.flow.web.contract.dto.config.JobScheduleConfig",
   "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/engine/HandleEngineHealthResultUseCase.java:io.baize.flow.dao.repository.JobInstanceDao",
   "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/engine/HandleEngineHealthResultUseCase.java:io.baize.flow.dao.repository.SeaTunnelClientDao",
-  "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/engine/SeaTunnelConnectionConfigProvider.java:io.baize.flow.dao.entity.SeaTunnelClient",
-  "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/engine/SeaTunnelConnectionConfigProvider.java:io.baize.flow.dao.repository.SeaTunnelClientDao",
   "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/job/BatchExecuteJobsUseCase.java:io.baize.flow.dao.entity.JobInstance",
   "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/job/BatchExecuteJobsUseCase.java:io.baize.flow.web.contract.vo.BatchJobDefinitionVO",
   "application-boundary:yak-ops-application/src/main/java/io/baize/flow/api/service/application/job/BatchExecuteJobsUseCase.java:io.baize.flow.web.contract.vo.BatchJobOperateResultVO",

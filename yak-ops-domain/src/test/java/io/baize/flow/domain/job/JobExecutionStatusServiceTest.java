@@ -13,7 +13,7 @@ class JobExecutionStatusServiceTest {
     private final MemoryRepository repository = new MemoryRepository();
     private final Clock clock = Clock.fixed(Instant.parse("2026-01-02T03:04:05Z"), ZoneOffset.UTC);
     @Test void records_submission_and_running_failure_with_timestamps() {
-        new CreateJobExecutionService(repository, clock).create(1, 1, "SEATUNNEL", 2L, "system");
+        new CreateJobExecutionService(repository, clock).create(1, 1, "test-engine", 2L, "system");
         UpdateJobExecutionStatusService service = new UpdateJobExecutionStatusService(repository, clock);
         service.update(1, 1, JobExecutionStatus.SUBMITTED, JobExecutionStatus.SUBMITTED, "job-a", null, null, "{}", "system");
         JobExecutionRecord result = service.update(1, 1, JobExecutionStatus.SUBMITTED, JobExecutionStatus.FAILED, "job-a", "ENGINE_FAILED", "boom", "{}", "system");
@@ -21,11 +21,11 @@ class JobExecutionStatusServiceTest {
     }
     @Test void handles_submit_failure_cancel_lifecycle_unreachable_unknown_and_restart_recovery() {
         CreateJobExecutionService create = new CreateJobExecutionService(repository, clock); UpdateJobExecutionStatusService service = new UpdateJobExecutionStatusService(repository, clock);
-        create.create(2, 1, "SEATUNNEL", null, "system");
+        create.create(2, 1, "test-engine", null, "system");
         assertEquals(JobExecutionStatus.FAILED, service.update(2, 1, JobExecutionStatus.FAILED, JobExecutionStatus.FAILED, null, "SUBMIT_FAILED", "no", null, "system").executionStatus());
-        create.create(3, 1, "SEATUNNEL", null, "system"); service.update(3, 1, JobExecutionStatus.SUBMITTED, JobExecutionStatus.CANCELLING, "job-c", null, null, null, "system");
+        create.create(3, 1, "test-engine", null, "system"); service.update(3, 1, JobExecutionStatus.SUBMITTED, JobExecutionStatus.CANCELLING, "job-c", null, null, null, "system");
         assertEquals(JobExecutionStatus.CANCELED, service.update(3, 1, JobExecutionStatus.SUBMITTED, JobExecutionStatus.CANCELED, "job-c", null, null, null, "system").executionStatus());
-        create.create(4, 1, "SEATUNNEL", null, "system");
+        create.create(4, 1, "test-engine", null, "system");
         assertEquals(JobExecutionStatus.UNKNOWN, service.update(4, 1, JobExecutionStatus.SUBMITTED, JobExecutionStatus.UNKNOWN, "job-u", "UNREACHABLE", null, null, "recovery").executionStatus());
         assertEquals(JobExecutionStatus.RUNNING, service.update(4, 1, JobExecutionStatus.SUBMITTED, JobExecutionStatus.RUNNING, "job-u", null, null, null, "recovery").executionStatus());
     }
