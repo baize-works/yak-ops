@@ -11,8 +11,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 public class Options {
 
     /**
@@ -22,7 +20,9 @@ public class Options {
      * @return The builder for the config option with the given key.
      */
     public static OptionBuilder key(String key) {
-        checkArgument(StringUtils.isNotBlank(key), "Option's key not be null.");
+        if (StringUtils.isBlank(key)) {
+            throw new IllegalArgumentException("Option key must not be blank");
+        }
         return new OptionBuilder(key);
     }
 

@@ -5,7 +5,6 @@ import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.infrastructure.alarm.event.JobStatusChangedEvent;
 import io.yak.ops.application.service.BatchJobInstanceService;
 import io.yak.ops.application.support.job.JobUtils;
-import io.yak.ops.common.enums.JobResult;
 import io.yak.ops.domain.enums.JobStatus;
 import io.yak.ops.dao.entity.JobInstance;
 import org.springframework.context.ApplicationEventPublisher;
@@ -64,26 +63,6 @@ public class JobResultHandler {
         handleFinalStatus(jobInstanceId, JobStatus.FAILED, message);
 
         log.error("Job failed. instanceId={}, error={}", jobInstanceId, message, error);
-    }
-
-    /**
-     * Handle job failure based on engine job result.
-     *
-     * @param jobInstanceId job instance id
-     * @param jobResult     engine result
-     */
-    public void handleFailure(Long jobInstanceId, JobResult jobResult) {
-        JobStatus engineStatus = jobResult == null ? JobStatus.FAILED : jobResult.getStatus();
-        String message = jobResult == null ? "Unknown error" : jobResult.getError();
-
-        handleFinalStatus(jobInstanceId, engineStatus, message);
-
-        log.error(
-                "Job failed. instanceId={}, status={}, error={}",
-                jobInstanceId,
-                engineStatus,
-                message
-        );
     }
 
     /**
