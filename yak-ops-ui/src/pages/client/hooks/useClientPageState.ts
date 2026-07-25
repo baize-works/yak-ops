@@ -1,6 +1,6 @@
-import { Form, message } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { seatunnelClientApi } from "../api";
+import {Form, message} from "antd";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {seatunnelClientApi} from "../api";
 
 
 export const useClientPageState = () => {
@@ -57,9 +57,9 @@ export const useClientPageState = () => {
         nextSelectedId && records.some((item: any) => item.id === nextSelectedId)
           ? nextSelectedId
           : selectedClientId &&
-              records.some((item: any) => item.id === selectedClientId)
-            ? selectedClientId
-            : records[0].id;
+          records.some((item: any) => item.id === selectedClientId)
+          ? selectedClientId
+          : records[0].id;
 
       setSelectedClientId(targetId);
       return records;
@@ -78,7 +78,7 @@ export const useClientPageState = () => {
     try {
       const res = await seatunnelClientApi.metrics(targetId);
       setMetrics(res?.data || res);
-    } catch (e){
+    } catch (e) {
       // 产生异常都认为client存在问题
       setMetrics(-1);
       console.error(e);

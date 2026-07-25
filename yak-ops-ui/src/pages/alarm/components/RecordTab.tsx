@@ -1,39 +1,11 @@
-import { useIntl } from '@umijs/max';
-import {
-  Button,
-  Empty,
-  Select,
-  Table,
-  Tooltip,
-} from 'antd';
-import type {
-  ColumnsType,
-  TablePaginationConfig,
-} from 'antd/es/table';
-import {
-  BellRing,
-  CheckCircle2,
-  Clock3,
-  MessageSquareText,
-  RefreshCw,
-  RotateCcw,
-  XCircle,
-} from 'lucide-react';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import {
-  fetchAlarmRecords,
-  fetchChannels,
-} from '../service';
-import type {
-  AlarmChannelRecord,
-  AlarmRecordRecord,
-} from '../types';
-import { formatTime } from '../utils';
+import {useIntl} from '@umijs/max';
+import {Button, Empty, Table, Tooltip,} from 'antd';
+import type {ColumnsType, TablePaginationConfig,} from 'antd/es/table';
+import {BellRing, CheckCircle2, Clock3, MessageSquareText, RefreshCw, XCircle,} from 'lucide-react';
+import React, {useCallback, useEffect, useMemo, useState,} from 'react';
+import {fetchAlarmRecords, fetchChannels,} from '../service';
+import type {AlarmChannelRecord, AlarmRecordRecord,} from '../types';
+import {formatTime} from '../utils';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -51,10 +23,8 @@ interface DisplayStyle {
 /**
  * 严重级别样式。
  */
-const SEVERITY_STYLE_MAP: Record<
-  string,
-  DisplayStyle
-> = {
+const SEVERITY_STYLE_MAP: Record<string,
+  DisplayStyle> = {
   INFO: {
     label: '信息',
     className: 'bg-blue-50 text-blue-600',
@@ -72,10 +42,8 @@ const SEVERITY_STYLE_MAP: Record<
 /**
  * 任务状态样式。
  */
-const STATUS_STYLE_MAP: Record<
-  string,
-  DisplayStyle
-> = {
+const STATUS_STYLE_MAP: Record<string,
+  DisplayStyle> = {
   CREATED: {
     label: '已创建',
     className: 'bg-slate-100 text-slate-600',
@@ -140,9 +108,7 @@ const RecordTab: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
 
-  const [records, setRecords] = useState<
-    AlarmRecordRecord[]
-  >([]);
+  const [records, setRecords] = useState<AlarmRecordRecord[]>([]);
 
   const [pageNo, setPageNo] = useState(1);
 
@@ -353,9 +319,7 @@ const RecordTab: React.FC = () => {
   /**
    * 表格列。
    */
-  const columns = useMemo<
-    ColumnsType<AlarmRecordRecord>
-  >(
+  const columns = useMemo<ColumnsType<AlarmRecordRecord>>(
     () => [
       {
         title: '告警信息',
@@ -381,9 +345,9 @@ const RecordTab: React.FC = () => {
                 ].join(' ')}
               >
                 {record.success === 1 ? (
-                  <CheckCircle2 className="h-[18px] w-[18px]" />
+                  <CheckCircle2 className="h-[18px] w-[18px]"/>
                 ) : (
-                  <XCircle className="h-[18px] w-[18px]" />
+                  <XCircle className="h-[18px] w-[18px]"/>
                 )}
               </div>
 
@@ -405,7 +369,7 @@ const RecordTab: React.FC = () => {
                 >
                   <p className="m-0 mt-1 truncate text-xs leading-5 text-slate-400">
                     {record.content ||
-                      '暂无告警内容'}
+                    '暂无告警内容'}
                   </p>
                 </Tooltip>
               </div>
@@ -493,7 +457,7 @@ const RecordTab: React.FC = () => {
         width: 150,
         render: (channelType?: string) => (
           <span className="inline-flex max-w-full items-center gap-1.5 text-xs text-slate-600">
-            <BellRing className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <BellRing className="h-3.5 w-3.5 shrink-0 text-slate-400"/>
 
             <Tooltip
               title={channelType || undefined}
@@ -520,9 +484,10 @@ const RecordTab: React.FC = () => {
                   告警内容
                 </p>
 
-                <p className="m-0 mt-1 max-h-[180px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-white">
+                <p
+                  className="m-0 mt-1 max-h-[180px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-white">
                   {record.content ||
-                    '暂无告警内容'}
+                  '暂无告警内容'}
                 </p>
               </div>
 
@@ -532,7 +497,8 @@ const RecordTab: React.FC = () => {
                     错误信息
                   </p>
 
-                  <p className="m-0 mt-1 max-h-[180px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-red-200">
+                  <p
+                    className="m-0 mt-1 max-h-[180px] overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-red-200">
                     {record.errorMessage}
                   </p>
                 </div>
@@ -590,7 +556,7 @@ const RecordTab: React.FC = () => {
                     'focus-visible:ring-slate-300',
                   ].join(' ')}
                 >
-                  <MessageSquareText className="h-3.5 w-3.5" />
+                  <MessageSquareText className="h-3.5 w-3.5"/>
                 </button>
               </Tooltip>
             </div>
@@ -604,7 +570,7 @@ const RecordTab: React.FC = () => {
         width: 180,
         render: (sentTime?: string) => (
           <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-500">
-            <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-400"/>
 
             {sentTime
               ? formatTime(sentTime)
@@ -632,7 +598,7 @@ const RecordTab: React.FC = () => {
 
         <Button
           icon={
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4"/>
           }
           loading={loading}
           onClick={handleRefresh}
@@ -753,7 +719,7 @@ const RecordTab: React.FC = () => {
           rowKey={(record) =>
             String(
               record.id ??
-                `${record.jobInstanceId}-${record.sentTime}`,
+              `${record.jobInstanceId}-${record.sentTime}`,
             )
           }
           size="middle"

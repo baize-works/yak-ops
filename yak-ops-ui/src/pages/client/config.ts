@@ -1,5 +1,3 @@
-
-
 export const statusFilters = [
   {
     label: "Live",
@@ -12,9 +10,9 @@ export const statusFilters = [
 ];
 
 export const engineTypeOptions = [
-  { label: "Zeta", value: "ZETA" },
-  { label: "Spark", value: "SPARK" },
-  { label: "Flink", value: "FLINK" },
+  {label: "Zeta", value: "ZETA"},
+  {label: "Spark", value: "SPARK"},
+  {label: "Flink", value: "FLINK"},
 ];
 
 export const sortTypes = [

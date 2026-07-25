@@ -1,23 +1,13 @@
-import { Input, Modal } from "antd";
-import React, { useMemo, useState } from "react";
+import {Input, Modal} from "antd";
+import React, {useMemo, useState} from "react";
 
-import { chartRegistryMap } from "./chartRegistry";
-import {
-  defaultChartConfigValues,
-  defaultFieldOptions,
-  previewData,
-  themeOptions,
-} from "./constants";
+import {chartRegistryMap} from "./chartRegistry";
+import {defaultChartConfigValues, defaultFieldOptions, previewData, themeOptions,} from "./constants";
 import ChartPreview from "./components/ChartPreview";
 import ChartSettingBlock from "./components/ChartSettingBlock";
 import ChartTypeSelect from "./components/ChartTypeSelect";
 import ThemeSelect from "./components/ThemeSelect";
-import type {
-  ChartConfigValues,
-  ChartType,
-  CreateChartValues,
-  FieldOption,
-} from "./types";
+import type {ChartConfigValues, ChartType, CreateChartValues, FieldOption,} from "./types";
 
 interface CreateChartModalProps {
   open: boolean;
@@ -27,11 +17,11 @@ interface CreateChartModalProps {
 }
 
 const CreateChartModal: React.FC<CreateChartModalProps> = ({
-  open,
-  onCancel,
-  onCreate,
-  fieldOptions = defaultFieldOptions,
-}) => {
+                                                             open,
+                                                             onCancel,
+                                                             onCreate,
+                                                             fieldOptions = defaultFieldOptions,
+                                                           }) => {
   const [name, setName] = useState("默认名");
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [theme, setTheme] = useState("yellow");

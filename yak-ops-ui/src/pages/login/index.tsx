@@ -1,20 +1,13 @@
-import { Col, Row } from "antd";
-import React, {
-  CSSProperties,
-  forwardRef,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import {Col, Row} from "antd";
+import React, {CSSProperties, forwardRef, useEffect, useMemo, useRef, useState,} from "react";
 import "./index.less";
 import LoginPanel from "./LoginPanel";
 import SceneCopy from "./SceneCopy";
 
 /** ===================== Base Layout (unscaled design values) ===================== */
 const BASE_LAYOUT = {
-  absLeft: { orange: 34, blue: 150, black: 280, yellow: 360 } as const,
-  absBottom: { orange: 18, blue: 18, black: 22, yellow: 18 } as const,
+  absLeft: {orange: 34, blue: 150, black: 280, yellow: 360} as const,
+  absBottom: {orange: 18, blue: 18, black: 22, yellow: 18} as const,
 };
 
 /** ===================== Types ===================== */
@@ -135,14 +128,12 @@ const BASE_SPECS: Record<Variant, CharacterSpec> = {
 };
 
 /** ===================== Base Entry Config ===================== */
-const BASE_ENTRY: Record<
-  Variant,
-  { mode: EntryMode; delayMs: number; dist?: number }
-> = {
-  orange: { mode: "bottomBounce", delayMs: 0, dist: 220 },
-  blue: { mode: "bottomBounce", delayMs: 80, dist: 240 },
-  black: { mode: "topDrop", delayMs: 160, dist: 220 },
-  yellow: { mode: "sideSlide", delayMs: 240, dist: 260 },
+const BASE_ENTRY: Record<Variant,
+  { mode: EntryMode; delayMs: number; dist?: number }> = {
+  orange: {mode: "bottomBounce", delayMs: 0, dist: 220},
+  blue: {mode: "bottomBounce", delayMs: 80, dist: 240},
+  black: {mode: "topDrop", delayMs: 160, dist: 220},
+  yellow: {mode: "sideSlide", delayMs: 240, dist: 260},
 };
 
 /** ===================== Utils ===================== */
@@ -173,7 +164,7 @@ function vecToPupilOffset(from: Pt, to: Pt, maxR: number) {
   const ux = dx / len;
   const uy = dy / len;
 
-  return { x: ux * maxR, y: uy * maxR };
+  return {x: ux * maxR, y: uy * maxR};
 }
 
 function getCenter(el: HTMLElement | null): Pt | null {
@@ -293,7 +284,7 @@ function computeLayout(
     relBottom.yellow + specs.yellow.h
   );
 
-  return { relLeft, groupW, relBottom, groupH };
+  return {relLeft, groupW, relBottom, groupH};
 }
 
 function lerp(a: number, b: number, t: number) {
@@ -341,12 +332,12 @@ function Character(props: {
   const [tilt, setTilt] = useState(0);
   const [bow, setBow] = useState(0);
 
-  const [pupilLeft, setPupilLeft] = useState<Pt>({ x: 0, y: 0 });
-  const [pupilRight, setPupilRight] = useState<Pt>({ x: 0, y: 0 });
+  const [pupilLeft, setPupilLeft] = useState<Pt>({x: 0, y: 0});
+  const [pupilRight, setPupilRight] = useState<Pt>({x: 0, y: 0});
 
   const timersRef = useRef<number[]>([]);
-  const targetLeftRef = useRef<Pt>({ x: 0, y: 0 });
-  const targetRightRef = useRef<Pt>({ x: 0, y: 0 });
+  const targetLeftRef = useRef<Pt>({x: 0, y: 0});
+  const targetRightRef = useRef<Pt>({x: 0, y: 0});
   const bodyCenterRef = useRef<Pt | null>(null);
 
   const clearTimers = () => {
@@ -404,11 +395,11 @@ function Character(props: {
 
     const left = cL
       ? vecToPupilOffset(cL, lookTarget, spec.pupilMaxR)
-      : { x: 0, y: 0 };
+      : {x: 0, y: 0};
 
     const right = cR
       ? vecToPupilOffset(cR, lookTarget, spec.pupilMaxR)
-      : { x: 0, y: 0 };
+      : {x: 0, y: 0};
 
     targetLeftRef.current = {
       x: clamp(left.x, -spec.pupilMaxR, spec.pupilMaxR),
@@ -519,10 +510,10 @@ function Character(props: {
       (variant === "orange"
         ? 0
         : variant === "blue"
-        ? 280
-        : variant === "black"
-        ? 540
-        : 820)) %
+          ? 280
+          : variant === "black"
+            ? 540
+            : 820)) %
       2200) /
     2200;
 
@@ -829,7 +820,7 @@ function Character(props: {
 
     return (
       <div ref={bodyRef} style={wrap}>
-        <div style={circle} />
+        <div style={circle}/>
 
         <div style={faceLayer}>
           <div ref={eyeLeftRef} style={eyeStyle}>
@@ -898,8 +889,7 @@ function Character(props: {
 }
 
 /** ===================== Scene ===================== */
-const CharactersScene = forwardRef<
-  HTMLDivElement,
+const CharactersScene = forwardRef<HTMLDivElement,
   {
     mouse: Pt;
     action: GlobalAction;
@@ -909,8 +899,7 @@ const CharactersScene = forwardRef<
     stageH: number;
     stageRect: { left: number; top: number; width: number; height: number };
     focusedField: FocusedField;
-  }
->(
+  }>(
   (
     {
       mouse,
@@ -939,7 +928,7 @@ const CharactersScene = forwardRef<
       [responsiveScale]
     );
 
-    const { relLeft, groupW, relBottom, groupH } = useMemo(
+    const {relLeft, groupW, relBottom, groupH} = useMemo(
       () => computeLayout(layout, specs),
       [layout, specs]
     );
@@ -988,30 +977,30 @@ const CharactersScene = forwardRef<
           }}
         />
 
-        <div className="scene-overlay scene-overlay-top" />
-        <div className="scene-overlay scene-overlay-floor" />
+        <div className="scene-overlay scene-overlay-top"/>
+        <div className="scene-overlay scene-overlay-floor"/>
 
-        <div className="scene-glow scene-glow-left" />
-        <div className="scene-glow scene-glow-right" />
+        <div className="scene-glow scene-glow-left"/>
+        <div className="scene-glow scene-glow-right"/>
 
         <div className="scene-bubbles">
-          <span className="bubble bubble-1" />
-          <span className="bubble bubble-2" />
-          <span className="bubble bubble-3" />
-          <span className="bubble bubble-4" />
-          <span className="bubble bubble-5" />
-          <span className="bubble bubble-6" />
-          <span className="bubble bubble-7" />
+          <span className="bubble bubble-1"/>
+          <span className="bubble bubble-2"/>
+          <span className="bubble bubble-3"/>
+          <span className="bubble bubble-4"/>
+          <span className="bubble bubble-5"/>
+          <span className="bubble bubble-6"/>
+          <span className="bubble bubble-7"/>
         </div>
 
         <div className="scene-sparkles">
-          <span className="spark spark-1" />
-          <span className="spark spark-2" />
-          <span className="spark spark-3" />
-          <span className="spark spark-4" />
+          <span className="spark spark-1"/>
+          <span className="spark spark-2"/>
+          <span className="spark spark-3"/>
+          <span className="spark spark-4"/>
         </div>
 
-        <SceneCopy />
+        <SceneCopy/>
 
         <Character
           variant="orange"
@@ -1097,7 +1086,7 @@ CharactersScene.displayName = "CharactersScene";
 export default function BlueCrewDemo() {
   const stageRef = useRef<HTMLDivElement | null>(null);
 
-  const [mouse, setMouse] = useState<Pt>({ x: 0, y: 0 });
+  const [mouse, setMouse] = useState<Pt>({x: 0, y: 0});
   const [action, setAction] = useState<GlobalAction>({
     type: "BLINK",
     nonce: 0,
@@ -1115,7 +1104,7 @@ export default function BlueCrewDemo() {
   const [focusedField, setFocusedField] = useState<FocusedField>(null);
 
   const bootStartRef = useRef<number>(0);
-  const mouseTargetRef = useRef<Pt>({ x: 0, y: 0 });
+  const mouseTargetRef = useRef<Pt>({x: 0, y: 0});
   const tiltTargetRef = useRef(0);
 
   /** ===== Boot timeline ===== */
@@ -1137,7 +1126,7 @@ export default function BlueCrewDemo() {
   /** ===== Smooth mouse + tilt ===== */
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      mouseTargetRef.current = { x: e.clientX, y: e.clientY };
+      mouseTargetRef.current = {x: e.clientX, y: e.clientY};
 
       const r = stageRef.current?.getBoundingClientRect();
       if (!r) return;
@@ -1148,7 +1137,7 @@ export default function BlueCrewDemo() {
       tiltTargetRef.current = clamp(dx, -1, 1) * 6;
     };
 
-    window.addEventListener("mousemove", onMove, { passive: true });
+    window.addEventListener("mousemove", onMove, {passive: true});
 
     let raf = 0;
 
@@ -1202,20 +1191,20 @@ export default function BlueCrewDemo() {
   }, []);
 
   const fire = (type: ActionType) => {
-    setAction({ type, nonce: Date.now() });
+    setAction({type, nonce: Date.now()});
   };
 
   return (
-    <div style={{ position: "relative", height: "100vh" }}>
-      <div style={{ zIndex: 600 }}>
-        <Row gutter={24} style={{ margin: 0, padding: 0, zIndex: 600 }}>
+    <div style={{position: "relative", height: "100vh"}}>
+      <div style={{zIndex: 600}}>
+        <Row gutter={24} style={{margin: 0, padding: 0, zIndex: 600}}>
           <Col
             xs={24}
             sm={24}
             md={14}
             lg={14}
             xl={14}
-            style={{ margin: 0, padding: 0 }}
+            style={{margin: 0, padding: 0}}
           >
             <CharactersScene
               ref={stageRef}
@@ -1243,7 +1232,7 @@ export default function BlueCrewDemo() {
               padding: 0,
             }}
           >
-            <LoginPanel onFire={fire} onFieldFocusChange={setFocusedField} />
+            <LoginPanel onFire={fire} onFieldFocusChange={setFocusedField}/>
           </Col>
         </Row>
       </div>

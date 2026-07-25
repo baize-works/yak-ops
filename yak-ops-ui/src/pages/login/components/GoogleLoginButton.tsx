@@ -1,7 +1,7 @@
-import { GoogleOutlined } from "@ant-design/icons";
-import { App, Button } from "antd";
-import React, { useEffect, useRef, useState } from "react";
-import { loginApi } from "../type";
+import {GoogleOutlined} from "@ant-design/icons";
+import {App, Button} from "antd";
+import React, {useEffect, useRef, useState} from "react";
+import {loginApi} from "../type";
 
 declare global {
   interface Window {
@@ -43,15 +43,15 @@ function loadGoogleScript(): Promise<void> {
 }
 
 const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
-  loading = false,
-  disabled = false,
-  className,
-  style,
-  onStart,
-  onSuccess,
-  onError,
-}) => {
-  const { message } = App.useApp();
+                                                               loading = false,
+                                                               disabled = false,
+                                                               className,
+                                                               style,
+                                                               onStart,
+                                                               onSuccess,
+                                                               onError,
+                                                             }) => {
+  const {message} = App.useApp();
   const [ready, setReady] = useState(false);
   const [innerLoading, setInnerLoading] = useState(false);
   const initedRef = useRef(false);
@@ -69,7 +69,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) {
-        console.log(process.env)
+      console.log(process.env)
       if (!warnedRef.current) {
         warnedRef.current = true;
         console.warn("Missing UMI_APP_GOOGLE_CLIENT_ID");
@@ -156,7 +156,7 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
       style={style}
       block
       type="default"
-      icon={<GoogleOutlined />}
+      icon={<GoogleOutlined/>}
       loading={loading || innerLoading}
       disabled={disabled || !ready}
       onClick={handleClick}

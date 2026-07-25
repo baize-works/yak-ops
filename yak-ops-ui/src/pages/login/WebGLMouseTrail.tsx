@@ -1,5 +1,5 @@
 import LegendaryCursor from "legendary-cursor";
-import { useEffect } from "react";
+import {useEffect} from "react";
 
 type LegendaryCursorOptions = {
   lineSize?: number;
@@ -24,11 +24,11 @@ type Props = {
 };
 
 export default function LegendaryCursorEffect({
-  enabled = true,
-  options,
-  singletonKey = "legendary-cursor-singleton",
-  desktopOnly = true,
-}: Props) {
+                                                enabled = true,
+                                                options,
+                                                singletonKey = "legendary-cursor-singleton",
+                                                desktopOnly = true,
+                                              }: Props) {
   useEffect(() => {
     if (!enabled) return;
     if (typeof window === "undefined") return;
@@ -55,7 +55,7 @@ export default function LegendaryCursorEffect({
       texture2: "/nebula.png",
     };
 
-    const merged = { ...defaultOptions, ...(options || {}) };
+    const merged = {...defaultOptions, ...(options || {})};
 
     try {
       LegendaryCursor.init(merged as any);
@@ -65,7 +65,8 @@ export default function LegendaryCursorEffect({
       console.error("[LegendaryCursorEffect] init failed:", e);
     }
 
-    return () => {};
+    return () => {
+    };
   }, [enabled, options, singletonKey, desktopOnly]);
 
   return null;

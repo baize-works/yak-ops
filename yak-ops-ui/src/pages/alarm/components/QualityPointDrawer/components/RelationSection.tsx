@@ -1,8 +1,8 @@
-import { Select } from "antd";
-import { ScrollText, Shapes } from "lucide-react";
-import type { ReactNode } from "react";
-import type { QualityPoint } from "../model";
-import type { UpdateQualityPointDraft } from "../types";
+import {Select} from "antd";
+import {ScrollText, Shapes} from "lucide-react";
+import type {ReactNode} from "react";
+import type {QualityPoint} from "../model";
+import type {UpdateQualityPointDraft} from "../types";
 import RelationItem from "./RelationItem";
 
 const tokenSeparators = [",", "，", ";", "；"];
@@ -15,11 +15,11 @@ interface RelationSectionProps {
 }
 
 const RelationSection = ({
-  point,
-  draft,
-  editing,
-  updateDraft,
-}: RelationSectionProps) => {
+                           point,
+                           draft,
+                           editing,
+                           updateDraft,
+                         }: RelationSectionProps) => {
   return (
     <section className="border-b border-slate-100 py-6">
       <div className="mb-4">
@@ -35,7 +35,7 @@ const RelationSection = ({
         <div className="grid gap-5 sm:grid-cols-2">
           <RelationTagInput
             icon={
-              <ScrollText className="h-3.5 w-3.5" />
+              <ScrollText className="h-3.5 w-3.5"/>
             }
             label="关联段落"
             value={draft?.relatedSections ?? []}
@@ -45,7 +45,7 @@ const RelationSection = ({
           />
 
           <RelationTagInput
-            icon={<Shapes className="h-3.5 w-3.5" />}
+            icon={<Shapes className="h-3.5 w-3.5"/>}
             label="关联元素"
             value={draft?.relatedElements ?? []}
             onChange={(values) =>
@@ -57,14 +57,14 @@ const RelationSection = ({
         <div className="grid gap-5 sm:grid-cols-2">
           <RelationItem
             icon={
-              <ScrollText className="h-3.5 w-3.5" />
+              <ScrollText className="h-3.5 w-3.5"/>
             }
             label="关联段落"
             values={point.relatedSections}
           />
 
           <RelationItem
-            icon={<Shapes className="h-3.5 w-3.5" />}
+            icon={<Shapes className="h-3.5 w-3.5"/>}
             label="关联元素"
             values={point.relatedElements}
           />
@@ -82,11 +82,11 @@ interface RelationTagInputProps {
 }
 
 const RelationTagInput = ({
-  icon,
-  label,
-  value,
-  onChange,
-}: RelationTagInputProps) => (
+                            icon,
+                            label,
+                            value,
+                            onChange,
+                          }: RelationTagInputProps) => (
   <div>
     <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
       {icon}

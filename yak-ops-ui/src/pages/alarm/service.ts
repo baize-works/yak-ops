@@ -1,6 +1,6 @@
 import HttpUtils from '@/utils/HttpUtils';
-import type { ApiResponse } from '@/utils/request';
-import { ALARM_API_PREFIX } from './constants';
+import type {ApiResponse} from '@/utils/request';
+import {ALARM_API_PREFIX} from './constants';
 import type {
   AlarmChannelCommand,
   AlarmChannelRecord,
@@ -71,9 +71,7 @@ export async function fetchRuleChannels(
 }
 
 /** 所有规则-通道关联（批量加载，用于规则列表展示关联通道） */
-export async function fetchAllRuleChannels(): Promise<
-  ApiResponse<Array<{ ruleId: number; channelId: number }>>
-> {
+export async function fetchAllRuleChannels(): Promise<ApiResponse<Array<{ ruleId: number; channelId: number }>>> {
   return HttpUtils.get(`${ALARM_API_PREFIX}/rules/all-channels`);
 }
 
@@ -81,7 +79,7 @@ export async function fetchAllRuleChannels(): Promise<
 export async function fetchAlarmRecords(
   params: AlarmRecordQuery,
 ): Promise<ApiResponse<AlarmRecordPage>> {
-  const { pageNo, pageSize, jobInstanceId, channelType, severity, success } = params;
+  const {pageNo, pageSize, jobInstanceId, channelType, severity, success} = params;
   const searchParams = new URLSearchParams();
   searchParams.set('pageNo', String(pageNo));
   searchParams.set('pageSize', String(pageSize));
@@ -111,7 +109,7 @@ interface JobDefinitionPageResult {
  * 后端分页接口返回 { code, data: { bizData, pagination } }。
  */
 export async function fetchAllJobDefinitions(): Promise<JobDefinitionOption[]> {
-  const body = { pageNo: 1, pageSize: 1000 };
+  const body = {pageNo: 1, pageSize: 1000};
   const batchRes = await HttpUtils.post<JobDefinitionPageResult>(
     `${BATCH_DEFINITION_API}/page`,
     body,
@@ -124,7 +122,7 @@ export async function fetchAllJobDefinitions(): Promise<JobDefinitionOption[]> {
   if (Array.isArray(batchList)) {
     batchList.forEach((item) => {
       if (item?.id != null && item?.jobName) {
-        result.push({ id: item.id, jobName: item.jobName, type: 'batch' });
+        result.push({id: item.id, jobName: item.jobName, type: 'batch'});
       }
     });
   }

@@ -1,7 +1,7 @@
-import { Select } from "antd";
-import React, { useMemo, useState } from "react";
+import {Select} from "antd";
+import React, {useMemo, useState} from "react";
 
-import type { ThemeOption } from "../types";
+import type {ThemeOption} from "../types";
 import ThemeColorBar from "./ThemeColorBar";
 
 interface ThemeSelectProps {
@@ -11,10 +11,10 @@ interface ThemeSelectProps {
 }
 
 const ThemeSelect: React.FC<ThemeSelectProps> = ({
-  value,
-  options,
-  onChange,
-}) => {
+                                                   value,
+                                                   options,
+                                                   onChange,
+                                                 }) => {
   const [open, setOpen] = useState(false);
 
   const selectedTheme = useMemo(() => {
@@ -31,13 +31,13 @@ const ThemeSelect: React.FC<ThemeSelectProps> = ({
       suffixIcon={<span className="text-slate-400">⌄</span>}
       options={options.map((item) => ({
         value: item.value,
-        label: <ThemeColorBar colors={item.colors} compact />,
+        label: <ThemeColorBar colors={item.colors} compact/>,
       }))}
       onChange={(nextValue) => {
         onChange(nextValue);
         setOpen(false);
       }}
-      labelRender={() => <ThemeColorBar colors={selectedTheme.colors} compact />}
+      labelRender={() => <ThemeColorBar colors={selectedTheme.colors} compact/>}
       popupRender={() => (
         <div className="rounded-xl bg-white p-3">
           <div className="max-h-[260px] space-y-3 overflow-y-auto pr-1">
@@ -61,7 +61,7 @@ const ThemeSelect: React.FC<ThemeSelectProps> = ({
                     active ? "bg-[hsl(231_48%_96%)]" : "hover:bg-slate-50",
                   ].join(" ")}
                 >
-                  <ThemeColorBar colors={item.colors} />
+                  <ThemeColorBar colors={item.colors}/>
                 </button>
               );
             })}

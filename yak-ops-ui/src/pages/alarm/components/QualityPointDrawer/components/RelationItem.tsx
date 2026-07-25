@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type {ReactNode} from "react";
 import TagList from "./TagList";
 
 interface RelationItemProps {
@@ -8,10 +8,10 @@ interface RelationItemProps {
 }
 
 const RelationItem = ({
-  icon,
-  label,
-  values,
-}: RelationItemProps) => {
+                        icon,
+                        label,
+                        values,
+                      }: RelationItemProps) => {
   return (
     <div className="flex min-w-0 items-start gap-3">
       <div className="mt-1 flex shrink-0 items-center gap-1.5 text-xs font-medium text-slate-500">
@@ -20,7 +20,7 @@ const RelationItem = ({
       </div>
 
       <div className="min-w-0 flex-1">
-        <TagList values={values} />
+        <TagList values={values}/>
       </div>
     </div>
   );

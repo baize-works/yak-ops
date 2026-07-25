@@ -1,12 +1,8 @@
 import React from "react";
-import {
-  DeleteOutlined,
-  EditOutlined,
-  LinkOutlined,
-} from "@ant-design/icons";
-import { Button, Popconfirm, Tooltip } from "antd";
-import { BLUE, BLUE_LIGHT, BORDER_COLOR } from "../constants";
-import { getHealthMeta } from "../utils";
+import {DeleteOutlined, EditOutlined, LinkOutlined,} from "@ant-design/icons";
+import {Button, Popconfirm, Tooltip} from "antd";
+import {BLUE, BORDER_COLOR} from "../constants";
+import {getHealthMeta} from "../utils";
 
 interface Props {
   clients: any[];
@@ -18,13 +14,13 @@ interface Props {
 }
 
 const ClientListPanel: React.FC<Props> = ({
-  clients,
-  selectedClientId,
-  onSelect,
-  onEdit,
-  onDelete,
-  deleteLoadingId,
-}) => {
+                                            clients,
+                                            selectedClientId,
+                                            onSelect,
+                                            onEdit,
+                                            onDelete,
+                                            deleteLoadingId,
+                                          }) => {
   return (
     <div
       style={{
@@ -71,13 +67,13 @@ const ClientListPanel: React.FC<Props> = ({
                     flexShrink: 0,
                   }}
                 >
-                  <LinkOutlined />
+                  <LinkOutlined/>
                 </span>
 
                 <div className="min-w-0 flex-1 pr-[52px]">
                   <div
                     className="truncate text-[14px] font-semibold"
-                    style={{ color: active ? BLUE : "#101828" }}
+                    style={{color: active ? BLUE : "#101828"}}
                   >
                     {client.clientName || "--"}
                   </div>
@@ -86,7 +82,7 @@ const ClientListPanel: React.FC<Props> = ({
 
               <div
                 className="flex items-center gap-2 pl-[42px] pr-[52px] text-[12px] leading-7"
-                style={{ color: active ? "#5B6B8A" : "#98A2B3" }}
+                style={{color: active ? "#5B6B8A" : "#98A2B3"}}
               >
                 <span
                   className={`inline-block h-2 w-2 rounded-full ${itemHealth.dot}`}
@@ -111,7 +107,7 @@ const ClientListPanel: React.FC<Props> = ({
                   <Button
                     size="small"
                     type="text"
-                    icon={<EditOutlined />}
+                    icon={<EditOutlined/>}
                     className="!flex !h-7 !w-7 !items-center !justify-center !rounded-lg !text-[#667085] hover:!bg-white hover:!text-[#4F5BD5]"
                     onClick={() => onEdit(client)}
                   />
@@ -133,7 +129,7 @@ const ClientListPanel: React.FC<Props> = ({
                       size="small"
                       type="text"
                       danger
-                      icon={<DeleteOutlined />}
+                      icon={<DeleteOutlined/>}
                       loading={deleting}
                       className="!flex !h-7 !w-7 !items-center !justify-center !rounded-lg hover:!bg-[#FFF1F0]"
                     />
@@ -145,7 +141,8 @@ const ClientListPanel: React.FC<Props> = ({
         })}
 
         {!clients?.length ? (
-          <div className="rounded-2xl border border-dashed border-[#D8DEE6] bg-[#FBFCFE] px-4 py-5 text-[13px] leading-6 text-[#6B7280]">
+          <div
+            className="rounded-2xl border border-dashed border-[#D8DEE6] bg-[#FBFCFE] px-4 py-5 text-[13px] leading-6 text-[#6B7280]">
             还没有 Client，先新增一个地址吧。
           </div>
         ) : null}

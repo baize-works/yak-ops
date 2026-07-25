@@ -1,7 +1,7 @@
-import React, { memo, useMemo } from "react";
+import React, {memo, useMemo} from "react";
 import ReactECharts from "echarts-for-react";
 
-import type { CategoryValueChartProps } from "./types";
+import type {CategoryValueChartProps} from "./types";
 import {
   defaultThemeColors,
   getCommonLegend,
@@ -14,25 +14,25 @@ import {
 
 const BasicFunnelChart: React.FC<CategoryValueChartProps> = memo(
   ({
-    data,
-    categoryField,
-    valueField,
+     data,
+     categoryField,
+     valueField,
 
-    showLegend = false,
-    showLabel = true,
+     showLegend = false,
+     showLabel = true,
 
-    sortBy = "data",
-    sortOrder = "desc",
+     sortBy = "data",
+     sortOrder = "desc",
 
-    themeColors = defaultThemeColors,
+     themeColors = defaultThemeColors,
 
-    title,
-    seriesName = "指标值",
+     title,
+     seriesName = "指标值",
 
-    height = "100%",
-    loading = false,
-    emptyText = "暂无图表数据",
-  }) => {
+     height = "100%",
+     loading = false,
+     emptyText = "暂无图表数据",
+   }) => {
     const chartData = useMemo(() => {
       return sortCategoryValueData({
         data,
@@ -123,10 +123,11 @@ const BasicFunnelChart: React.FC<CategoryValueChartProps> = memo(
     return (
       <div
         className="relative h-full w-full rounded-2xl bg-white"
-        style={{ height }}
+        style={{height}}
       >
         {isEmpty ? (
-          <div className="flex h-full min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
+          <div
+            className="flex h-full min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
             <div className="text-center">
               <div className="text-sm font-medium text-slate-700">
                 {emptyText}

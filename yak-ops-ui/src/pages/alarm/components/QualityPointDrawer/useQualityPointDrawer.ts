@@ -1,25 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import type { QualityPoint } from "./model";
-import type {
-  PromptTab,
-  QualityPointDrawerProps,
-  UpdateQualityPointDraft,
-} from "./types";
-import {
-  cloneQualityPoint,
-  normalizeQualityPoint,
-} from "./utils";
+import {useEffect, useMemo, useState} from "react";
+import type {QualityPoint} from "./model";
+import type {PromptTab, QualityPointDrawerProps, UpdateQualityPointDraft,} from "./types";
+import {cloneQualityPoint, normalizeQualityPoint,} from "./utils";
 
-type UseQualityPointDrawerParams = Pick<
-  QualityPointDrawerProps,
-  "qualityPoint" | "onClose" | "onUpdate"
->;
+type UseQualityPointDrawerParams = Pick<QualityPointDrawerProps,
+  "qualityPoint" | "onClose" | "onUpdate">;
 
 export const useQualityPointDrawer = ({
-  qualityPoint,
-  onClose,
-  onUpdate,
-}: UseQualityPointDrawerParams) => {
+                                        qualityPoint,
+                                        onClose,
+                                        onUpdate,
+                                      }: UseQualityPointDrawerParams) => {
   const [promptTab, setPromptTab] =
     useState<PromptTab>("system");
   const [editing, setEditing] = useState(false);
@@ -46,9 +37,9 @@ export const useQualityPointDrawer = ({
     setDraft((current) =>
       current
         ? {
-            ...current,
-            [key]: value,
-          }
+          ...current,
+          [key]: value,
+        }
         : current,
     );
   };

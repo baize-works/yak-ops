@@ -1,4 +1,4 @@
-import type { FormInstance } from 'antd';
+import type {FormInstance} from 'antd';
 
 /** 通用响应结构，与 data-source 页保持一致 */
 export interface CommonApiResponse<T> {

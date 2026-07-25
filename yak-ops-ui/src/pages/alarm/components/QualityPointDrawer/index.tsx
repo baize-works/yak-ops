@@ -1,17 +1,17 @@
-import { Drawer } from "antd";
+import {Drawer} from "antd";
 import BasicInfoSection from "./components/BasicInfoSection";
 import PromptSection from "./components/PromptSection";
 import QualityPointDrawerHeader from "./components/QualityPointDrawerHeader";
 import RelationSection from "./components/RelationSection";
-import type { QualityPointDrawerProps } from "./types";
-import { useQualityPointDrawer } from "./useQualityPointDrawer";
+import type {QualityPointDrawerProps} from "./types";
+import {useQualityPointDrawer} from "./useQualityPointDrawer";
 
 const QualityPointDrawer = ({
-  open,
-  qualityPoint,
-  onClose,
-  onUpdate,
-}: QualityPointDrawerProps) => {
+                              open,
+                              qualityPoint,
+                              onClose,
+                              onUpdate,
+                            }: QualityPointDrawerProps) => {
   const drawer = useQualityPointDrawer({
     qualityPoint,
     onClose,
@@ -29,7 +29,7 @@ const QualityPointDrawer = ({
       width="min(640px, 100vw)"
       closable={false}
       maskClosable={!drawer.editing && !drawer.saving}
-      styles={{ body: { padding: 0 } }}
+      styles={{body: {padding: 0}}}
     >
       <div className="flex min-h-full flex-col bg-white">
         <QualityPointDrawerHeader

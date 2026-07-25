@@ -1,10 +1,5 @@
 import HttpUtils from "@/utils/HttpUtils";
-import {
-  ConcreteQualityType,
-  QualityPoint,
-  QualityPointApiItem,
-  QualityPointListPayload,
-} from "./qualityPointTypes";
+import {ConcreteQualityType, QualityPoint, QualityPointApiItem, QualityPointListPayload,} from "./qualityPointTypes";
 
 /**
  * 根据你的实际 HttpUtils 文件位置调整导入路径。
@@ -102,8 +97,8 @@ const mapQualityPoint = (
 ): QualityPoint | null => {
   const type = normalizeQualityType(
     item.type ??
-      item.qualityType ??
-      item.qualityPointType,
+    item.qualityType ??
+    item.qualityPointType,
   );
 
   if (!type) {
@@ -142,14 +137,14 @@ const mapQualityPoint = (
 
     relatedSections: toStringArray(
       item.relatedSections ??
-        item.sections ??
-        item.relatedParagraphs,
+      item.sections ??
+      item.relatedParagraphs,
     ),
 
     relatedElements: toStringArray(
       item.relatedElements ??
-        item.elements ??
-        item.relatedFields,
+      item.elements ??
+      item.relatedFields,
     ),
 
     systemPrompt: item.systemPrompt ?? "",

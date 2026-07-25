@@ -1,4 +1,4 @@
-import type { ChartRow, ChartSortBy, ChartSortOrder } from "./types";
+import type {ChartRow, ChartSortBy, ChartSortOrder} from "./types";
 
 export const defaultThemeColors = [
   "#ffa001",
@@ -24,12 +24,12 @@ export const getFieldText = (
 };
 
 export const sortAxisChartData = ({
-  data,
-  xField,
-  yField,
-  sortBy = "data",
-  sortOrder = "asc",
-}: {
+                                    data,
+                                    xField,
+                                    yField,
+                                    sortBy = "data",
+                                    sortOrder = "asc",
+                                  }: {
   data: ChartRow[];
   xField?: string;
   yField?: string;
@@ -64,12 +64,12 @@ export const sortAxisChartData = ({
 };
 
 export const sortCategoryValueData = ({
-  data,
-  categoryField,
-  valueField,
-  sortBy = "data",
-  sortOrder = "asc",
-}: {
+                                        data,
+                                        categoryField,
+                                        valueField,
+                                        sortBy = "data",
+                                        sortOrder = "asc",
+                                      }: {
   data: ChartRow[];
   categoryField?: string;
   valueField?: string;

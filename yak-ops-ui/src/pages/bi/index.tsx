@@ -1,15 +1,6 @@
-import {
-  BarChart3,
-  Check,
-  Edit3,
-  LayoutDashboard,
-  Plus,
-  RefreshCw,
-  Settings,
-  Sparkles,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import GridLayout, { Layout } from "react-grid-layout";
+import {BarChart3, Check, Edit3, LayoutDashboard, Plus, RefreshCw, Settings, Sparkles,} from "lucide-react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import GridLayout, {Layout} from "react-grid-layout";
 
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -18,14 +9,9 @@ import "./index.less";
 import ChartCard from "./components/ChartCard";
 import CreateChartModal from "./components/CreateChartModal";
 
-import type { CreateChartValues } from "./components/CreateChartModal/types";
-import { COLS, MARGIN, ROW_HEIGHT } from "./dashboard.data";
-import {
-  getCanvasHeight,
-  getInitialLayout,
-  getLayoutBottomRow,
-  persistDashboardLayout,
-} from "./dashboard.utils";
+import type {CreateChartValues} from "./components/CreateChartModal/types";
+import {COLS, MARGIN, ROW_HEIGHT} from "./dashboard.data";
+import {getCanvasHeight, getInitialLayout, getLayoutBottomRow, persistDashboardLayout,} from "./dashboard.utils";
 
 interface ChartMeta {
   id: string;
@@ -246,7 +232,7 @@ const Dashboard = () => {
           return dashboard;
         }
 
-        const nextCharts = { ...dashboard.charts };
+        const nextCharts = {...dashboard.charts};
         delete nextCharts[chartId];
 
         return {
@@ -303,7 +289,7 @@ const Dashboard = () => {
                 dashboardTheme.primaryText,
               ].join(" ")}
             >
-              <LayoutDashboard size={17} />
+              <LayoutDashboard size={17}/>
             </div>
 
             <div className="min-w-0">
@@ -327,7 +313,7 @@ const Dashboard = () => {
               ].join(" ")}
               title="新建仪表盘"
             >
-              <Plus size={15} />
+              <Plus size={15}/>
             </button>
           </div>
 
@@ -344,14 +330,14 @@ const Dashboard = () => {
                     "flex h-9 w-full items-center gap-2 rounded-xl px-3 text-left text-sm transition",
                     active
                       ? [
-                          dashboardTheme.primarySoftBg,
-                          dashboardTheme.primaryText,
-                          "font-medium",
-                        ].join(" ")
+                        dashboardTheme.primarySoftBg,
+                        dashboardTheme.primaryText,
+                        "font-medium",
+                      ].join(" ")
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
                   ].join(" ")}
                 >
-                  <BarChart3 size={15} />
+                  <BarChart3 size={15}/>
                   <span className="min-w-0 flex-1 truncate">
                     {dashboard.name}
                   </span>
@@ -365,7 +351,7 @@ const Dashboard = () => {
               type="button"
               className="flex h-9 w-full items-center gap-2 rounded-xl px-3 text-sm text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
             >
-              <Settings size={15} />
+              <Settings size={15}/>
               仪表盘设置
             </button>
           </div>
@@ -426,7 +412,7 @@ const Dashboard = () => {
                 onClick={handleRefresh}
                 className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
               >
-                <RefreshCw size={15} />
+                <RefreshCw size={15}/>
                 刷新
               </button>
 
@@ -442,7 +428,7 @@ const Dashboard = () => {
                   dashboardTheme.primaryText,
                 ].join(" ")}
               >
-                <Plus size={15} />
+                <Plus size={15}/>
                 创建图表
               </button>
 
@@ -454,13 +440,13 @@ const Dashboard = () => {
                   isEditing
                     ? "bg-slate-900 text-white hover:bg-slate-800"
                     : [
-                        dashboardTheme.primaryBg,
-                        dashboardTheme.primaryBgHover,
-                        "text-white",
-                      ].join(" "),
+                      dashboardTheme.primaryBg,
+                      dashboardTheme.primaryBgHover,
+                      "text-white",
+                    ].join(" "),
                 ].join(" ")}
               >
-                <Check size={15} />
+                <Check size={15}/>
               </button>
             </div>
           </header>
@@ -488,7 +474,7 @@ const Dashboard = () => {
                         dashboardTheme.primaryText,
                       ].join(" ")}
                     >
-                      <Sparkles size={22} />
+                      <Sparkles size={22}/>
                     </div>
 
                     <div className="text-base font-semibold text-slate-900">

@@ -1,2 +1,2 @@
-export type { QualityPoint } from "../../qualityPointTypes";
-export { typeLabelMap } from "../../qualityPointTypes";
+export type {QualityPoint} from "../../qualityPointTypes";
+export {typeLabelMap} from "../../qualityPointTypes";

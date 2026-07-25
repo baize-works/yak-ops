@@ -1,7 +1,7 @@
-import React, { memo, useMemo } from "react";
+import React, {memo, useMemo} from "react";
 import ReactECharts from "echarts-for-react";
 
-import type { AxisChartProps } from "./types";
+import type {AxisChartProps} from "./types";
 import {
   defaultThemeColors,
   getCommonLegend,
@@ -13,27 +13,27 @@ import {
 
 const BasicScatterChart: React.FC<AxisChartProps> = memo(
   ({
-    data,
-    xField,
-    yField,
+     data,
+     xField,
+     yField,
 
-    showLegend = false,
-    showLabel = false,
-    showAxis = true,
-    showGrid = true,
+     showLegend = false,
+     showLabel = false,
+     showAxis = true,
+     showGrid = true,
 
-    sortBy = "data",
-    sortOrder = "asc",
+     sortBy = "data",
+     sortOrder = "asc",
 
-    themeColors = defaultThemeColors,
+     themeColors = defaultThemeColors,
 
-    title,
-    seriesName = "指标值",
+     title,
+     seriesName = "指标值",
 
-    height = "100%",
-    loading = false,
-    emptyText = "暂无图表数据",
-  }) => {
+     height = "100%",
+     loading = false,
+     emptyText = "暂无图表数据",
+   }) => {
     const chartData = useMemo(() => {
       return sortAxisChartData({
         data,
@@ -160,10 +160,11 @@ const BasicScatterChart: React.FC<AxisChartProps> = memo(
     return (
       <div
         className="relative h-full w-full rounded-2xl bg-white"
-        style={{ height }}
+        style={{height}}
       >
         {isEmpty ? (
-          <div className="flex h-full min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
+          <div
+            className="flex h-full min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
             <div className="text-center">
               <div className="text-sm font-medium text-slate-700">
                 {emptyText}

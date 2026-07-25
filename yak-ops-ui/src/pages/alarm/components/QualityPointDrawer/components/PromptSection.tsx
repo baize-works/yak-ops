@@ -1,16 +1,10 @@
-import { Input } from "antd";
-import {
-  Braces,
-  MessageSquareText,
-} from "lucide-react";
-import type { ReactNode } from "react";
-import type { QualityPoint } from "../model";
-import type {
-  PromptTab,
-  UpdateQualityPointDraft,
-} from "../types";
+import {Input} from "antd";
+import {Braces, MessageSquareText,} from "lucide-react";
+import type {ReactNode} from "react";
+import type {QualityPoint} from "../model";
+import type {PromptTab, UpdateQualityPointDraft,} from "../types";
 
-const { TextArea } = Input;
+const {TextArea} = Input;
 
 interface PromptSectionProps {
   point: QualityPoint;
@@ -21,12 +15,12 @@ interface PromptSectionProps {
 }
 
 const PromptSection = ({
-  point,
-  editing,
-  promptTab,
-  onPromptTabChange,
-  updateDraft,
-}: PromptSectionProps) => {
+                         point,
+                         editing,
+                         promptTab,
+                         onPromptTabChange,
+                         updateDraft,
+                       }: PromptSectionProps) => {
   const promptValue =
     promptTab === "system"
       ? point.systemPrompt
@@ -68,7 +62,7 @@ const PromptSection = ({
               ? "请输入系统提示词"
               : "请输入用户提示词"
           }
-          autoSize={{ minRows: 12, maxRows: 24 }}
+          autoSize={{minRows: 12, maxRows: 24}}
           className="mt-4 font-mono text-sm leading-7"
         />
       ) : (
@@ -81,7 +75,8 @@ const PromptSection = ({
             </p>
           </div>
 
-          <pre className="max-h-[420px] overflow-y-auto whitespace-pre-wrap break-words px-4 py-4 font-sans text-sm leading-7 text-slate-600">
+          <pre
+            className="max-h-[420px] overflow-y-auto whitespace-pre-wrap break-words px-4 py-4 font-sans text-sm leading-7 text-slate-600">
             {promptValue || "暂无提示词配置"}
           </pre>
         </div>
@@ -96,13 +91,13 @@ interface PromptTabsProps {
 }
 
 const PromptTabs = ({
-  value,
-  onChange,
-}: PromptTabsProps) => (
+                      value,
+                      onChange,
+                    }: PromptTabsProps) => (
   <div className="flex rounded-lg bg-slate-100 p-1">
     <PromptTabButton
       active={value === "system"}
-      icon={<Braces className="h-3.5 w-3.5" />}
+      icon={<Braces className="h-3.5 w-3.5"/>}
       onClick={() => onChange("system")}
     >
       系统提示词
@@ -111,7 +106,7 @@ const PromptTabs = ({
     <PromptTabButton
       active={value === "user"}
       icon={
-        <MessageSquareText className="h-3.5 w-3.5" />
+        <MessageSquareText className="h-3.5 w-3.5"/>
       }
       onClick={() => onChange("user")}
     >
@@ -128,11 +123,11 @@ interface PromptTabButtonProps {
 }
 
 const PromptTabButton = ({
-  active,
-  icon,
-  children,
-  onClick,
-}: PromptTabButtonProps) => (
+                           active,
+                           icon,
+                           children,
+                           onClick,
+                         }: PromptTabButtonProps) => (
   <button
     type="button"
     onClick={onClick}

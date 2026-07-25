@@ -1,16 +1,16 @@
 import React from "react";
 
-import { previewData, themeOptions } from "../components/CreateChartModal/constants";
+import {previewData, themeOptions} from "../components/CreateChartModal/constants";
 import ChartPreview from "../components/CreateChartModal/components/ChartPreview";
-import type { CreateChartValues } from "../components/CreateChartModal/types";
+import type {CreateChartValues} from "../components/CreateChartModal/types";
 
 interface DashboardChartPreviewProps {
   config?: CreateChartValues;
 }
 
 const DashboardChartPreview: React.FC<DashboardChartPreviewProps> = ({
-  config,
-}) => {
+                                                                       config,
+                                                                     }) => {
   if (!config) {
     return null;
   }

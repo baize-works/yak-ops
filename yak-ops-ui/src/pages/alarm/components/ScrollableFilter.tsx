@@ -1,5 +1,5 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import {ChevronLeft, ChevronRight} from "lucide-react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 
 export interface FilterOption<T extends string = string> {
   label: string;
@@ -14,11 +14,11 @@ interface ScrollableFilterProps<T extends string = string> {
 }
 
 const ScrollableFilter = <T extends string>({
-  value,
-  options,
-  onChange,
-  className = "",
-}: ScrollableFilterProps<T>) => {
+                                              value,
+                                              options,
+                                              onChange,
+                                              className = "",
+                                            }: ScrollableFilterProps<T>) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -45,7 +45,7 @@ const ScrollableFilter = <T extends string>({
 
     updateScrollState();
 
-    element.addEventListener("scroll", updateScrollState, { passive: true });
+    element.addEventListener("scroll", updateScrollState, {passive: true});
 
     const observer = new ResizeObserver(updateScrollState);
     observer.observe(element);
@@ -87,7 +87,7 @@ const ScrollableFilter = <T extends string>({
             "active:scale-95",
           ].join(" ")}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4"/>
         </button>
       </div>
 
@@ -113,7 +113,7 @@ const ScrollableFilter = <T extends string>({
             "active:scale-95",
           ].join(" ")}
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4"/>
         </button>
       </div>
 

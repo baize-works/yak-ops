@@ -1,7 +1,7 @@
-import React, { memo, useMemo } from "react";
+import React, {memo, useMemo} from "react";
 import ReactECharts from "echarts-for-react";
 
-import type { CategoryValueChartProps } from "./types";
+import type {CategoryValueChartProps} from "./types";
 import {
   defaultThemeColors,
   getCommonLegend,
@@ -18,27 +18,27 @@ interface BasicPieChartProps extends CategoryValueChartProps {
 
 const BasicPieChart: React.FC<BasicPieChartProps> = memo(
   ({
-    data,
-    categoryField,
-    valueField,
+     data,
+     categoryField,
+     valueField,
 
-    showLegend = false,
-    showLabel = false,
+     showLegend = false,
+     showLabel = false,
 
-    sortBy = "data",
-    sortOrder = "asc",
+     sortBy = "data",
+     sortOrder = "asc",
 
-    themeColors = defaultThemeColors,
+     themeColors = defaultThemeColors,
 
-    title,
-    seriesName = "指标值",
+     title,
+     seriesName = "指标值",
 
-    height = "100%",
-    loading = false,
-    emptyText = "暂无图表数据",
+     height = "100%",
+     loading = false,
+     emptyText = "暂无图表数据",
 
-    variant = "pie",
-  }) => {
+     variant = "pie",
+   }) => {
     const chartData = useMemo(() => {
       return sortCategoryValueData({
         data,
@@ -128,10 +128,11 @@ const BasicPieChart: React.FC<BasicPieChartProps> = memo(
     return (
       <div
         className="relative h-full w-full rounded-2xl bg-white"
-        style={{ height }}
+        style={{height}}
       >
         {isEmpty ? (
-          <div className="flex h-full min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
+          <div
+            className="flex h-full min-h-[260px] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
             <div className="text-center">
               <div className="text-sm font-medium text-slate-700">
                 {emptyText}

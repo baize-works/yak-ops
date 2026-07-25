@@ -1,7 +1,7 @@
-import { Checkbox } from "antd";
+import {Checkbox} from "antd";
 import React from "react";
 
-import type { ChartConfigValues } from "../types";
+import type {ChartConfigValues} from "../types";
 import ChartSettingBlock from "../components/ChartSettingBlock";
 
 interface CommonChartOptionsProps {
@@ -14,13 +14,13 @@ interface CommonChartOptionsProps {
 }
 
 const CommonChartOptions: React.FC<CommonChartOptionsProps> = ({
-  value,
-  onChange,
-  showAxisOption = true,
-  showGridOption = true,
-  showLegendOption = true,
-  showLabelOption = true,
-}) => {
+                                                                 value,
+                                                                 onChange,
+                                                                 showAxisOption = true,
+                                                                 showGridOption = true,
+                                                                 showLegendOption = true,
+                                                                 showLabelOption = true,
+                                                               }) => {
   const options = [
     {
       visible: showLegendOption,

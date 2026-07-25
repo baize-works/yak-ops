@@ -1,7 +1,7 @@
-import React, { memo, useMemo } from "react";
+import React, {memo, useMemo} from "react";
 
-import type { NumberChartProps } from "./types";
-import { defaultThemeColors, toNumber } from "./utils";
+import type {NumberChartProps} from "./types";
+import {defaultThemeColors, toNumber} from "./utils";
 
 const formatNumber = (value: number) => {
   return new Intl.NumberFormat("zh-CN", {
@@ -11,19 +11,19 @@ const formatNumber = (value: number) => {
 
 const BasicNumberChart: React.FC<NumberChartProps> = memo(
   ({
-    data,
-    metricField,
+     data,
+     metricField,
 
-    themeColors = defaultThemeColors,
+     themeColors = defaultThemeColors,
 
-    title,
-    label = "指标值",
-    suffix = "",
-    prefix = "",
+     title,
+     label = "指标值",
+     suffix = "",
+     prefix = "",
 
-    height = "100%",
-    emptyText = "暂无指标数据",
-  }) => {
+     height = "100%",
+     emptyText = "暂无指标数据",
+   }) => {
     const value = useMemo(() => {
       if (!metricField || !data.length) return null;
 
@@ -37,10 +37,11 @@ const BasicNumberChart: React.FC<NumberChartProps> = memo(
     return (
       <div
         className="flex h-full w-full items-center justify-center rounded-2xl bg-white"
-        style={{ height }}
+        style={{height}}
       >
         {isEmpty ? (
-          <div className="flex h-full min-h-[260px] w-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
+          <div
+            className="flex h-full min-h-[260px] w-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60">
             <div className="text-center">
               <div className="text-sm font-medium text-slate-700">
                 {emptyText}
@@ -51,7 +52,8 @@ const BasicNumberChart: React.FC<NumberChartProps> = memo(
             </div>
           </div>
         ) : (
-          <div className="w-full rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-8 shadow-sm">
+          <div
+            className="w-full rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-8 shadow-sm">
             {title ? (
               <div className="mb-2 text-sm font-semibold text-slate-900">
                 {title}

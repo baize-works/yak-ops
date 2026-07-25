@@ -1,33 +1,9 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-} from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
-import {
-  Button,
-  Empty,
-  message,
-  Modal,
-  Spin,
-  Switch,
-  Tooltip,
-} from 'antd';
-import {
-  ArrowRight,
-  BellRing,
-  Clock3,
-  ShieldAlert,
-  Target,
-} from 'lucide-react';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { SEVERITY_CONFIG } from '../constants';
+import {DeleteOutlined, EditOutlined,} from '@ant-design/icons';
+import {useIntl} from '@umijs/max';
+import {Button, Empty, message, Modal, Spin, Switch, Tooltip,} from 'antd';
+import {ArrowRight, BellRing, Clock3, ShieldAlert, Target,} from 'lucide-react';
+import React, {useCallback, useEffect, useMemo, useRef, useState,} from 'react';
+import {SEVERITY_CONFIG} from '../constants';
 import {
   deleteRule,
   fetchAllJobDefinitions,
@@ -37,16 +13,16 @@ import {
   fetchRules,
   saveRule,
 } from '../service';
+import {formatTime} from '../utils';
+import AddOrEditRuleModal from './AddOrEditRuleModal';
 import {
   AlarmOperateType,
   type AlarmChannelRecord,
   type AlarmModalRef,
   type AlarmRuleRecord,
 } from '../types';
-import { formatTime } from '../utils';
-import AddOrEditRuleModal from './AddOrEditRuleModal';
 
-const { confirm } = Modal;
+const {confirm} = Modal;
 
 interface RuleTabProps {
   keyword?: string;
@@ -100,27 +76,19 @@ function buildRuleChannelMap(
 }
 
 const RuleTab: React.FC<RuleTabProps> = ({
-  keyword = '',
-}) => {
+                                           keyword = '',
+                                         }) => {
   const intl = useIntl();
   const drawerRef = useRef<AlarmModalRef>(null);
 
   const [loading, setLoading] = useState(false);
-  const [togglingId, setTogglingId] = useState<
-    number | null
-  >(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
-  const [ruleList, setRuleList] = useState<
-    AlarmRuleRecord[]
-  >([]);
+  const [ruleList, setRuleList] = useState<AlarmRuleRecord[]>([]);
 
-  const [channelList, setChannelList] = useState<
-    AlarmChannelRecord[]
-  >([]);
+  const [channelList, setChannelList] = useState<AlarmChannelRecord[]>([]);
 
-  const [jobNameMap, setJobNameMap] = useState<
-    Record<number, string>
-  >({});
+  const [jobNameMap, setJobNameMap] = useState<Record<number, string>>({});
 
   const [ruleChannelMap, setRuleChannelMap] =
     useState<Record<number, number[]>>({});
@@ -129,10 +97,8 @@ const RuleTab: React.FC<RuleTabProps> = ({
    * 通道 ID -> 通道信息。
    */
   const channelMap = useMemo(() => {
-    const result: Record<
-      number,
-      AlarmChannelRecord
-    > = {};
+    const result: Record<number,
+      AlarmChannelRecord> = {};
 
     channelList.forEach((channel) => {
       if (channel.id != null) {
@@ -257,12 +223,12 @@ const RuleTab: React.FC<RuleTabProps> = ({
       const channelNames =
         rule.id != null
           ? (
-              ruleChannelMap[rule.id] || []
-            ).map(
-              (id) =>
-                channelMap[id]?.name ||
-                String(id),
-            )
+            ruleChannelMap[rule.id] || []
+          ).map(
+          (id) =>
+            channelMap[id]?.name ||
+            String(id),
+          )
           : [];
 
       const searchableContent = [
@@ -416,7 +382,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
         name: record.name,
         targetJobs: record.targetJobs,
         triggerStatuses:
-          record.triggerStatuses,
+        record.triggerStatuses,
         excludes: record.excludes,
         severity: record.severity,
         enabled: checked ? 1 : 0,
@@ -443,9 +409,9 @@ const RuleTab: React.FC<RuleTabProps> = ({
           prev.map((item) =>
             item.id === record.id
               ? {
-                  ...item,
-                  enabled: checked ? 1 : 0,
-                }
+                ...item,
+                enabled: checked ? 1 : 0,
+              }
               : item,
           ),
         );
@@ -493,8 +459,8 @@ const RuleTab: React.FC<RuleTabProps> = ({
 
                 const severityConfig =
                   SEVERITY_CONFIG[
-                    rule.severity || ''
-                  ];
+                  rule.severity || ''
+                    ];
 
                 const statuses =
                   parseStringList(
@@ -509,38 +475,38 @@ const RuleTab: React.FC<RuleTabProps> = ({
                 const channelIds =
                   rule.id != null
                     ? ruleChannelMap[
-                        rule.id
-                      ] || []
+                    rule.id
+                    ] || []
                     : [];
 
                 const targetSummary =
                   targetJobIds.length === 0
                     ? intl.formatMessage({
-                        id: 'pages.alarm.field.allJobs',
-                        defaultMessage:
-                          '全部任务',
-                      })
+                      id: 'pages.alarm.field.allJobs',
+                      defaultMessage:
+                        '全部任务',
+                    })
                     : targetJobIds
-                        .slice(0, 2)
-                        .map(
-                          (id) =>
-                            jobNameMap[id] ||
-                            `#${id}`,
-                        )
-                        .join('、');
+                      .slice(0, 2)
+                      .map(
+                        (id) =>
+                          jobNameMap[id] ||
+                          `#${id}`,
+                      )
+                      .join('、');
 
                 const channelSummary =
                   channelIds.length === 0
                     ? '未关联通道'
                     : channelIds
-                        .slice(0, 2)
-                        .map(
-                          (id) =>
-                            channelMap[id]
-                              ?.name ||
-                            `#${id}`,
-                        )
-                        .join('、');
+                      .slice(0, 2)
+                      .map(
+                        (id) =>
+                          channelMap[id]
+                            ?.name ||
+                          `#${id}`,
+                      )
+                      .join('、');
 
                 return (
                   <div
@@ -566,7 +532,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
                           : 'bg-slate-50 text-slate-300',
                       ].join(' ')}
                     >
-                      <ShieldAlert className="h-5 w-5" />
+                      <ShieldAlert className="h-5 w-5"/>
                     </div>
 
                     {/* 主体 */}
@@ -576,7 +542,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="m-0 truncate text-sm font-semibold text-slate-950">
                               {rule.name ||
-                                '未命名规则'}
+                              '未命名规则'}
                             </h3>
 
                             <span
@@ -593,9 +559,9 @@ const RuleTab: React.FC<RuleTabProps> = ({
                                 className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium"
                                 style={{
                                   color:
-                                    severityConfig.color,
+                                  severityConfig.color,
                                   backgroundColor:
-                                    severityConfig.backgroundColor,
+                                  severityConfig.backgroundColor,
                                 }}
                               >
                                 {
@@ -607,7 +573,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
 
                           <p className="mt-1.5 line-clamp-2 min-h-12 text-sm leading-6 text-slate-500">
                             {rule.description ||
-                              '暂无规则说明'}
+                            '暂无规则说明'}
                           </p>
                         </div>
 
@@ -648,12 +614,12 @@ const RuleTab: React.FC<RuleTabProps> = ({
                           <span className="text-xs text-slate-400">
                             +
                             {statuses.length -
-                              3}
+                            3}
                           </span>
                         )}
 
                         {statuses.length ===
-                          0 && (
+                        0 && (
                           <span className="text-xs text-slate-400">
                             暂无触发状态
                           </span>
@@ -663,7 +629,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
                       {/* 元信息 */}
                       <div className="mt-3 space-y-2 text-xs text-slate-400">
                         <div className="flex min-w-0 items-center gap-2">
-                          <Target className="h-3.5 w-3.5 shrink-0" />
+                          <Target className="h-3.5 w-3.5 shrink-0"/>
 
                           <span className="shrink-0">
                             目标任务
@@ -674,17 +640,17 @@ const RuleTab: React.FC<RuleTabProps> = ({
                           </span>
 
                           {targetJobIds.length >
-                            2 && (
+                          2 && (
                             <span className="shrink-0">
                               +
                               {targetJobIds.length -
-                                2}
+                              2}
                             </span>
                           )}
                         </div>
 
                         <div className="flex min-w-0 items-center gap-2">
-                          <BellRing className="h-3.5 w-3.5 shrink-0" />
+                          <BellRing className="h-3.5 w-3.5 shrink-0"/>
 
                           <span className="shrink-0">
                             告警通道
@@ -695,11 +661,11 @@ const RuleTab: React.FC<RuleTabProps> = ({
                           </span>
 
                           {channelIds.length >
-                            2 && (
+                          2 && (
                             <span className="shrink-0">
                               +
                               {channelIds.length -
-                                2}
+                              2}
                             </span>
                           )}
                         </div>
@@ -708,8 +674,9 @@ const RuleTab: React.FC<RuleTabProps> = ({
                       {/* 操作 */}
                       <div className="mt-3 flex items-center gap-1 border-t border-slate-100 pt-3">
                         {rule.createTime && (
-                          <span className="mr-auto inline-flex min-w-0 items-center gap-1.5 truncate text-xs text-slate-400">
-                            <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                          <span
+                            className="mr-auto inline-flex min-w-0 items-center gap-1.5 truncate text-xs text-slate-400">
+                            <Clock3 className="h-3.5 w-3.5 shrink-0"/>
 
                             {formatTime(
                               rule.createTime,
@@ -721,7 +688,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
                           type="text"
                           size="small"
                           icon={
-                            <EditOutlined />
+                            <EditOutlined/>
                           }
                           onClick={() =>
                             handleEdit(rule)
@@ -740,7 +707,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
                           size="small"
                           danger
                           icon={
-                            <DeleteOutlined />
+                            <DeleteOutlined/>
                           }
                           onClick={() =>
                             handleDelete(rule)
@@ -765,7 +732,7 @@ const RuleTab: React.FC<RuleTabProps> = ({
                               'hover:bg-white hover:text-slate-700',
                             ].join(' ')}
                           >
-                            <ArrowRight className="h-4 w-4" />
+                            <ArrowRight className="h-4 w-4"/>
                           </button>
                         </Tooltip>
                       </div>

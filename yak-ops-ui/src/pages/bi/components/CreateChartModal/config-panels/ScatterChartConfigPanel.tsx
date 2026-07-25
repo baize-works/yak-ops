@@ -1,15 +1,15 @@
-import { Select } from "antd";
+import {Select} from "antd";
 import React from "react";
 
-import type { ChartConfigPanelProps } from "../types";
+import type {ChartConfigPanelProps} from "../types";
 import ChartSettingBlock from "../components/ChartSettingBlock";
 import CommonChartOptions from "./CommonChartOptions";
 
 const ScatterChartConfigPanel: React.FC<ChartConfigPanelProps> = ({
-  value,
-  fieldOptions,
-  onChange,
-}) => {
+                                                                    value,
+                                                                    fieldOptions,
+                                                                    onChange,
+                                                                  }) => {
   return (
     <>
       <ChartSettingBlock title="X 轴字段">
@@ -18,7 +18,7 @@ const ScatterChartConfigPanel: React.FC<ChartConfigPanelProps> = ({
           placeholder="请选择 X 轴字段"
           value={value.xField}
           options={fieldOptions}
-          onChange={(xField) => onChange({ xField })}
+          onChange={(xField) => onChange({xField})}
         />
       </ChartSettingBlock>
 
@@ -28,11 +28,11 @@ const ScatterChartConfigPanel: React.FC<ChartConfigPanelProps> = ({
           placeholder="请选择 Y 轴字段"
           value={value.yField}
           options={fieldOptions}
-          onChange={(yField) => onChange({ yField })}
+          onChange={(yField) => onChange({yField})}
         />
       </ChartSettingBlock>
 
-      <CommonChartOptions value={value} onChange={onChange} />
+      <CommonChartOptions value={value} onChange={onChange}/>
     </>
   );
 };

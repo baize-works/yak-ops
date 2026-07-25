@@ -1,19 +1,8 @@
-import {
-  DashboardOutlined,
-  DatabaseOutlined,
-  HddOutlined,
-} from "@ant-design/icons";
-import {
-  ClientMonitoring,
-  HealthInfo,
-  RecentEventItem,
-  ResourceUsageItem,
-  ResourceUsageTone,
-  TrendBar,
-} from "./types";
+import {DashboardOutlined, DatabaseOutlined, HddOutlined,} from "@ant-design/icons";
+import {ClientMonitoring, HealthInfo, RecentEventItem, ResourceUsageItem, ResourceUsageTone, TrendBar,} from "./types";
 
 export const getHealthInfo = (client: ClientMonitoring): HealthInfo => {
-  const { overview, monitoring } = client;
+  const {overview, monitoring} = client;
 
   if (monitoring.physicalMemoryFreeMB < 100) {
     return {
@@ -127,10 +116,8 @@ const formatMBToBestUnit = (mb: number) => {
 };
 
 const getToneStyle = (tone: ResourceUsageTone) => {
-  const toneMap: Record<
-    ResourceUsageTone,
-    { gradient: string; trackColor: string; glowColor: string }
-  > = {
+  const toneMap: Record<ResourceUsageTone,
+    { gradient: string; trackColor: string; glowColor: string }> = {
     blue: {
       gradient: "linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%)",
       trackColor: "rgba(96,165,250,0.16)",
@@ -164,7 +151,7 @@ const getToneStyle = (tone: ResourceUsageTone) => {
 export const buildResourceUsageData = (
   client: ClientMonitoring
 ): ResourceUsageItem[] => {
-  const { monitoring, overview } = client;
+  const {monitoring, overview} = client;
 
   const cpu = clampPercent(monitoring.loadSystemPercent);
 
@@ -178,8 +165,8 @@ export const buildResourceUsageData = (
   const physicalUsedPercent =
     physicalTotalMB > 0
       ? clampPercent(
-          ((physicalTotalMB - physicalFreeMB) / physicalTotalMB) * 100
-        )
+      ((physicalTotalMB - physicalFreeMB) / physicalTotalMB) * 100
+      )
       : 0;
 
   const memory =
@@ -190,10 +177,10 @@ export const buildResourceUsageData = (
   const diskEstimate = clampPercent(
     Math.round(
       14 +
-        overview.runningJobs * 2.4 +
-        overview.failedJobs * 5.5 +
-        overview.pendingJobs * 1.2 +
-        monitoring.eventQSize * 0.12
+      overview.runningJobs * 2.4 +
+      overview.failedJobs * 5.5 +
+      overview.pendingJobs * 1.2 +
+      monitoring.eventQSize * 0.12
     )
   );
 
@@ -237,7 +224,7 @@ export const buildResourceUsageData = (
       tip: getCpuTip(cpu),
       tone: cpuTone,
       ...getToneStyle(cpuTone),
-      icon: <DashboardOutlined />,
+      icon: <DashboardOutlined/>,
     },
     {
       key: "memory",
@@ -250,7 +237,7 @@ export const buildResourceUsageData = (
       tip: getMemoryTip(memory),
       tone: memoryTone,
       ...getToneStyle(memoryTone),
-      icon: <DatabaseOutlined />,
+      icon: <DatabaseOutlined/>,
     },
     {
       key: "disk",
@@ -261,7 +248,7 @@ export const buildResourceUsageData = (
       tip: getDiskTip(diskEstimate),
       tone: diskTone,
       ...getToneStyle(diskTone),
-      icon: <HddOutlined />,
+      icon: <HddOutlined/>,
     },
   ];
 };
@@ -315,7 +302,7 @@ export const buildRecentEvents = (
 
 export const buildCriticalAlerts = (client: ClientMonitoring): string[] => {
   const result: string[] = [];
-  const { overview, monitoring } = client;
+  const {overview, monitoring} = client;
 
   if (monitoring.physicalMemoryFreeMB < 100) {
     result.push("物理内存剩余极低，建议尽快排查系统占用与宿主机资源。");

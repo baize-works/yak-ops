@@ -1,4 +1,4 @@
-import type { QualityPoint } from "./model";
+import type {QualityPoint} from "./model";
 
 export const cloneQualityPoint = (
   qualityPoint: QualityPoint,

@@ -4,9 +4,9 @@ interface TagListProps {
 }
 
 const TagList = ({
-  values,
-  emptyText = "暂无配置",
-}: TagListProps) => {
+                   values,
+                   emptyText = "暂无配置",
+                 }: TagListProps) => {
   if (values.length === 0) {
     return (
       <span className="text-sm text-slate-400">

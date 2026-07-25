@@ -1,15 +1,13 @@
-import { Input, Select } from "antd";
-import type { QualityPoint } from "../model";
-import { typeLabelMap } from "../model";
-import type { UpdateQualityPointDraft } from "../types";
+import {Input, Select} from "antd";
+import type {QualityPoint} from "../model";
+import {typeLabelMap} from "../model";
+import type {UpdateQualityPointDraft} from "../types";
 
-const { TextArea } = Input;
+const {TextArea} = Input;
 
 const qualityTypeOptions = (
-  Object.entries(typeLabelMap) as Array<
-    [QualityPoint["type"], string]
-  >
-).map(([value, label]) => ({ value, label }));
+  Object.entries(typeLabelMap) as Array<[QualityPoint["type"], string]>
+).map(([value, label]) => ({value, label}));
 
 interface BasicInfoSectionProps {
   point: QualityPoint;
@@ -19,11 +17,11 @@ interface BasicInfoSectionProps {
 }
 
 const BasicInfoSection = ({
-  point,
-  draft,
-  editing,
-  updateDraft,
-}: BasicInfoSectionProps) => {
+                            point,
+                            draft,
+                            editing,
+                            updateDraft,
+                          }: BasicInfoSectionProps) => {
   return (
     <section className="border-b border-slate-100 pb-6">
       <div className="grid gap-6 sm:grid-cols-2">
@@ -88,7 +86,7 @@ const BasicInfoSection = ({
               )
             }
             placeholder="请输入质控说明"
-            autoSize={{ minRows: 3, maxRows: 8 }}
+            autoSize={{minRows: 3, maxRows: 8}}
             className="mt-2"
           />
         ) : (

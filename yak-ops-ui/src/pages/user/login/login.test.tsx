@@ -1,8 +1,8 @@
 ﻿// @ts-ignore
-import { startMock } from '@@/requestRecordMock';
-import { TestBrowser } from '@@/testBrowser';
-import { fireEvent, render } from '@testing-library/react';
-import React, { act } from 'react';
+import {startMock} from '@@/requestRecordMock';
+import {TestBrowser} from '@@/testBrowser';
+import {fireEvent, render} from '@testing-library/react';
+import React, {act} from 'react';
 
 const waitTime = (time: number = 100) => {
   return new Promise((resolve) => {
@@ -75,7 +75,7 @@ describe('Login Page', () => {
     );
 
     act(() => {
-      fireEvent.change(userNameInput, { target: { value: 'admin' } });
+      fireEvent.change(userNameInput, {target: {value: 'admin'}});
     });
 
     const passwordInput = await rootContainer.findByPlaceholderText(
@@ -83,7 +83,7 @@ describe('Login Page', () => {
     );
 
     act(() => {
-      fireEvent.change(passwordInput, { target: { value: 'ant.design' } });
+      fireEvent.change(passwordInput, {target: {value: 'ant.design'}});
     });
 
     await (await rootContainer.findByText('Login')).click();

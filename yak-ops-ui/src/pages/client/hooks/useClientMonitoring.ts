@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { message } from "antd";
-import { SeatunnelClient, seatunnelClientApi } from "../api";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {SeatunnelClient, seatunnelClientApi} from "../api";
 
 
 export const useClientMonitoring = () => {

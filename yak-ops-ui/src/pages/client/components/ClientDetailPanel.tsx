@@ -1,8 +1,8 @@
-import { ApiOutlined, ReloadOutlined } from "@ant-design/icons";
-import { Button, Empty } from "antd";
-import { AnimatePresence } from "framer-motion";
-import React, { useMemo } from "react";
-import { BLUE, MotionDiv, contentSwapVariants } from "../constants";
+import {ApiOutlined, ReloadOutlined} from "@ant-design/icons";
+import {Button, Empty} from "antd";
+import {AnimatePresence} from "framer-motion";
+import React, {useMemo} from "react";
+import {BLUE, contentSwapVariants, MotionDiv} from "../constants";
 import ClientMetricsSection from "./ClientMetricsSection";
 
 interface Props {
@@ -41,12 +41,12 @@ const getHealthMeta = (healthStatus?: number) => {
 };
 
 const ClientDetailPanel: React.FC<Props> = ({
-  selectedClient,
-  selectedClientId,
-  metrics,
-  metricsLoading,
-  onRefresh,
-}) => {
+                                              selectedClient,
+                                              selectedClientId,
+                                              metrics,
+                                              metricsLoading,
+                                              onRefresh,
+                                            }) => {
   const healthMeta = useMemo(
     () => getHealthMeta(selectedClient?.healthStatus),
     [selectedClient?.healthStatus]
@@ -63,8 +63,9 @@ const ClientDetailPanel: React.FC<Props> = ({
 
   if (!selectedClient) {
     return (
-      <div className="flex min-h-full items-center justify-center rounded-2xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD]">
-        <Empty description="请选择左侧 Client 查看详情" />
+      <div
+        className="flex min-h-full items-center justify-center rounded-2xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD]">
+        <Empty description="请选择左侧 Client 查看详情"/>
       </div>
     );
   }
@@ -79,7 +80,8 @@ const ClientDetailPanel: React.FC<Props> = ({
         variants={contentSwapVariants}
         className="min-h-full"
       >
-        <section className="mb-6 rounded-2xl border border-[#EAECF0] bg-white px-6 py-6 shadow-[0_8px_24px_rgba(16,24,40,0.045)]">
+        <section
+          className="mb-6 rounded-2xl border border-[#EAECF0] bg-white px-6 py-6 shadow-[0_8px_24px_rgba(16,24,40,0.045)]">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-4">
@@ -91,7 +93,7 @@ const ClientDetailPanel: React.FC<Props> = ({
                     color: BLUE,
                   }}
                 >
-                  <ApiOutlined className="text-[19px]" />
+                  <ApiOutlined className="text-[19px]"/>
                 </div>
 
                 <div className="min-w-0 flex-1 pt-0.5">
@@ -101,7 +103,8 @@ const ClientDetailPanel: React.FC<Props> = ({
                     </h1>
 
                     {clientVersion && (
-                      <span className="inline-flex h-6 items-center rounded-full border border-[#DFE7F3] bg-[#F7FAFF] px-2.5 text-[12px] font-medium text-[#4F5BD5]">
+                      <span
+                        className="inline-flex h-6 items-center rounded-full border border-[#DFE7F3] bg-[#F7FAFF] px-2.5 text-[12px] font-medium text-[#4F5BD5]">
                         v{clientVersion}
                       </span>
                     )}
@@ -128,9 +131,9 @@ const ClientDetailPanel: React.FC<Props> = ({
                 px-3 py-1.5
                 text-[13px] font-medium text-[#344054]
               "
-                      style={{ backgroundColor: "#FAFBFC" }}
+                      style={{backgroundColor: "#FAFBFC"}}
                     >
-                      <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${healthMeta.dot}`} />
+                      <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${healthMeta.dot}`}/>
                       <span className="break-all">{displayBaseUrl}</span>
                     </div>
                   </div>
@@ -146,7 +149,7 @@ const ClientDetailPanel: React.FC<Props> = ({
             </div>
 
             <Button
-              icon={<ReloadOutlined />}
+              icon={<ReloadOutlined/>}
               loading={metricsLoading}
               onClick={() => onRefresh(selectedClientId)}
               className="

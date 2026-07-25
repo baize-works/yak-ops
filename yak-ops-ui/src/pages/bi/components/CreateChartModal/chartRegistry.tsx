@@ -1,12 +1,4 @@
-import {
-  AreaChart,
-  BarChart3,
-  Hash,
-  LineChart,
-  PieChart,
-  ScatterChart,
-  Table2,
-} from "lucide-react";
+import {AreaChart, BarChart3, Hash, LineChart, PieChart, ScatterChart, Table2,} from "lucide-react";
 import React from "react";
 
 import {
@@ -27,13 +19,13 @@ import FunnelChartConfigPanel from "./config-panels/FunnelChartConfigPanel";
 import WordCloudChartConfigPanel from "./config-panels/WordCloudChartConfigPanel";
 
 import EmptyChartPreview from "./components/EmptyChartPreview";
-import type { ChartPreviewProps, ChartRegistryItem, ChartType } from "./types";
+import type {ChartPreviewProps, ChartRegistryItem, ChartType} from "./types";
 
 const BarPreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                   chartConfig,
+                                                   themeColors,
+                                                   previewData,
+                                                 }) => {
   return (
     <BasicBarChart
       data={previewData}
@@ -53,10 +45,10 @@ const BarPreview: React.FC<ChartPreviewProps> = ({
 };
 
 const LinePreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                    chartConfig,
+                                                    themeColors,
+                                                    previewData,
+                                                  }) => {
   return (
     <BasicLineChart
       data={previewData}
@@ -76,10 +68,10 @@ const LinePreview: React.FC<ChartPreviewProps> = ({
 };
 
 const AreaLinePreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                        chartConfig,
+                                                        themeColors,
+                                                        previewData,
+                                                      }) => {
   return (
     <BasicLineChart
       data={previewData}
@@ -100,10 +92,10 @@ const AreaLinePreview: React.FC<ChartPreviewProps> = ({
 };
 
 const PiePreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                   chartConfig,
+                                                   themeColors,
+                                                   previewData,
+                                                 }) => {
   return (
     <BasicPieChart
       data={previewData}
@@ -122,10 +114,10 @@ const PiePreview: React.FC<ChartPreviewProps> = ({
 };
 
 const RingPiePreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                       chartConfig,
+                                                       themeColors,
+                                                       previewData,
+                                                     }) => {
   return (
     <BasicPieChart
       data={previewData}
@@ -144,10 +136,10 @@ const RingPiePreview: React.FC<ChartPreviewProps> = ({
 };
 
 const RosePiePreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                       chartConfig,
+                                                       themeColors,
+                                                       previewData,
+                                                     }) => {
   return (
     <BasicPieChart
       data={previewData}
@@ -166,10 +158,10 @@ const RosePiePreview: React.FC<ChartPreviewProps> = ({
 };
 
 const ScatterPreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                       chartConfig,
+                                                       themeColors,
+                                                       previewData,
+                                                     }) => {
   return (
     <BasicScatterChart
       data={previewData}
@@ -189,10 +181,10 @@ const ScatterPreview: React.FC<ChartPreviewProps> = ({
 };
 
 const FunnelPreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                      chartConfig,
+                                                      themeColors,
+                                                      previewData,
+                                                    }) => {
   return (
     <BasicFunnelChart
       data={previewData}
@@ -210,10 +202,10 @@ const FunnelPreview: React.FC<ChartPreviewProps> = ({
 };
 
 const NumberPreview: React.FC<ChartPreviewProps> = ({
-  chartConfig,
-  themeColors,
-  previewData,
-}) => {
+                                                      chartConfig,
+                                                      themeColors,
+                                                      previewData,
+                                                    }) => {
   return (
     <BasicNumberChart
       data={previewData}
@@ -225,7 +217,7 @@ const NumberPreview: React.FC<ChartPreviewProps> = ({
   );
 };
 
-const PlaceholderPreview: React.FC<ChartPreviewProps> = ({ chartType }) => {
+const PlaceholderPreview: React.FC<ChartPreviewProps> = ({chartType}) => {
   return (
     <EmptyChartPreview
       title={`${chartType} 预览待接入`}
@@ -239,7 +231,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "柱状图",
     value: "bar",
     group: "条形图",
-    icon: <BarChart3 size={16} />,
+    icon: <BarChart3 size={16}/>,
     ConfigPanel: BarChartConfigPanel,
     Preview: BarPreview,
   },
@@ -247,7 +239,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "条形图",
     value: "line",
     group: "条形图",
-    icon: <BarChart3 size={16} />,
+    icon: <BarChart3 size={16}/>,
     ConfigPanel: BarChartConfigPanel,
     Preview: BarPreview,
   },
@@ -255,7 +247,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "折线图",
     value: "zline",
     group: "折线图",
-    icon: <LineChart size={16} />,
+    icon: <LineChart size={16}/>,
     ConfigPanel: BarChartConfigPanel,
     Preview: LinePreview,
   },
@@ -263,7 +255,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "面积折线图",
     value: "areaLine",
     group: "折线图",
-    icon: <AreaChart size={16} />,
+    icon: <AreaChart size={16}/>,
     ConfigPanel: BarChartConfigPanel,
     Preview: AreaLinePreview,
   },
@@ -271,7 +263,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "组合图",
     value: "combo",
     group: "组合图",
-    icon: <BarChart3 size={16} />,
+    icon: <BarChart3 size={16}/>,
     ConfigPanel: BarChartConfigPanel,
     Preview: PlaceholderPreview,
   },
@@ -279,7 +271,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "饼图",
     value: "pie",
     group: "饼图",
-    icon: <PieChart size={16} />,
+    icon: <PieChart size={16}/>,
     ConfigPanel: PieChartConfigPanel,
     Preview: PiePreview,
   },
@@ -287,7 +279,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "环形饼图",
     value: "ringPie",
     group: "饼图",
-    icon: <PieChart size={16} />,
+    icon: <PieChart size={16}/>,
     ConfigPanel: PieChartConfigPanel,
     Preview: RingPiePreview,
   },
@@ -295,7 +287,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "玫瑰饼图",
     value: "rosePie",
     group: "饼图",
-    icon: <PieChart size={16} />,
+    icon: <PieChart size={16}/>,
     ConfigPanel: PieChartConfigPanel,
     Preview: RosePiePreview,
   },
@@ -303,7 +295,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "散点图",
     value: "scatter",
     group: "散点图",
-    icon: <ScatterChart size={16} />,
+    icon: <ScatterChart size={16}/>,
     ConfigPanel: ScatterChartConfigPanel,
     Preview: ScatterPreview,
   },
@@ -311,7 +303,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "表格",
     value: "table",
     group: "其他",
-    icon: <Table2 size={16} />,
+    icon: <Table2 size={16}/>,
     ConfigPanel: TableChartConfigPanel,
     Preview: PlaceholderPreview,
   },
@@ -319,7 +311,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "漏斗图",
     value: "funnel",
     group: "其他",
-    icon: <BarChart3 size={16} />,
+    icon: <BarChart3 size={16}/>,
     ConfigPanel: FunnelChartConfigPanel,
     Preview: FunnelPreview,
   },
@@ -327,7 +319,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "词云",
     value: "wordCloud",
     group: "其他",
-    icon: <Hash size={16} />,
+    icon: <Hash size={16}/>,
     ConfigPanel: WordCloudChartConfigPanel,
     Preview: PlaceholderPreview,
   },
@@ -335,7 +327,7 @@ export const chartRegistryList: ChartRegistryItem[] = [
     label: "统计数字",
     value: "number",
     group: "其他",
-    icon: <Hash size={16} />,
+    icon: <Hash size={16}/>,
     ConfigPanel: NumberChartConfigPanel,
     Preview: NumberPreview,
   },

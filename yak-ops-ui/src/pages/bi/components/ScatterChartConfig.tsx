@@ -1,16 +1,16 @@
-import { Select } from "antd";
+import {Select} from "antd";
 import React from "react";
 
-import type { ChartConfigComponentProps } from "./chart-config.types";
+import type {ChartConfigComponentProps} from "./chart-config.types";
 
 import CommonChartOptions from "./CommonChartOptions";
 import ChartSettingBlock from "./ChartSettingBlock";
 
 const ScatterChartConfig: React.FC<ChartConfigComponentProps> = ({
-  value,
-  fieldOptions,
-  onChange,
-}) => {
+                                                                   value,
+                                                                   fieldOptions,
+                                                                   onChange,
+                                                                 }) => {
   return (
     <>
       <ChartSettingBlock title="X 轴字段">
@@ -19,7 +19,7 @@ const ScatterChartConfig: React.FC<ChartConfigComponentProps> = ({
           placeholder="请选择 X 轴字段"
           value={value.xField}
           options={fieldOptions}
-          onChange={(xField) => onChange({ xField })}
+          onChange={(xField) => onChange({xField})}
         />
       </ChartSettingBlock>
 
@@ -29,11 +29,11 @@ const ScatterChartConfig: React.FC<ChartConfigComponentProps> = ({
           placeholder="请选择 Y 轴字段"
           value={value.yField}
           options={fieldOptions}
-          onChange={(yField) => onChange({ yField })}
+          onChange={(yField) => onChange({yField})}
         />
       </ChartSettingBlock>
 
-      <CommonChartOptions value={value} onChange={onChange} />
+      <CommonChartOptions value={value} onChange={onChange}/>
     </>
   );
 };

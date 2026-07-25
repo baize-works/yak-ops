@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.yak.ops</groupId>
     <artifactId>yak-ops</artifactId>
@@ -50,7 +51,7 @@
         <module>yak-ops-web-contract</module>
         <module>yak-ops-engine-support</module>
         <module>yak-ops-engine-contract</module>
-        <module>yak-ops-engine-contract-testkit</module>
+        <!--        <module>yak-ops-engine-contract-testkit</module>-->
         <module>yak-ops-engine-legacy</module>
         <module>yak-ops-engine-all</module>
         <module>yak-ops-dist</module>
@@ -272,7 +273,9 @@
                     <execution>
                         <id>check-hexagonal-architecture</id>
                         <phase>validate</phase>
-                        <goals><goal>exec</goal></goals>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
                         <configuration>
                             <executable>python3</executable>
                             <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
@@ -284,11 +287,14 @@
                     <execution>
                         <id>enforce-aggregate-module-boundaries</id>
                         <phase>validate</phase>
-                        <goals><goal>exec</goal></goals>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
                         <configuration>
                             <executable>bash</executable>
                             <arguments>
-                                <argument>${maven.multiModuleProjectDirectory}/tools/verify-module-boundaries.sh</argument>
+                                <argument>${maven.multiModuleProjectDirectory}/tools/verify-module-boundaries.sh
+                                </argument>
                                 <argument>${maven.multiModuleProjectDirectory}</argument>
                             </arguments>
                         </configuration>

@@ -1,13 +1,13 @@
-import React, { memo, useMemo } from "react";
-import { Dropdown } from "antd";
-import type { MenuProps } from "antd";
-import { Download, Settings, Trash2 } from "lucide-react";
+import React, {memo, useMemo} from "react";
+import type {MenuProps} from "antd";
+import {Dropdown} from "antd";
+import {Download, Settings, Trash2} from "lucide-react";
 
 import AutoResizeChart from "./AutoResizeChart";
 
 import ChartPreview from "./CreateChartModal/components/ChartPreview";
-import { previewData, themeOptions } from "./CreateChartModal/constants";
-import type { CreateChartValues } from "./CreateChartModal/types";
+import {previewData, themeOptions} from "./CreateChartModal/constants";
+import type {CreateChartValues} from "./CreateChartModal/types";
 
 interface ChartCardProps {
   option?: any;
@@ -22,14 +22,14 @@ interface ChartCardProps {
 
 const ChartCard: React.FC<ChartCardProps> = memo(
   ({
-    option,
-    chartConfig,
-    title = "默认名",
-    selected = false,
-    onSetting,
-    onExport,
-    onDelete,
-  }) => {
+     option,
+     chartConfig,
+     title = "默认名",
+     selected = false,
+     onSetting,
+     onExport,
+     onDelete,
+   }) => {
     const selectedTheme = useMemo(() => {
       return (
         themeOptions.find((item) => item.value === chartConfig?.theme) ||
@@ -40,12 +40,12 @@ const ChartCard: React.FC<ChartCardProps> = memo(
     const menuItems: MenuProps["items"] = [
       {
         key: "setting",
-        icon: <Settings size={15} />,
+        icon: <Settings size={15}/>,
         label: "设置图表",
       },
       {
         key: "export",
-        icon: <Download size={15} />,
+        icon: <Download size={15}/>,
         label: "导出图片",
       },
       {
@@ -54,12 +54,12 @@ const ChartCard: React.FC<ChartCardProps> = memo(
       {
         key: "delete",
         danger: true,
-        icon: <Trash2 size={15} />,
+        icon: <Trash2 size={15}/>,
         label: "删除图表",
       },
     ];
 
-    const handleMenuClick: MenuProps["onClick"] = ({ key, domEvent }) => {
+    const handleMenuClick: MenuProps["onClick"] = ({key, domEvent}) => {
       domEvent.stopPropagation();
 
       if (key === "setting") {
@@ -92,7 +92,7 @@ const ChartCard: React.FC<ChartCardProps> = memo(
       }
 
       if (option) {
-        return <AutoResizeChart option={option} />;
+        return <AutoResizeChart option={option}/>;
       }
 
       return (
@@ -110,14 +110,14 @@ const ChartCard: React.FC<ChartCardProps> = memo(
           "will-change-[transform,box-shadow,border-color]",
           selected
             ? [
-                "border-[hsl(231_48%_48%)]",
-                "shadow-[0_0_0_1px_hsl(231_48%_48%),0_10px_30px_hsl(231_48%_48%/0.14),0_0_0_4px_hsl(231_48%_48%/0.08)]",
-              ].join(" ")
+              "border-[hsl(231_48%_48%)]",
+              "shadow-[0_0_0_1px_hsl(231_48%_48%),0_10px_30px_hsl(231_48%_48%/0.14),0_0_0_4px_hsl(231_48%_48%/0.08)]",
+            ].join(" ")
             : [
-                "border-slate-200",
-                "hover:border-[hsl(231_48%_48%/0.50)]",
-                "hover:shadow-[0_0_0_1px_hsl(231_48%_48%/0.14),0_10px_28px_hsl(231_48%_48%/0.10)]",
-              ].join(" "),
+              "border-slate-200",
+              "hover:border-[hsl(231_48%_48%/0.50)]",
+              "hover:shadow-[0_0_0_1px_hsl(231_48%_48%/0.14),0_10px_28px_hsl(231_48%_48%/0.10)]",
+            ].join(" "),
         ]
           .filter(Boolean)
           .join(" ")}
@@ -130,7 +130,7 @@ const ChartCard: React.FC<ChartCardProps> = memo(
           ].join(" ")}
           aria-hidden="true"
         >
-          {Array.from({ length: 6 }).map((_, index) => (
+          {Array.from({length: 6}).map((_, index) => (
             <span
               key={index}
               className="h-[3px] w-[3px] rounded-full bg-slate-400"

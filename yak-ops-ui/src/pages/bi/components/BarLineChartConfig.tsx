@@ -1,17 +1,17 @@
-import { Select } from "antd";
+import {Select} from "antd";
 import React from "react";
 
-import type { ChartConfigComponentProps } from "./chart-config.types";
+import type {ChartConfigComponentProps} from "./chart-config.types";
 
 import CommonChartOptions from "./CommonChartOptions";
 import SortConfig from "./SortConfig";
 import ChartSettingBlock from "./ChartSettingBlock";
 
 const BarLineChartConfig: React.FC<ChartConfigComponentProps> = ({
-  value,
-  fieldOptions,
-  onChange,
-}) => {
+                                                                   value,
+                                                                   fieldOptions,
+                                                                   onChange,
+                                                                 }) => {
   return (
     <>
       <ChartSettingBlock title="横轴">
@@ -20,7 +20,7 @@ const BarLineChartConfig: React.FC<ChartConfigComponentProps> = ({
           placeholder="请选择横轴字段"
           value={value.xField}
           options={fieldOptions}
-          onChange={(xField) => onChange({ xField })}
+          onChange={(xField) => onChange({xField})}
         />
       </ChartSettingBlock>
 
@@ -30,13 +30,13 @@ const BarLineChartConfig: React.FC<ChartConfigComponentProps> = ({
           placeholder="请选择纵轴字段"
           value={value.yField}
           options={fieldOptions}
-          onChange={(yField) => onChange({ yField })}
+          onChange={(yField) => onChange({yField})}
         />
       </ChartSettingBlock>
 
-      <CommonChartOptions value={value} onChange={onChange} />
+      <CommonChartOptions value={value} onChange={onChange}/>
 
-      <SortConfig value={value} onChange={onChange} />
+      <SortConfig value={value} onChange={onChange}/>
     </>
   );
 };

@@ -1,14 +1,14 @@
-import { Radio } from "antd";
+import {Radio} from "antd";
 import React from "react";
 
-import type { ChartConfigComponentProps, SortBy } from "./chart-config.types";
+import type {ChartConfigComponentProps, SortBy} from "./chart-config.types";
 import ChartSettingBlock from "./ChartSettingBlock";
 
 
 const SortConfig: React.FC<Pick<ChartConfigComponentProps, "value" | "onChange">> = ({
-  value,
-  onChange,
-}) => {
+                                                                                       value,
+                                                                                       onChange,
+                                                                                     }) => {
   return (
     <ChartSettingBlock title="排序依据">
       <Radio.Group

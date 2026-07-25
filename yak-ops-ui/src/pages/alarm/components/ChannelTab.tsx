@@ -1,43 +1,20 @@
-import {
-  BellOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  PlusOutlined,
-  ThunderboltOutlined,
-} from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
-import {
-  Button,
-  Empty,
-  message,
-  Modal,
-  Spin,
-  Switch,
-  Tooltip,
-} from 'antd';
-import { ArrowRight, RadioTower } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  deleteChannel,
-  fetchChannels,
-  saveChannel,
-  testChannel,
-} from '../service';
-import type {
-  AlarmChannelRecord,
-  AlarmModalRef,
-  AlarmOperateType,
-} from '../types';
-import { formatTime } from '../utils';
+import {BellOutlined, DeleteOutlined, EditOutlined, ThunderboltOutlined,} from '@ant-design/icons';
+import {useIntl} from '@umijs/max';
+import {Button, Empty, message, Modal, Spin, Switch, Tooltip,} from 'antd';
+import {ArrowRight, RadioTower} from 'lucide-react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {deleteChannel, fetchChannels, saveChannel, testChannel,} from '../service';
+import type {AlarmChannelRecord, AlarmModalRef, AlarmOperateType,} from '../types';
+import {formatTime} from '../utils';
 import AddOrEditChannelModal from './AddOrEditChannelModal';
 
-const { confirm } = Modal;
+const {confirm} = Modal;
 
 interface ChannelTabProps {
   keyword?: string;
 }
 
-const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
+const ChannelTab: React.FC<ChannelTabProps> = ({keyword = ''}) => {
   const intl = useIntl();
   const modalRef = useRef<AlarmModalRef>(null);
 
@@ -244,7 +221,7 @@ const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
                         : 'bg-slate-50 text-slate-300',
                     ].join(' ')}
                   >
-                    <RadioTower className="h-5 w-5" />
+                    <RadioTower className="h-5 w-5"/>
                   </div>
 
                   {/* 主体 */}
@@ -281,11 +258,11 @@ const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
                     {/* 元信息 */}
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                       <span className="inline-flex items-center gap-1">
-                        <BellOutlined />
+                        <BellOutlined/>
                         {channel.channelType || '-'}
                       </span>
 
-                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                      <span className="h-1 w-1 rounded-full bg-slate-300"/>
 
                       <span>
                         {channel.createTime
@@ -299,7 +276,7 @@ const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
                       <Button
                         type="text"
                         size="small"
-                        icon={<ThunderboltOutlined />}
+                        icon={<ThunderboltOutlined/>}
                         loading={testing}
                         onClick={() => handleTest(channel)}
                         className="text-slate-500"
@@ -310,7 +287,7 @@ const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
                       <Button
                         type="text"
                         size="small"
-                        icon={<EditOutlined />}
+                        icon={<EditOutlined/>}
                         onClick={() => handleEdit(channel)}
                         className="text-slate-500"
                       >
@@ -321,7 +298,7 @@ const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
                         type="text"
                         size="small"
                         danger
-                        icon={<DeleteOutlined />}
+                        icon={<DeleteOutlined/>}
                         onClick={() => handleDelete(channel)}
                       >
                         删除
@@ -337,7 +314,7 @@ const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
                             'hover:bg-white hover:text-slate-700',
                           ].join(' ')}
                         >
-                          <ArrowRight className="h-4 w-4" />
+                          <ArrowRight className="h-4 w-4"/>
                         </button>
                       </Tooltip>
                     </div>
@@ -366,7 +343,7 @@ const ChannelTab: React.FC<ChannelTabProps> = ({ keyword = '' }) => {
         )}
       </Spin>
 
-      <AddOrEditChannelModal ref={modalRef} />
+      <AddOrEditChannelModal ref={modalRef}/>
     </div>
   );
 };

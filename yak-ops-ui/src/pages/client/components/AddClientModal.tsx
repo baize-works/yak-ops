@@ -1,25 +1,10 @@
 import ZetaIcon from "@/pages/batch-link-up/workflow/sider/icon/ZetaIcon";
-import {
-  ApiOutlined,
-  ClusterOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  SmileOutlined,
-} from "@ant-design/icons";
-import {
-  Button,
-  Col,
-  Form,
-  Input,
-  Modal,
-  Row,
-  Segmented,
-  Select,
-  Switch,
-} from "antd";
-import React, { useEffect, useRef } from "react";
+import {ApiOutlined, ClusterOutlined, DeleteOutlined, PlusOutlined, SmileOutlined,} from "@ant-design/icons";
+import {Button, Col, Form, Input, Modal, Row, Segmented, Select, Switch,} from "antd";
+import React, {useEffect, useRef} from "react";
 import "./index.less";
-const { TextArea } = Input;
+
+const {TextArea} = Input;
 
 export type SeaTunnelClientDeployMode = "SINGLE" | "SEPARATED_CLUSTER";
 export type SeaTunnelClientProtocol = "http" | "https";
@@ -73,7 +58,7 @@ const engineOptions = [
   {
     label: (
       <div className="flex items-center gap-2">
-        <ZetaIcon height="20" width="20" />
+        <ZetaIcon height="20" width="20"/>
         <span>ZETA</span>
       </div>
     ),
@@ -82,15 +67,15 @@ const engineOptions = [
 ];
 
 const protocolOptions = [
-  { label: "HTTP", value: "http" },
-  { label: "HTTPS", value: "https" },
+  {label: "HTTP", value: "http"},
+  {label: "HTTPS", value: "https"},
 ];
 
 const deployModeOptions = [
   {
     label: (
       <div className="deploy-mode-option">
-        <ApiOutlined />
+        <ApiOutlined/>
         <span>单节点 / 单入口</span>
       </div>
     ),
@@ -99,7 +84,7 @@ const deployModeOptions = [
   {
     label: (
       <div className="deploy-mode-option">
-        <ClusterOutlined />
+        <ClusterOutlined/>
         <span>分离模式集群</span>
       </div>
     ),
@@ -172,14 +157,14 @@ const getRandomClientName = (lastValue?: string) => {
 };
 
 const AddClientModal: React.FC<AddClientModalProps> = ({
-  open,
-  form,
-  confirmLoading = false,
-  mode = "create",
-  initialValues,
-  onCancel,
-  onSubmit,
-}) => {
+                                                         open,
+                                                         form,
+                                                         confirmLoading = false,
+                                                         mode = "create",
+                                                         initialValues,
+                                                         onCancel,
+                                                         onSubmit,
+                                                       }) => {
   const lastRemarkRef = useRef<string>();
   const lastClientNameRef = useRef<string>();
 
@@ -256,7 +241,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
       title={
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#EEF4FF]">
-            <SmileOutlined style={{ color: "#3B82F6", fontSize: 18 }} />
+            <SmileOutlined style={{color: "#3B82F6", fontSize: 18}}/>
           </div>
 
           <div>
@@ -292,7 +277,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
       }}
       footer={
         <div className="flex justify-end gap-2">
-          <Button onClick={onCancel} style={{ height: 34, borderRadius: 16 }}>
+          <Button onClick={onCancel} style={{height: 34, borderRadius: 16}}>
             取消
           </Button>
 
@@ -300,7 +285,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             type="primary"
             loading={confirmLoading}
             onClick={onSubmit}
-            style={{ height: 34, borderRadius: 16, paddingInline: 18 }}
+            style={{height: 34, borderRadius: 16, paddingInline: 18}}
           >
             {isEdit ? "保存修改" : "创建 Client"}
           </Button>
@@ -322,7 +307,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
           }}
         >
           <Form.Item name="id" hidden>
-            <Input />
+            <Input/>
           </Form.Item>
 
           <Row gutter={16}>
@@ -330,9 +315,9 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               <Form.Item
                 name="clientName"
                 label="客户端名称"
-                rules={[{ required: true, message: "请输入客户端名称" }]}
+                rules={[{required: true, message: "请输入客户端名称"}]}
               >
-                <Input placeholder="例如：ZETA-独孤九剑" style={inputStyle} />
+                <Input placeholder="例如：ZETA-独孤九剑" style={inputStyle}/>
               </Form.Item>
             </Col>
 
@@ -340,9 +325,9 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               <Form.Item
                 name="engineType"
                 label="引擎类型"
-                rules={[{ required: true, message: "请选择引擎类型" }]}
+                rules={[{required: true, message: "请选择引擎类型"}]}
               >
-                <Select options={engineOptions} />
+                <Select options={engineOptions}/>
               </Form.Item>
             </Col>
           </Row>
@@ -352,7 +337,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               <Form.Item
                 name="deployMode"
                 label="部署模式"
-                rules={[{ required: true, message: "请选择部署模式" }]}
+                rules={[{required: true, message: "请选择部署模式"}]}
               >
                 <Segmented
                   className="deploy-mode-segmented"
@@ -368,9 +353,9 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               <Form.Item
                 name="protocol"
                 label="协议"
-                rules={[{ required: true, message: "请选择协议" }]}
+                rules={[{required: true, message: "请选择协议"}]}
               >
-                <Select options={protocolOptions} />
+                <Select options={protocolOptions}/>
               </Form.Item>
             </Col>
 
@@ -378,15 +363,15 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               <Form.Item
                 name="contextPath"
                 label="上下文路径"
-                rules={[{ required: false, message: "请输入上下文路径" }]}
+                rules={[{required: false, message: "请输入上下文路径"}]}
               >
-                <Input placeholder="例如：/" style={inputStyle} />
+                <Input placeholder="例如：/" style={inputStyle}/>
               </Form.Item>
             </Col>
           </Row>
 
           <Form.Item noStyle shouldUpdate>
-            {({ getFieldValue }) => {
+            {({getFieldValue}) => {
               const deployMode = getFieldValue(
                 "deployMode"
               ) as SeaTunnelClientDeployMode;
@@ -395,7 +380,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                 return (
                   <div className="mb-4">
                     <Form.List name="masterEndpoints">
-                      {(fields, { add, remove }) => (
+                      {(fields, {add, remove}) => (
                         <>
                           <div className="mb-2 flex items-center justify-between">
                             <div className="text-[13px] font-medium text-[#667085]">
@@ -411,7 +396,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                                 )
                               }
                             >
-                              <PlusOutlined />
+                              <PlusOutlined/>
                             </button>
                           </div>
 
@@ -433,7 +418,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                                       message: "请输入 Master 地址: 127.0.0.1",
                                     },
                                   ]}
-                                  style={{ marginBottom: 0 }}
+                                  style={{marginBottom: 0}}
                                 >
                                   <Input
                                     placeholder={`Master ${index + 1} 地址`}
@@ -453,7 +438,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                                       message: "端口必须为数字",
                                     },
                                   ]}
-                                  style={{ marginBottom: 0 }}
+                                  style={{marginBottom: 0}}
                                 >
                                   <Input
                                     placeholder="8080"
@@ -464,7 +449,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                                 <Button
                                   type="text"
                                   danger
-                                  icon={<DeleteOutlined />}
+                                  icon={<DeleteOutlined/>}
                                   disabled={fields.length <= 1}
                                   onClick={() => remove(field.name)}
                                   style={{
@@ -480,7 +465,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                                   initialValue="MASTER"
                                   hidden
                                 >
-                                  <Input />
+                                  <Input/>
                                 </Form.Item>
 
                                 <Form.Item
@@ -488,7 +473,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                                   initialValue={index + 1}
                                   hidden
                                 >
-                                  <Input />
+                                  <Input/>
                                 </Form.Item>
                               </div>
                             ))}
@@ -535,7 +520,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                         },
                       ]}
                     >
-                      <Input placeholder="8080" style={inputStyle} />
+                      <Input placeholder="8080" style={inputStyle}/>
                     </Form.Item>
                   </Col>
                 </Row>
@@ -547,25 +532,25 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             <Form.Item
               name="authEnabled"
               valuePropName="checked"
-              style={{ marginBottom: 0 }}
+              style={{marginBottom: 0}}
             >
-              <Switch />
+              <Switch/>
             </Form.Item>
 
             <span className="text-[13px] text-[#344054]">开启 Basic Auth</span>
           </div>
 
           <Form.Item noStyle shouldUpdate>
-            {({ getFieldValue }) =>
+            {({getFieldValue}) =>
               getFieldValue("authEnabled") ? (
                 <Row gutter={16}>
                   <Col span={12}>
                     <Form.Item
                       name="username"
                       label="用户名"
-                      rules={[{ required: true, message: "请输入用户名" }]}
+                      rules={[{required: true, message: "请输入用户名"}]}
                     >
-                      <Input placeholder="admin" style={inputStyle} />
+                      <Input placeholder="admin" style={inputStyle}/>
                     </Form.Item>
                   </Col>
 
@@ -573,7 +558,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
                     <Form.Item
                       name="password"
                       label="密码"
-                      rules={[{ required: true, message: "请输入密码" }]}
+                      rules={[{required: true, message: "请输入密码"}]}
                     >
                       <Input.Password
                         placeholder="请输入密码"
@@ -589,8 +574,8 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
           <Form.Item name="remark" label="备注">
             <TextArea
               placeholder="补充说明这个 Client 的用途、环境或备注信息"
-              autoSize={{ minRows: 3, maxRows: 4 }}
-              style={{ borderRadius: 10 }}
+              autoSize={{minRows: 3, maxRows: 4}}
+              style={{borderRadius: 10}}
             />
           </Form.Item>
         </Form>

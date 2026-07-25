@@ -4,8 +4,8 @@ import AddClientModal from "./components/AddClientModal";
 import ClientPageHeader from "./components/ClientPageHeader";
 import ClientListPanel from "./components/ClientListPanel";
 import ClientDetailPanel from "./components/ClientDetailPanel";
-import { CARD_BG, BORDER_COLOR, PAGE_BG } from "./constants";
-import { useClientPageState } from "./hooks/useClientPageState";
+import {BORDER_COLOR, CARD_BG, PAGE_BG} from "./constants";
+import {useClientPageState} from "./hooks/useClientPageState";
 
 const ClientPageTailwind: React.FC = () => {
   const {
@@ -41,10 +41,10 @@ const ClientPageTailwind: React.FC = () => {
     >
       <div
         className="h-[calc(100vh-48px)]"
-        style={{ background: PAGE_BG }}
+        style={{background: PAGE_BG}}
       >
         <div className="box-border px-6 py-6">
-          <ClientPageHeader onAdd={handleOpenCreate} />
+          <ClientPageHeader onAdd={handleOpenCreate}/>
 
           <div
             style={{

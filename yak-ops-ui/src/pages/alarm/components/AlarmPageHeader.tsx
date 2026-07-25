@@ -1,16 +1,18 @@
-import { BellOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import {BellOutlined} from '@ant-design/icons';
+import {useIntl} from '@umijs/max';
 import React from 'react';
 
 const AlarmPageHeader: React.FC = () => {
   const intl = useIntl();
 
   return (
-    <div className="mb-8 flex flex-col gap-5 rounded-3xl lg:flex-row lg:items-end lg:justify-between" style={{marginTop: 30}}>
+    <div className="mb-8 flex flex-col gap-5 rounded-3xl lg:flex-row lg:items-end lg:justify-between"
+         style={{marginTop: 30}}>
       <div className="min-w-0">
         <div className="mb-2 flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[hsl(231_48%_48%/0.10)] text-[hsl(231_48%_48%)]">
-            <BellOutlined style={{ fontSize: 22 }} />
+          <div
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[hsl(231_48%_48%/0.10)] text-[hsl(231_48%_48%)]">
+            <BellOutlined style={{fontSize: 22}}/>
           </div>
 
           <h1 className="m-0 truncate text-[26px] font-bold leading-8 tracking-[-0.02em] text-[#101828]">

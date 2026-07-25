@@ -1,15 +1,15 @@
-import { Select } from "antd";
-import React, { useMemo, useState } from "react";
+import {Select} from "antd";
+import React, {useMemo, useState} from "react";
 
-import { chartRegistryList } from "../chartRegistry";
-import type { ChartType } from "../types";
+import {chartRegistryList} from "../chartRegistry";
+import type {ChartType} from "../types";
 
 interface ChartTypeSelectProps {
   value: ChartType;
   onChange: (value: ChartType) => void;
 }
 
-const ChartTypeSelect: React.FC<ChartTypeSelectProps> = ({ value, onChange }) => {
+const ChartTypeSelect: React.FC<ChartTypeSelectProps> = ({value, onChange}) => {
   const [open, setOpen] = useState(false);
 
   const chartGroups = useMemo(() => {

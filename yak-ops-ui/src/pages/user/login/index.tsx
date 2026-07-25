@@ -1,6 +1,6 @@
-import { Footer } from "@/components";
-import { login } from "@/services/ant-design-pro/api";
-import { getFakeCaptcha } from "@/services/ant-design-pro/login";
+import {Footer} from "@/components";
+import {login} from "@/services/ant-design-pro/api";
+import {getFakeCaptcha} from "@/services/ant-design-pro/login";
 import {
   AlipayCircleOutlined,
   LockOutlined,
@@ -9,26 +9,15 @@ import {
   UserOutlined,
   WeiboCircleOutlined,
 } from "@ant-design/icons";
-import {
-  LoginForm,
-  ProFormCaptcha,
-  ProFormCheckbox,
-  ProFormText,
-} from "@ant-design/pro-components";
-import {
-  FormattedMessage,
-  Helmet,
-  SelectLang,
-  useIntl,
-  useModel,
-} from "@umijs/max";
-import { Alert, App, Tabs } from "antd";
-import { createStyles } from "antd-style";
-import React, { useState } from "react";
-import { flushSync } from "react-dom";
+import {LoginForm, ProFormCaptcha, ProFormCheckbox, ProFormText,} from "@ant-design/pro-components";
+import {FormattedMessage, Helmet, SelectLang, useIntl, useModel,} from "@umijs/max";
+import {Alert, App, Tabs} from "antd";
+import {createStyles} from "antd-style";
+import React, {useState} from "react";
+import {flushSync} from "react-dom";
 import Settings from "../../../../config/defaultSettings";
 
-const useStyles = createStyles(({ token }) => {
+const useStyles = createStyles(({token}) => {
   return {
     action: {
       marginLeft: "8px",
@@ -65,7 +54,7 @@ const useStyles = createStyles(({ token }) => {
 });
 
 const ActionIcons = () => {
-  const { styles } = useStyles();
+  const {styles} = useStyles();
 
   return (
     <>
@@ -86,18 +75,18 @@ const ActionIcons = () => {
 };
 
 const Lang = () => {
-  const { styles } = useStyles();
+  const {styles} = useStyles();
 
   return (
     <div className={styles.lang} data-lang>
-      {SelectLang && <SelectLang />}
+      {SelectLang && <SelectLang/>}
     </div>
   );
 };
 
 const LoginMessage: React.FC<{
   content: string;
-}> = ({ content }) => {
+}> = ({content}) => {
   return (
     <Alert
       style={{
@@ -113,9 +102,9 @@ const LoginMessage: React.FC<{
 const Login: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
   const [type, setType] = useState<string>("account");
-  const { initialState, setInitialState } = useModel("@@initialState");
-  const { styles } = useStyles();
-  const { message } = App.useApp();
+  const {initialState, setInitialState} = useModel("@@initialState");
+  const {styles} = useStyles();
+  const {message} = App.useApp();
   const intl = useIntl();
 
   const fetchUserInfo = async () => {
@@ -135,7 +124,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (values: API.LoginParams) => {
     try {
-      const msg = await login({ ...values, type });
+      const msg = await login({...values, type});
       console.log(msg);
       if (msg.status === "ok") {
         const defaultLoginSuccessMessage = intl.formatMessage({
@@ -154,11 +143,11 @@ const Login: React.FC = () => {
       }
       setUserLoginState(msg);
     } catch (error) {
-      
+
     }
   };
 
-  const { status, type: loginType } = userLoginState;
+  const {status, type: loginType} = userLoginState;
 
   return (
     <div className={styles.container}>
@@ -171,7 +160,7 @@ const Login: React.FC = () => {
           {Settings.title && ` - ${Settings.title}`}
         </title>
       </Helmet>
-      <Lang />
+      <Lang/>
       <div
         style={{
           flex: "1",
@@ -183,7 +172,7 @@ const Login: React.FC = () => {
             minWidth: 280,
             maxWidth: "75vw",
           }}
-          logo={<img alt="logo" src="/logo.svg" />}
+          logo={<img alt="logo" src="/logo.svg"/>}
           title="Ant Design"
           subTitle={intl.formatMessage({
             id: "pages.layouts.userLayout.title",
@@ -197,7 +186,7 @@ const Login: React.FC = () => {
               id="pages.login.loginWith"
               defaultMessage="其他登录方式"
             />,
-            <ActionIcons key="icons" />,
+            <ActionIcons key="icons"/>,
           ]}
           onFinish={async (values) => {
             await handleSubmit(values as API.LoginParams);
@@ -239,7 +228,7 @@ const Login: React.FC = () => {
                 name="username"
                 fieldProps={{
                   size: "large",
-                  prefix: <UserOutlined />,
+                  prefix: <UserOutlined/>,
                 }}
                 placeholder={intl.formatMessage({
                   id: "pages.login.username.placeholder",
@@ -261,7 +250,7 @@ const Login: React.FC = () => {
                 name="password"
                 fieldProps={{
                   size: "large",
-                  prefix: <LockOutlined />,
+                  prefix: <LockOutlined/>,
                 }}
                 placeholder={intl.formatMessage({
                   id: "pages.login.password.placeholder",
@@ -283,14 +272,14 @@ const Login: React.FC = () => {
           )}
 
           {status === "error" && loginType === "mobile" && (
-            <LoginMessage content="验证码错误" />
+            <LoginMessage content="验证码错误"/>
           )}
           {type === "mobile" && (
             <>
               <ProFormText
                 fieldProps={{
                   size: "large",
-                  prefix: <MobileOutlined />,
+                  prefix: <MobileOutlined/>,
                 }}
                 name="mobile"
                 placeholder={intl.formatMessage({
@@ -321,7 +310,7 @@ const Login: React.FC = () => {
               <ProFormCaptcha
                 fieldProps={{
                   size: "large",
-                  prefix: <LockOutlined />,
+                  prefix: <LockOutlined/>,
                 }}
                 captchaProps={{
                   size: "large",
@@ -390,7 +379,7 @@ const Login: React.FC = () => {
           </div>
         </LoginForm>
       </div>
-      <Footer />
+      <Footer/>
     </div>
   );
 };

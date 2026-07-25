@@ -88,7 +88,7 @@
   align-items: center;
   width: 100%;
   height: 100%;
-//   padding-top: var(--st-icon-offset-top);
+  //   padding-top: var(--st-icon-offset-top);
   box-sizing: border-box;
 }
 
@@ -289,12 +289,10 @@ h1.sketches_text {
 }
 
 .scene-overlay-top {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.34) 0%,
-    rgba(255, 255, 255, 0.14) 18%,
-    rgba(255, 255, 255, 0) 38%
-  );
+  background: linear-gradient(180deg,
+  rgba(255, 255, 255, 0.34) 0%,
+  rgba(255, 255, 255, 0.14) 18%,
+  rgba(255, 255, 255, 0) 38%);
   z-index: 1;
 }
 
@@ -305,13 +303,11 @@ h1.sketches_text {
   height: 280px;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(90, 151, 200, 0.14) 0%,
-    rgba(90, 151, 200, 0.08) 28%,
-    rgba(90, 151, 200, 0.03) 48%,
-    rgba(90, 151, 200, 0) 72%
-  );
+  background: radial-gradient(ellipse at center,
+  rgba(90, 151, 200, 0.14) 0%,
+  rgba(90, 151, 200, 0.08) 28%,
+  rgba(90, 151, 200, 0.03) 48%,
+  rgba(90, 151, 200, 0) 72%);
   filter: blur(22px);
   z-index: 2;
   animation: floorPulse 7s ease-in-out infinite;
@@ -329,12 +325,10 @@ h1.sketches_text {
   left: -40px;
   width: 260px;
   height: 260px;
-  background: radial-gradient(
-    circle,
-    rgba(132, 190, 230, 0.22) 0%,
-    rgba(132, 190, 230, 0.08) 38%,
-    rgba(132, 190, 230, 0) 72%
-  );
+  background: radial-gradient(circle,
+  rgba(132, 190, 230, 0.22) 0%,
+  rgba(132, 190, 230, 0.08) 38%,
+  rgba(132, 190, 230, 0) 72%);
   animation: glowFloatLeft 10s ease-in-out infinite;
 }
 
@@ -343,12 +337,10 @@ h1.sketches_text {
   right: 60px;
   width: 220px;
   height: 220px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.32) 0%,
-    rgba(255, 255, 255, 0.10) 36%,
-    rgba(255, 255, 255, 0) 70%
-  );
+  background: radial-gradient(circle,
+  rgba(255, 255, 255, 0.32) 0%,
+  rgba(255, 255, 255, 0.10) 36%,
+  rgba(255, 255, 255, 0) 70%);
   animation: glowFloatRight 12s ease-in-out infinite;
 }
 
@@ -363,9 +355,8 @@ h1.sketches_text {
   border-radius: 999px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 8px 20px rgba(90, 151, 200, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55),
+  0 8px 20px rgba(90, 151, 200, 0.08);
   opacity: 0.62;
   animation-name: bubbleFloat;
   animation-timing-function: ease-in-out;

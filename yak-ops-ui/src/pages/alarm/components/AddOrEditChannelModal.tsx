@@ -1,36 +1,9 @@
-import { useIntl } from '@umijs/max';
-import {
-  Button,
-  Drawer,
-  Form,
-  Input,
-  InputNumber,
-  message,
-  Select,
-  Spin,
-  Switch,
-} from 'antd';
-import type { Rule } from 'antd/es/form';
-import {
-  ArrowLeft,
-  Check,
-  ChevronRight,
-  FlaskConical,
-  RadioTower,
-  X,
-} from 'lucide-react';
-import React, {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
-import {
-  fetchChannelTypes,
-  saveChannel,
-  testChannel,
-} from '../service';
+import {useIntl} from '@umijs/max';
+import {Button, Drawer, Form, Input, InputNumber, message, Select, Spin, Switch,} from 'antd';
+import type {Rule} from 'antd/es/form';
+import {ArrowLeft, Check, ChevronRight, FlaskConical, RadioTower, X,} from 'lucide-react';
+import React, {forwardRef, useEffect, useImperativeHandle, useRef, useState,} from 'react';
+import {fetchChannelTypes, saveChannel, testChannel,} from '../service';
 import {
   AlarmOperateType,
   type AlarmChannelCommand,
@@ -43,7 +16,7 @@ import {
   type FormFieldRule,
 } from '../types';
 
-const { TextArea } = Input;
+const {TextArea} = Input;
 
 /**
  * 解析通道配置 JSON。
@@ -154,7 +127,7 @@ function renderFormControl(field: FormFieldConfig) {
       );
 
     case 'SWITCH':
-      return <Switch size="small" />;
+      return <Switch size="small"/>;
 
     case 'TEXTAREA':
       return (
@@ -170,7 +143,7 @@ function renderFormControl(field: FormFieldConfig) {
     case 'INPUT':
     default:
       return (
-        <Input placeholder={field.placeholder} />
+        <Input placeholder={field.placeholder}/>
       );
   }
 }
@@ -184,13 +157,11 @@ interface ChannelTypeSelectorProps {
 /**
  * 新建通道时的类型选择区域。
  */
-const ChannelTypeSelector: React.FC<
-  ChannelTypeSelectorProps
-> = ({
-  channelTypes,
-  loading,
-  onSelect,
-}) => {
+const ChannelTypeSelector: React.FC<ChannelTypeSelectorProps> = ({
+                                                                   channelTypes,
+                                                                   loading,
+                                                                   onSelect,
+                                                                 }) => {
   return (
     <section>
       <div>
@@ -206,7 +177,7 @@ const ChannelTypeSelector: React.FC<
       {!loading && channelTypes.length === 0 ? (
         <div className="flex flex-col items-center py-20 text-center">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-            <RadioTower className="h-5 w-5" />
+            <RadioTower className="h-5 w-5"/>
           </div>
 
           <p className="m-0 mt-4 text-sm font-medium text-slate-600">
@@ -398,10 +369,10 @@ const AddOrEditChannelModal =
 
     useImperativeHandle(ref, () => ({
       open: async ({
-        operateType: nextOperateType,
-        currentRecord: nextRecord,
-        onSuccess,
-      }: AlarmModalOpenPayload) => {
+                     operateType: nextOperateType,
+                     currentRecord: nextRecord,
+                     onSuccess,
+                   }: AlarmModalOpenPayload) => {
         resetState();
 
         setOperateType(nextOperateType);
@@ -422,7 +393,7 @@ const AddOrEditChannelModal =
          */
         if (
           nextOperateType ===
-            AlarmOperateType.Edit &&
+          AlarmOperateType.Edit &&
           nextRecord
         ) {
           const channelRecord =
@@ -518,10 +489,8 @@ const AddOrEditChannelModal =
         return;
       }
 
-      const defaultValues: Record<
-        string,
-        unknown
-      > = {};
+      const defaultValues: Record<string,
+        unknown> = {};
 
       selectedType.configFields?.forEach(
         (field) => {
@@ -570,7 +539,7 @@ const AddOrEditChannelModal =
         ) {
           message.success(
             res.data.message ||
-              '测试消息发送成功',
+            '测试消息发送成功',
           );
 
           return;
@@ -578,7 +547,7 @@ const AddOrEditChannelModal =
 
         message.error(
           res?.data?.message ||
-            '测试失败，请检查通道配置',
+          '测试失败，请检查通道配置',
         );
       } catch (error: any) {
         if (error?.errorFields) {
@@ -612,7 +581,7 @@ const AddOrEditChannelModal =
         const payload: AlarmChannelCommand = {
           name: basicValues.name,
           channelType:
-            selectedType.channelType,
+          selectedType.channelType,
           enabled: basicValues.enabled ? 1 : 0,
           description:
             basicValues.description?.trim() ||
@@ -657,29 +626,29 @@ const AddOrEditChannelModal =
 
     const drawerTitle = isCreateMode
       ? intl.formatMessage({
-          id: 'pages.alarm.modal.channel.title.add',
-          defaultMessage: '新建告警通道',
-        })
+        id: 'pages.alarm.modal.channel.title.add',
+        defaultMessage: '新建告警通道',
+      })
       : intl.formatMessage({
-          id: 'pages.alarm.modal.channel.title.edit',
-          defaultMessage: '编辑告警通道',
-        });
+        id: 'pages.alarm.modal.channel.title.edit',
+        defaultMessage: '编辑告警通道',
+      });
 
     const drawerDescription =
       showFormStep && selectedType
         ? `配置 ${
-            selectedType.displayName ||
-            selectedType.channelType
-          } 告警通道`
+          selectedType.displayName ||
+          selectedType.channelType
+        } 告警通道`
         : '选择需要创建的告警通道类型';
 
     const sortedFields =
       selectedType?.configFields
         ? [...selectedType.configFields].sort(
-            (first, second) =>
-              (first.order ?? 0) -
-              (second.order ?? 0),
-          )
+        (first, second) =>
+          (first.order ?? 0) -
+          (second.order ?? 0),
+        )
         : [];
 
     return (
@@ -717,28 +686,28 @@ const AddOrEditChannelModal =
           >
             <div className="flex min-w-0 items-center gap-3">
               {showFormStep &&
-                isCreateMode && (
-                  <button
-                    type="button"
-                    aria-label="返回选择通道类型"
-                    disabled={
-                      confirmLoading || testing
-                    }
-                    onClick={handlePrevious}
-                    className={[
-                      'inline-flex h-9 w-9 shrink-0',
-                      'items-center justify-center',
-                      'rounded-lg text-slate-400',
-                      'transition-colors duration-200',
-                      'hover:bg-slate-100',
-                      'hover:text-slate-900',
-                      'disabled:pointer-events-none',
-                      'disabled:opacity-40',
-                    ].join(' ')}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </button>
-                )}
+              isCreateMode && (
+                <button
+                  type="button"
+                  aria-label="返回选择通道类型"
+                  disabled={
+                    confirmLoading || testing
+                  }
+                  onClick={handlePrevious}
+                  className={[
+                    'inline-flex h-9 w-9 shrink-0',
+                    'items-center justify-center',
+                    'rounded-lg text-slate-400',
+                    'transition-colors duration-200',
+                    'hover:bg-slate-100',
+                    'hover:text-slate-900',
+                    'disabled:pointer-events-none',
+                    'disabled:opacity-40',
+                  ].join(' ')}
+                >
+                  <ArrowLeft className="h-4 w-4"/>
+                </button>
+              )}
 
               <div
                 className={[
@@ -749,7 +718,7 @@ const AddOrEditChannelModal =
                   'text-[hsl(231_48%_48%)]',
                 ].join(' ')}
               >
-                <RadioTower className="h-5 w-5" />
+                <RadioTower className="h-5 w-5"/>
               </div>
 
               <div className="min-w-0">
@@ -759,13 +728,14 @@ const AddOrEditChannelModal =
                   </h2>
 
                   {showFormStep &&
-                    selectedType && (
-                      <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                  selectedType && (
+                    <span
+                      className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
                         {
                           selectedType.channelType
                         }
                       </span>
-                    )}
+                  )}
                 </div>
 
                 <p className="m-0 mt-1 truncate text-xs text-slate-400">
@@ -780,7 +750,7 @@ const AddOrEditChannelModal =
                   <Button
                     size="small"
                     icon={
-                      <FlaskConical className="h-3.5 w-3.5" />
+                      <FlaskConical className="h-3.5 w-3.5"/>
                     }
                     loading={testing}
                     disabled={confirmLoading}
@@ -796,7 +766,7 @@ const AddOrEditChannelModal =
                     type="primary"
                     size="small"
                     icon={
-                      <Check className="h-3.5 w-3.5" />
+                      <Check className="h-3.5 w-3.5"/>
                     }
                     loading={confirmLoading}
                     disabled={testing}
@@ -828,7 +798,7 @@ const AddOrEditChannelModal =
                   'disabled:opacity-40',
                 ].join(' ')}
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4"/>
               </button>
             </div>
           </header>
@@ -894,7 +864,7 @@ const AddOrEditChannelModal =
                           name="enabled"
                           valuePropName="checked"
                         >
-                          <Switch size="small" />
+                          <Switch size="small"/>
                         </Form.Item>
                       </div>
 
@@ -933,7 +903,8 @@ const AddOrEditChannelModal =
                         </p>
                       </div>
 
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
+                      <span
+                        className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
                         {sortedFields.length}
                         个配置项
                       </span>

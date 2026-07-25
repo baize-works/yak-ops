@@ -62,10 +62,10 @@ export interface QualityPointApiItem {
 export type QualityPointListPayload =
   | QualityPointApiItem[]
   | {
-      records?: QualityPointApiItem[];
-      list?: QualityPointApiItem[];
-      rows?: QualityPointApiItem[];
-    };
+  records?: QualityPointApiItem[];
+  list?: QualityPointApiItem[];
+  rows?: QualityPointApiItem[];
+};
 
 export const typeLabelMap: Record<ConcreteQualityType, string> = {
   existence: "存在性",

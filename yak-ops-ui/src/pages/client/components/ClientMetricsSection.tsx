@@ -1,19 +1,19 @@
-import React, { useMemo } from "react";
+import React, {useMemo} from "react";
 import {
   ClockCircleOutlined,
   CloudServerOutlined,
   HddOutlined,
   RadarChartOutlined,
 } from "@ant-design/icons";
-import { Progress } from "antd";
-import { formatPercent, formatText, getSafeNumber } from "../utils";
+import {Progress} from "antd";
+import {formatPercent, formatText, getSafeNumber} from "../utils";
 
 interface Props {
   metricsLoading: boolean;
   metrics: any;
 }
 
-const ClientMetricsSection: React.FC<Props> = ({ metricsLoading, metrics }) => {
+const ClientMetricsSection: React.FC<Props> = ({metricsLoading, metrics}) => {
   const quickStats = useMemo(
     () => [
       {
@@ -22,7 +22,7 @@ const ClientMetricsSection: React.FC<Props> = ({ metricsLoading, metrics }) => {
         value: metrics?.cpuUsage,
         type: "progress",
         desc: "当前节点整体 CPU 使用率",
-        icon: <RadarChartOutlined />,
+        icon: <RadarChartOutlined/>,
       },
       {
         key: "memoryUsage",
@@ -30,7 +30,7 @@ const ClientMetricsSection: React.FC<Props> = ({ metricsLoading, metrics }) => {
         value: metrics?.memoryUsage,
         type: "progress",
         desc: "当前节点堆内存使用率",
-        icon: <HddOutlined />,
+        icon: <HddOutlined/>,
       },
       {
         key: "threadCount",
@@ -38,7 +38,7 @@ const ClientMetricsSection: React.FC<Props> = ({ metricsLoading, metrics }) => {
         value: metrics?.threadCount,
         type: "text",
         desc: "当前节点活跃线程数量",
-        icon: <CloudServerOutlined />,
+        icon: <CloudServerOutlined/>,
       },
       {
         key: "runningOps",
@@ -46,7 +46,7 @@ const ClientMetricsSection: React.FC<Props> = ({ metricsLoading, metrics }) => {
         value: metrics?.runningOps,
         type: "text",
         desc: "当前正在执行的操作数",
-        icon: <ClockCircleOutlined />,
+        icon: <ClockCircleOutlined/>,
       },
     ],
     [metrics]
@@ -77,7 +77,8 @@ const ClientMetricsSection: React.FC<Props> = ({ metricsLoading, metrics }) => {
                 <div className="text-[13px] font-semibold tracking-[0.02em] text-[#667085]">
                   {item.label}
                 </div>
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F3F6FB] text-[16px] text-[#44546F]">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F3F6FB] text-[16px] text-[#44546F]">
                   {item.icon}
                 </div>
               </div>

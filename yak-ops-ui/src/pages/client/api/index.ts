@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 const apiPrefix = '/api/v1/datax/executor';
+
 function getApi(path: string) {
   return `${apiPrefix}${path}`;
 }

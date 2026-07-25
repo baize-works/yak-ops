@@ -1,35 +1,9 @@
-import { useIntl } from '@umijs/max';
-import {
-  Button,
-  Drawer,
-  Form,
-  Input,
-  message,
-  Select,
-  Spin,
-  Switch,
-} from 'antd';
-import {
-  Check,
-  ShieldAlert,
-  X,
-} from 'lucide-react';
-import React, {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
-import {
-  DEFAULT_SEVERITY,
-  JOB_STATUS_OPTIONS,
-  SEVERITY_OPTIONS,
-} from '../constants';
-import {
-  fetchAllJobDefinitions,
-  fetchRuleChannels,
-  saveRule,
-} from '../service';
+import {useIntl} from '@umijs/max';
+import {Button, Drawer, Form, Input, message, Select, Spin, Switch,} from 'antd';
+import {Check, ShieldAlert, X,} from 'lucide-react';
+import React, {forwardRef, useImperativeHandle, useRef, useState,} from 'react';
+import {DEFAULT_SEVERITY, JOB_STATUS_OPTIONS, SEVERITY_OPTIONS,} from '../constants';
+import {fetchAllJobDefinitions, fetchRuleChannels, saveRule,} from '../service';
 import {
   AlarmOperateType,
   type AlarmModalOpenPayload,
@@ -40,7 +14,7 @@ import {
   type RuleFormValues,
 } from '../types';
 
-const { TextArea } = Input;
+const {TextArea} = Input;
 
 interface AddOrEditRuleModalProps {
   channels: Array<{
@@ -86,10 +60,8 @@ function getJobOptionLabel(job: JobDefinitionOption) {
   return `[离线] ${job.jobName}`;
 }
 
-const AddOrEditRuleModal = forwardRef<
-  AlarmModalRef,
-  AddOrEditRuleModalProps
->(({ channels }, ref) => {
+const AddOrEditRuleModal = forwardRef<AlarmModalRef,
+  AddOrEditRuleModalProps>(({channels}, ref) => {
   const intl = useIntl();
   const [form] = Form.useForm<RuleFormValues>();
 
@@ -107,9 +79,7 @@ const AddOrEditRuleModal = forwardRef<
   const [currentRecord, setCurrentRecord] =
     useState<AlarmRuleRecord>();
 
-  const [jobOptions, setJobOptions] = useState<
-    JobDefinitionOption[]
-  >([]);
+  const [jobOptions, setJobOptions] = useState<JobDefinitionOption[]>([]);
 
   const successCallbackRef =
     useRef<(() => void) | undefined>();
@@ -182,10 +152,10 @@ const AddOrEditRuleModal = forwardRef<
 
   useImperativeHandle(ref, () => ({
     open: async ({
-      operateType: nextOperateType,
-      currentRecord: nextRecord,
-      onSuccess,
-    }: AlarmModalOpenPayload) => {
+                   operateType: nextOperateType,
+                   currentRecord: nextRecord,
+                   onSuccess,
+                 }: AlarmModalOpenPayload) => {
       const currentRequestId =
         openRequestIdRef.current + 1;
 
@@ -224,7 +194,7 @@ const AddOrEditRuleModal = forwardRef<
 
       const isEdit =
         nextOperateType ===
-          AlarmOperateType.Edit &&
+        AlarmOperateType.Edit &&
         nextRecord;
 
       if (!isEdit) {
@@ -388,13 +358,13 @@ const AddOrEditRuleModal = forwardRef<
 
   const drawerTitle = isCreateMode
     ? intl.formatMessage({
-        id: 'pages.alarm.modal.rule.title.add',
-        defaultMessage: '新建告警规则',
-      })
+      id: 'pages.alarm.modal.rule.title.add',
+      defaultMessage: '新建告警规则',
+    })
     : intl.formatMessage({
-        id: 'pages.alarm.modal.rule.title.edit',
-        defaultMessage: '编辑告警规则',
-      });
+      id: 'pages.alarm.modal.rule.title.edit',
+      defaultMessage: '编辑告警规则',
+    });
 
   const drawerDescription = isCreateMode
     ? '配置任务状态变化时的告警策略'
@@ -456,7 +426,7 @@ const AddOrEditRuleModal = forwardRef<
                 'text-[hsl(231_48%_48%)]',
               ].join(' ')}
             >
-              <ShieldAlert className="h-5 w-5" />
+              <ShieldAlert className="h-5 w-5"/>
             </div>
 
             <div className="min-w-0">
@@ -475,7 +445,7 @@ const AddOrEditRuleModal = forwardRef<
               type="primary"
               size="small"
               icon={
-                <Check className="h-3.5 w-3.5" />
+                <Check className="h-3.5 w-3.5"/>
               }
               loading={confirmLoading}
               onClick={handleSubmit}
@@ -502,7 +472,7 @@ const AddOrEditRuleModal = forwardRef<
                 'disabled:opacity-40',
               ].join(' ')}
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4"/>
             </button>
           </div>
         </header>
@@ -580,7 +550,7 @@ const AddOrEditRuleModal = forwardRef<
                     name="enabled"
                     valuePropName="checked"
                   >
-                    <Switch size="small" />
+                    <Switch size="small"/>
                   </Form.Item>
                 </div>
 
@@ -668,7 +638,7 @@ const AddOrEditRuleModal = forwardRef<
                 </Form.Item>
 
                 <Form.Item noStyle shouldUpdate>
-                  {({ getFieldValue }) => {
+                  {({getFieldValue}) => {
                     const selectedTargets:
                       | number[]
                       | undefined =
@@ -680,18 +650,18 @@ const AddOrEditRuleModal = forwardRef<
                       selectedTargets &&
                       selectedTargets.length > 0
                         ? jobOptions
-                            .filter((job) =>
-                              selectedTargets.includes(
-                                job.id,
+                          .filter((job) =>
+                            selectedTargets.includes(
+                              job.id,
+                            ),
+                          )
+                          .map((job) => ({
+                            label:
+                              getJobOptionLabel(
+                                job,
                               ),
-                            )
-                            .map((job) => ({
-                              label:
-                                getJobOptionLabel(
-                                  job,
-                                ),
-                              value: job.id,
-                            }))
+                            value: job.id,
+                          }))
                         : jobSelectOptions;
 
                     return (
@@ -765,7 +735,7 @@ const AddOrEditRuleModal = forwardRef<
                 </Form.Item>
 
                 {enabledChannelOptions.length ===
-                  0 && (
+                0 && (
                   <p className="m-0 mt-2 text-xs text-orange-500">
                     暂无可用告警通道，请先创建并启用告警通道。
                   </p>

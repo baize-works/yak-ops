@@ -1,11 +1,11 @@
-import React, { memo, useEffect, useRef } from "react";
+import React, {memo, useEffect, useRef} from "react";
 import ReactECharts from "echarts-for-react";
 
 interface AutoResizeChartProps {
   option: any;
 }
 
-const AutoResizeChart: React.FC<AutoResizeChartProps> = memo(({ option }) => {
+const AutoResizeChart: React.FC<AutoResizeChartProps> = memo(({option}) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
 

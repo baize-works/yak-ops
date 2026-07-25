@@ -1,7 +1,7 @@
-import { Radio } from "antd";
+import {Radio} from "antd";
 import React from "react";
 
-import type { ChartConfigValues, SortBy, SortOrder } from "../types";
+import type {ChartConfigValues, SortBy, SortOrder} from "../types";
 import ChartSettingBlock from "../components/ChartSettingBlock";
 
 interface SortConfigProps {
@@ -9,7 +9,7 @@ interface SortConfigProps {
   onChange: (patch: Partial<ChartConfigValues>) => void;
 }
 
-const SortConfig: React.FC<SortConfigProps> = ({ value, onChange }) => {
+const SortConfig: React.FC<SortConfigProps> = ({value, onChange}) => {
   return (
     <>
       <ChartSettingBlock title="排序依据">

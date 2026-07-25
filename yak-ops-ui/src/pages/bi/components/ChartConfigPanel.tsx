@@ -1,7 +1,7 @@
 import React from "react";
 
-import type { ChartType } from "./CreateChartModal";
-import type { ChartConfigComponentProps } from "./chart-config.types";
+import type {ChartType} from "./CreateChartModal";
+import type {ChartConfigComponentProps} from "./chart-config.types";
 
 import BarLineChartConfig from "./BarLineChartConfig";
 import NumberChartConfig from "./NumberChartConfig";
@@ -10,7 +10,7 @@ import ScatterChartConfig from "./ScatterChartConfig";
 import TableChartConfig from "./TableChartConfig";
 
 const ChartConfigPanel: React.FC<ChartConfigComponentProps> = (props) => {
-  const { chartType } = props;
+  const {chartType} = props;
 
   const barLineTypes: ChartType[] = ["bar", "line", "zline", "areaLine", "combo"];
   const pieTypes: ChartType[] = ["pie", "ringPie", "rosePie"];

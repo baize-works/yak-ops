@@ -1,4 +1,4 @@
-import { ChartType } from "./CreateChartModal";
+import {ChartType} from "./CreateChartModal";
 
 
 export type SortBy = "data" | "x" | "y";

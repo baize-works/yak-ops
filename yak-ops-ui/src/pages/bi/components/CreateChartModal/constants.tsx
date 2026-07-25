@@ -1,4 +1,4 @@
-import type { ChartConfigValues, FieldOption, ThemeOption } from "./types";
+import type {ChartConfigValues, FieldOption, ThemeOption} from "./types";
 
 export const defaultChartConfigValues: ChartConfigValues = {
   xField: "SETTING_NAME",
@@ -57,13 +57,13 @@ export const themeOptions: ThemeOption[] = [
 ];
 
 export const defaultFieldOptions: FieldOption[] = [
-  { label: "SETTING_NAME", value: "SETTING_NAME" },
-  { label: "SETTING_VALUE", value: "SETTING_VALUE" },
-  { label: "日期", value: "date" },
-  { label: "任务数", value: "taskCount" },
-  { label: "成功数", value: "successCount" },
-  { label: "失败数", value: "failedCount" },
-  { label: "执行耗时", value: "duration" },
+  {label: "SETTING_NAME", value: "SETTING_NAME"},
+  {label: "SETTING_VALUE", value: "SETTING_VALUE"},
+  {label: "日期", value: "date"},
+  {label: "任务数", value: "taskCount"},
+  {label: "成功数", value: "successCount"},
+  {label: "失败数", value: "failedCount"},
+  {label: "执行耗时", value: "duration"},
 ];
 
 export const previewData = [

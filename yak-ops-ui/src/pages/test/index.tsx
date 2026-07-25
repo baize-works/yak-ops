@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, {useMemo, useState} from "react";
 
 type MenuItem = {
   key: string;
@@ -7,11 +7,11 @@ type MenuItem = {
 };
 
 const items: MenuItem[] = [
-  { key: "1", icon: "🏠", label: "Dashboard" },
-  { key: "2", icon: "📦", label: "Batch Jobs" },
-  { key: "4", icon: "🧩", label: "Connectors" },
-  { key: "5", icon: "📊", label: "Monitoring" },
-  { key: "6", icon: "⚙️", label: "Settings" },
+  {key: "1", icon: "🏠", label: "Dashboard"},
+  {key: "2", icon: "📦", label: "Batch Jobs"},
+  {key: "4", icon: "🧩", label: "Connectors"},
+  {key: "5", icon: "📊", label: "Monitoring"},
+  {key: "6", icon: "⚙️", label: "Settings"},
 ];
 
 const App: React.FC = () => {
@@ -407,8 +407,8 @@ const App: React.FC = () => {
         <main className="content">
           <div className="topbar">
             <div>
-              <div style={{ fontSize: 14, color: "#64748b" }}>Current Page</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>
+              <div style={{fontSize: 14, color: "#64748b"}}>Current Page</div>
+              <div style={{fontSize: 18, fontWeight: 700, color: "#0f172a"}}>
                 {activeItem?.label}
               </div>
             </div>

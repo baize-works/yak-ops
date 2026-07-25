@@ -6,9 +6,9 @@ interface ThemeColorBarProps {
 }
 
 const ThemeColorBar: React.FC<ThemeColorBarProps> = ({
-  colors,
-  compact = false,
-}) => {
+                                                       colors,
+                                                       compact = false,
+                                                     }) => {
   return (
     <div
       className={[
@@ -20,7 +20,7 @@ const ThemeColorBar: React.FC<ThemeColorBarProps> = ({
         <span
           key={color}
           className="flex-1"
-          style={{ backgroundColor: color }}
+          style={{backgroundColor: color}}
         />
       ))}
     </div>

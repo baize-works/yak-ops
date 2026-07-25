@@ -1,12 +1,6 @@
-import type { Layout } from "react-grid-layout";
+import type {Layout} from "react-grid-layout";
 
-import {
-  DEFAULT_LAYOUT,
-  MARGIN,
-  MIN_ROW_COUNT,
-  ROW_HEIGHT,
-  STORAGE_KEY,
-} from "./dashboard.data";
+import {DEFAULT_LAYOUT, MARGIN, MIN_ROW_COUNT, ROW_HEIGHT, STORAGE_KEY,} from "./dashboard.data";
 
 export const getInitialLayout = (): Layout[] => {
   try {
