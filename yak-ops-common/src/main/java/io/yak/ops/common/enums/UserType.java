@@ -1,5 +1,6 @@
 package io.yak.ops.common.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 
 /**
  * user type
@@ -16,6 +17,7 @@ public enum UserType {
         this.descp = descp;
     }
 
+    @EnumValue
     private final int code;
     private final String descp;
 
@@ -26,5 +28,13 @@ public enum UserType {
     public String getDescp() {
         return descp;
     }
-}
 
+    public static UserType fromCode(int code) {
+        for (UserType userType : values()) {
+            if (userType.code == code) {
+                return userType;
+            }
+        }
+        throw new IllegalArgumentException("Unknown user type code: " + code);
+    }
+}

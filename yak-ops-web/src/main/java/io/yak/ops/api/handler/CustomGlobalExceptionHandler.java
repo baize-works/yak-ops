@@ -71,15 +71,4 @@ public class CustomGlobalExceptionHandler {
         return Result.buildFromRSAndMsg(ResultStatus.FAIL, "Service encountered a null pointer exception");
     }
 
-    /**
-     * Catch-all handler for any other exceptions not explicitly handled.
-     *
-     * @param e the exception
-     * @return Result indicating failure with the exception's message
-     */
-    @ExceptionHandler(Exception.class)
-    public Result<Void> handleException(Exception e) {
-        LOGGER.error("method=handleException || errMsg=exception", e);
-        return Result.buildFromRSAndMsg(ResultStatus.FAIL, e.getMessage());
-    }
 }

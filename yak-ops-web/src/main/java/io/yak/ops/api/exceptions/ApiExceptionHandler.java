@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 /**
  * Global Exception Handler
@@ -41,12 +42,26 @@ public class ApiExceptionHandler {
      * Static resource not found
      * Avoid printing ERROR logs repeatedly for wrong swagger/static resource paths
      */
-    @ExceptionHandler(Exception.class)
-    public Result<Object> handleNoResourceFoundException(Exception e,
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public Result<Object> handleNoResourceFoundException(NoHandlerFoundException e,
                                                          HttpServletRequest request) {
         log.warn("Static resource not found, uri={}, resourcePath={}",
                 request.getRequestURI(), e.getMessage());
         return Result.errorWithArgs(Status.INTERNAL_SERVER_ERROR_ARGS, "Resource not found");
+    }
+
+    /**
+     * Internal failures, including persistence and result mapping failures.
+     */
+    @ExceptionHandler(Exception.class)
+    public Result<Object> handleInternalException(Exception e, HttpServletRequest request) {
+        HandlerMethod handlerMethod = getHandlerMethod(request);
+        if (handlerMethod != null) {
+            log.error("{} Meet an internal exception", handlerMethod.getShortLogMessage(), e);
+        } else {
+            log.error("Meet an internal exception, uri={}", request.getRequestURI(), e);
+        }
+        return Result.errorWithArgs(Status.INTERNAL_SERVER_ERROR_ARGS, "Internal server error");
     }
 
     /**

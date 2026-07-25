@@ -30,13 +30,13 @@ public class UsersServiceImpl implements UsersService {
 
     @Override
     public User getUserInfo(User loginUser) {
-        User User;
+        User user;
         if (loginUser.getUserType() == UserType.ADMIN_USER) {
-            User = loginUser;
+            user = loginUser;
         } else {
-            User = users.findById(loginUser.getId()).orElse(null);
+            user = users.findById(loginUser.getId()).orElse(null);
         }
-        return User;
+        return user;
     }
 
     @Override
