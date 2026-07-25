@@ -17,7 +17,7 @@ import {
   type SetStateAction,
 } from "react";
 import { ReactFlowProvider } from "reactflow";
-import { seatunnelJobDefinitionApi } from "../api";
+import { linkupJobDefinitionApi } from "../api";
 import FlowCanvas from "./FlowCanvas";
 import RightConfigPanel from "./RightConfigPanel";
 import { CheckListPopover } from "./components/CheckListPopover";
@@ -398,7 +398,7 @@ export default function Workflow({
       setPreviewLoading(true);
 
       const finalPayload = buildFinalPayload();
-      const res = await seatunnelJobDefinitionApi.buildGuideSingleConfig(
+      const res = await linkupJobDefinitionApi.buildGuideSingleConfig(
         finalPayload
       );
 
@@ -432,7 +432,7 @@ export default function Workflow({
         env: nextEnv,
       };
 
-      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideSingle(
+      const res = await linkupJobDefinitionApi.saveOrUpdateGuideSingle(
         finalPayload
       );
 

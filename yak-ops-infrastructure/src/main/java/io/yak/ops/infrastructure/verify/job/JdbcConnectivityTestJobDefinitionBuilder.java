@@ -9,7 +9,7 @@ import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.yak.ops.common.enums.HoconBuildStage;
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.dao.entity.SeaTunnelClient;
+import io.yak.ops.dao.entity.LinkUpClient;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +39,7 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
     private TestJobEnvConfigBuilder testJobEnvConfigBuilder;
 
     @Resource
-    private SeaTunnelJobConfigAssembler seaTunnelJobConfigAssembler;
+    private LinkUpJobConfigAssembler linkUpJobConfigAssembler;
 
     @Override
     public boolean supports(DbType dbType) {
@@ -47,7 +47,7 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
     }
 
     @Override
-    public ConnectivityTestJob build(SeaTunnelClient client, DataSource datasource) {
+    public ConnectivityTestJob build(LinkUpClient client, DataSource datasource) {
         DbType dbType = datasource.getDbType();
 
         String builderKey = sourceBuilderResolver.resolveBuilderKey(dbType);
@@ -68,7 +68,7 @@ public class JdbcConnectivityTestJobDefinitionBuilder implements ConnectivityTes
         Config sourcePluginConfig = sourceBuilder.buildSourceHocon(buildContext);
 
         String jobName = buildJobName(client.getId(), datasource.getId());
-        String jobConfig = seaTunnelJobConfigAssembler.assemble(
+        String jobConfig = linkUpJobConfigAssembler.assemble(
                 testJobEnvConfigBuilder.buildBatchEnv(),
                 hoconPluginName,
                 sourcePluginConfig,

@@ -1,7 +1,7 @@
 import { message } from "antd";
 import { useState } from "react";
 import { history } from "umi";
-import { seatunnelJobDefinitionApi } from "./api";
+import { linkupJobDefinitionApi } from "./api";
 import DataSyncHeader from "./components/DataSyncHeader";
 import SyncTaskList from "./components/SyncTaskList";
 // import SyncTaskList from "./SyncTaskList";
@@ -24,7 +24,7 @@ const App = () => {
    * 先申请唯一ID，继续沿用缓存方式进入详情页
    */
   const goDetail = () => {
-    seatunnelJobDefinitionApi.getUniqueId().then((data) => {
+    linkupJobDefinitionApi.getUniqueId().then((data) => {
       if (data?.code === 0) {
         const returnId = data?.data;
 

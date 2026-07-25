@@ -15,7 +15,7 @@ import java.io.IOException;
  * Transform node builder.
  *
  * <p>
- * This builder generates the HOCON configuration for a Transform node in a SeaTunnel job.
+ * This builder generates the HOCON configuration for a Transform node in a LinkUp job.
  * It leverages TransformConfigSwitcherUtils to convert user-provided transform options
  * into the corresponding configuration.
  * </p>

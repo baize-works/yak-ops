@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Represents a group of nodes in a SeaTunnel job.
+ * Represents a group of nodes in a LinkUp job.
  *
  * <p>
  * This class organizes configuration blocks into three categories:

@@ -12,7 +12,7 @@ import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import org.apache.seatunnel.plugin.datasource.doris.metadata.DorisCatalog;
 import io.yak.ops.common.enums.HoconBuildStage;
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.dao.entity.SeaTunnelClient;
+import io.yak.ops.dao.entity.LinkUpClient;
 import io.yak.ops.plugin.spi.datasource.BaseConnectionParam;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
@@ -41,7 +41,7 @@ public class DorisConnectivityTestJobDefinitionBuilder implements ConnectivityTe
     private TestJobEnvConfigBuilder testJobEnvConfigBuilder;
 
     @Resource
-    private SeaTunnelJobConfigAssembler seaTunnelJobConfigAssembler;
+    private LinkUpJobConfigAssembler linkUpJobConfigAssembler;
 
     @Override
     public boolean supports(DbType dbType) {
@@ -49,7 +49,7 @@ public class DorisConnectivityTestJobDefinitionBuilder implements ConnectivityTe
     }
 
     @Override
-    public ConnectivityTestJob build(SeaTunnelClient client, DataSource datasource) {
+    public ConnectivityTestJob build(LinkUpClient client, DataSource datasource) {
         DbType dbType = datasource.getDbType();
         String connectionJson = datasource.getConnectionParams();
 
@@ -79,7 +79,7 @@ public class DorisConnectivityTestJobDefinitionBuilder implements ConnectivityTe
 
         // 组装完整 job 配置
         String jobName = buildJobName(client.getId(), datasource.getId());
-        String jobConfig = seaTunnelJobConfigAssembler.assemble(
+        String jobConfig = linkUpJobConfigAssembler.assemble(
                 testJobEnvConfigBuilder.buildBatchEnv(),
                 "Doris",
                 sourcePluginConfig,

@@ -27,7 +27,7 @@
   </a>
   <img src="https://img.shields.io/badge/Java-21-blue?style=flat-square" alt="Java 21" />
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20-blue?style=flat-square" alt="Node.js 20+" />
-  <img src="https://img.shields.io/badge/SeaTunnel-2.3.13-blue?style=flat-square" alt="SeaTunnel 2.3.13" />
+  <img src="https://img.shields.io/badge/LinkUp-2.3.13-blue?style=flat-square" alt="LinkUp 2.3.13" />
 </p>
 
 <p align="center">

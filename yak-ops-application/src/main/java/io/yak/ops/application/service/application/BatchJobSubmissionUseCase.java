@@ -5,7 +5,7 @@ import io.yak.ops.application.model.vo.JobInstanceVO;
 /**
  * Application-facing port for submitting and cancelling an engine job.
  *
- * <p>The infrastructure module provides the SeaTunnel REST implementation.
+ * <p>The infrastructure module provides the LinkUp REST implementation.
  * Keeping this contract here prevents execution use cases from taking a
  * dependency on an HTTP client or engine-specific implementation.</p>
  */

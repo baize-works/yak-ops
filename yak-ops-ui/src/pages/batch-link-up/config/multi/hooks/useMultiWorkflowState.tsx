@@ -4,7 +4,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 
 import {dataSourceCatalogApi, fetchDataSourceOptions,} from "@/pages/data-source/service";
 
-import {seatunnelJobDefinitionApi} from "@/pages/batch-link-up/api";
+import {linkupJobDefinitionApi} from "@/pages/batch-link-up/api";
 import {buildTableItems, DEFAULT_DB_TYPE, DEFAULT_FORM_VALUES,} from "../config";
 import {DbTypeValue, TableItem} from "../types";
 import {JobDefinitionState, markJobDefinitionSynced, normalizeJobDefinitionState} from "../jobDefinitionState";
@@ -545,7 +545,7 @@ export function useMultiWorkflowState({
         content: workflowData,
       };
 
-      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti(
+      const res = await linkupJobDefinitionApi.saveOrUpdateGuideMulti(
         finalPayload
       );
 
@@ -618,7 +618,7 @@ export function useMultiWorkflowState({
       setPreviewLoading(true);
 
       const finalPayload = buildFinalPayload();
-      const res = await seatunnelJobDefinitionApi.buildGuideMultiConfig(
+      const res = await linkupJobDefinitionApi.buildGuideMultiConfig(
         finalPayload
       );
 
@@ -659,7 +659,7 @@ export function useMultiWorkflowState({
       setRunLoading(true);
 
       // TODO: 后续接入真正执行接口 / RunLog。
-      // await seatunnelJobDefinitionApi.execute(publishedJobDefineId);
+      // await linkupJobDefinitionApi.execute(publishedJobDefineId);
 
       // message.success("运行校验通过，可继续接入执行逻辑");
     } catch (error: any) {

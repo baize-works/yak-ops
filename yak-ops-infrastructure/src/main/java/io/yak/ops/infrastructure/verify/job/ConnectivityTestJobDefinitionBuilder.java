@@ -1,7 +1,7 @@
 package io.yak.ops.infrastructure.verify.job;
 
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.dao.entity.SeaTunnelClient;
+import io.yak.ops.dao.entity.LinkUpClient;
 import io.yak.ops.plugin.spi.enums.DbType;
 
 /**
@@ -17,5 +17,5 @@ public interface ConnectivityTestJobDefinitionBuilder {
     /**
      * Build a connectivity test job for the given client and datasource.
      */
-    ConnectivityTestJob build(SeaTunnelClient client, DataSource datasource);
+    ConnectivityTestJob build(LinkUpClient client, DataSource datasource);
 }

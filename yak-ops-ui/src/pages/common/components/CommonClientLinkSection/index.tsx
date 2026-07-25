@@ -1,4 +1,4 @@
-import {seatunnelClientApi} from "@/pages/client/api";
+import {linkupClientApi} from "@/pages/client/api";
 import AddClientModal from "@/pages/client/components/AddClientModal";
 import AddOrEditDataSourceModal from "@/pages/data-source/components/AddOrEditDataSourceModal";
 import {fetchDataSourceOptions} from "@/pages/data-source/service";
@@ -487,7 +487,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
     try {
       setClientLoading(true);
 
-      const res = await seatunnelClientApi.option();
+      const res = await linkupClientApi.option();
       const options = Array.isArray(res?.data)
         ? normalizeClientOptions(res.data)
         : [];
@@ -676,7 +676,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
             triggerMode,
           }) || {};
 
-        const res = await seatunnelClientApi.verifyDatasource(clientId, {
+        const res = await linkupClientApi.verifyDatasource(clientId, {
           datasourceId,
           pluginName: currentType?.pluginName,
           connectorType: currentType?.connectorType,
@@ -934,7 +934,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
 
       setConfirmLoading(true);
 
-      const res = await seatunnelClientApi.saveOrUpdate(values);
+      const res = await linkupClientApi.saveOrUpdate(values);
 
       if (res?.code !== 0) {
         message.error(res?.msg || "创建 Client 失败");

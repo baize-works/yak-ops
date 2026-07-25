@@ -2,7 +2,7 @@ package io.yak.ops.application.port.verify;
 
 import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.dao.entity.SeaTunnelClient;
+import io.yak.ops.dao.entity.LinkUpClient;
 
 /** Cache boundary for successful automatic connectivity checks. */
 public interface DatasourceVerificationCache {
@@ -10,6 +10,6 @@ public interface DatasourceVerificationCache {
     void put(String key, ClientDatasourceVerifyVO value);
     void evict(String key);
     void clear();
-    String buildKey(SeaTunnelClient client, DataSource datasource,
+    String buildKey(LinkUpClient client, DataSource datasource,
                     String pluginName, String connectorType, String role);
 }

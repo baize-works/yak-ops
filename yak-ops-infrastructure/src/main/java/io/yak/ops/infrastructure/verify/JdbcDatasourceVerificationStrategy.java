@@ -4,7 +4,7 @@ import io.yak.ops.application.port.verify.DatasourceVerificationStrategy;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.infrastructure.verify.executor.JobExecutionResult;
-import io.yak.ops.infrastructure.verify.executor.SeaTunnelTestJobExecutor;
+import io.yak.ops.infrastructure.verify.executor.LinkUpTestJobExecutor;
 import io.yak.ops.infrastructure.verify.job.ConnectivityTestJob;
 import io.yak.ops.infrastructure.verify.job.ConnectivityTestJobFactory;
 import io.yak.ops.application.port.verify.model.DatasourceVerifyContext;
@@ -34,7 +34,7 @@ public class JdbcDatasourceVerificationStrategy
     private ConnectivityTestJobFactory connectivityTestJobFactory;
 
     @Resource
-    private SeaTunnelTestJobExecutor seaTunnelTestJobExecutor;
+    private LinkUpTestJobExecutor linkUpTestJobExecutor;
 
     @Resource
     private ConnectivityVerifyResultAssembler connectivityVerifyResultAssembler;
@@ -57,7 +57,7 @@ public class JdbcDatasourceVerificationStrategy
     /**
      * 给 CDC 策略复用。
      *
-     * CDC 场景也需要先确认客户端能通过 SeaTunnel 访问该数据源。
+     * CDC 场景也需要先确认客户端能通过 LinkUp 访问该数据源。
      */
     public ClientDatasourceVerifyVO doVerify(DatasourceVerifyContext context) {
         ConnectivityTestJob testJob = connectivityTestJobFactory.build(
@@ -65,7 +65,7 @@ public class JdbcDatasourceVerificationStrategy
                 context.getDatasource()
         );
 
-        JobExecutionResult executionResult = seaTunnelTestJobExecutor.executeAndWait(
+        JobExecutionResult executionResult = linkUpTestJobExecutor.executeAndWait(
                 context.getClient(),
                 testJob,
                 context.getTimeoutMs(),
@@ -93,9 +93,9 @@ public class JdbcDatasourceVerificationStrategy
             return ClientDatasourceVerifyItemVO.success(
                     "JDBC_HOCON_CONNECTIVITY",
                     "基础连通性",
-                    "SeaTunnel 测试任务执行成功",
-                    "SeaTunnel 测试任务执行成功",
-                    "客户端可以通过 SeaTunnel 访问该数据源"
+                    "LinkUp 测试任务执行成功",
+                    "LinkUp 测试任务执行成功",
+                    "客户端可以通过 LinkUp 访问该数据源"
             );
         }
 
@@ -103,8 +103,8 @@ public class JdbcDatasourceVerificationStrategy
                 "JDBC_HOCON_CONNECTIVITY",
                 "基础连通性",
                 StringUtils.defaultIfBlank(vo.getErrorMessage(), vo.getMessage()),
-                "SeaTunnel 测试任务执行成功",
-                "客户端无法通过 SeaTunnel 访问该数据源"
+                "LinkUp 测试任务执行成功",
+                "客户端无法通过 LinkUp 访问该数据源"
         );
     }
 

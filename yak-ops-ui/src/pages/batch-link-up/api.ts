@@ -5,7 +5,7 @@ export enum Operate {
   Edit,
 }
 
-export interface SeatunnelJobDefinition {
+export interface LinkupJobDefinition {
   id?: any;
   jobName?: any;
   jobDesc?: any;
@@ -19,7 +19,7 @@ export interface SeatunnelJobDefinition {
 
 export const apiPrefix = '/api/v1/job/batch-definition';
 
-export const seatunnelJobDefinitionApi = {
+export const linkupJobDefinitionApi = {
   /**
    * SCRIPT 模式保存/更新
    */
@@ -43,7 +43,7 @@ export const seatunnelJobDefinitionApi = {
 
   selectById: (
     id: any,
-  ): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
+  ): Promise<{ code: number; data: LinkupJobDefinition; message?: string }> => {
     return HttpUtils.get(`${apiPrefix}/${id}`);
   },
 
@@ -56,7 +56,7 @@ export const seatunnelJobDefinitionApi = {
     return HttpUtils.get(`${apiPrefix}/${id}/edit-detail`);
   },
 
-  getUniqueId: (): Promise<{ code: number; data: SeatunnelJobDefinition; message?: string }> => {
+  getUniqueId: (): Promise<{ code: number; data: LinkupJobDefinition; message?: string }> => {
     return HttpUtils.get(`${apiPrefix}/get-unique-id`);
   },
 
@@ -117,7 +117,7 @@ export const seatunnelJobDefinitionApi = {
 
 export const executeApiPrefix = '/api/v1/executor';
 
-export const seatunnelJobExecuteApi = {
+export const linkupJobExecuteApi = {
   execute: (jobDefineId: any) => {
     return HttpUtils.get(executeApiPrefix + '/execute?jobDefineId=' + jobDefineId);
   },
@@ -129,7 +129,7 @@ export const seatunnelJobExecuteApi = {
 
 const instanceApiPrefix = '/api/v1/job/batch-instance';
 
-export const seatunnelJobInstanceApi = {
+export const linkupJobInstanceApi = {
   page: (data: any): Promise<{ code: number; data: any; message?: string }> => {
     return HttpUtils.post(`${instanceApiPrefix}/page`, data);
   },
@@ -143,33 +143,33 @@ export const seatunnelJobInstanceApi = {
   },
 };
 
-const seatunnelJobScheduleApiPrefix = '/api/v1/job/schedule';
+const linkupJobScheduleApiPrefix = '/api/v1/job/schedule';
 
-export const seatunnelJobScheduleApi = {
+export const linkupJobScheduleApi = {
   getLast5ExecutionTimes: (cron: string) => {
     return HttpUtils.get<any[]>(
-      `${seatunnelJobScheduleApiPrefix}/last5-execution-times?cron=` + cron,
+      `${linkupJobScheduleApiPrefix}/last5-execution-times?cron=` + cron,
     );
   },
 
   stopSchedule: (jobScheduleId: string) => {
     return HttpUtils.get<any[]>(
-      `${seatunnelJobScheduleApiPrefix}/stop-schedule?scheduleId=` + jobScheduleId,
+      `${linkupJobScheduleApiPrefix}/stop-schedule?scheduleId=` + jobScheduleId,
     );
   },
 
   startSchedule: (jobScheduleId: string) => {
     return HttpUtils.get<any[]>(
-      `${seatunnelJobScheduleApiPrefix}/start-schedule?scheduleId=` + jobScheduleId,
+      `${linkupJobScheduleApiPrefix}/start-schedule?scheduleId=` + jobScheduleId,
     );
   },
 };
 
-const seatunnelCopilotApiPrefix = '/api/v1/copilot/ai';
+const linkupCopilotApiPrefix = '/api/v1/copilot/ai';
 
-export const seatunnelCopilotApi = {
+export const linkupCopilotApi = {
   copilot: (data: any) => {
-    return HttpUtils.post<any[]>(`${seatunnelCopilotApiPrefix}/agent`, data);
+    return HttpUtils.post<any[]>(`${linkupCopilotApiPrefix}/agent`, data);
   },
 };
 

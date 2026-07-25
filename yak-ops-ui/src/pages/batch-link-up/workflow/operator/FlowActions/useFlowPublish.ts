@@ -1,4 +1,4 @@
-import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
+import { linkupJobDefinitionApi } from "@/pages/batch-link-up/api";
 import { message } from "antd";
 import { useReactFlow } from "reactflow";
 import { useLocation } from "umi";
@@ -35,7 +35,7 @@ export function useFlowPublish(nodes: any[], edges: any[], baseForm: any) {
             id: idFromUrl
         };
 
-        const data = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti( httpParams);
+        const data = await linkupJobDefinitionApi.saveOrUpdateGuideMulti( httpParams);
         if (data?.code === 0) {
             message.success("发布成功");
         }
@@ -48,7 +48,7 @@ export function useFlowPublish(nodes: any[], edges: any[], baseForm: any) {
     const generateHocon = async () => {
         const flowData = prepareFlowData();
         const leftSideParam = baseForm?.getFieldsValue();
-        return seatunnelJobDefinitionApi.hocon({
+        return linkupJobDefinitionApi.hocon({
             jobDefinitionInfo: JSON.stringify(flowData),
             ...leftSideParam,
             jobType: "BATCH"

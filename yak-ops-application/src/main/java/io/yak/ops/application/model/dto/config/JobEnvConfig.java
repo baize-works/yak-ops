@@ -15,7 +15,7 @@ import io.yak.ops.domain.enums.JobMode;
 public class JobEnvConfig {
 
     /**
-     * SeaTunnel env.job.mode
+     * LinkUp env.job.mode
      * BATCH
      */
     private JobMode jobMode;

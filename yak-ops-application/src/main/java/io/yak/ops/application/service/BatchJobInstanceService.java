@@ -2,7 +2,7 @@ package io.yak.ops.application.service;
 
 import io.yak.ops.domain.enums.RunMode;
 import io.yak.ops.dao.entity.JobInstance;
-import io.yak.ops.application.model.dto.SeaTunnelJobInstanceDTO;
+import io.yak.ops.application.model.dto.LinkUpJobInstanceDTO;
 import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
 import io.yak.ops.application.model.response.PaginationResult;
 import io.yak.ops.application.model.vo.JobInstanceVO;
@@ -14,7 +14,7 @@ public interface BatchJobInstanceService {
 
     JobInstanceVO create(Long jobDefineId, RunMode runMode);
 
-    PaginationResult<JobInstanceVO> paging(SeaTunnelJobInstanceDTO dto);
+    PaginationResult<JobInstanceVO> paging(LinkUpJobInstanceDTO dto);
 
     String buildJobConfig(JobDefinitionSaveCommand command);
 

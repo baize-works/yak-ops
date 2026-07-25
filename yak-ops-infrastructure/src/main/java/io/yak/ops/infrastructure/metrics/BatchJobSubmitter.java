@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 
 
 /**
- * Submitter for batch SeaTunnel jobs.
+ * Submitter for batch LinkUp jobs.
  *
  * <p>
  * This class only handles batch job submission, metrics monitoring,
@@ -128,7 +128,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
         Long clientId = instance.getClientId();
         String engineJobId = instance.getEngineJobId();
 
-        log.info("Stopping batch SeaTunnel job: instanceId={}, clientId={}, engineJobId={}",
+        log.info("Stopping batch LinkUp job: instanceId={}, clientId={}, engineJobId={}",
                 instanceId, clientId, engineJobId);
 
         EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(clientId), null, null, java.util.Collections.emptyMap());
@@ -174,7 +174,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
         if (!metricsRegistered || !watcherRegistered) {
             jobLogger.warn(
                     "Batch post-submit watcher registration incomplete. " +
-                            "The job has already been submitted to SeaTunnel Engine. " +
+                            "The job has already been submitted to LinkUp Engine. " +
                             "metricsRegistered=" + metricsRegistered +
                             ", watcherRegistered=" + watcherRegistered
             );
@@ -217,7 +217,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
                                          String engineId,
                                          Exception e) {
         jobLogger.error(
-                "Batch job was submitted to SeaTunnel Engine, but post-submit handling failed. " +
+                "Batch job was submitted to LinkUp Engine, but post-submit handling failed. " +
                         "instanceId=" + instanceId + ", engineId=" + engineId,
                 e
         );
@@ -233,7 +233,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
          * Do not mark the batch job instance as FAILED here.
          *
          * Reason:
-         * The SeaTunnel Engine has already accepted the job.
+         * The LinkUp Engine has already accepted the job.
          * If we mark the local instance as failed now, local state may conflict
          * with the real engine state.
          */

@@ -11,7 +11,7 @@ import io.yak.ops.common.utils.JSONUtils;
 import io.yak.ops.infrastructure.quartz.QuartzScheduleUtils;
 import io.yak.ops.dao.entity.JobSchedule;
 import io.yak.ops.dao.repository.JobScheduleDao;
-import io.yak.ops.application.model.dto.SeaTunnelJobScheduleDTO;
+import io.yak.ops.application.model.dto.LinkUpJobScheduleDTO;
 import io.yak.ops.application.model.dto.config.JobScheduleConfig;
 import org.quartz.*;
 import org.springframework.beans.BeanUtils;
@@ -39,7 +39,7 @@ public class JobScheduleServiceAdapter implements JobScheduleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createTaskSchedule(SeaTunnelJobScheduleDTO dto) {
+    public Long createTaskSchedule(LinkUpJobScheduleDTO dto) {
         log.info("Creating job schedule: {}", dto);
 
         if (dto == null || dto.getJobDefinitionId() == null) {
@@ -70,7 +70,7 @@ public class JobScheduleServiceAdapter implements JobScheduleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateTaskSchedule(SeaTunnelJobScheduleDTO dto) {
+    public boolean updateTaskSchedule(LinkUpJobScheduleDTO dto) {
         log.info("Updating task schedule: {}", dto);
 
         if (dto == null || dto.getId() == null) {

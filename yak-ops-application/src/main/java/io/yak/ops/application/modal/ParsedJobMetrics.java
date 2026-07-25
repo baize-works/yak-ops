@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Parsed metrics snapshot from SeaTunnel Engine.
+ * Parsed metrics snapshot from LinkUp Engine.
  *
  * <p>
  * pipelineMetrics: job / pipeline level summary metrics.

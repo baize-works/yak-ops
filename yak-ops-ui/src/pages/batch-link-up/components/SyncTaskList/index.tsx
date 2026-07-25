@@ -4,7 +4,7 @@ import { Divider, Empty, Table, Tooltip, message } from "antd";
 import { TableRowSelection } from "antd/es/table/interface";
 import moment from "moment";
 import { useEffect, useState } from "react";
-import { seatunnelJobDefinitionApi } from "../../api";
+import { linkupJobDefinitionApi } from "../../api";
 import { batchJobExecutorApi } from "../../type";
 import ActionColumn from "./components/ActionColumn";
 import AdvancedSearchForm from "./components/AdvancedSearchForm";
@@ -153,7 +153,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
     }
 
     try {
-      const data = await seatunnelJobDefinitionApi.page({
+      const data = await linkupJobDefinitionApi.page({
         ...transformedParams,
         current: pagination.current,
         pageSize: pagination.pageSize,

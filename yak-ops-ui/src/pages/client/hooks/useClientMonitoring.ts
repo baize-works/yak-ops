@@ -1,9 +1,9 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {SeatunnelClient, seatunnelClientApi} from "../api";
+import {LinkupClient, linkupClientApi} from "../api";
 
 
 export const useClientMonitoring = () => {
-  const [clients, setClients] = useState<SeatunnelClient[]>([]);
+  const [clients, setClients] = useState<LinkupClient[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | undefined>();
   const [loading, setLoading] = useState(false);
 
@@ -11,7 +11,7 @@ export const useClientMonitoring = () => {
     try {
       setLoading(true);
 
-      const res = await seatunnelClientApi.page({
+      const res = await linkupClientApi.page({
         pageNo: 1,
         pageSize: 10,
       });
@@ -21,7 +21,7 @@ export const useClientMonitoring = () => {
       setClients(records);
 
       setSelectedClientId((prev) => {
-        if (prev && records.some((item: SeatunnelClient) => item.id === prev)) {
+        if (prev && records.some((item: LinkupClient) => item.id === prev)) {
           return prev;
         }
         return records?.[0]?.id;

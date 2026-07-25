@@ -13,7 +13,7 @@ import java.util.List;
 public interface JobMetricsService {
 
     /**
-     * Fetch and parse metrics from SeaTunnel Engine.
+     * Fetch and parse metrics from LinkUp Engine.
      */
     ParsedJobMetrics getJobMetricsFromEngine(@NonNull Long clientId,
                                              @NonNull String jobEngineId);

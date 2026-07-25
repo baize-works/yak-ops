@@ -6,14 +6,14 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://${YAK_OPS_DATABASE_HOST:127.0.0.1}:${YAK_OPS_DATABASE_PORT:5432}/${YAK_OPS_DATABASE_NAME:yak_ops}}"
-    username: ${SPRING_DATASOURCE_USERNAME:seatunnel}
+    username: ${SPRING_DATASOURCE_USERNAME:linkup}
     password: ${SPRING_DATASOURCE_PASSWORD:change_me}
 
   quartz:
     properties:
       org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
 
-seatunnel:
+linkup:
   web:
     database:
       type: postgresql

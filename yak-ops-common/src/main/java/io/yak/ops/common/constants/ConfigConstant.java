@@ -1,24 +1,24 @@
 package io.yak.ops.common.constants;
 
 public class ConfigConstant {
-    public static final String SEATUNNEL_SERVICE_NAME = "st:impl:seaTunnelServer";
+    public static final String LINKUP_SERVICE_NAME = "st:impl:linkUpServer";
 
-    public static final String SEATUNNEL_ID_GENERATOR_NAME = "SeaTunnelIdGenerator";
+    public static final String LINKUP_ID_GENERATOR_NAME = "LinkUpIdGenerator";
 
-    public static final String DEFAULT_SEATUNNEL_CLUSTER_NAME = "seatunnel";
+    public static final String DEFAULT_LINKUP_CLUSTER_NAME = "linkup";
 
     public static final String REST_SUBMIT_JOBS_PARAMS = "params";
 
     /**
      * The default port number for the cluster auto-discovery mechanism's multicast communication.
      */
-    public static final int DEFAULT_SEATUNNEL_MULTICAST_PORT = 53326;
+    public static final int DEFAULT_LINKUP_MULTICAST_PORT = 53326;
 
-    public static final String SYSPROP_SEATUNNEL_CONFIG = "seatunnel.config";
+    public static final String SYSPROP_LINKUP_CONFIG = "linkup.config";
 
-    public static final String HAZELCAST_SEATUNNEL_CONF_FILE_PREFIX = "seatunnel";
+    public static final String HAZELCAST_LINKUP_CONF_FILE_PREFIX = "linkup";
 
-    public static final String HAZELCAST_SEATUNNEL_DEFAULT_YAML = "seatunnel.yaml";
+    public static final String HAZELCAST_LINKUP_DEFAULT_YAML = "linkup.yaml";
 
     public static final int OPERATION_RETRY_TIME = 30;
 

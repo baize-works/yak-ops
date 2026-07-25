@@ -33,7 +33,7 @@ public interface JobDefinitionModeHandler {
     String serializeDefinition(JobDefinitionSaveCommand command);
 
     /**
-     * Build the SeaTunnel HOCON configuration.
+     * Build the LinkUp HOCON configuration.
      */
     String buildHoconConfig(JobDefinitionSaveCommand command);
 }

@@ -1,4 +1,4 @@
-import { seatunnelClientApi } from "@/pages/batch-link-up/type";
+import { linkupClientApi } from "@/pages/batch-link-up/type";
 import {
   CloseOutlined, EditOutlined,
   FileSearchOutlined,
@@ -97,7 +97,7 @@ const formatLogContent = (value: any) => {
   }
 
   /**
-   * 兼容 SeaTunnel Engine 返回：
+   * 兼容 LinkUp Engine 返回：
    * [
    *   {
    *     node: "localhost:8080",
@@ -232,7 +232,7 @@ const RunLogDrawer: FC<RunLogDrawerProps> = ({
       setErrorText("");
       setLogContent("");
 
-      const response = await seatunnelClientApi.getLogsByInstanceId(
+      const response = await linkupClientApi.getLogsByInstanceId(
         instanceId,
         jobMode
       );

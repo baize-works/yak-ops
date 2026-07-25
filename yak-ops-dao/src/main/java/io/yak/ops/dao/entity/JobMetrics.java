@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * SeaTunnel job / pipeline level metrics.
+ * LinkUp job / pipeline level metrics.
  */
 @Data
 @TableName("t_yak_ops_job_metrics")

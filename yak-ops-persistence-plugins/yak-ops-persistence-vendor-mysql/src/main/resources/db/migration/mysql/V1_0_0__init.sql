@@ -56,7 +56,7 @@ CREATE TABLE `t_yak_ops_client`
     KEY                     `idx_engine_type` (`engine_type`),
     KEY                     `idx_health_status` (`health_status`),
     KEY                     `idx_heartbeat_time` (`heartbeat_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client 表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LinkUp Client 表';
 
 CREATE TABLE `t_yak_ops_client_node`
 (
@@ -80,7 +80,7 @@ CREATE TABLE `t_yak_ops_client_node`
     KEY `idx_client_id` (`client_id`),
     KEY `idx_client_role` (`client_id`, `node_role`),
     KEY `idx_health_status` (`health_status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client 节点表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LinkUp Client 节点表';
 
 CREATE TABLE `t_yak_ops_datasource`
 (
@@ -181,7 +181,7 @@ CREATE TABLE `t_yak_ops_time_variable`
     `update_time`     datetime              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_param_name` (`param_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel时间变量表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LinkUp时间变量表';
 
 CREATE TABLE `t_yak_ops_job_definition`
 (

@@ -48,7 +48,7 @@ public class OptionRule {
     /**
      * Optional options with default value.
      *
-     * <p>This options will not be validated.SeaTunnelRuntimeException
+     * <p>This options will not be validated.LinkUpRuntimeException
      *
      * <p>This is used by the web-UI to show what options are available.
      */

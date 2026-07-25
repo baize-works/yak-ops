@@ -21,7 +21,7 @@ header:
     copyright-owner: Apache Software Foundation
 
   paths-ignore:
-    - seatunnel-dist
+    - linkup-dist
     - NOTICE
     - LICENSE
     - DISCLAIMER
@@ -40,7 +40,7 @@ header:
     - '**/NOTICE'
     - '**/.gitkeep'
     - '**/com/typesafe/config/**'
-    - 'seatunnel-main-repository/**'
+    - 'linkup-main-repository/**'
     - 'yak-ops-dist/release-docs/**'
 
   comment: on-failure

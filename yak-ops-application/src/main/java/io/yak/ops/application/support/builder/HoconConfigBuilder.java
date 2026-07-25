@@ -9,7 +9,7 @@ import io.yak.ops.application.support.builder.sink.SinkNodeConfigBuilder;
 import io.yak.ops.application.support.builder.source.SourceNodeConfigBuilder;
 import io.yak.ops.application.support.builder.transform.TransformNodeConfigBuilder;
 import io.yak.ops.domain.dag.DagGraph;
-import io.yak.ops.application.support.utils.SeaTunnelConfigUtil;
+import io.yak.ops.application.support.utils.LinkUpConfigUtil;
 import io.yak.ops.application.model.dto.config.BatchJobEnvConfig;
 import io.yak.ops.application.model.dto.config.JobEnvConfig;
 import io.yak.ops.application.model.dto.config.JobScheduleConfig;
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Builds a complete SeaTunnel job configuration in HOCON format.
+ * Builds a complete LinkUp job configuration in HOCON format.
  */
 @Component
 @Slf4j
@@ -42,7 +42,7 @@ public class HoconConfigBuilder {
 
         NodeGroup group = groupNodes(io.yak.ops.application.support.dag.DagConfigMapper.nodes(dagGraph), context);
 
-        return SeaTunnelConfigUtil.generateConfig(
+        return LinkUpConfigUtil.generateConfig(
                 envConfigBuilder.build(envConfig),
                 render(group.sources()),
                 render(group.transforms()),
@@ -114,7 +114,7 @@ public class HoconConfigBuilder {
 
         NodeGroup group = groupNodes(io.yak.ops.application.support.dag.DagConfigMapper.nodes(dagGraph), context);
 
-        return SeaTunnelConfigUtil.generateConfig(
+        return LinkUpConfigUtil.generateConfig(
                 envConfigBuilder.build(envConfig),
                 render(group.sources()),
                 render(group.transforms()),

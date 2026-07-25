@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * SeaTunnel table level metrics.
+ * LinkUp table level metrics.
  */
 @Data
 @TableName("t_yak_ops_job_table_metrics")

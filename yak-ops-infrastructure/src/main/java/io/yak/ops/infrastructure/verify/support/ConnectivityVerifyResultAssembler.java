@@ -4,7 +4,7 @@ import io.yak.ops.infrastructure.verify.executor.JobExecutionResult;
 import io.yak.ops.infrastructure.verify.job.ConnectivityTestJob;
 import io.yak.ops.infrastructure.verify.resolver.ConnectivityErrorResolver;
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.dao.entity.SeaTunnelClient;
+import io.yak.ops.dao.entity.LinkUpClient;
 import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +17,7 @@ public class ConnectivityVerifyResultAssembler {
     private ConnectivityErrorResolver connectivityErrorResolver;
 
     public ClientDatasourceVerifyVO toVO(
-            SeaTunnelClient client,
+            LinkUpClient client,
             DataSource datasource,
             ConnectivityTestJob job,
             JobExecutionResult executionResult) {

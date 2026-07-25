@@ -101,7 +101,7 @@ mybatis-plus:
       id-type: auto
     banner: false
 
-seatunnel:
+linkup:
   metrics:
     interval-ms: 2000
     log-every-times: 10

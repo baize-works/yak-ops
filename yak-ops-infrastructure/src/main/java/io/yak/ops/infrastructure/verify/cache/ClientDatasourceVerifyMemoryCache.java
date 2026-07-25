@@ -3,7 +3,7 @@ package io.yak.ops.infrastructure.verify.cache;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.dao.entity.SeaTunnelClient;
+import io.yak.ops.dao.entity.LinkUpClient;
 import io.yak.ops.application.model.vo.ClientDatasourceVerifyItemVO;
 import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
 import org.springframework.beans.BeanUtils;
@@ -20,7 +20,7 @@ public class ClientDatasourceVerifyMemoryCache implements io.yak.ops.application
 
     /**
      * 自动连通性测试缓存时间。
-     * 建议 5 分钟即可，避免页面切换频繁提交 SeaTunnel 任务。
+     * 建议 5 分钟即可，避免页面切换频繁提交 LinkUp 任务。
      */
     private static final long DEFAULT_TTL_MS = 5 * 60 * 1000L;
 
@@ -77,7 +77,7 @@ public class ClientDatasourceVerifyMemoryCache implements io.yak.ops.application
     }
 
     public String buildKey(
-            SeaTunnelClient client,
+            LinkUpClient client,
             DataSource datasource,
             String pluginName,
             String connectorType,

@@ -1,6 +1,6 @@
 import {message} from "antd";
 
-import {seatunnelJobDefinitionApi} from "@/pages/batch-link-up/api";
+import {linkupJobDefinitionApi} from "@/pages/batch-link-up/api";
 import {hoconTemplateApi} from "../hoconTemplateApi";
 import {useEffect, useRef, useState, type Dispatch, type SetStateAction} from "react";
 import {
@@ -235,7 +235,7 @@ export function useCustomWorkflowState({
       setPublishLoading(true);
 
       const finalPayload = buildFinalPayload();
-      const res = await seatunnelJobDefinitionApi.saveOrUpdateScript(
+      const res = await linkupJobDefinitionApi.saveOrUpdateScript(
         finalPayload
       );
 
@@ -305,7 +305,7 @@ export function useCustomWorkflowState({
       setPreviewLoading(true);
 
       const finalPayload = buildFinalPayload();
-      const res = await seatunnelJobDefinitionApi.buildScriptConfig(
+      const res = await linkupJobDefinitionApi.buildScriptConfig(
         finalPayload
       );
 

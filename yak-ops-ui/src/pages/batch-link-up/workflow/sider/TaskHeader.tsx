@@ -106,7 +106,7 @@ const TaskHeader = () => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    Seatunnel
+                    Linkup
                   </div>
                   <Down />
                 </div>

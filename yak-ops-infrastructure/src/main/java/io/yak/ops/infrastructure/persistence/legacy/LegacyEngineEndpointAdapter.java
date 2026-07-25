@@ -1,8 +1,8 @@
 package io.yak.ops.infrastructure.persistence.legacy;
 
 import io.yak.ops.application.port.EngineEndpointRepository;
-import io.yak.ops.dao.entity.SeaTunnelClient;
-import io.yak.ops.dao.repository.SeaTunnelClientDao;
+import io.yak.ops.dao.entity.LinkUpClient;
+import io.yak.ops.dao.repository.LinkUpClientDao;
 import io.yak.ops.engine.api.EngineConnectionConfig;
 import io.yak.ops.engine.api.EngineConnectionConfigProvider;
 import io.yak.ops.engine.api.EngineEndpoint;
@@ -18,14 +18,14 @@ import org.springframework.stereotype.Component;
 @Component
 public final class LegacyEngineEndpointAdapter
         implements EngineEndpointRepository, EngineConnectionConfigProvider {
-    private final SeaTunnelClientDao clients;
+    private final LinkUpClientDao clients;
 
-    public LegacyEngineEndpointAdapter(SeaTunnelClientDao clients) { this.clients = clients; }
+    public LegacyEngineEndpointAdapter(LinkUpClientDao clients) { this.clients = clients; }
 
     @Override
     public Optional<EngineEndpoint> findById(String engineEndpointId) {
         Long legacyId = numericId(engineEndpointId);
-        SeaTunnelClient client = clients.queryById(legacyId);
+        LinkUpClient client = clients.queryById(legacyId);
         if (client == null) return Optional.empty();
         Map<String, String> attributes = client.getContextPath() == null
                 ? java.util.Collections.emptyMap() : java.util.Collections.singletonMap("contextPath", client.getContextPath());
@@ -35,7 +35,7 @@ public final class LegacyEngineEndpointAdapter
 
     @Override
     public EngineConnectionConfig connectionFor(EngineEndpoint endpoint) {
-        SeaTunnelClient client = clients.queryById(numericId(endpoint.endpointId()));
+        LinkUpClient client = clients.queryById(numericId(endpoint.endpointId()));
         if (client == null) throw invalid("Engine endpoint does not exist: " + endpoint.endpointId(), null);
         return new EngineConnectionConfig(client.getBaseUrl(), client.getContextPath(),
                 Boolean.TRUE.equals(client.getAuthEnabled()), client.getUsername(), client.getPassword());

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Build context for generating SeaTunnel HOCON from DAG.
+ * Build context for generating LinkUp HOCON from DAG.
  *
  * <p>
  * It keeps DAG-level information that a single node builder cannot know,

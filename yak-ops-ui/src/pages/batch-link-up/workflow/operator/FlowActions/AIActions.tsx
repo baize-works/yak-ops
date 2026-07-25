@@ -31,7 +31,7 @@ export const AIActions = ({ onBack, onRun, runVisible }: any) => {
                 className={styles["latest-publish"]}
                 style={{ fontWeight: 500, fontSize: 16, marginBottom: 4 }}
               >
-                SeaTunnel Copilot
+                LinkUp Copilot
               </div>
               <div
                 onClick={() => {

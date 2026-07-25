@@ -27,7 +27,7 @@
   </a>
   <img src="https://img.shields.io/badge/Java-21-blue?style=flat-square" alt="Java 21" />
   <img src="https://img.shields.io/badge/Node.js-%3E%3D20-blue?style=flat-square" alt="Node.js 20+" />
-  <img src="https://img.shields.io/badge/SeaTunnel-2.3.13-blue?style=flat-square" alt="SeaTunnel 2.3.13" />
+  <img src="https://img.shields.io/badge/LinkUp-2.3.13-blue?style=flat-square" alt="LinkUp 2.3.13" />
 </p>
 
 <p align="center">
@@ -46,9 +46,9 @@
 
 **Yak Ops** 是一个面向 **Apache SeaTunnel** 构建的独立第三方 Web 管理平台。
 
-它提供了一种直观、实用的方式来创建、配置、运行、调度和监控数据同步任务，用户无需再手动维护复杂的 SeaTunnel 配置文件。
+它提供了一种直观、实用的方式来创建、配置、运行、调度和监控数据同步任务，用户无需再手动维护复杂的 LinkUp 配置文件。
 
-通过 Yak Ops，用户可以在统一的 Web 界面中管理数据源、构建离线与实时同步链路、配置字段映射、生成 SeaTunnel 任务配置、向 SeaTunnel 引擎提交任务、查看运行日志并监控执行指标。
+通过 Yak Ops，用户可以在统一的 Web 界面中管理数据源、构建离线与实时同步链路、配置字段映射、生成 LinkUp 任务配置、向 LinkUp 引擎提交任务、查看运行日志并监控执行指标。
 
 > 我们的目标很简单：让 Apache SeaTunnel 在真实的数据集成场景中更容易使用。
 
@@ -82,11 +82,11 @@ Yak Ops 支持多种任务创建方式，包括可视化向导配置和脚本模
 
 通过可视化方式配置源端字段与目标端字段的映射关系。
 
-Yak Ops 同时支持基于 SQL 的数据转换，并能够自动生成对应的 SeaTunnel 任务配置。
+Yak Ops 同时支持基于 SQL 的数据转换，并能够自动生成对应的 LinkUp 任务配置。
 
 ### 任务全生命周期管理
 
-管理 SeaTunnel 任务的完整生命周期：
+管理 LinkUp 任务的完整生命周期：
 
 * 创建和编辑任务
 * 发布任务定义
@@ -113,7 +113,7 @@ Yak Ops 同时支持基于 SQL 的数据转换，并能够自动生成对应的 
 
 ### 自动生成任务配置
 
-Yak Ops 可以将可视化任务定义转换为可执行的 SeaTunnel 配置文件。
+Yak Ops 可以将可视化任务定义转换为可执行的 LinkUp 配置文件。
 
 这能够减少重复的配置工作，并帮助团队统一数据同步任务的开发规范。
 
@@ -149,7 +149,7 @@ Yak Ops 适合有以下需求的团队：
 | 操作系统 | 推荐 Linux |
 | 浏览器 | 最新版 Chrome 或 Edge |
 
-> Yak Ops 在连接 SeaTunnel 引擎时会进行版本校验，请使用当前支持的 SeaTunnel 版本。
+> Yak Ops 在连接 LinkUp 引擎时会进行版本校验，请使用当前支持的 LinkUp 版本。
 
 ## 系统架构
 
@@ -241,7 +241,7 @@ cp .env.without-mysql.example .env.without-mysql
 MYSQL_HOST=host.docker.internal
 MYSQL_PORT=3306
 MYSQL_DATABASE=yak_ops
-MYSQL_USER=seatunnel
+MYSQL_USER=linkup
 MYSQL_PASSWORD=change_me
 ```
 
@@ -256,8 +256,8 @@ MYSQL_HOST=host.docker.internal
 MySQL 用户必须允许来自 Docker 宿主机的连接，建议创建独立数据库用户：
 
 ```sql
-CREATE USER IF NOT EXISTS 'seatunnel'@'%' IDENTIFIED BY 'change_me';
-GRANT ALL PRIVILEGES ON yak_ops.* TO 'seatunnel'@'%';
+CREATE USER IF NOT EXISTS 'linkup'@'%' IDENTIFIED BY 'change_me';
+GRANT ALL PRIVILEGES ON yak_ops.* TO 'linkup'@'%';
 FLUSH PRIVILEGES;
 ```
 
@@ -345,7 +345,7 @@ yak-ops-<version>/
 
 Yak Ops 启动后：
 
-1. 打开 SeaTunnel 客户端管理页面。
+1. 打开 LinkUp 客户端管理页面。
 2. 添加 Apache SeaTunnel 2.3.13 引擎地址。
 3. 测试连接。
 4. 创建数据源。
@@ -407,7 +407,7 @@ https://doc.yak-ops.com/
 
 * 环境准备
 * 数据库初始化
-* SeaTunnel 引擎配置
+* LinkUp 引擎配置
 * 数据源管理
 * 离线同步
 * 实时同步
@@ -434,7 +434,7 @@ http://111.230.213.87:8000
 计划持续完善以下能力：
 
 * 支持更多数据源插件
-* 兼容更多 SeaTunnel 版本
+* 兼容更多 LinkUp 版本
 * 完善版本升级和数据库迁移能力
 * 增强任务配置校验
 * 增加告警和通知能力
@@ -449,9 +449,9 @@ http://111.230.213.87:8000
 
 使用当前版本前，请注意：
 
-* 当前已完成验证的 SeaTunnel 版本为 2.3.13。
+* 当前已完成验证的 LinkUp 版本为 2.3.13。
 * Yak Ops 元数据库推荐使用 MySQL 8.0。
-* 部分高级 SeaTunnel Connector 参数仍可能需要通过脚本模式进行配置。
+* 部分高级 LinkUp Connector 参数仍可能需要通过脚本模式进行配置。
 * 生产环境部署时，请使用安全的数据库密码、持久化数据卷，并限制网络访问范围。
 * 公共体验环境禁止使用敏感数据。
 * 升级到新版本前，请备份 Yak Ops 数据库。
@@ -540,7 +540,7 @@ Yak Ops 是一个独立的第三方项目。
 
 本项目不是 Apache 软件基金会的官方项目，也未获得 Apache 软件基金会的隶属、认可或背书。
 
-Apache SeaTunnel、SeaTunnel、Apache 以及 Apache 羽毛标志均为 Apache 软件基金会的商标。
+Apache SeaTunnel、LinkUp、Apache 以及 Apache 羽毛标志均为 Apache 软件基金会的商标。
 
 本项目名称和文档中使用 Apache SeaTunnel，仅用于说明本项目与 Apache SeaTunnel 的兼容性和集成关系。
 

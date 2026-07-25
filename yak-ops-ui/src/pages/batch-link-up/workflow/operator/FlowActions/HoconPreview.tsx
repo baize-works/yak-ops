@@ -62,7 +62,7 @@ export const HoconPreview = ({ onGenerate, checkStat, checkGroups }: any) => {
               >
                 {intl.formatMessage({
                   id: "pages.hoconPreview.title",
-                  defaultMessage: "SeaTunnel HOCON",
+                  defaultMessage: "LinkUp HOCON",
                 })}
               </div>
 

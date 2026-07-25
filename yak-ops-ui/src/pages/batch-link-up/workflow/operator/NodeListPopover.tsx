@@ -184,7 +184,7 @@ export const NodeListPopover: React.FC<NodeListPopoverProps> = ({
                   }}
                   onClick={() => {
                     if (onNodeDragStart) {
-                      const id = `seatunnel-${Date.now()}`;
+                      const id = `linkup-${Date.now()}`;
                       onNodeDragStart(id, {
                         nodeType: "transform",
                         title: item?.transformTitle,

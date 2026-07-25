@@ -27,7 +27,7 @@ def java_import_violations():
             "application-boundary",
             lambda name: any(token in name for token in (
                 ".web.contract.",
-                ".engine.seatunnel.", ".engine.runtime.",
+                ".engine.linkup.", ".engine.runtime.",
             )),
         ),
     }
@@ -75,7 +75,7 @@ def dependency_violations():
         "yak-ops-domain": None,  # no reactor dependency is allowed
         "yak-ops-application": {
             "yak-ops-web-contract", "yak-ops-engine-runtime",
-            "yak-ops-engine-seatunnel",
+            "yak-ops-engine-linkup",
         },
         "yak-ops-dao": {"yak-ops-web-contract"},
         "yak-ops-infrastructure": {"yak-ops-web-contract"},

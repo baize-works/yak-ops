@@ -24,7 +24,7 @@ import static io.yak.ops.plugin.spi.enums.Status.QUERY_JOB_METRICS_SUMMARY_ERROR
 public class JobMetricsController {
 
     @Resource
-    private JobMetricsService seatunnelJobMetricsService;
+    private JobMetricsService linkupJobMetricsService;
 
     /**
      * Retrieves job summary statistics.
@@ -39,7 +39,7 @@ public class JobMetricsController {
     public Result<OverviewSummaryVO> summary(
             @RequestParam(value = "timeRange", defaultValue = "H24") TimeRange timeRange,
             @RequestParam(value = "taskType", required = false, defaultValue = "BATCH") String taskType) {
-        return Result.buildSuc(seatunnelJobMetricsService.summary(timeRange, taskType));
+        return Result.buildSuc(linkupJobMetricsService.summary(timeRange, taskType));
     }
 
     /**
@@ -55,6 +55,6 @@ public class JobMetricsController {
     public Result<OverviewChartsVO> charts(
             @RequestParam(value = "timeRange", defaultValue = "H24") TimeRange timeRange,
             @RequestParam(value = "taskType", required = false, defaultValue = "BATCH") String taskType) {
-        return Result.buildSuc(seatunnelJobMetricsService.charts(timeRange, taskType));
+        return Result.buildSuc(linkupJobMetricsService.charts(timeRange, taskType));
     }
 }

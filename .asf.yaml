@@ -15,8 +15,8 @@
 #
 
 github:
-  description: SeaTunnel is a distributed, high-performance data integration platform for the synchronization and transformation of massive data (offline & real-time).
-  homepage: https://seatunnel.apache.org/
+  description: LinkUp is a distributed, high-performance data integration platform for the synchronization and transformation of massive data (offline & real-time).
+  homepage: https://linkup.apache.org/
   labels:
     - data-integration
     - high-performance
@@ -25,7 +25,7 @@ github:
     - data-pipeline
     - sql-engine
     - apache
-    - seatunnel
+    - linkup
     - etl-framework
   enabled_merge_buttons:
     squash: true
@@ -42,6 +42,6 @@ github:
         required_approving_review_count: 1
 
 notifications:
-  commits: commits@seatunnel.apache.org
-  issues: commits@seatunnel.apache.org
-  pullrequests: commits@seatunnel.apache.org
+  commits: commits@linkup.apache.org
+  issues: commits@linkup.apache.org
+  pullrequests: commits@linkup.apache.org

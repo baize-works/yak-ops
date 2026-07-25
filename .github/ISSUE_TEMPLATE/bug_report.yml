@@ -49,13 +49,13 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS, browser, JDK, Node.js, database, SeaTunnel version, deployment method.
+      description: OS, browser, JDK, Node.js, database, LinkUp version, deployment method.
       placeholder: |
         - OS:
         - Browser:
         - JDK:
         - Node.js:
-        - SeaTunnel:
+        - LinkUp:
         - Deployment:
     validations:
       required: true

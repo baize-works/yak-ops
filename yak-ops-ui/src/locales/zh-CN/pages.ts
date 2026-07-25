@@ -290,7 +290,7 @@ export default {
   'pages.job.node.sink.fieldsValidate.col.targetField': '目标字段',
 
   'pages.hoconPreview.resolveIssuesFirst': '请先解决所有问题 😊',
-  'pages.hoconPreview.title': 'SeaTunnel Hocon',
+  'pages.hoconPreview.title': 'LinkUp Hocon',
   'pages.hoconPreview.tooltip': 'Hocon 模拟生成',
 
   // 建议全局复用

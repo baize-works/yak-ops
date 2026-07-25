@@ -9,7 +9,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import io.yak.ops.api.exceptions.ApiException;
 import io.yak.ops.application.service.BatchJobInstanceService;
-import io.yak.ops.application.model.dto.SeaTunnelJobInstanceDTO;
+import io.yak.ops.application.model.dto.LinkUpJobInstanceDTO;
 import io.yak.ops.application.model.response.PaginationResult;
 import io.yak.ops.application.model.response.Result;
 import io.yak.ops.application.model.vo.JobInstanceVO;
@@ -34,13 +34,13 @@ import static io.yak.ops.plugin.spi.enums.Status.QUERY_BATCH_JOB_INSTANCE_LOG_ER
 public class BatchJobInstanceController {
 
     @Resource
-    private BatchJobInstanceService seatunnelJobInstanceService;
+    private BatchJobInstanceService linkupJobInstanceService;
 
     @PostMapping("/page")
     @Operation(summary = "queryBatchJobInstancePaging", description = "QUERY_BATCH_JOB_INSTANCE_PAGING_NOTES")
     @ApiException(QUERY_BATCH_JOB_INSTANCE_ERROR)
-    public PaginationResult<JobInstanceVO> paging(@RequestBody SeaTunnelJobInstanceDTO dto) {
-        return seatunnelJobInstanceService.paging(dto);
+    public PaginationResult<JobInstanceVO> paging(@RequestBody LinkUpJobInstanceDTO dto) {
+        return linkupJobInstanceService.paging(dto);
     }
 
     @GetMapping("/{id}")
@@ -50,7 +50,7 @@ public class BatchJobInstanceController {
     })
     @ApiException(BATCH_JOB_INSTANCE_NOT_EXIST)
     public Result<JobInstanceVO> selectById(@PathVariable("id") @NotNull Long id) {
-        return Result.buildSuc(seatunnelJobInstanceService.selectById(id));
+        return Result.buildSuc(linkupJobInstanceService.selectById(id));
     }
 
     @GetMapping("/{instanceId}/table-metrics")
@@ -61,7 +61,7 @@ public class BatchJobInstanceController {
     @ApiException(QUERY_BATCH_JOB_INSTANCE_ERROR)
     public Result<List<JobTableMetricsVO>> listTableMetrics(
             @PathVariable("instanceId") @NotNull Long instanceId) {
-        return Result.buildSuc(seatunnelJobInstanceService.listTableMetrics(instanceId));
+        return Result.buildSuc(linkupJobInstanceService.listTableMetrics(instanceId));
     }
 
     @GetMapping("/{instanceId}/log")
@@ -71,6 +71,6 @@ public class BatchJobInstanceController {
     })
     @ApiException(QUERY_BATCH_JOB_INSTANCE_LOG_ERROR)
     public Result<String> getLog(@PathVariable("instanceId") Long instanceId) {
-        return Result.buildSuc(seatunnelJobInstanceService.getLogContent(instanceId));
+        return Result.buildSuc(linkupJobInstanceService.getLogContent(instanceId));
     }
 }

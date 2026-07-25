@@ -5,7 +5,7 @@
 // import { useEffect, useMemo, useState } from "react";
 // import ActionColumn from "./components/SyncTaskList/components/ActionColumn";
 // import AdvancedSearchForm from "./components/SyncTaskList/components/AdvancedSearchForm";
-// import { seatunnelJobDefinitionApi } from "./api";
+// import { linkupJobDefinitionApi } from "./api";
 // import BottomActionBar from "./components/SyncTaskList/components/BottomActionBar";
 // import DataSourceSyncPlan from "./components/SyncTaskList/components/DataSourceSyncPlan";
 
@@ -118,7 +118,7 @@
 //     }
 
 //     try {
-//       const data = await seatunnelJobDefinitionApi.page({
+//       const data = await linkupJobDefinitionApi.page({
 //         ...transformedParams,
 //         current: pagination.current,
 //         pageSize: pagination.pageSize,

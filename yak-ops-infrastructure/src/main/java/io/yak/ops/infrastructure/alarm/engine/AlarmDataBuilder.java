@@ -27,7 +27,7 @@ public final class AlarmDataBuilder {
                 newStatus);
 
         StringBuilder content = new StringBuilder();
-        content.append("SeaTunnel 任务状态发生变更\n");
+        content.append("LinkUp 任务状态发生变更\n");
         if (jobName != null) {
             content.append("任务名称: ").append(jobName).append("\n");
         }
