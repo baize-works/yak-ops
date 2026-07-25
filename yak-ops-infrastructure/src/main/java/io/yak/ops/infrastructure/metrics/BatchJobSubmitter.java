@@ -79,7 +79,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
 
             String filename = "batch-job-" + instanceId + ".conf";
 
-            EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(clientId), null, null, java.util.java.util.Collections.emptyMap());
+            EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(clientId), null, null, java.util.Collections.emptyMap());
             EngineGateway gateway = engineGatewayRegistry.get(endpoint.engine());
             engineId = gateway.submit(new JobSubmitCommand(endpoint, safeConfig(hoconConfig), java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap() {{ put("fileName", filename); put("jobName", instance.getJobName()); }}), "job-instance-" + instanceId)).externalExecutionId();
             submitted = true;
@@ -131,7 +131,7 @@ public class BatchJobSubmitter implements BatchJobSubmissionUseCase {
         log.info("Stopping batch SeaTunnel job: instanceId={}, clientId={}, engineJobId={}",
                 instanceId, clientId, engineJobId);
 
-        EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(clientId), null, null, java.util.java.util.Collections.emptyMap());
+        EngineEndpoint endpoint = new EngineEndpoint(new ExecutionEngine("legacy"), String.valueOf(clientId), null, null, java.util.Collections.emptyMap());
         engineGatewayRegistry.get(endpoint.engine()).cancel(endpoint, engineJobId);
 
         log.info("Stop batch engine job response: instanceId={}, clientId={}, engineJobId={}",

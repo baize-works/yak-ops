@@ -15,6 +15,7 @@ import io.yak.ops.application.model.dto.config.GuideMultiJobContent;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,12 +147,12 @@ public class GuideMultiJobAnalyzer {
 
     private List<String> resolveTableList(GuideMultiJobContent content) {
         if (content == null || content.getTableMatch() == null) {
-            return java.util.java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
 
         List<String> tables = content.getTableMatch().getTables();
         if (CollectionUtils.isEmpty(tables)) {
-            return java.util.java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
 
         return tables;

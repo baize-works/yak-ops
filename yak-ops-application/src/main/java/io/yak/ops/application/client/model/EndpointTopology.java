@@ -1,7 +1,6 @@
 package io.yak.ops.application.client.model;
 
 import java.util.List;
-import java.util.Objects;
 
 /** Normalized collection of addresses belonging to a logical endpoint. */
 public final class EndpointTopology {
@@ -12,7 +11,7 @@ public final class EndpointTopology {
     public EndpointTopology(List<String> addresses, String preferredAddress) {
         addresses = addresses == null ? java.util.Collections.emptyList() : java.util.Collections.unmodifiableList(new java.util.ArrayList<>(addresses));
         if (addresses.isEmpty()) throw new IllegalArgumentException("topology must contain an address");
-        preferredAddress = Objects.requireNonNullElse(preferredAddress, addresses.get(0));
+        preferredAddress = preferredAddress == null ? addresses.get(0) : preferredAddress;
         if (!addresses.contains(preferredAddress)) throw new IllegalArgumentException("preferred address is not in topology");
         this.addresses = addresses;
         this.preferredAddress = preferredAddress;

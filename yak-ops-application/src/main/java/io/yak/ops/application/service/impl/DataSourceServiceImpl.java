@@ -139,7 +139,11 @@ public class DataSourceServiceImpl extends BaseServiceImpl implements DataSource
 
             records.forEach(this::fillDerivedFields);
 
-            return PaginationResult.buildSuc(records, pageResult);
+            return PaginationResult.buildSuc(
+                    records,
+                    pageResult.getTotal(),
+                    pageResult.getCurrent(),
+                    pageResult.getSize());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
