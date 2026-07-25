@@ -7,6 +7,12 @@ class SeaTunnelExecutionStatusMapperTest {
   assertEquals(JobExecutionStatus.RUNNING, SeaTunnelExecutionStatusMapper.map("RUNNING"));
   assertEquals(JobExecutionStatus.SUCCEEDED, SeaTunnelExecutionStatusMapper.map("FINISHED"));
   assertEquals(JobExecutionStatus.CANCELED, SeaTunnelExecutionStatusMapper.map("CANCELLED"));
-  assertEquals(JobExecutionStatus.UNKNOWN, SeaTunnelExecutionStatusMapper.map("NEW_VENDOR_STATE"));
+ assertEquals(JobExecutionStatus.UNKNOWN, SeaTunnelExecutionStatusMapper.map("NEW_VENDOR_STATE"));
+ }
+ @Test void preservesUnknownWireValueWithoutInferringOutcome() {
+  SeaTunnelExecutionStatusMapper.StatusResolution result =
+          SeaTunnelExecutionStatusMapper.resolve(" New_Vendor_State ");
+  assertEquals(JobExecutionStatus.UNKNOWN, result.status());
+  assertEquals(" New_Vendor_State ", result.rawStatus());
  }
 }

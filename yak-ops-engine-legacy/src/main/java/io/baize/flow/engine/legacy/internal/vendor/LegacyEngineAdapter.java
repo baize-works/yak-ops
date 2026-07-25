@@ -33,7 +33,11 @@ public class LegacyEngineAdapter implements EngineGateway, EngineMetricsGateway 
     @Override public void cancel(EngineEndpoint endpoint, String jobId) { try { client.cancel(clientId(endpoint), jobId); } catch (Exception e) { throw SeaTunnelErrorMapper.unavailable("cancel", e); } }
     @Override public JobExecution execution(EngineEndpoint endpoint, String platformId, String jobId) {
         try { SeaTunnelJobResponse info = client.job(clientId(endpoint), jobId); if (info == null) throw SeaTunnelErrorMapper.unavailable("query", new IllegalStateException("empty response"));
-            java.time.Instant now=java.time.Instant.now(); return new JobExecution(platformId, jobId, SeaTunnelExecutionStatusMapper.map(info.status()), null, null, null, now, info.errorMessage(), java.util.Map.of()); }
+            SeaTunnelExecutionStatusMapper.StatusResolution status = SeaTunnelExecutionStatusMapper.resolve(info.status());
+            java.util.Map<String, String> metadata = status.rawStatus() == null
+                    ? java.util.Map.of()
+                    : java.util.Map.of("vendor.raw_status", status.rawStatus());
+            java.time.Instant now=java.time.Instant.now(); return new JobExecution(platformId, jobId, status.status(), null, null, null, now, info.errorMessage(), metadata); }
         catch (EngineContractException e) { throw e; } catch (Exception e) { throw SeaTunnelErrorMapper.unavailable("query", e); }
     }
     @Override public EngineMetrics metrics(EngineEndpoint endpoint, String jobId) { capabilities().require(EngineCapabilities.Capability.METRICS); try { SeaTunnelMetricsResponse response = client.metrics(clientId(endpoint), jobId); if (response == null) throw SeaTunnelErrorMapper.unavailable("metrics", new IllegalStateException("empty response")); return SeaTunnelMetricsMapper.map(response.values()); } catch (EngineContractException e) { throw e; } catch (Exception e) { throw SeaTunnelErrorMapper.unavailable("metrics", e); } }
