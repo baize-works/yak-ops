@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import io.baize.flow.domain.enums.ScheduleStatusEnum;
 import io.baize.flow.dao.entity.JobSchedule;

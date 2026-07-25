@@ -86,7 +86,7 @@ public class SeaTunnelClientSpec {
      * Authentication information used to access SeaTunnel REST endpoints.
      */
     private SeaTunnelClientAuthInfo auth;
-    
+
     /**
      * Context path for the application.
      */

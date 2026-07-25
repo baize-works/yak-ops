@@ -2,7 +2,7 @@ package io.baize.flow.application.support.builder.sink;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.hocon.HoconBuildContext;

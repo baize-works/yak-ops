@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.ToString;
 import io.baize.flow.common.constants.Constants;
 
-import java.io.Serial;
 import java.io.Serializable;
 
 @Data
@@ -16,7 +15,6 @@ import java.io.Serializable;
 @Deprecated(since = "1.0.0", forRemoval = true)
 public class BaseResult implements Serializable {
 
-    @Serial
     private static final long serialVersionUID = -5771016784021901099L;
 
     @Schema(description = "Status code", example = "200", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -1,7 +1,7 @@
 package io.baize.flow.dao.repository.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import io.baize.flow.common.enums.ReleaseState;
 import io.baize.flow.dao.entity.JobDefinitionEntity;
@@ -63,16 +63,16 @@ public class JobDefinitionDaoImpl
     @Override
     public List<JobDefinitionEntity> listByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<Long> validIds = ids.stream()
                 .filter(id -> id != null && id > 0)
                 .distinct()
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (validIds.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         LambdaQueryWrapper<JobDefinitionEntity> wrapper = new LambdaQueryWrapper<>();
@@ -80,7 +80,7 @@ public class JobDefinitionDaoImpl
 
         List<JobDefinitionEntity> records = jobDefinitionMapper.selectList(wrapper);
         if (records == null || records.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return records;
@@ -109,16 +109,16 @@ public class JobDefinitionDaoImpl
     @Override
     public List<Long> selectReferencedDatasourceIds(List<Long> datasourceIds) {
         if (datasourceIds == null || datasourceIds.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<Long> validIds = datasourceIds.stream()
                 .filter(id -> id != null && id > 0)
                 .distinct()
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         if (validIds.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         LambdaQueryWrapper<JobDefinitionEntity> wrapper = new LambdaQueryWrapper<>();
@@ -134,7 +134,7 @@ public class JobDefinitionDaoImpl
 
         List<JobDefinitionEntity> records = jobDefinitionMapper.selectList(wrapper);
         if (records == null || records.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return records.stream()
@@ -144,7 +144,7 @@ public class JobDefinitionDaoImpl
                 ))
                 .filter(id -> id != null && validIds.contains(id))
                 .distinct()
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override

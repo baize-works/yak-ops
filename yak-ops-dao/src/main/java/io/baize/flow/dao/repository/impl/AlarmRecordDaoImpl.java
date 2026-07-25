@@ -26,10 +26,10 @@ public class AlarmRecordDaoImpl extends BaseDao<AlarmRecordEntity, AlarmRecordMa
         if (jobInstanceId != null) {
             wrapper.eq(AlarmRecordEntity::getJobInstanceId, jobInstanceId);
         }
-        if (channelType != null && !channelType.isBlank()) {
+        if (channelType != null && !channelType.trim().isEmpty()) {
             wrapper.eq(AlarmRecordEntity::getChannelType, channelType);
         }
-        if (severity != null && !severity.isBlank()) {
+        if (severity != null && !severity.trim().isEmpty()) {
             wrapper.eq(AlarmRecordEntity::getSeverity, severity);
         }
         if (success != null) {

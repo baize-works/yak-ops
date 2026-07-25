@@ -28,7 +28,7 @@ public final class LegacyEngineEndpointAdapter
         SeaTunnelClient client = clients.queryById(legacyId);
         if (client == null) return Optional.empty();
         Map<String, String> attributes = client.getContextPath() == null
-                ? Map.of() : Map.of("contextPath", client.getContextPath());
+                ? java.util.Collections.emptyMap() : java.util.Collections.singletonMap("contextPath", client.getContextPath());
         return Optional.of(new EngineEndpoint(new ExecutionEngine("legacy"), engineEndpointId,
                 client.getBaseUrl(), "legacy-client:" + engineEndpointId, attributes));
     }

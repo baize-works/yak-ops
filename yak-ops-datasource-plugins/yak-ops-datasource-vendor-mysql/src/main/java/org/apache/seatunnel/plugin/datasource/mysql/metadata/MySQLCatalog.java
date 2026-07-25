@@ -146,7 +146,7 @@ public class MySQLCatalog extends AbstractJdbcCatalog {
     protected String getSpecifiedColumnSql(TablePath tablePath, List<DataSourceTableColumn> columns) {
         List<String> columnNames = columns.stream()
                 .map(DataSourceTableColumn::getColumnName)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         String quotedColumnNames = columnNames.stream()
                 .map(name -> "'" + name + "'")

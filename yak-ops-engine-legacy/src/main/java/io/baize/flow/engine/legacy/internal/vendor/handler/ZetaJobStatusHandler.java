@@ -1,7 +1,7 @@
 package io.baize.flow.engine.legacy.internal.vendor.handler;
 
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.domain.enums.JobStatus;

@@ -24,7 +24,7 @@ public class JobExecutionRepositoryImpl implements JobExecutionRepository {
         return Optional.ofNullable(mapper.selectOne(new LambdaQueryWrapper<JobExecutionEntity>().eq(JobExecutionEntity::getInstanceId, instanceId).eq(JobExecutionEntity::getAttemptNo, attemptNo))).map(this::toRecord);
     }
     @Override public Optional<JobExecutionRecord> findByExternalJobId(String id) {
-        if (id == null || id.isBlank()) return Optional.empty();
+        if (id == null || id.trim().isEmpty()) return Optional.empty();
         return Optional.ofNullable(mapper.selectOne(new LambdaQueryWrapper<JobExecutionEntity>().eq(JobExecutionEntity::getExternalJobId, id))).map(this::toRecord);
     }
     private JobExecutionEntity toEntity(JobExecutionRecord r) { JobExecutionEntity e = new JobExecutionEntity(); e.setId(r.id()); e.setInstanceId(r.instanceId()); e.setAttemptNo(r.attemptNo()); e.setEngineType(r.engineType()); e.setEngineEndpointId(r.engineEndpointId()); e.setExternalJobId(r.externalJobId()); e.setSubmissionStatus(r.submissionStatus()); e.setExecutionStatus(r.executionStatus()); e.setSubmittingAt(date(r.submittingAt())); e.setSubmittedAt(date(r.submittedAt())); e.setStartedAt(date(r.startedAt())); e.setCancellingAt(date(r.cancellingAt())); e.setCanceledAt(date(r.canceledAt())); e.setFinishedAt(date(r.finishedAt())); e.setLastSyncedAt(date(r.lastSyncedAt())); e.setErrorCode(r.errorCode()); e.setErrorMessage(r.errorMessage()); e.setEngineSnapshot(r.engineSnapshot()); e.setCreatedBy(r.createdBy()); e.setUpdatedBy(r.updatedBy()); e.setCreateTime(date(r.createdAt())); e.setUpdateTime(date(r.updatedAt())); return e; }

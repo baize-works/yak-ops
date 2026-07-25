@@ -21,5 +21,5 @@ public class SynchronizeJobStatusUseCase {
   if (execution.status().terminal()) { JobInstance update=new JobInstance(); update.setId(instanceId); update.setJobStatus(toLocal(execution.status())); update.setErrorMessage(execution.diagnosticMessage()); update.setEndTime(new Date()); instances.updateById(update); }
   return execution;
  }
- private JobStatus toLocal(JobExecutionStatus status){return switch(status){case SUCCEEDED -> JobStatus.FINISHED; case CANCELED -> JobStatus.CANCELED; default -> JobStatus.FAILED;};}
+ private JobStatus toLocal(JobExecutionStatus status) { switch (status) { case SUCCEEDED: return JobStatus.FINISHED; case CANCELED: return JobStatus.CANCELED; default: return JobStatus.FAILED; } }
 }

@@ -1,6 +1,6 @@
 package io.baize.flow.application.service.impl.client;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.enums.SeaTunnelClientDeployMode;
@@ -536,12 +536,12 @@ public class SeaTunnelClientLifecycleAppService {
                 seaTunnelClientNodeDao.selectByClientId(clientId);
 
         if (nodes == null || nodes.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         return nodes.stream()
                 .map(assembler::toEndpointDTO)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -678,6 +678,6 @@ public class SeaTunnelClientLifecycleAppService {
      * Returns an empty list when the given list is null.
      */
     private <T> List<T> safeList(List<T> list) {
-        return list == null ? Collections.emptyList() : list;
+        return list == null ? java.util.Collections.emptyList() : list;
     }
 }

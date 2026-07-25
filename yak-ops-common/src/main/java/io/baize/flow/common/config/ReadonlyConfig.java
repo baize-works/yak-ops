@@ -62,7 +62,7 @@ public class ReadonlyConfig implements Serializable {
 
     public Map<String, String> toMap() {
         if (confData.isEmpty()) {
-            return Collections.emptyMap();
+            return java.util.Collections.emptyMap();
         }
 
         Map<String, String> result = new LinkedHashMap<>();

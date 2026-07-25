@@ -1,7 +1,7 @@
 package io.baize.flow.application.job.handler.script;
 
 import com.typesafe.config.Config;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.enums.JobDefinitionMode;
 import io.baize.flow.common.modal.JobDefinitionAnalysisResult;

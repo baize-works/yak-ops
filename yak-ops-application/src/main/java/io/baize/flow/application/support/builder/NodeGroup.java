@@ -90,7 +90,7 @@ public class NodeGroup {
     List<RenderedItem> transforms() {
         return transforms.stream()
                 .map(c -> new RenderedItem(null, c))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -104,6 +104,6 @@ public class NodeGroup {
         return map.entrySet().stream()
                 .flatMap(e -> e.getValue().stream()
                         .map(c -> new RenderedItem(e.getKey(), c)))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 }

@@ -144,7 +144,7 @@ public final class DagUtil {
     private static List<ObjectNode> jsonArrayToList(JsonNode node) {
 
         if (node == null || !node.isArray()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         ArrayNode array = (ArrayNode) node;

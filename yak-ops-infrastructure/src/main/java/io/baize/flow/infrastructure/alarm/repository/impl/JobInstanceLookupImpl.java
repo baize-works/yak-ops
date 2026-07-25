@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.alarm.repository.impl;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.infrastructure.alarm.repository.JobInstanceBasic;
 import io.baize.flow.infrastructure.alarm.repository.JobInstanceLookup;
 import io.baize.flow.common.enums.ReleaseState;

@@ -41,7 +41,7 @@ public class WebhookAlarmChannel implements AlarmChannel {
             return AlarmResult.fail("alarm params is empty");
         }
         String url = params.get("url");
-        if (url == null || url.isBlank()) {
+        if (url == null || url.trim().isEmpty()) {
             return AlarmResult.fail("webhook url is not configured");
         }
 
@@ -49,7 +49,7 @@ public class WebhookAlarmChannel implements AlarmChannel {
         int timeoutMs = parseIntOrDefault(params.get("timeoutMs"), DEFAULT_TIMEOUT_MS);
         Map<String, Object> headers = parseHeaders(params.get("headers"));
         String bodyTemplate = params.get("bodyTemplate");
-        String body = (bodyTemplate != null && !bodyTemplate.isBlank())
+        String body = (bodyTemplate != null && !bodyTemplate.trim().isEmpty())
                 ? renderTemplate(bodyTemplate, info.getAlarmData())
                 : buildBody(info.getAlarmData());
 
@@ -155,7 +155,7 @@ public class WebhookAlarmChannel implements AlarmChannel {
      * Extract error message from common webhook response formats (DingTalk, Feishu, etc.)
      */
     private String extractErrorMessage(String responseBody) {
-        if (responseBody == null || responseBody.isBlank()) {
+        if (responseBody == null || responseBody.trim().isEmpty()) {
             return null;
         }
         try {
@@ -185,19 +185,19 @@ public class WebhookAlarmChannel implements AlarmChannel {
     }
 
     private Map<String, Object> parseHeaders(String headersJson) {
-        if (headersJson == null || headersJson.isBlank()) {
-            return Collections.emptyMap();
+        if (headersJson == null || headersJson.trim().isEmpty()) {
+            return java.util.Collections.emptyMap();
         }
         try {
             return OBJECT_MAPPER.readValue(headersJson, MAP_TYPE);
         } catch (Exception e) {
             log.warn("Failed to parse webhook headers, ignoring: {}", headersJson, e);
-            return Collections.emptyMap();
+            return java.util.Collections.emptyMap();
         }
     }
 
     private int parseIntOrDefault(String value, int fallback) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             return fallback;
         }
         try {

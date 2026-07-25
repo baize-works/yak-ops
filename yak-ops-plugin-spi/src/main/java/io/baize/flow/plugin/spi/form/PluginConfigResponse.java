@@ -18,12 +18,12 @@ import java.util.List;
 public class PluginConfigResponse {
     private DbType pluginType;
     private List<FormFieldConfig> formFields;
-    
+
     /**
      * 是否需要安装插件
      */
     private Boolean installRequired;
-    
+
     /**
      * 安装提示信息
      */

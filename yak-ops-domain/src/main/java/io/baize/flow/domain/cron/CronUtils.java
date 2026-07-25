@@ -185,7 +185,7 @@ public class CronUtils {
 
         return getSelfFireDateList(zonedDateTimeStart, zonedDateTimeEnd, schedules).stream()
                 .map(zonedDateTime -> new Date(zonedDateTime.toInstant().toEpochMilli()))
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**

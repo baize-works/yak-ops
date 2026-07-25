@@ -14,6 +14,6 @@ final class SeaTunnelErrorMapper {
     }
     private static Map<String, String> diagnostics(Exception cause) {
         // Never expose a vendor exception type across the boundary; retain its code/name for support.
-        return Map.of("vendor", "seatunnel", "vendor.error_code", cause.getClass().getSimpleName());
+        return java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap() {{ put("vendor", "seatunnel"); put("vendor.error_code", cause.getClass().getSimpleName()); }});
     }
 }

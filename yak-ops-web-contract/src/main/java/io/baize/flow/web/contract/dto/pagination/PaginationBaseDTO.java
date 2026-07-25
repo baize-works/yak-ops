@@ -2,7 +2,7 @@ package io.baize.flow.web.contract.dto.pagination;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import io.baize.flow.common.constants.PaginationConstant;
 

@@ -1,6 +1,6 @@
 package io.baize.flow.application.service.impl;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -60,7 +60,7 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         try {
             return getJdbcCatalog(dataSource, connectionParam).listTableOptions().stream()
                     .map(this::toOptionVO)
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -88,14 +88,14 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         if ("2".equals(matchMode)) {
             return allTables.stream()
                     .filter(table -> String.valueOf(table.getValue()).matches(keyword))
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
         }
 
         if ("3".equals(matchMode)) {
             String[] exactNames = keyword.split(",");
             return allTables.stream()
                     .filter(table -> matchExactTable(String.valueOf(table.getValue()), exactNames))
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
         }
 
         return allTables;
@@ -127,7 +127,7 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
                         optionVO.setFieldKey(column.getColumnKey());
                         return optionVO;
                     })
-                    .collect(Collectors.toList());
+                    .collect(java.util.stream.Collectors.toList());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
@@ -200,11 +200,7 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
         BaseConnectionParam connectionParam = buildConnectionParam(dataSource);
         JdbcCatalog jdbcCatalog = getJdbcCatalog(dataSource, connectionParam);
 
-        Map<String, Object> columnRequest = Map.of(
-                KEY_READ_MODE, "table",
-                KEY_TABLE_PATH, tablePath,
-                KEY_QUERY, ""
-        );
+        Map<String, Object> columnRequest = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap() {{ put(KEY_READ_MODE, "table"); put(KEY_TABLE_PATH, tablePath); put(KEY_QUERY, ""); }});
 
         try {
             List<DataSourceTableColumn> columns = jdbcCatalog.listColumns(columnRequest);

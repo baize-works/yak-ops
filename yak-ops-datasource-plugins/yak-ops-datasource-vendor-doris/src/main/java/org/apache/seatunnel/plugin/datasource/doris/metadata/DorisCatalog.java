@@ -98,7 +98,7 @@ public class DorisCatalog extends AbstractJdbcCatalog {
     protected String getSpecifiedColumnSql(TablePath tablePath, List<DataSourceTableColumn> columns) {
         List<String> columnNames = columns.stream()
                 .map(DataSourceTableColumn::getColumnName)
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
 
         String quotedColumnNames = columnNames.stream()
                 .map(name -> "'" + name + "'")

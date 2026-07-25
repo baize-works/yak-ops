@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import io.baize.flow.dao.entity.SeaTunnelClientNode;
 import io.baize.flow.dao.mapper.SeaTunnelClientNodeMapper;
@@ -29,7 +29,7 @@ public class SeaTunnelClientNodeDaoImpl
     @Override
     public List<SeaTunnelClientNode> selectByClientId(Long clientId) {
         if (clientId == null || clientId <= 0) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         LambdaQueryWrapper<SeaTunnelClientNode> wrapper = new LambdaQueryWrapper<>();
@@ -39,7 +39,7 @@ public class SeaTunnelClientNodeDaoImpl
                 .orderByAsc(SeaTunnelClientNode::getId);
 
         List<SeaTunnelClientNode> records = seaTunnelClientNodeMapper.selectList(wrapper);
-        return records == null ? Collections.emptyList() : records;
+        return records == null ? java.util.Collections.emptyList() : records;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class SeaTunnelClientNodeDaoImpl
             String nodeRole
     ) {
         if (clientId == null || clientId <= 0 || nodeRole == null || nodeRole.trim().isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         LambdaQueryWrapper<SeaTunnelClientNode> wrapper = new LambdaQueryWrapper<>();
@@ -59,7 +59,7 @@ public class SeaTunnelClientNodeDaoImpl
                 .orderByAsc(SeaTunnelClientNode::getId);
 
         List<SeaTunnelClientNode> records = seaTunnelClientNodeMapper.selectList(wrapper);
-        return records == null ? Collections.emptyList() : records;
+        return records == null ? java.util.Collections.emptyList() : records;
     }
 
     @Override

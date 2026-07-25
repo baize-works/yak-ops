@@ -2,7 +2,7 @@ package io.baize.flow.dao.repository.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import io.baize.flow.dao.entity.SeaTunnelClient;
 import io.baize.flow.dao.mapper.SeaTunnelClientMapper;
@@ -40,7 +40,7 @@ public class SeaTunnelClientDaoImpl
                 .orderByDesc(SeaTunnelClient::getCreateTime);
 
         List<SeaTunnelClient> records = seaTunnelClientMapper.selectList(wrapper);
-        return records == null ? Collections.emptyList() : records;
+        return records == null ? java.util.Collections.emptyList() : records;
     }
 
     @Override

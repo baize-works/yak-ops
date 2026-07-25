@@ -13,7 +13,7 @@ public final class AlarmChannelRegistry {
     private final Map<String, AlarmChannel> channels;
 
     public AlarmChannelRegistry() {
-        factories = Map.copyOf(new PrioritySPIFactory<>(AlarmChannelFactory.class).getSPIMap());
+        factories = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(new PrioritySPIFactory<>(AlarmChannelFactory.class).getSPIMap()));
         channels = factories.entrySet().stream().collect(Collectors.toUnmodifiableMap(
                 Map.Entry::getKey, entry -> entry.getValue().create()));
     }

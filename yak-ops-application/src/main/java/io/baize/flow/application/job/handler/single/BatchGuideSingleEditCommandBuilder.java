@@ -42,7 +42,7 @@ public class BatchGuideSingleEditCommandBuilder implements BatchJobEditCommandBu
                 }
         );
 
-        cmd.setWorkflow(workflow == null ? Collections.emptyMap() : workflow);
+        cmd.setWorkflow(workflow == null ? java.util.Collections.emptyMap() : workflow);
         return cmd;
     }
 

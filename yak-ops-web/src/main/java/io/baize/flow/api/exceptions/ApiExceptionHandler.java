@@ -1,6 +1,6 @@
 package io.baize.flow.api.exceptions;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.web.contract.response.Result;

@@ -40,7 +40,7 @@ public class DagGraph {
      */
     public List<Config> getNodesAsConfig() {
         if (nodes == null || nodes.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<Config> configs = new ArrayList<>(nodes.size());

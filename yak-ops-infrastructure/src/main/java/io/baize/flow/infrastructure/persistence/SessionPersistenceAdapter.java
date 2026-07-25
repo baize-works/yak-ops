@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 public class SessionPersistenceAdapter implements SessionRepository {
     private final SessionMapper mapper;
     @Override public Optional<Session> findById(String id) { return Optional.ofNullable(mapper.selectById(id)).map(this::toModel); }
-    @Override public List<Session> findByUserId(int userId) { return mapper.selectList(new LambdaQueryWrapper<io.baize.flow.dao.entity.Session>().eq(io.baize.flow.dao.entity.Session::getUserId, userId)).stream().map(this::toModel).toList(); }
+    @Override public List<Session> findByUserId(int userId) { return mapper.selectList(new LambdaQueryWrapper<io.baize.flow.dao.entity.Session>().eq(io.baize.flow.dao.entity.Session::getUserId, userId)).stream().map(this::toModel).collect(java.util.stream.Collectors.toList()); }
     @Override public Optional<Session> findByUserIdAndIp(int userId, String ip) { return Optional.ofNullable(mapper.selectOne(new LambdaQueryWrapper<io.baize.flow.dao.entity.Session>().eq(io.baize.flow.dao.entity.Session::getUserId, userId).eq(io.baize.flow.dao.entity.Session::getIp, ip))).map(this::toModel); }
     @Override public void save(Session session) { io.baize.flow.dao.entity.Session entity = toEntity(session); if (mapper.selectById(entity.getId()) == null) mapper.insert(entity); else mapper.updateById(entity); }
     @Override public void deleteById(String sessionId) { mapper.deleteById(sessionId); }

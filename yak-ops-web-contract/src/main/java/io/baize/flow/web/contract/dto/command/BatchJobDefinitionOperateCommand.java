@@ -1,6 +1,6 @@
 package io.baize.flow.web.contract.dto.command;
 
-import jakarta.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotEmpty;
 import lombok.Data;
 
 import java.util.List;

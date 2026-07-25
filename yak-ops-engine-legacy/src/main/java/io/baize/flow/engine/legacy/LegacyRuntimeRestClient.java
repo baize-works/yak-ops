@@ -1,6 +1,6 @@
 package io.baize.flow.engine.legacy;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

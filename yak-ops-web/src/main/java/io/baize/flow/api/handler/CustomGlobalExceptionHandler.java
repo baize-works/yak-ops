@@ -51,7 +51,7 @@ public class CustomGlobalExceptionHandler {
         // Convert error messages into a single comma-separated string
         List<String> errorList = fieldErrorList.stream()
                 .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
 
         return Result.buildFromRSAndMsg(
                 ResultStatus.PARAM_ILLEGAL,

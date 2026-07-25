@@ -1,6 +1,6 @@
 package io.baize.flow.application.job.handler.single;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.common.utils.JSONUtils;

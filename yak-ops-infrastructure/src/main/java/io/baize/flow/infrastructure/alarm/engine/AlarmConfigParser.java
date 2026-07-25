@@ -38,7 +38,7 @@ public final class AlarmConfigParser {
      * @return a non-null map; empty if the input is blank or unparseable
      */
     public static Map<String, String> parse(ObjectMapper objectMapper, String configJson) {
-        if (configJson == null || configJson.isBlank()) {
+        if (configJson == null || configJson.trim().isEmpty()) {
             return new HashMap<>();
         }
         try {

@@ -1,7 +1,7 @@
 package io.baize.flow.application.service;
 
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import io.baize.flow.application.model.Session;
 import io.baize.flow.application.model.User;
 

@@ -22,7 +22,7 @@ public class KeyValuePairListDeserializer extends JsonDeserializer<List<KeyValue
         ObjectMapper mapper = (ObjectMapper) p.getCodec();
 
         if (node == null || node.isNull()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         if (node.isArray()) {
@@ -32,7 +32,7 @@ public class KeyValuePairListDeserializer extends JsonDeserializer<List<KeyValue
         if (node.isTextual()) {
             String text = node.asText();
             if (StringUtils.isBlank(text)) {
-                return Collections.emptyList();
+                return java.util.Collections.emptyList();
             }
             return mapper.readValue(text, new TypeReference<List<KeyValuePair>>() {});
         }

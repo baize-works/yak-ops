@@ -144,7 +144,7 @@ public final class JSONUtils {
         }
 
         if (Strings.isNullOrEmpty(json)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         try {
@@ -225,7 +225,7 @@ public final class JSONUtils {
      */
     public static <K, V> Map<K, V> toMap(String json, Class<K> classK, Class<V> classV) {
         if (Strings.isNullOrEmpty(json)) {
-            return Collections.emptyMap();
+            return java.util.Collections.emptyMap();
         }
 
         try {
@@ -235,7 +235,7 @@ public final class JSONUtils {
             System.err.println("json to map exception!" + e);
         }
 
-        return Collections.emptyMap();
+        return java.util.Collections.emptyMap();
     }
 
     /**

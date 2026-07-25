@@ -335,7 +335,7 @@ public class SeaTunnelClientAssembler {
             String contextPath
     ) {
         if (endpointDTOList == null || endpointDTOList.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Map<String, SeaTunnelClientEndpoint> endpointMap = new LinkedHashMap<>();

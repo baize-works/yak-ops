@@ -125,7 +125,7 @@ public class DamengJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
         } catch (Exception e) {
             log.debug("Read dameng job definition table list failed, path={}", path, e);
         }
-        return Collections.emptyList();
+        return java.util.Collections.emptyList();
     }
 
     @SuppressWarnings("unchecked")
@@ -133,18 +133,18 @@ public class DamengJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
         if (value instanceof Map) {
             return (Map<String, Object>) value;
         }
-        return Collections.emptyMap();
+        return java.util.Collections.emptyMap();
     }
 
     @SuppressWarnings("unchecked")
     private List<String> getStringList(Map<String, Object> map, String key) {
         if (map == null || map.isEmpty() || key == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Object value = map.get(key);
         if (!(value instanceof List)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<String> result = new ArrayList<>();
@@ -171,7 +171,7 @@ public class DamengJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
 
     private List<String> cleanTables(List<String> tables) {
         if (CollectionUtils.isEmpty(tables)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<String> result = new ArrayList<>();
@@ -185,7 +185,7 @@ public class DamengJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
 
     private List<String> distinct(List<String> values) {
         if (CollectionUtils.isEmpty(values)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<String> result = new ArrayList<>();

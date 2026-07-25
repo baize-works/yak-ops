@@ -27,13 +27,10 @@ public class OpenAPIConfig {
                         .license(new License()
                                 .name("Apache 2.0")
                                 .url("https://www.apache.org/licenses/LICENSE-2.0.html")))
-                .servers(List.of(
-                        new Server()
+                .servers(java.util.Collections.unmodifiableList(java.util.Arrays.asList(new Server()
                                 .url("http://localhost:9527")
-                                .description("开发环境"),
-                        new Server()
+                                .description("开发环境"), new Server()
                                 .url("https://api.seatunnel.apache.org")
-                                .description("生产环境")
-                ));
+                                .description("生产环境"))));
     }
 }

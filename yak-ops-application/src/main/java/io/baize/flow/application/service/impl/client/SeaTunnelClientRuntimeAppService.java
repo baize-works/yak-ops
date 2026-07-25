@@ -1,6 +1,6 @@
 package io.baize.flow.application.service.impl.client;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import io.baize.flow.domain.exceptions.ServiceException;
 import io.baize.flow.application.support.utils.MetricValueParser;

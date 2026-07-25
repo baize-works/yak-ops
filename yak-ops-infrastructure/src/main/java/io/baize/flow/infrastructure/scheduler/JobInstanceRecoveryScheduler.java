@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.scheduler;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.application.service.application.job.SynchronizeJobStatusUseCase;
 import io.baize.flow.dao.entity.JobInstance;

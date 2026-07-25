@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.verify;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.cdc.CdcDatasourcePrecheckItem;
 import org.apache.seatunnel.plugin.datasource.api.cdc.CdcDatasourcePrecheckProvider;

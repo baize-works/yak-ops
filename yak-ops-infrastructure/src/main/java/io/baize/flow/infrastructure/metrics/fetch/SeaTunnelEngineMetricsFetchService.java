@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.metrics.fetch;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.engine.legacy.LegacyRuntimeRestClient;
 import org.springframework.stereotype.Service;
@@ -27,13 +27,13 @@ public class SeaTunnelEngineMetricsFetchService implements EngineMetricsFetchSer
 
         Map<String, Object> jobInfo = engineRestClient.jobInfo(clientId, engineJobId);
         if (jobInfo == null) {
-            jobInfo = Collections.emptyMap();
+            jobInfo = java.util.Collections.emptyMap();
         }
 
         Object metricsObj = jobInfo.get("metrics");
         Map<String, Object> metrics = metricsObj instanceof Map
                 ? (Map<String, Object>) metricsObj
-                : Collections.emptyMap();
+                : java.util.Collections.emptyMap();
 
         EngineJobInfo result = new EngineJobInfo();
         result.setClientId(clientId);

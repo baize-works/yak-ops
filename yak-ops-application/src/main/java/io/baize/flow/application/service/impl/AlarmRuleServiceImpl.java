@@ -1,6 +1,6 @@
 package io.baize.flow.application.service.impl;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import io.baize.flow.application.service.AlarmRuleService;
 import io.baize.flow.dao.entity.AlarmRuleChannelEntity;
 import io.baize.flow.dao.entity.AlarmRuleEntity;
@@ -73,7 +73,7 @@ public class AlarmRuleServiceImpl implements AlarmRuleService {
     @Override
     public List<AlarmRuleChannelEntity> listChannels(Long ruleId) {
         if (ruleId == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         return alarmRuleChannelDao.listByRuleId(ruleId);
     }

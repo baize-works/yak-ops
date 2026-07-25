@@ -1,6 +1,6 @@
 package io.baize.flow.application.service.impl;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.application.modal.ParsedJobMetrics;
@@ -303,7 +303,7 @@ public class JobMetricsServiceImpl implements JobMetricsService {
     private List<JobTableMetrics> parseTableMetrics(Map<String, Object> jobInfo,
                                                     Map<String, Object> metrics) {
         if (metrics == null || metrics.isEmpty()) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<TablePair> tablePairs = parseTablePairsFromJobDag(jobInfo);
@@ -358,14 +358,14 @@ public class JobMetricsServiceImpl implements JobMetricsService {
     private List<TablePair> parseTablePairsFromJobDag(Map<String, Object> jobInfo) {
         Object jobDagObj = jobInfo.get("jobDag");
         if (!(jobDagObj instanceof Map)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         Map jobDag = (Map) jobDagObj;
         Object vertexInfoMapObj = jobDag.get("vertexInfoMap");
 
         if (!(vertexInfoMapObj instanceof Collection)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<String> sourceTables = new ArrayList<>();
@@ -793,7 +793,7 @@ public class JobMetricsServiceImpl implements JobMetricsService {
     @SuppressWarnings("unchecked")
     private Map<String, Object> asStringObjectMap(Object obj) {
         if (!(obj instanceof Map)) {
-            return Collections.emptyMap();
+            return java.util.Collections.emptyMap();
         }
 
         Map<?, ?> raw = (Map<?, ?>) obj;

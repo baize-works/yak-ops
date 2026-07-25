@@ -3,7 +3,7 @@ package io.baize.flow.api.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.Data;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannelFactory;
 import io.baize.flow.application.port.AlarmChannelCatalog;
@@ -60,7 +60,7 @@ public class AlarmController {
                     vo.setConfigFields(factory.params());
                     return vo;
                 })
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
         return Result.buildSuc(list);
     }
 
@@ -121,7 +121,7 @@ public class AlarmController {
     public Result<List<Long>> listRuleChannels(@PathVariable("id") Long id) {
         List<Long> ids = alarmRuleService.listChannels(id).stream()
                 .map(AlarmRuleChannelEntity::getChannelId)
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
         return Result.buildSuc(ids);
     }
 

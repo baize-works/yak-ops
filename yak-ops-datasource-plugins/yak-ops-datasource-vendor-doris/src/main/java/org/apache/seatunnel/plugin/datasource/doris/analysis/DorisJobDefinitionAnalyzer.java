@@ -156,7 +156,7 @@ public class DorisJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
         } catch (Exception e) {
             // ignore
         }
-        return Collections.emptyList();
+        return java.util.Collections.emptyList();
     }
 
     @SuppressWarnings("unchecked")
@@ -164,17 +164,17 @@ public class DorisJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
         if (value instanceof Map) {
             return (Map<String, Object>) value;
         }
-        return Collections.emptyMap();
+        return java.util.Collections.emptyMap();
     }
 
     @SuppressWarnings("unchecked")
     private static List<String> getStringList(Map<String, Object> map, String key) {
         if (map == null || map.isEmpty() || key == null) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         Object value = map.get(key);
         if (!(value instanceof List)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         List<Object> values = (List<Object>) value;
         List<String> result = new ArrayList<>();
@@ -188,7 +188,7 @@ public class DorisJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
 
     private static List<String> cleanTables(List<String> tables) {
         if (CollectionUtils.isEmpty(tables)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         List<String> result = new ArrayList<>();
         for (String table : tables) {
@@ -201,7 +201,7 @@ public class DorisJobDefinitionAnalyzer implements JobDefinitionAnalyzer {
 
     private static List<String> distinct(List<String> values) {
         if (CollectionUtils.isEmpty(values)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
         List<String> result = new ArrayList<>();
         for (String value : values) {

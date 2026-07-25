@@ -232,7 +232,7 @@ public final class ReflectionFormGenerator {
         Object[] enumConstants = enumType.getEnumConstants();
 
         if (enumConstants == null || enumConstants.length == 0) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<Option> options = new ArrayList<>(enumConstants.length);
@@ -281,13 +281,13 @@ public final class ReflectionFormGenerator {
 
         String label = invokeStringMethod(enumConstant, ENUM_LABEL_METHOD);
 
-        if (label != null && !label.isBlank()) {
+        if (label != null && !label.trim().isEmpty()) {
             return label;
         }
 
         String desc = invokeStringMethod(enumConstant, ENUM_DESC_METHOD);
 
-        if (desc != null && !desc.isBlank()) {
+        if (desc != null && !desc.trim().isEmpty()) {
             return desc;
         }
 

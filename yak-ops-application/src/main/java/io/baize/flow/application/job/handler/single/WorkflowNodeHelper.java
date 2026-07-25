@@ -13,13 +13,13 @@ public final class WorkflowNodeHelper {
         if (obj instanceof Map) {
             return (Map<String, Object>) obj;
         }
-        return Collections.emptyMap();
+        return java.util.Collections.emptyMap();
     }
 
     @SuppressWarnings("unchecked")
     public static List<Map<String, Object>> castToMapList(Object obj) {
         if (!(obj instanceof List)) {
-            return Collections.emptyList();
+            return java.util.Collections.emptyList();
         }
 
         List<?> rawList = (List<?>) obj;
@@ -61,7 +61,7 @@ public final class WorkflowNodeHelper {
                 return node;
             }
         }
-        return Collections.emptyMap();
+        return java.util.Collections.emptyMap();
     }
 
     public static Set<String> collectNodeIds(List<Map<String, Object>> nodes) {

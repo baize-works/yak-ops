@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.metrics;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.application.modal.ParsedJobMetrics;
