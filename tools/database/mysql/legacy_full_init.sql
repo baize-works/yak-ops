@@ -68,7 +68,7 @@ CREATE TABLE `t_yak_ops_client`
     KEY                     `idx_engine_type` (`engine_type`),
     KEY                     `idx_health_status` (`health_status`),
     KEY                     `idx_heartbeat_time` (`heartbeat_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client 表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LinkUp Client 表';
 
 DROP TABLE IF EXISTS `t_yak_ops_client_node`;
 CREATE TABLE `t_yak_ops_client_node`
@@ -93,7 +93,7 @@ CREATE TABLE `t_yak_ops_client_node`
     KEY                   `idx_client_id` (`client_id`),
     KEY                   `idx_client_role` (`client_id`, `node_role`),
     KEY                   `idx_health_status` (`health_status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel Client 节点表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LinkUp Client 节点表';
 
 DROP TABLE IF EXISTS `t_yak_ops_datasource`;
 CREATE TABLE `t_yak_ops_datasource`
@@ -201,7 +201,7 @@ CREATE TABLE `t_yak_ops_time_variable`
     `update_time`     datetime              DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_param_name` (`param_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SeaTunnel时间变量表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LinkUp时间变量表';
 
 DROP TABLE IF EXISTS `t_yak_ops_job_definition`;
 CREATE TABLE `t_yak_ops_job_definition`
@@ -360,7 +360,7 @@ CREATE TABLE `t_yak_ops_streaming_job_definition`
     `job_desc`             varchar(1000) DEFAULT NULL COMMENT '任务描述',
     `mode`                 varchar(64)   DEFAULT NULL COMMENT '任务定义模式：GUIDE_SINGLE / GUIDE_MULTI / SCRIPT',
     `job_type`             varchar(64)   DEFAULT NULL COMMENT '任务类型：BATCH / STREAMING',
-    `client_id`            bigint        DEFAULT NULL COMMENT 'SeaTunnel Client ID',
+    `client_id`            bigint        DEFAULT NULL COMMENT 'LinkUp Client ID',
     `job_version`          int           DEFAULT 1 COMMENT '任务当前版本',
     `release_state`        varchar(64)   DEFAULT NULL COMMENT '发布状态：ONLINE / OFFLINE',
     `source_type`          varchar(128)  DEFAULT NULL COMMENT '源端类型',
@@ -405,12 +405,12 @@ CREATE TABLE `t_yak_ops_streaming_job_instance`
 (
     `id`                bigint      NOT NULL COMMENT '主键ID',
     `job_definition_id` bigint      NOT NULL COMMENT '实时任务定义ID',
-    `client_id`         bigint               DEFAULT NULL COMMENT 'SeaTunnel Client ID',
+    `client_id`         bigint               DEFAULT NULL COMMENT 'LinkUp Client ID',
     `run_mode`          varchar(32) NOT NULL COMMENT '运行模式：MANUAL / SCHEDULE / RETRY',
     `job_status`        varchar(32) NOT NULL COMMENT '实例状态',
     `trigger_source`    varchar(64)          DEFAULT NULL COMMENT '触发来源',
     `retry_count`       int         NOT NULL DEFAULT 0 COMMENT '重试次数',
-    `engine_job_id`     varchar(64)          DEFAULT NULL COMMENT 'SeaTunnel Engine Job ID',
+    `engine_job_id`     varchar(64)          DEFAULT NULL COMMENT 'LinkUp Engine Job ID',
     `runtime_config`    longtext COMMENT '本次执行使用的 HOCON 配置',
     `log_path`          varchar(512)         DEFAULT NULL COMMENT '日志路径',
     `error_message`     text COMMENT '错误摘要',
@@ -435,8 +435,8 @@ CREATE TABLE `t_yak_ops_streaming_job_metrics_current`
 (
     `job_instance_id`         bigint         NOT NULL COMMENT 'Web侧实例ID',
     `job_definition_id`       bigint         NOT NULL COMMENT '任务定义ID',
-    `engine_job_id`           varchar(64)             DEFAULT NULL COMMENT 'SeaTunnel Engine Job ID',
-    `client_id`               bigint                  DEFAULT NULL COMMENT 'SeaTunnel Client ID',
+    `engine_job_id`           varchar(64)             DEFAULT NULL COMMENT 'LinkUp Engine Job ID',
+    `client_id`               bigint                  DEFAULT NULL COMMENT 'LinkUp Client ID',
     `job_status`              varchar(32)             DEFAULT NULL COMMENT '引擎返回的任务状态',
     `read_row_count`          bigint         NOT NULL DEFAULT 0 COMMENT '读取行数',
     `write_row_count`         bigint         NOT NULL DEFAULT 0 COMMENT '写入行数',
@@ -468,8 +468,8 @@ CREATE TABLE `t_yak_ops_streaming_job_metrics_snapshot`
     `collect_time_ms`         bigint         NOT NULL COMMENT '采集时间戳，单位：毫秒',
     `job_instance_id`         bigint         NOT NULL COMMENT 'Web侧实例ID',
     `job_definition_id`       bigint         NOT NULL COMMENT '任务定义ID',
-    `engine_job_id`           varchar(64)             DEFAULT NULL COMMENT 'SeaTunnel Engine Job ID',
-    `client_id`               bigint                  DEFAULT NULL COMMENT 'SeaTunnel Client ID',
+    `engine_job_id`           varchar(64)             DEFAULT NULL COMMENT 'LinkUp Engine Job ID',
+    `client_id`               bigint                  DEFAULT NULL COMMENT 'LinkUp Client ID',
     `pipeline_id`             int            NOT NULL DEFAULT 0 COMMENT 'Pipeline ID',
     `job_status`              varchar(32)             DEFAULT NULL COMMENT '引擎返回的任务状态',
     `read_row_count`          bigint         NOT NULL DEFAULT 0 COMMENT '读取行数',
@@ -495,8 +495,8 @@ CREATE TABLE `t_yak_ops_streaming_job_table_metrics_current`
 (
     `job_instance_id`      bigint         NOT NULL COMMENT 'Web侧实例ID',
     `job_definition_id`    bigint         NOT NULL COMMENT '任务定义ID',
-    `engine_job_id`        varchar(64)             DEFAULT NULL COMMENT 'SeaTunnel Engine Job ID',
-    `client_id`            bigint                  DEFAULT NULL COMMENT 'SeaTunnel Client ID',
+    `engine_job_id`        varchar(64)             DEFAULT NULL COMMENT 'LinkUp Engine Job ID',
+    `client_id`            bigint                  DEFAULT NULL COMMENT 'LinkUp Client ID',
     `pipeline_id`          int            NOT NULL DEFAULT 0 COMMENT 'Pipeline ID',
     `source_table`         varchar(512)            DEFAULT NULL COMMENT '源表',
     `sink_table`           varchar(512)            DEFAULT NULL COMMENT '目标表',
@@ -701,7 +701,7 @@ FOREIGN_KEY_CHECKS = 1;
 -- Connector parameter metadata
 -- JDBC Connector 参数元数据初始化脚本
 -- 生成内容：Jdbc Source + Jdbc Sink
--- 注意：参数名以用户提供的 SeaTunnel 配置项为准，例如 fetch_size、split.size。
+-- 注意：参数名以用户提供的 LinkUp 配置项为准，例如 fetch_size、split.size。
 
 ALTER TABLE `t_yak_ops_connector_param_meta`
 DROP
@@ -721,19 +721,19 @@ VALUES ('connector', 'Jdbc', 'source', 'compatible_mode',
         '{"summary":"指定数据库兼容模式。","coreMeaning":"用于同一数据库产品支持多种协议或兼容语义时选择正确解析方式。","recommendationHints":["OceanBase 按实际租户模式选择 mysql 或 oracle。","StarRocks 场景设置为 starrocks。"],"cautions":["配置值必须与目标数据库真实兼容模式一致。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'source', 'dialect', '显式指定 JDBC 方言，优先级高于通过 URL 自动识别。', 'string', 0, NULL, 'mysql',
-        '{"summary":"指定 SeaTunnel 使用的 JDBC 方言。","coreMeaning":"方言决定类型映射、SQL 生成、元数据读取等数据库差异化行为。","recommendationHints":["URL 无法准确识别或使用兼容数据库时显式配置。"],"cautions":["错误方言可能导致类型映射或 SQL 语法错误。","未支持方言可能回退到 GenericDialect。"]}',
+        '{"summary":"指定 LinkUp 使用的 JDBC 方言。","coreMeaning":"方言决定类型映射、SQL 生成、元数据读取等数据库差异化行为。","recommendationHints":["URL 无法准确识别或使用兼容数据库时显式配置。"],"cautions":["错误方言可能导致类型映射或 SQL 语法错误。","未支持方言可能回退到 GenericDialect。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'source', 'connection_check_timeout_sec', '验证数据库连接操作的超时时间，单位秒。', 'number', 0, '30', '30',
         '{"summary":"控制 JDBC 连接检查的等待时间。","coreMeaning":"超过该时间仍未完成连接验证时，连接检查会失败。","recommendationHints":["网络稳定的内网环境通常保持默认值。","跨区域、代理或高延迟网络可适当调大。"],"cautions":["过大可能延长故障发现时间。","过小可能在网络抖动时产生误判。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'source', 'partition_column', '用于并行分片读取的列名。', 'string', 0, NULL, 'id',
-        '{"summary":"指定 query 模式下的分片列。","coreMeaning":"SeaTunnel 根据该列的上下界划分多个读取分区。","recommendationHints":["优先选择有索引、分布较均匀、可比较的数值列。"],"cautions":["分布严重倾斜会造成任务长尾。","该参数主要用于 query 模式。"]}',
+        '{"summary":"指定 query 模式下的分片列。","coreMeaning":"LinkUp 根据该列的上下界划分多个读取分区。","recommendationHints":["优先选择有索引、分布较均匀、可比较的数值列。"],"cautions":["分布严重倾斜会造成任务长尾。","该参数主要用于 query 模式。"]}',
         '用于AI参数推荐', 0),
-       ('connector', 'Jdbc', 'source', 'partition_upper_bound', '分片列扫描上界；未配置时 SeaTunnel 会查询最大值。', 'number', 0, NULL,
+       ('connector', 'Jdbc', 'source', 'partition_upper_bound', '分片列扫描上界；未配置时 LinkUp 会查询最大值。', 'number', 0, NULL,
         '1000000',
         '{"summary":"设置 partition_column 的最大扫描边界。","coreMeaning":"与下界及分片数共同决定 query 模式的分区范围。","recommendationHints":["边界已知且稳定时可显式配置，减少额外元数据查询。"],"cautions":["配置过小会漏读超过上界的数据。","应与 partition_column 数据类型匹配。"]}',
         '用于AI参数推荐', 0),
-       ('connector', 'Jdbc', 'source', 'partition_lower_bound', '分片列扫描下界；未配置时 SeaTunnel 会查询最小值。', 'number', 0, NULL,
+       ('connector', 'Jdbc', 'source', 'partition_lower_bound', '分片列扫描下界；未配置时 LinkUp 会查询最小值。', 'number', 0, NULL,
         '1',
         '{"summary":"设置 partition_column 的最小扫描边界。","coreMeaning":"与上界及分片数共同决定 query 模式的分区范围。","recommendationHints":["边界已知且稳定时可显式配置。"],"cautions":["配置过大会漏读低于下界的数据。","应与 partition_column 数据类型匹配。"]}',
         '用于AI参数推荐', 0),
@@ -795,9 +795,9 @@ VALUES ('connector', 'Jdbc', 'source', 'compatible_mode',
         0, '1000', '1000',
         '{"summary":"控制采样分片时的采样密度。","coreMeaning":"值越大，实际采样比例越低；值越小，采样数据越多。","recommendationHints":["超大数据集可使用较低采样率以控制采样成本。"],"cautions":["采样过少可能降低分片边界估算准确性。","采样过多会增加数据库扫描开销。"]}',
         '用于AI参数推荐', 0),
-       ('connector', 'Jdbc', 'source', 'common-options', 'Source 插件通用参数集合，具体字段参见 SeaTunnel Source Common Options。',
+       ('connector', 'Jdbc', 'source', 'common-options', 'Source 插件通用参数集合，具体字段参见 LinkUp Source Common Options。',
         'object', 0, NULL, '{"plugin_output":"jdbc_source_result"}',
-        '{"summary":"承载 Source 插件公共能力参数。","coreMeaning":"不是 JDBC 专属业务参数，通常用于结果表名、并行度等公共配置。","recommendationHints":["仅填写当前 SeaTunnel 版本明确支持的公共参数。"],"cautions":["不同版本支持项可能不同。","该项可作为参数组展示，而非直接输出 common-options 键。"]}',
+        '{"summary":"承载 Source 插件公共能力参数。","coreMeaning":"不是 JDBC 专属业务参数，通常用于结果表名、并行度等公共配置。","recommendationHints":["仅填写当前 LinkUp 版本明确支持的公共参数。"],"cautions":["不同版本支持项可能不同。","该项可作为参数组展示，而非直接输出 common-options 键。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'source', 'split.string_split_mode', '字符串分片算法，可选 sample 或 charset_based。', 'string', 0,
         'sample', 'charset_based',
@@ -838,7 +838,7 @@ VALUES ('connector', 'Jdbc', 'sink', 'compatible_mode',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'sink', 'primary_keys', '目标表主键字段列表，用于自动生成 INSERT、UPDATE、DELETE 或 UPSERT SQL。', 'array', 0,
         NULL, '["id"]',
-        '{"summary":"声明目标表主键。","coreMeaning":"SeaTunnel 使用主键识别记录并生成 Upsert、更新和删除语义。","recommendationHints":["CDC 或需要幂等写入时应准确配置。","联合主键按字段顺序填写。"],"cautions":["错误主键可能导致重复数据或误更新。","目标表应具备对应唯一性约束。"]}',
+        '{"summary":"声明目标表主键。","coreMeaning":"LinkUp 使用主键识别记录并生成 Upsert、更新和删除语义。","recommendationHints":["CDC 或需要幂等写入时应准确配置。","联合主键按字段顺序填写。"],"cautions":["错误主键可能导致重复数据或误更新。","目标表应具备对应唯一性约束。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'sink', 'connection_check_timeout_sec', '验证目标数据库连接操作的超时时间，单位秒。', 'number', 0, '30', '30',
         '{"summary":"控制 JDBC Sink 连接检查等待时间。","coreMeaning":"超过该时间仍未完成验证时判定连接失败。","recommendationHints":["跨区域或高延迟环境可适当调大。"],"cautions":["过大延长故障反馈，过小可能误判网络抖动。"]}',
@@ -854,12 +854,12 @@ VALUES ('connector', 'Jdbc', 'sink', 'compatible_mode',
         '{"summary":"控制 JDBC Sink 是否启用 XA Exactly-Once。","coreMeaning":"开启后通过分布式事务协调 checkpoint 与数据库提交。","recommendationHints":["强一致且能接受 XA 成本时开启。","开启时必须配置 xa_data_source_class_name。"],"cautions":["XA 会增加事务开销和运维复杂度。","目标数据库与驱动必须支持 XA。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'sink', 'generate_sink_sql', '是否基于目标数据库表结构自动生成 Sink SQL。', 'boolean', 0, 'false', 'true',
-        '{"summary":"控制是否自动生成 JDBC Sink 写入 SQL。","coreMeaning":"开启后 SeaTunnel 根据目标表、字段和主键生成语句。","recommendationHints":["标准表结构和字段映射场景可开启。"],"cautions":["复杂表达式、特殊函数或非标准写法应使用 query。"]}',
+        '{"summary":"控制是否自动生成 JDBC Sink 写入 SQL。","coreMeaning":"开启后 LinkUp 根据目标表、字段和主键生成语句。","recommendationHints":["标准表结构和字段映射场景可开启。"],"cautions":["复杂表达式、特殊函数或非标准写法应使用 query。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'sink', 'xa_data_source_class_name',
         'XA 数据源类名，例如 MySQL 使用 com.mysql.cj.jdbc.MysqlXADataSource。', 'string', 0, NULL,
         'com.mysql.cj.jdbc.MysqlXADataSource',
-        '{"summary":"指定 Exactly-Once 使用的 XADataSource 实现类。","coreMeaning":"SeaTunnel 通过该类创建 XA 连接并参与两阶段提交。","recommendationHints":["仅在 is_exactly_once=true 时配置。"],"cautions":["类名必须与数据库驱动版本匹配。","普通 DataSource 类不能替代 XADataSource。"]}',
+        '{"summary":"指定 Exactly-Once 使用的 XADataSource 实现类。","coreMeaning":"LinkUp 通过该类创建 XA 连接并参与两阶段提交。","recommendationHints":["仅在 is_exactly_once=true 时配置。"],"cautions":["类名必须与数据库驱动版本匹配。","普通 DataSource 类不能替代 XADataSource。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'sink', 'max_commit_attempts', '事务提交失败时的最大重试次数。', 'number', 0, '3', '3',
         '{"summary":"控制事务 commit 失败后的重试次数。","coreMeaning":"主要用于 Exactly-Once 或显式事务提交阶段的瞬时故障恢复。","recommendationHints":["保持默认值或结合数据库故障特征小幅调整。"],"cautions":["过多重试会延长 checkpoint 完成时间。","提交结果不确定时需关注重复提交风险。"]}',
@@ -878,9 +878,9 @@ VALUES ('connector', 'Jdbc', 'sink', 'compatible_mode',
         '{"rewriteBatchedStatements":"true","useSSL":"false"}',
         '{"summary":"补充 JDBC Sink 驱动连接属性。","coreMeaning":"可用于批处理优化、SSL、时区、字符集及厂商专属配置。","recommendationHints":["MySQL 批量写入可评估 rewriteBatchedStatements=true。"],"cautions":["驱动属性存在版本差异。","与 URL 重复参数需确认优先级。"]}',
         '用于AI参数推荐', 0),
-       ('connector', 'Jdbc', 'sink', 'common-options', 'Sink 插件通用参数集合，具体字段参见 SeaTunnel Sink Common Options。', 'object',
+       ('connector', 'Jdbc', 'sink', 'common-options', 'Sink 插件通用参数集合，具体字段参见 LinkUp Sink Common Options。', 'object',
         0, NULL, '{"parallelism":4}',
-        '{"summary":"承载 Sink 插件公共能力参数。","coreMeaning":"不是 JDBC 专属参数，通常用于并行度等通用任务配置。","recommendationHints":["仅填写当前 SeaTunnel 版本支持的公共参数。"],"cautions":["该项可作为参数组展示，而不是直接输出 common-options 键。"]}',
+        '{"summary":"承载 Sink 插件公共能力参数。","coreMeaning":"不是 JDBC 专属参数，通常用于并行度等通用任务配置。","recommendationHints":["仅填写当前 LinkUp 版本支持的公共参数。"],"cautions":["该项可作为参数组展示，而不是直接输出 common-options 键。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'Jdbc', 'sink', 'schema_save_mode', '任务启动前目标表结构处理策略。', 'enum', 0, 'CREATE_SCHEMA_WHEN_NOT_EXIST',
         'CREATE_SCHEMA_WHEN_NOT_EXIST',
@@ -942,7 +942,7 @@ COMMIT;
 -- 参数数量：32
 -- 说明：
 -- 1. 不显式写入 id，由 AUTO_INCREMENT 自动生成。
--- 2. server-id 使用平台建议默认值 5600；SeaTunnel 原生未配置时会随机生成。
+-- 2. server-id 使用平台建议默认值 5600；LinkUp 原生未配置时会随机生成。
 -- 3. 使用 ON DUPLICATE KEY UPDATE，可重复执行并更新已有参数元数据。
 -- 4. 依赖唯一索引能够唯一标识 connector_name + connector_type + param_name。
 
@@ -1010,7 +1010,7 @@ VALUES ('connector', 'MySQL-CDC', 'source', 'table-names-config', '表级配置�
         '用于AI参数推荐', 0),
        ('connector', 'MySQL-CDC', 'source', 'format', 'MySQL CDC 输出格式，可选 DEFAULT 或 COMPATIBLE_DEBEZIUM_JSON。', 'enum',
         0, 'DEFAULT', 'COMPATIBLE_DEBEZIUM_JSON',
-        '{"summary":"控制 MySQL CDC 事件输出的数据格式。","coreMeaning":"DEFAULT 使用 SeaTunnel 内部 CDC 事件结构；COMPATIBLE_DEBEZIUM_JSON 输出兼容 Debezium 的 JSON。","validValues":["DEFAULT","COMPATIBLE_DEBEZIUM_JSON"],"recommendationHints":["SeaTunnel 内部链路通常使用 DEFAULT。","需要兼容 Debezium 消费格式时使用 COMPATIBLE_DEBEZIUM_JSON。"],"cautions":["切换格式会改变下游字段结构和解析逻辑。"]}',
+        '{"summary":"控制 MySQL CDC 事件输出的数据格式。","coreMeaning":"DEFAULT 使用 LinkUp 内部 CDC 事件结构；COMPATIBLE_DEBEZIUM_JSON 输出兼容 Debezium 的 JSON。","validValues":["DEFAULT","COMPATIBLE_DEBEZIUM_JSON"],"recommendationHints":["LinkUp 内部链路通常使用 DEFAULT。","需要兼容 Debezium 消费格式时使用 COMPATIBLE_DEBEZIUM_JSON。"],"cautions":["切换格式会改变下游字段结构和解析逻辑。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'MySQL-CDC', 'source', 'schema-changes.enabled', '是否启用 Schema Evolution，目前支持新增列、删除列、重命名列和修改列。',
         'boolean', 0, 'false', 'true',
@@ -1018,15 +1018,15 @@ VALUES ('connector', 'MySQL-CDC', 'source', 'table-names-config', '表级配置�
         '用于AI参数推荐', 0),
        ('connector', 'MySQL-CDC', 'source', 'debezium', '透传给 Debezium Embedded Engine 的配置项。', 'map', 0, NULL,
         '{"snapshot.locking.mode":"none","include.schema.changes":"false"}',
-        '{"summary":"配置底层 Debezium 引擎的高级参数。","coreMeaning":"用于覆盖快照锁、心跳、Binlog 解析和其他 Debezium 行为。","recommendationHints":["仅在 SeaTunnel 标准参数无法满足需求时使用。","配置前应核对当前内置 Debezium 版本。"],"cautions":["错误参数可能导致数据不一致或任务无法启动。","不同 Debezium 版本的参数支持存在差异。"]}',
+        '{"summary":"配置底层 Debezium 引擎的高级参数。","coreMeaning":"用于覆盖快照锁、心跳、Binlog 解析和其他 Debezium 行为。","recommendationHints":["仅在 LinkUp 标准参数无法满足需求时使用。","配置前应核对当前内置 Debezium 版本。"],"cautions":["错误参数可能导致数据不一致或任务无法启动。","不同 Debezium 版本的参数支持存在差异。"]}',
         '用于AI参数推荐', 0),
        ('connector', 'MySQL-CDC', 'source', 'int_type_narrowing', '是否在无精度损失时进行整数类型缩窄，例如将 MySQL tinyint(1) 映射为 boolean。',
         'boolean', 0, 'true', 'true',
         '{"summary":"控制 MySQL 整数类型的语义化缩窄。","coreMeaning":"开启后 tinyint(1) 等类型可能被识别为 BOOLEAN。","recommendationHints":["字段确实表达布尔含义时保持开启。"],"cautions":["若 tinyint(1) 实际存储数值而非布尔值，应关闭。"]}',
         '用于AI参数推荐', 0),
-       ('connector', 'MySQL-CDC', 'source', 'common-options', 'Source 插件通用参数集合，具体字段参见 SeaTunnel Source Common Options。',
+       ('connector', 'MySQL-CDC', 'source', 'common-options', 'Source 插件通用参数集合，具体字段参见 LinkUp Source Common Options。',
         'object', 0, NULL, '{"plugin_output":"mysql_cdc_result","parallelism":4}',
-        '{"summary":"承载 Source 插件公共配置。","coreMeaning":"通常包括结果表名、并行度等非 MySQL CDC 专属参数。","recommendationHints":["仅配置当前 SeaTunnel 版本明确支持的公共参数。"],"cautions":["该项更适合作为参数组展示，而非直接输出 common-options 键。"]}',
+        '{"summary":"承载 Source 插件公共配置。","coreMeaning":"通常包括结果表名、并行度等非 MySQL CDC 专属参数。","recommendationHints":["仅配置当前 LinkUp 版本明确支持的公共参数。"],"cautions":["该项更适合作为参数组展示，而非直接输出 common-options 键。"]}',
         '用于AI参数推荐', 0) ON DUPLICATE KEY
 UPDATE
     `param_desc` =

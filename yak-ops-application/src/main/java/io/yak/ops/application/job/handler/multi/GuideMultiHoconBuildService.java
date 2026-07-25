@@ -163,7 +163,7 @@ public class GuideMultiHoconBuildService {
          * 把前端输入的 keyword 透传给 CDC resolver。
          *
          * MultiTableCdcTableOptionResolver 里根据 matchMode=2
-         * 生成 SeaTunnel CDC 原生 table-pattern。
+         * 生成 LinkUp CDC 原生 table-pattern。
          */
         if (MATCH_MODE_REGEX.equals(matchMode)) {
             putIfNotBlank(config, KEY_SOURCE_TABLE, keyword);

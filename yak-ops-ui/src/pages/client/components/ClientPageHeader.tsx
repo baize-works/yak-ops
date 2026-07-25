@@ -32,7 +32,7 @@ const ClientPageHeader: React.FC<Props> = ({onAdd}) => {
             Client 管理
           </h1>
           <p className="mt-1 text-slate-500" style={{fontSize: 13}}>
-            统一管理 SeaTunnel / Zeta Client，查看节点健康状态与核心资源指标，让任务提交与运行监控更清晰。
+            统一管理 LinkUp / Zeta Client，查看节点健康状态与核心资源指标，让任务提交与运行监控更清晰。
           </p>
         </div>
       </div>

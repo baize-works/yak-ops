@@ -11,7 +11,7 @@ import java.util.Map;
 public class LegacyRuntimeRestClient implements EngineRuntimeClientPort {
 
     @Resource
-    private LegacyRestClient seatunnelRestClient;
+    private LegacyRestClient linkupRestClient;
 
     public Map<String, Object> jobInfo(Long clientId, String jobEngineId) {
         if (clientId == null) {
@@ -20,6 +20,6 @@ public class LegacyRuntimeRestClient implements EngineRuntimeClientPort {
         if (jobEngineId == null) {
             throw new IllegalArgumentException("jobEngineId must not be null");
         }
-        return seatunnelRestClient.jobInfo(clientId, jobEngineId);
+        return linkupRestClient.jobInfo(clientId, jobEngineId);
     }
 }

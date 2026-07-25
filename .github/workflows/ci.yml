@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Enforce vendor-token ledger
         run: |
-          rg -i 'seatunnel|zeta' --glob '!tools/engine-neutrality-allowlist.txt' > /tmp/engine-vendor-inventory.txt || true
+          rg -i 'linkup|zeta' --glob '!tools/engine-neutrality-allowlist.txt' > /tmp/engine-vendor-inventory.txt || true
           python3 tools/check-engine-neutrality.py
 
   backend:

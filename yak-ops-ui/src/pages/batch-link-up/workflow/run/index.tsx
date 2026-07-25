@@ -4,7 +4,7 @@ import type {FC, ReactNode} from "react";
 import {memo, useEffect, useMemo, useRef, useState} from "react";
 import SockJS from "sockjs-client";
 import CloseIcon from "../icon/CloseIcon";
-import {seatunnelJobDefinitionApi, seatunnelJobExecuteApi} from "../../api";
+import {linkupJobDefinitionApi, linkupJobExecuteApi} from "../../api";
 import "./index.less";
 
 interface RunLogProps {
@@ -15,7 +15,7 @@ interface RunLogProps {
   params?: any;
 }
 
-type SeatunnelJobMetricsPO = {
+type LinkupJobMetricsPO = {
   id?: string | number | null;
   jobInstanceId?: number;
   jobDefinitionId?: number;
@@ -44,7 +44,7 @@ type SeatunnelJobMetricsPO = {
   updateTime?: string | null;
 };
 
-type TableMetricsPO = SeatunnelJobMetricsPO & {
+type TableMetricsPO = LinkupJobMetricsPO & {
   sourceTable?: string;
   sinkTable?: string;
 };
@@ -58,12 +58,12 @@ type MetricsMessage = {
   /**
    * 后端当前实际返回字段
    */
-  pipelineMetrics?: Record<string, SeatunnelJobMetricsPO>;
+  pipelineMetrics?: Record<string, LinkupJobMetricsPO>;
 
   /**
    * 兼容旧字段，避免以后字段名变化导致前端直接挂掉
    */
-  metrics?: Record<string, SeatunnelJobMetricsPO>;
+  metrics?: Record<string, LinkupJobMetricsPO>;
 
   /**
    * 表级指标
@@ -149,13 +149,13 @@ const RunLog: FC<RunLogProps> = ({
 
   const getPipelineMetricsMap = (
     data?: MetricsMessage
-  ): Record<string, SeatunnelJobMetricsPO> | undefined => {
+  ): Record<string, LinkupJobMetricsPO> | undefined => {
     return data?.pipelineMetrics || data?.metrics;
   };
 
   const getFirstPipeline = (
-    metrics?: Record<string, SeatunnelJobMetricsPO>
-  ): SeatunnelJobMetricsPO | null => {
+    metrics?: Record<string, LinkupJobMetricsPO>
+  ): LinkupJobMetricsPO | null => {
     if (!metrics) return null;
 
     const keys = Object.keys(metrics);
@@ -301,7 +301,7 @@ const RunLog: FC<RunLogProps> = ({
         try {
           void (baseForm?.getFieldsValue?.() || {});
 
-          const detailResp = await seatunnelJobDefinitionApi.selectById(
+          const detailResp = await linkupJobDefinitionApi.selectById(
             params?.id
           );
 
@@ -311,7 +311,7 @@ const RunLog: FC<RunLogProps> = ({
             return;
           }
 
-          const execResp = await seatunnelJobExecuteApi.execute(params?.id);
+          const execResp = await linkupJobExecuteApi.execute(params?.id);
 
           if (execResp?.code !== 0) {
             addLogEntry(

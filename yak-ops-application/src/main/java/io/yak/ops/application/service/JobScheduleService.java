@@ -2,16 +2,16 @@ package io.yak.ops.application.service;
 
 import io.yak.ops.domain.enums.ScheduleStatusEnum;
 import io.yak.ops.dao.entity.JobSchedule;
-import io.yak.ops.application.model.dto.SeaTunnelJobScheduleDTO;
+import io.yak.ops.application.model.dto.LinkUpJobScheduleDTO;
 
 import java.util.Date;
 import java.util.List;
 
 public interface JobScheduleService {
 
-    Long createTaskSchedule(SeaTunnelJobScheduleDTO dto);
+    Long createTaskSchedule(LinkUpJobScheduleDTO dto);
 
-    boolean updateTaskSchedule(SeaTunnelJobScheduleDTO dto);
+    boolean updateTaskSchedule(LinkUpJobScheduleDTO dto);
 
     boolean deleteByTaskDefinitionId(Long taskDefinitionId);
 

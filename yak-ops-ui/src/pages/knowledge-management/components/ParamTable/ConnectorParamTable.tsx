@@ -58,7 +58,7 @@ const ConnectorParamTable: React.FC<Props> = ({
 }) => {
   const columns: ColumnsType<ParamItem> = [
     {
-      title: "SeaTunnel连接器",
+      title: "LinkUp连接器",
       dataIndex: "connectorName",
       key: "connectorName",
       width: 170,

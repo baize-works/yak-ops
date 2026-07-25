@@ -33,8 +33,8 @@ ENV YAK_OPS_HOME=/opt/yak-ops \
     YAK_OPS_DATABASE_PORT=3306 \
     YAK_OPS_DATABASE_NAME=yak_ops \
     SPRING_DATASOURCE_URL="jdbc:mysql://mysql:3306/yak_ops?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true" \
-    SPRING_DATASOURCE_USERNAME=seatunnel \
-    SPRING_DATASOURCE_PASSWORD=seatunnel
+    SPRING_DATASOURCE_USERNAME=linkup \
+    SPRING_DATASOURCE_PASSWORD=linkup
 
 WORKDIR ${YAK_OPS_HOME}
 

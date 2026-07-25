@@ -13,7 +13,7 @@ spring:
     properties:
       org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
 
-seatunnel:
+linkup:
   web:
     database:
       type: mysql

@@ -138,7 +138,7 @@ public class ScriptDatasourceHoconBuildService {
      * <p>
      * Web-side fields such as datasourceId/dbType/pluginName are only used
      * for finding datasource and selecting builder. They should not appear
-     * in the final SeaTunnel HOCON.
+     * in the final LinkUp HOCON.
      */
     private Config buildRuntimeNodeConfig(Config config) {
         if (config == null) {

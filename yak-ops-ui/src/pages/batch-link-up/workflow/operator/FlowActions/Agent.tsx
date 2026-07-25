@@ -3,7 +3,7 @@ import { Sender, SenderProps } from "@ant-design/x";
 import { Dropdown, Flex, GetRef, MenuProps, message } from "antd";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-import { seatunnelCopilotApi } from "@/pages/batch-link-up/api";
+import { linkupCopilotApi } from "@/pages/batch-link-up/api";
 
 import DeepSeekIcon from "../../icon/DeepSeekIcon";
 import { dataSourceCatalogApi, fetchDataSourceAll, fetchDataSourcePage } from "@/pages/data-source/service";
@@ -389,7 +389,7 @@ const App: React.FC = () => {
             prompt: `${skill?.value} | ${v}`,
             intentType: activeAgentKey,
           };
-          seatunnelCopilotApi.copilot(params).then((data) => {
+          linkupCopilotApi.copilot(params).then((data) => {
             if (data?.code === 0) {
               senderRef.current?.clear?.();
             } else {

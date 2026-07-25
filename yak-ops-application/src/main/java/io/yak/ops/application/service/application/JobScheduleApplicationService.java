@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.application.service.JobScheduleService;
 import io.yak.ops.domain.enums.ScheduleStatusEnum;
 import io.yak.ops.dao.entity.JobSchedule;
-import io.yak.ops.application.model.dto.SeaTunnelJobScheduleDTO;
+import io.yak.ops.application.model.dto.LinkUpJobScheduleDTO;
 import io.yak.ops.application.model.dto.command.BatchJobSaveCommand;
 import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
 import io.yak.ops.application.model.dto.config.JobScheduleConfig;
@@ -35,7 +35,7 @@ public class JobScheduleApplicationService {
 
         JobSchedule existing = jobScheduleService.getByTaskDefinitionId(jobDefinitionId);
 
-        SeaTunnelJobScheduleDTO scheduleDTO = buildScheduleDTO(
+        LinkUpJobScheduleDTO scheduleDTO = buildScheduleDTO(
                 jobDefinitionId,
                 scheduleConfig,
                 scheduleStatus,
@@ -66,11 +66,11 @@ public class JobScheduleApplicationService {
         return scheduleConfig == null || StringUtils.isBlank(scheduleConfig.getCronExpression());
     }
 
-    private SeaTunnelJobScheduleDTO buildScheduleDTO(Long jobDefinitionId,
+    private LinkUpJobScheduleDTO buildScheduleDTO(Long jobDefinitionId,
                                                      JobScheduleConfig scheduleConfig,
                                                      ScheduleStatusEnum scheduleStatus,
                                                      JobSchedule existing) {
-        SeaTunnelJobScheduleDTO dto = new SeaTunnelJobScheduleDTO();
+        LinkUpJobScheduleDTO dto = new LinkUpJobScheduleDTO();
         dto.setJobDefinitionId(jobDefinitionId);
         dto.setCronExpression(scheduleConfig.getCronExpression() == null
                 ? null
@@ -84,7 +84,7 @@ public class JobScheduleApplicationService {
         return dto;
     }
 
-    private Long saveSchedule(SeaTunnelJobScheduleDTO scheduleDTO, JobSchedule existing) {
+    private Long saveSchedule(LinkUpJobScheduleDTO scheduleDTO, JobSchedule existing) {
         if (existing == null) {
             return jobScheduleService.createTaskSchedule(scheduleDTO);
         }

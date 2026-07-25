@@ -1,5 +1,5 @@
 FROM node:20-alpine
-WORKDIR /app/seatunnel-ui
+WORKDIR /app/linkup-ui
 COPY ./* ./
 RUN yarn install
 CMD ["yarn", "start"]

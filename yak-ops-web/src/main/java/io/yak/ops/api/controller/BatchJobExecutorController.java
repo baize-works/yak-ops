@@ -27,7 +27,7 @@ public class BatchJobExecutorController {
     private BatchJobExecutorService jobExecutorService;
 
     /**
-     * Executes a SeaTunnel job by job definition ID.
+     * Executes a LinkUp job by job definition ID.
      */
     @GetMapping("/execute")
     @Operation(summary = "executeJob", description = "EXECUTE_JOB_NOTES")
@@ -41,7 +41,7 @@ public class BatchJobExecutorController {
     }
 
     /**
-     * Pause / stop a running SeaTunnel job instance.
+     * Pause / stop a running LinkUp job instance.
      */
     @GetMapping("/pause")
     @Operation(summary = "pauseJob", description = "PAUSE_JOB_NOTES")
@@ -55,7 +55,7 @@ public class BatchJobExecutorController {
     }
 
     /**
-     * Batch execute SeaTunnel jobs by job definition IDs.
+     * Batch execute LinkUp jobs by job definition IDs.
      */
     @PostMapping("/batch-execute")
     @Operation(summary = "batchExecuteJob", description = "BATCH_EXECUTE_JOB_NOTES")
@@ -70,7 +70,7 @@ public class BatchJobExecutorController {
     }
 
     /**
-     * Batch pause running SeaTunnel jobs by job definition IDs.
+     * Batch pause running LinkUp jobs by job definition IDs.
      */
     @PostMapping("/batch-pause")
     @Operation(summary = "batchPauseJob", description = "BATCH_PAUSE_JOB_NOTES")

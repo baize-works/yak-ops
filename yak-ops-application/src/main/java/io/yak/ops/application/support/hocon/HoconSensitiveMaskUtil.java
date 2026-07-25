@@ -23,7 +23,7 @@ public final class HoconSensitiveMaskUtil {
     ));
 
     /**
-     * SeaTunnel HOCON 顶层固定顺序
+     * LinkUp HOCON 顶层固定顺序
      */
     private static final List<String> ROOT_ORDER = Arrays.asList(
             "env",

@@ -102,7 +102,7 @@ public class AlarmChannelServiceAdapter implements AlarmChannelService {
         AlarmChannel channel = factory.create();
         AlarmData data = AlarmData.builder()
                 .id(0L)
-                .title("SeaTunnel 告警连通性测试")
+                .title("LinkUp 告警连通性测试")
                 .content("这是一条测试消息，用于验证告警通道配置是否正确。\n如收到此消息，说明通道连通性正常。")
                 .severity(AlarmSeverity.INFO)
                 .build();

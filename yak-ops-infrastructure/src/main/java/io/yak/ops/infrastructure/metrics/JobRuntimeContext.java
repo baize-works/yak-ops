@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Runtime context information for a SeaTunnel job instance.
+ * Runtime context information for a LinkUp job instance.
  *
  * This object carries the essential metadata required during
  * job execution, monitoring, and result handling.
@@ -23,7 +23,7 @@ public class JobRuntimeContext {
 
     /**
      * Engine-side job identifier.
-     * This ID is used to communicate with the SeaTunnel engine
+     * This ID is used to communicate with the LinkUp engine
      * for metrics collection and job result querying.
      */
     private String engineId;

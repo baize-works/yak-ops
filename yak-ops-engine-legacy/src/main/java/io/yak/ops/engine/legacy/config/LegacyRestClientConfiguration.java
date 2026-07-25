@@ -6,13 +6,13 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * SeaTunnel Legacy REST 客户端配置。
+ * LinkUp Legacy REST 客户端配置。
  */
 @Configuration
 public class LegacyRestClientConfiguration {
 
     /**
-     * SeaTunnel Legacy REST 请求客户端。
+     * LinkUp Legacy REST 请求客户端。
      */
     @Bean("legacyEngineRestTemplate")
     public RestTemplate legacyEngineRestTemplate() {

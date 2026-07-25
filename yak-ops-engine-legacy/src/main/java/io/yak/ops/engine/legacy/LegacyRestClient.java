@@ -2,8 +2,8 @@ package io.yak.ops.engine.legacy;
 
 import io.yak.ops.engine.api.EngineClientAuthentication;
 import io.yak.ops.engine.api.EngineClientPort;
-import io.yak.ops.engine.legacy.internal.vendor.exception.SeaTunnelClientException;
-import io.yak.ops.engine.legacy.internal.vendor.rest.SeaTunnelClientResolver;
+import io.yak.ops.engine.legacy.internal.vendor.exception.LinkUpClientException;
+import io.yak.ops.engine.legacy.internal.vendor.rest.LinkUpClientResolver;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,13 +24,13 @@ import java.util.Map;
 public class LegacyRestClient implements EngineClientPort {
     private static final String REST_ROOT = "/hazelcast/rest";
     private final RestTemplate restTemplate;
-    private final SeaTunnelClientResolver resolver;
+    private final LinkUpClientResolver resolver;
 
 
     public LegacyRestClient(
             @Qualifier("legacyEngineRestTemplate")
                     RestTemplate restTemplate,
-            SeaTunnelClientResolver resolver) {
+            LinkUpClientResolver resolver) {
 
         this.restTemplate = restTemplate;
         this.resolver = resolver;
@@ -199,15 +199,15 @@ public class LegacyRestClient implements EngineClientPort {
         try {
             return restTemplate.exchange(uri.toUriString(), method, new HttpEntity<>(body, headers), type).getBody();
         } catch (RestClientResponseException e) {
-            throw new SeaTunnelClientException("SeaTunnel returned HTTP " + e.getRawStatusCode(), e.getRawStatusCode(), e.getResponseBodyAsString(), e);
+            throw new LinkUpClientException("LinkUp returned HTTP " + e.getRawStatusCode(), e.getRawStatusCode(), e.getResponseBodyAsString(), e);
         } catch (Exception e) {
-            throw new SeaTunnelClientException("SeaTunnel request failed", 0, null, e);
+            throw new LinkUpClientException("LinkUp request failed", 0, null, e);
         }
     }
 
     private static String trim(String value) {
         if (value == null || value.trim().isEmpty())
-            throw new IllegalArgumentException("SeaTunnel base URL must not be blank");
+            throw new IllegalArgumentException("LinkUp base URL must not be blank");
         return value.replaceAll("/+$", "");
     }
 

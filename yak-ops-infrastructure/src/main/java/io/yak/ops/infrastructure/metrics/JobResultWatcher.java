@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Watch SeaTunnel batch job result by REST polling.
+ * Watch LinkUp batch job result by REST polling.
  *
  * <p>
  * This watcher only detects the final Zeta job status.
@@ -31,12 +31,12 @@ public class JobResultWatcher {
     private JobResultHandler resultHandler;
 
     @Resource
-    private LegacyRestClient seatunnelRestClient;
+    private LegacyRestClient linkupRestClient;
 
-    @Value("${seatunnel.result.poll-interval-ms:2000}")
+    @Value("${linkup.result.poll-interval-ms:2000}")
     private long pollIntervalMs;
 
-    @Value("${seatunnel.result.poll-timeout-ms:0}")
+    @Value("${linkup.result.poll-timeout-ms:0}")
     private long pollTimeoutMs;
 
     public void registerByRest(final JobRuntimeContext context) {
@@ -66,7 +66,7 @@ public class JobResultWatcher {
             while (true) {
                 checkTimeout(start, engineId);
 
-                Map jobInfo = seatunnelRestClient.jobInfo(clientId, engineId);
+                Map jobInfo = linkupRestClient.jobInfo(clientId, engineId);
                 String statusStr = readStatus(jobInfo);
 
                 if (StringUtils.isBlank(statusStr)) {

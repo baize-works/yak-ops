@@ -1,6 +1,6 @@
 import { Badge, message, Popover } from "antd";
 import { useState } from "react";
-import { seatunnelJobScheduleApi } from "../../../api";
+import { linkupJobScheduleApi } from "../../../api";
 import { useIntl } from "@umijs/max";
 
 interface ExecutionStatusProps {
@@ -62,7 +62,7 @@ const ScheduleInfo: React.FC<ExecutionStatusProps> = ({ record }) => {
           <a
             onClick={() => {
               if (record?.cronExpression) {
-                seatunnelJobScheduleApi
+                linkupJobScheduleApi
                   .getLast5ExecutionTimes(record?.cronExpression)
                   .then((data) => {
                     if (data?.code === 0) {

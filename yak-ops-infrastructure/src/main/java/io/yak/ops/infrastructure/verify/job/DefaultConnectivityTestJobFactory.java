@@ -2,7 +2,7 @@ package io.yak.ops.infrastructure.verify.job;
 
 import javax.annotation.Resource;
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.dao.entity.SeaTunnelClient;
+import io.yak.ops.dao.entity.LinkUpClient;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public class DefaultConnectivityTestJobFactory implements ConnectivityTestJobFac
     private List<ConnectivityTestJobDefinitionBuilder> builders;
 
     @Override
-    public ConnectivityTestJob build(SeaTunnelClient client, DataSource datasource) {
+    public ConnectivityTestJob build(LinkUpClient client, DataSource datasource) {
         return builders.stream()
                 .filter(builder -> builder.supports(datasource.getDbType()))
                 .findFirst()

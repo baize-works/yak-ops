@@ -88,7 +88,7 @@ export const taskScheduleApi = {
   },
 };
 
-export const seatunnelClientApi = {
+export const linkupClientApi = {
   getLogsByInstanceId(
     instanceId: string | number,
     jobMode: any

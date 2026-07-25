@@ -6,10 +6,10 @@ import "./index.less";
 
 const {TextArea} = Input;
 
-export type SeaTunnelClientDeployMode = "SINGLE" | "SEPARATED_CLUSTER";
-export type SeaTunnelClientProtocol = "http" | "https";
+export type LinkUpClientDeployMode = "SINGLE" | "SEPARATED_CLUSTER";
+export type LinkUpClientProtocol = "http" | "https";
 
-export interface SeaTunnelClientEndpointDTO {
+export interface LinkUpClientEndpointDTO {
   host?: string;
   hostname?: string;
   port?: string | number;
@@ -17,13 +17,13 @@ export interface SeaTunnelClientEndpointDTO {
   priority?: number;
 }
 
-export interface SeaTunnelClientFormValues {
+export interface LinkUpClientFormValues {
   id?: number;
   clientName: string;
   engineType: string;
 
-  deployMode?: SeaTunnelClientDeployMode;
-  protocol?: SeaTunnelClientProtocol;
+  deployMode?: LinkUpClientDeployMode;
+  protocol?: LinkUpClientProtocol;
 
   contextPath: string;
 
@@ -31,7 +31,7 @@ export interface SeaTunnelClientFormValues {
   clientHostname: string;
   clientPort: string | number;
 
-  masterEndpoints?: SeaTunnelClientEndpointDTO[];
+  masterEndpoints?: LinkUpClientEndpointDTO[];
 
   remark?: string;
   authEnabled?: boolean;
@@ -44,7 +44,7 @@ interface AddClientModalProps {
   form: any;
   confirmLoading?: boolean;
   mode?: "create" | "edit";
-  initialValues?: Partial<SeaTunnelClientFormValues>;
+  initialValues?: Partial<LinkUpClientFormValues>;
   onCancel: () => void;
   onSubmit: () => void;
 }
@@ -128,7 +128,7 @@ const clientNamePresets = [
 
 const createDefaultMasterEndpoint = (
   priority = 1
-): SeaTunnelClientEndpointDTO => ({
+): LinkUpClientEndpointDTO => ({
   host: "",
   hostname: "",
   port: 8080,
@@ -174,7 +174,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
     if (!open) return;
 
     if (isEdit) {
-      const deployMode: SeaTunnelClientDeployMode =
+      const deployMode: LinkUpClientDeployMode =
         initialValues?.deployMode ||
         (initialValues?.masterEndpoints?.length
           ? "SEPARATED_CLUSTER"
@@ -249,7 +249,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
               {isEdit ? "编辑 Client" : "新增 Client"}
             </div>
             <div className="mt-0.5 text-[13px] text-[#667085]">
-              配置 SeaTunnel Zeta REST 连接信息。
+              配置 LinkUp Zeta REST 连接信息。
             </div>
           </div>
         </div>
@@ -374,7 +374,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({
             {({getFieldValue}) => {
               const deployMode = getFieldValue(
                 "deployMode"
-              ) as SeaTunnelClientDeployMode;
+              ) as LinkUpClientDeployMode;
 
               if (deployMode === "SEPARATED_CLUSTER") {
                 return (

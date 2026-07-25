@@ -1,4 +1,4 @@
-import { seatunnelJobInstanceApi } from "@/pages/batch-link-up/api";
+import { linkupJobInstanceApi } from "@/pages/batch-link-up/api";
 import { HistoryItem } from "@/pages/batch-link-up/type";
 import { message } from "antd";
 import dayjs from "dayjs";
@@ -87,7 +87,7 @@ export const useTaskHistory = ({
     setLoading(true);
 
     try {
-      const data = await seatunnelJobInstanceApi.page({
+      const data = await linkupJobInstanceApi.page({
         pageNum: 1,
         pageSize: 20,
         jobDefinitionId: selectedItem.id,

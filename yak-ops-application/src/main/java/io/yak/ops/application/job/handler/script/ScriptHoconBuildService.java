@@ -1,7 +1,7 @@
 package io.yak.ops.application.job.handler.script;
 
 import com.typesafe.config.Config;
-import io.yak.ops.application.support.utils.SeaTunnelConfigUtil;
+import io.yak.ops.application.support.utils.LinkUpConfigUtil;
 import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
 import io.yak.ops.application.model.dto.config.ScriptJobContent;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,7 @@ public class ScriptHoconBuildService {
         hoconValidateService.validateRequiredBlocks(rootConfig);
 
         /*
-         * SeaTunnelConfigUtil.generateConfig(...) already wraps:
+         * LinkUpConfigUtil.generateConfig(...) already wraps:
          *
          * env { ... }
          * source { ... }
@@ -60,7 +60,7 @@ public class ScriptHoconBuildService {
 
         String sinkHocon = buildPluginSectionBody(rootConfig, SINK);
 
-        return SeaTunnelConfigUtil.generateConfig(
+        return LinkUpConfigUtil.generateConfig(
                 envHocon,
                 sourceHocon,
                 transformHocon,

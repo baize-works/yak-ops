@@ -1,4 +1,4 @@
-import { seatunnelJobScheduleApi } from "@/pages/batch-link-up/api";
+import { linkupJobScheduleApi } from "@/pages/batch-link-up/api";
 import { ClockCircleOutlined, CopyOutlined } from "@ant-design/icons";
 import { Badge, Form, Popover, Typography, message } from "antd";
 import React, { useState } from "react";
@@ -32,7 +32,7 @@ const CronPreview: React.FC<Props> = ({ cronExpression }) => {
 
     try {
       setPreviewLoading(true);
-      const data = await seatunnelJobScheduleApi.getLast5ExecutionTimes(
+      const data = await linkupJobScheduleApi.getLast5ExecutionTimes(
         cronExpression
       );
       setNextExecutionTimes(data?.data || []);

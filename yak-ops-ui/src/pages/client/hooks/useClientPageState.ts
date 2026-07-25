@@ -1,6 +1,6 @@
 import {Form, message} from "antd";
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {seatunnelClientApi} from "../api";
+import {linkupClientApi} from "../api";
 
 
 export const useClientPageState = () => {
@@ -39,7 +39,7 @@ export const useClientPageState = () => {
 
   const loadClients = useCallback(
     async (nextSelectedId?: number) => {
-      const res = await seatunnelClientApi.page({
+      const res = await linkupClientApi.page({
         pageNo: 1,
         pageSize: 999,
       });
@@ -76,7 +76,7 @@ export const useClientPageState = () => {
 
     setMetricsLoading(true);
     try {
-      const res = await seatunnelClientApi.metrics(targetId);
+      const res = await linkupClientApi.metrics(targetId);
       setMetrics(res?.data || res);
     } catch (e) {
       // 产生异常都认为client存在问题
@@ -119,7 +119,7 @@ export const useClientPageState = () => {
 
     setConfirmLoading(true);
     try {
-      await seatunnelClientApi.saveOrUpdate(payload);
+      await linkupClientApi.saveOrUpdate(payload);
 
       message.success(editingClient ? "Client 修改成功" : "Client 创建成功");
 
@@ -139,7 +139,7 @@ export const useClientPageState = () => {
 
       setDeleteLoadingId(client.id);
       try {
-        await seatunnelClientApi.delete(client.id);
+        await linkupClientApi.delete(client.id);
         message.success("Client 删除成功");
 
         const nextClients = await loadClients();

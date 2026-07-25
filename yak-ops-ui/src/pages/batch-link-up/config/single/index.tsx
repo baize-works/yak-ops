@@ -1,7 +1,7 @@
 import {history, useLocation, useParams} from "@umijs/max";
 import {Empty, message, Spin} from "antd";
 import {useEffect, useState} from "react";
-import {seatunnelJobDefinitionApi} from "../../api";
+import {linkupJobDefinitionApi} from "../../api";
 import Workflow from "../../workflow";
 import {
   BasicConfig,
@@ -279,7 +279,7 @@ export default function SingleConfigPage() {
         setLoading(true);
         setPageScene("edit");
 
-        const res = await seatunnelJobDefinitionApi.selectEditDetail(id);
+        const res = await linkupJobDefinitionApi.selectEditDetail(id);
         if (res?.code !== 0 || !res?.data) {
           message.error(res?.message || res?.msg || "获取编辑详情失败");
           setParams(null);

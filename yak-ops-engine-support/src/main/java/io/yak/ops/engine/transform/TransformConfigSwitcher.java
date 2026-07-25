@@ -6,14 +6,14 @@ import io.yak.ops.engine.transform.domain.TransformOptions;
 
 /**
  * Strategy interface for converting {@link TransformOptions}
- * into a SeaTunnel {@link Config}.
+ * into a LinkUp {@link Config}.
  *
  * <p>
  * Each implementation is responsible for:
  * <ul>
  *   <li>Declaring which {@link Transform} it supports</li>
  *   <li>Transforming the corresponding options object into
- *       a SeaTunnel-compatible configuration</li>
+ *       a LinkUp-compatible configuration</li>
  * </ul>
  *
  * <p>
@@ -31,16 +31,16 @@ public interface TransformConfigSwitcher {
     Transform getTransform();
 
     /**
-     * Convert the given {@link TransformOptions} into a SeaTunnel
+     * Convert the given {@link TransformOptions} into a LinkUp
      * {@link Config} object.
      *
      * <p>
-     * The returned Config will be merged into the final SeaTunnel
+     * The returned Config will be merged into the final LinkUp
      * pipeline configuration.
      * </p>
      *
      * @param transformOptions transform-specific options
-     * @return SeaTunnel configuration for the transform
+     * @return LinkUp configuration for the transform
      */
     Config transform(TransformOptions transformOptions);
 

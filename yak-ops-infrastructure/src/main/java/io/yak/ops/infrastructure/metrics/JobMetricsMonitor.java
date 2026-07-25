@@ -26,11 +26,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Monitor SeaTunnel job metrics.
+ * Monitor LinkUp job metrics.
  *
  * <p>
  * Responsibilities:
- * 1. Poll real-time metrics from SeaTunnel Engine.
+ * 1. Poll real-time metrics from LinkUp Engine.
  * 2. Write snapshots to job log file.
  * 3. Push metrics to WebSocket.
  * 4. Persist final metrics when job finishes.
@@ -47,7 +47,7 @@ public class JobMetricsMonitor {
 
     private final Map<Long, MonitorState> monitorStates = new ConcurrentHashMap<>();
 
-    @Value("${seatunnel.metrics.log-every-times:10}")
+    @Value("${linkup.metrics.log-every-times:10}")
     private int logEveryTimes;
 
     /**
@@ -58,7 +58,7 @@ public class JobMetricsMonitor {
      * Set to 0 or negative to disable timeout.
      * </p>
      */
-    @Value("${seatunnel.metrics.max-monitor-ms:1800000}")
+    @Value("${linkup.metrics.max-monitor-ms:1800000}")
     private long maxMonitorMs;
 
     /**
@@ -69,13 +69,13 @@ public class JobMetricsMonitor {
      * to avoid endless polling.
      * </p>
      */
-    @Value("${seatunnel.metrics.max-empty-times:30}")
+    @Value("${linkup.metrics.max-empty-times:30}")
     private int maxEmptyTimes;
 
     /**
      * Maximum continuous metrics fetching error count.
      */
-    @Value("${seatunnel.metrics.max-error-times:30}")
+    @Value("${linkup.metrics.max-error-times:30}")
     private int maxErrorTimes;
 
     /**
@@ -86,7 +86,7 @@ public class JobMetricsMonitor {
      * Default: 5 minutes.
      * </p>
      */
-    @Value("${seatunnel.metrics.no-progress-warn-ms:300000}")
+    @Value("${linkup.metrics.no-progress-warn-ms:300000}")
     private long noProgressWarnMs;
 
     @Resource
@@ -225,7 +225,7 @@ public class JobMetricsMonitor {
         }
     }
 
-    @Scheduled(fixedDelayString = "${seatunnel.metrics.interval-ms:2000}")
+    @Scheduled(fixedDelayString = "${linkup.metrics.interval-ms:2000}")
     public void reportAllWebSocket() {
         if (monitoringJobs.isEmpty()) {
             return;
@@ -278,7 +278,7 @@ public class JobMetricsMonitor {
         state.setEmptyTimes(state.getEmptyTimes() + 1);
 
         if (state.getEmptyTimes() == 1 || state.getEmptyTimes() % 10 == 0) {
-            log.warn("Empty metrics returned from SeaTunnel Engine, instanceId={}, engineId={}, emptyTimes={}",
+            log.warn("Empty metrics returned from LinkUp Engine, instanceId={}, engineId={}, emptyTimes={}",
                     instanceId, context.getEngineId(), state.getEmptyTimes());
         }
 
@@ -391,7 +391,7 @@ public class JobMetricsMonitor {
         state.setLastNoProgressWarnTime(now);
 
         String message = String.format(
-                "SeaTunnel job metrics has no progress, instanceId=%s, engineId=%s, readRows=%s, writeRows=%s, queueSize=%s, noProgressMs=%s",
+                "LinkUp job metrics has no progress, instanceId=%s, engineId=%s, readRows=%s, writeRows=%s, queueSize=%s, noProgressMs=%s",
                 instanceId,
                 context.getEngineId(),
                 current.getReadRows(),

@@ -2,7 +2,7 @@ import { useIntl } from "@umijs/max";
 import { Tabs } from "antd";
 import React, { useEffect, useState } from "react";
 
-import { seatunnelJobInstanceApi } from "./api";
+import { linkupJobInstanceApi } from "./api";
 import BasicInfoSection from "./BasicInfoSection";
 import HoconTab from "./tabs/HoconTab";
 import LogTab from "./tabs/LogTab";
@@ -26,7 +26,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ instanceItem }) => {
     try {
       setLogLoading(true);
 
-      const res = await seatunnelJobInstanceApi.getLog(instanceItem?.id);
+      const res = await linkupJobInstanceApi.getLog(instanceItem?.id);
 
       setLogContent(
         res?.data ||

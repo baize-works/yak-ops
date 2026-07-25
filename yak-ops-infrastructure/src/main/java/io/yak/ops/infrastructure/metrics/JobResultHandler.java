@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 /**
- * Handler responsible for processing SeaTunnel batch job execution results.
+ * Handler responsible for processing LinkUp batch job execution results.
  *
  * <p>
  * It centralizes final status processing:

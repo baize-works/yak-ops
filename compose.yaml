@@ -7,7 +7,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change_me}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-yak_ops}
-      MYSQL_USER: ${MYSQL_USER:-seatunnel}
+      MYSQL_USER: ${MYSQL_USER:-linkup}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change_me}
       TZ: Asia/Shanghai
 
@@ -66,7 +66,7 @@ services:
       YAK_OPS_DATABASE_NAME: ${MYSQL_DATABASE:-yak_ops}
 
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-yak_ops}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-seatunnel}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-linkup}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-change_me}
 
       SPRING_FLYWAY_ENABLED: "true"

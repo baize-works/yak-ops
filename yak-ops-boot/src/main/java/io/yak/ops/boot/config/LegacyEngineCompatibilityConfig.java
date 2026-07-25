@@ -1,7 +1,7 @@
 package io.yak.ops.boot.config;
 
 import io.yak.ops.engine.legacy.LegacyEngineProperties;
-import io.yak.ops.engine.legacy.internal.vendor.rest.SeaTunnelClientProperties;
+import io.yak.ops.engine.legacy.internal.vendor.rest.LinkUpClientProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,10 +10,10 @@ import org.springframework.web.client.RestTemplate;
 
 /** Compatibility wiring for the quarantined legacy transport. */
 @Configuration
-@EnableConfigurationProperties({LegacyEngineProperties.class, SeaTunnelClientProperties.class})
+@EnableConfigurationProperties({LegacyEngineProperties.class, LinkUpClientProperties.class})
 public class LegacyEngineCompatibilityConfig {
     @Bean("legacyEngineRestTemplate")
-    public RestTemplate legacyEngineRestTemplate(LegacyEngineProperties current, SeaTunnelClientProperties deprecated) {
+    public RestTemplate legacyEngineRestTemplate(LegacyEngineProperties current, LinkUpClientProperties deprecated) {
         int connectTimeout = deprecated.getConnectTimeoutMs() == null
                 ? current.getClient().getConnectTimeoutMs() : deprecated.getConnectTimeoutMs();
         int readTimeout = deprecated.getReadTimeoutMs() == null

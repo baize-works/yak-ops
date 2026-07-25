@@ -33,7 +33,7 @@ public class JobInstanceRecoveryScheduler {
     @Resource
     private SynchronizeJobStatusUseCase synchronizeJobStatusUseCase;
 
-    @Value("${seatunnel.job.recovery.enabled:true}")
+    @Value("${linkup.job.recovery.enabled:true}")
     private boolean enabled;
 
     @EventListener(ApplicationReadyEvent.class)
@@ -50,8 +50,8 @@ public class JobInstanceRecoveryScheduler {
     }
 
     @Scheduled(
-            initialDelayString = "${seatunnel.job.recovery.initial-delay-ms:60000}",
-            fixedDelayString = "${seatunnel.job.recovery.fixed-delay-ms:60000}"
+            initialDelayString = "${linkup.job.recovery.initial-delay-ms:60000}",
+            fixedDelayString = "${linkup.job.recovery.fixed-delay-ms:60000}"
     )
     public void recoverPeriodically() {
         if (!enabled) {

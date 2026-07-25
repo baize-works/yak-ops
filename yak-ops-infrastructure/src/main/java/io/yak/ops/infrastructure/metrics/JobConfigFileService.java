@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Service responsible for managing temporary SeaTunnel job
+ * Service responsible for managing temporary LinkUp job
  * configuration files on the local filesystem.
  *
  * <p>

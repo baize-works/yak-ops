@@ -1,4 +1,4 @@
-import {seatunnelJobDefinitionApi} from "@/pages/batch-link-up/api";
+import {linkupJobDefinitionApi} from "@/pages/batch-link-up/api";
 import CloseIcon from "@/pages/batch-link-up/workflow/icon/CloseIcon";
 import CodeBlockWithCopy from "@/pages/batch-link-up/workflow/operator/CodeBlockWithCopy";
 import {FileTextOutlined, SaveOutlined} from "@ant-design/icons";
@@ -68,7 +68,7 @@ const MultiSyncActions: React.FC<Props> = ({
         jobType: "BATCH",
       };
 
-      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti(
+      const res = await linkupJobDefinitionApi.saveOrUpdateGuideMulti(
         params
       );
 
@@ -92,7 +92,7 @@ const MultiSyncActions: React.FC<Props> = ({
         jobType: "BATCH",
       };
 
-      const res = await seatunnelJobDefinitionApi.hocon(params);
+      const res = await linkupJobDefinitionApi.hocon(params);
 
       setOpen(true);
       setContent(res?.data);
@@ -139,7 +139,7 @@ const MultiSyncActions: React.FC<Props> = ({
                   }}
                 >
                   <div className="latest-publish" style={{fontWeight: 500}}>
-                    Seatunnel Hocon
+                    Linkup Hocon
                   </div>
                   <div
                     onClick={() => setOpen(false)}

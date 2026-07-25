@@ -325,7 +325,7 @@ const CodeBlockWithCopy: React.FC<CodeBlockWithCopyProps> = ({
               {title}
             </div>
             {/* <div className="mt-0.5 text-[11px] text-slate-400">
-              Generated SeaTunnel HOCON configuration
+              Generated LinkUp HOCON configuration
             </div> */}
           </div>
         </div>

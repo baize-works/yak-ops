@@ -26,7 +26,7 @@ import static io.yak.ops.plugin.spi.enums.Status.STOP_JOB_SCHEDULE_ERROR;
 public class JobScheduleController {
 
     @Resource
-    private JobScheduleService seatunnelJobScheduleService;
+    private JobScheduleService linkupJobScheduleService;
 
     /**
      * Retrieves the next 5 execution times based on the cron expression.
@@ -39,7 +39,7 @@ public class JobScheduleController {
     @ApiException(QUERY_JOB_SCHEDULE_EXECUTION_TIMES_ERROR)
     public Result<List<String>> getLast5ExecutionTimes(
             @RequestParam("cron") String cronExpression) {
-        return Result.buildSuc(seatunnelJobScheduleService.getLast5ExecutionTimesByCron(cronExpression));
+        return Result.buildSuc(linkupJobScheduleService.getLast5ExecutionTimesByCron(cronExpression));
     }
 
     /**
@@ -53,7 +53,7 @@ public class JobScheduleController {
     @ApiException(STOP_JOB_SCHEDULE_ERROR)
     public Result<Boolean> stopSchedule(
             @RequestParam("scheduleId") Long scheduleId) {
-        return Result.buildSuc(seatunnelJobScheduleService.stopSchedule(scheduleId));
+        return Result.buildSuc(linkupJobScheduleService.stopSchedule(scheduleId));
     }
 
     /**
@@ -67,6 +67,6 @@ public class JobScheduleController {
     @ApiException(START_JOB_SCHEDULE_ERROR)
     public Result<Boolean> startSchedule(
             @RequestParam("scheduleId") Long scheduleId) {
-        return Result.buildSuc(seatunnelJobScheduleService.startSchedule(scheduleId));
+        return Result.buildSuc(linkupJobScheduleService.startSchedule(scheduleId));
     }
 }

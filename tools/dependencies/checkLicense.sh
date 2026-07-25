@@ -19,14 +19,14 @@
 
 set -e
 
-if [ -d "/tmp/seatunnel-dependencies" ]; then
-  rm -rf /tmp/seatunnel-dependencies/*
+if [ -d "/tmp/linkup-dependencies" ]; then
+  rm -rf /tmp/linkup-dependencies/*
 fi
 
-./mvnw clean -Prelease --batch-mode  --no-snapshot-updates dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=/tmp/seatunnel-dependencies
+./mvnw clean -Prelease --batch-mode  --no-snapshot-updates dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=/tmp/linkup-dependencies
 
-# List all modules(jars) that belong to the SeaTunnel itself, these will be ignored when checking the dependency
-ls /tmp/seatunnel-dependencies | sort > all-dependencies.txt
+# List all modules(jars) that belong to the LinkUp itself, these will be ignored when checking the dependency
+ls /tmp/linkup-dependencies | sort > all-dependencies.txt
 
 echo "start"
 

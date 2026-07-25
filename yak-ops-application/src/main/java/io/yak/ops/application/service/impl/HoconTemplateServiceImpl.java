@@ -6,7 +6,7 @@ import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import org.apache.seatunnel.plugin.datasource.api.jdbc.DataSourceProcessor;
 import org.apache.seatunnel.plugin.datasource.api.utils.DataSourceUtils;
 import io.yak.ops.application.service.HoconTemplateService;
-import io.yak.ops.application.support.utils.SeaTunnelConfigUtil;
+import io.yak.ops.application.support.utils.LinkUpConfigUtil;
 import io.yak.ops.application.model.vo.HoconTemplateVO;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ public class HoconTemplateServiceImpl implements HoconTemplateService {
         vo.setSourceTemplate(sourceTemplate);
         vo.setSinkTemplate(sinkTemplate);
         vo.setFullTemplate(
-                SeaTunnelConfigUtil.generateConfig(
+                LinkUpConfigUtil.generateConfig(
                         defaultEnvTemplate(),
                         sourceTemplate,
                         "",

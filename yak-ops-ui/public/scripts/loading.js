@@ -340,7 +340,7 @@
           </div>
 
           <div class="stw-title">
-            <span class="stw-title-main">SeaTunnel</span>
+            <span class="stw-title-main">LinkUp</span>
             <span class="stw-title-sub"> Web</span>
           </div>
         </div>

@@ -22,7 +22,7 @@ import io.yak.ops.dao.repository.JobTableMetricsDao;
 import io.yak.ops.dao.model.query.JobInstanceQuery;
 import io.yak.ops.dao.model.result.JobInstanceResult;
 import io.yak.ops.dao.model.result.JobTableMetricsResult;
-import io.yak.ops.application.model.dto.SeaTunnelJobInstanceDTO;
+import io.yak.ops.application.model.dto.LinkUpJobInstanceDTO;
 import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
 import io.yak.ops.application.model.response.PaginationResult;
 import io.yak.ops.application.model.vo.JobInstanceVO;
@@ -59,10 +59,10 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     @Resource
     private JobDefinitionCommandResolver jobDefinitionCommandResolver;
 
-    @Value("${seatunnel.job.log-dir:logs}")
+    @Value("${linkup.job.log-dir:logs}")
     private String baseLogDir;
 
-    @Value("${seatunnel.job.max-log-query-bytes:52428800}")
+    @Value("${linkup.job.max-log-query-bytes:52428800}")
     private long maxLogQueryBytes;
 
     @Resource
@@ -97,7 +97,7 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     }
 
     @Override
-    public PaginationResult<JobInstanceVO> paging(SeaTunnelJobInstanceDTO dto) {
+    public PaginationResult<JobInstanceVO> paging(LinkUpJobInstanceDTO dto) {
         validatePagingRequest(dto);
 
         try {
@@ -369,7 +369,7 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
     /**
      * Validate paging request.
      */
-    private void validatePagingRequest(SeaTunnelJobInstanceDTO dto) {
+    private void validatePagingRequest(LinkUpJobInstanceDTO dto) {
         if (dto == null) {
             throw new ServiceException(Status.REQUEST_PARAMS_NOT_VALID_ERROR, "dto");
         }

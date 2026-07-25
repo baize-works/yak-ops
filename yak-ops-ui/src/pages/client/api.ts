@@ -2,7 +2,7 @@ import HttpUtils from "@/utils/HttpUtils";
 
 export const apiPrefix = "/api/v1/devops/client";
 
-export interface SeatunnelClient {
+export interface LinkupClient {
   id?: number;
   clientName: string;
   engineType: "FLINK" | "SPARK" | "ZETA";
@@ -19,14 +19,14 @@ export interface SeatunnelClient {
   updateTime?: string;
 }
 
-export interface SeatunnelClientMetrics {
+export interface LinkupClientMetrics {
   cpuUsage?: number;
   memoryUsage?: number;
   threadCount?: number;
   runningOps?: number;
 }
 
-export interface SeatunnelClientPageRequest {
+export interface LinkupClientPageRequest {
   pageNo?: number;
   pageSize?: number;
   keywords?: string;
@@ -36,33 +36,33 @@ export interface SeatunnelClientPageRequest {
   sortType?: "asc" | "desc";
 }
 
-export interface SeatunnelClientStatistics {
+export interface LinkupClientStatistics {
   total: number;
   liveCount: number;
   downCount: number;
 }
 
-export interface SeatunnelClientOption {
+export interface LinkupClientOption {
   value: string | number;
   label: string;
   description?: string;
 }
 
-export interface SeatunnelClientLog {
+export interface LinkupClientLog {
   clientId: number;
   clientName: string;
   content: string;
 }
 
-export const seatunnelClientApi = {
-  saveOrUpdate: (data: SeatunnelClient) => {
+export const linkupClientApi = {
+  saveOrUpdate: (data: LinkupClient) => {
     return HttpUtils.post(`${apiPrefix}/saveOrUpdate`, data);
   },
 
 
   selectById: (
     id: number
-  ): Promise<{ code: number; data: SeatunnelClient; message?: string }> => {
+  ): Promise<{ code: number; data: LinkupClient; message?: string }> => {
     return HttpUtils.get(`${apiPrefix}/${id}`);
   },
 
@@ -71,14 +71,14 @@ export const seatunnelClientApi = {
   },
 
   page: (
-    data: SeatunnelClientPageRequest
+    data: LinkupClientPageRequest
   ): Promise<{ code: number; data: any; message?: string }> => {
     return HttpUtils.post(`${apiPrefix}/page`, data);
   },
 
   option: (): Promise<{
     code: number;
-    data: SeatunnelClientOption[];
+    data: LinkupClientOption[];
     msg?: string;
     message?: string;
   }> => {
@@ -107,7 +107,7 @@ export const seatunnelClientApi = {
     id: number
   ): Promise<{
     code: number;
-    data: SeatunnelClientMetrics;
+    data: LinkupClientMetrics;
     msg?: string;
     message?: string;
   }> => {

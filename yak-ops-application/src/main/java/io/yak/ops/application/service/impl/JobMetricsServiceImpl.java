@@ -28,7 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * SeaTunnel job metrics service.
+ * LinkUp job metrics service.
  *
  * <p>
  * This implementation parses both:
@@ -292,7 +292,7 @@ public class JobMetricsServiceImpl implements JobMetricsService {
      * Parse table level metrics.
      *
      * <p>
-     * SeaTunnel returns table metrics like:
+     * LinkUp returns table metrics like:
      * TableSourceReceivedCount={sourceTable=10}
      * TableSinkWriteCount={sinkTable=10}
      *

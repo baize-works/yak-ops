@@ -13,8 +13,8 @@ import { useIntl } from "@umijs/max";
 import { Dropdown, Modal, Popconfirm, Space, message } from "antd";
 import { useRef, useState } from "react";
 import {
-  seatunnelJobDefinitionApi,
-  seatunnelJobExecuteApi,
+  linkupJobDefinitionApi,
+  linkupJobExecuteApi,
 } from "../../../api";
 import TaskViewModal from "../../../TaskViewModal";
 import RunLogDrawer from "./RunLogDrawer";
@@ -81,7 +81,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
       return;
     }
 
-    seatunnelJobExecuteApi.pause(instanceId).then((data) => {
+    linkupJobExecuteApi.pause(instanceId).then((data) => {
       if (data?.code === 0) {
         message.success("停止成功");
         cbk();
@@ -98,7 +98,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
       return;
     }
 
-    const response = await seatunnelJobDefinitionApi.online(record.id);
+    const response = await linkupJobDefinitionApi.online(record.id);
 
     if (response?.code === 0) {
       message.success("上线成功");
@@ -120,7 +120,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
       return;
     }
 
-    const response = await seatunnelJobDefinitionApi.offline(record.id);
+    const response = await linkupJobDefinitionApi.offline(record.id);
 
     if (response?.code === 0) {
       message.success("下线成功");
@@ -132,7 +132,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
   };
 
   const doDeleteTask = async (id: string | number) => {
-    const response = await seatunnelJobDefinitionApi.delete(id);
+    const response = await linkupJobDefinitionApi.delete(id);
 
     if (response?.code === 0) {
       message.success(response?.msg || "删除成功");
@@ -222,7 +222,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
       return;
     }
 
-    const data = await seatunnelJobDefinitionApi.selectEditDetail(record.id);
+    const data = await linkupJobDefinitionApi.selectEditDetail(record.id);
 
     if (data?.code === 0) {
       goDetail(record.id, record);
@@ -364,7 +364,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
               try {
                 setRunLoading(true);
 
-                const data = await seatunnelJobExecuteApi.execute(record?.id);
+                const data = await linkupJobExecuteApi.execute(record?.id);
 
                 if (data?.code === 0) {
                   message.success(

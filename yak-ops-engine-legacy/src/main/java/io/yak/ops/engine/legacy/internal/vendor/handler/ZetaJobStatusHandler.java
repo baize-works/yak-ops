@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Resolve real SeaTunnel Zeta job status by REST API.
+ * Resolve real LinkUp Zeta job status by REST API.
  *
  * <p>
  * This resolver is mainly used by Yak Ops restart recovery.
@@ -37,7 +37,7 @@ public class ZetaJobStatusHandler {
     );
 
     @Resource
-    private LegacyRestClient seaTunnelRestClient;
+    private LegacyRestClient linkUpRestClient;
 
     public ZetaJobStatusResolveResult resolve(Long clientId, String engineJobId) {
         if (clientId == null || clientId <= 0) {
@@ -107,7 +107,7 @@ public class ZetaJobStatusHandler {
 
     private ZetaJobStatusResolveResult resolveFromRunningJobs(Long clientId,
                                                               String engineJobId) {
-        List runningJobs = seaTunnelRestClient.runningJobs(clientId);
+        List runningJobs = linkUpRestClient.runningJobs(clientId);
         if (runningJobs == null || runningJobs.isEmpty()) {
             return null;
         }
@@ -145,7 +145,7 @@ public class ZetaJobStatusHandler {
 
     private ZetaJobStatusResolveResult resolveFromJobInfo(Long clientId,
                                                           String engineJobId) {
-        Map jobInfo = seaTunnelRestClient.jobInfo(clientId, engineJobId);
+        Map jobInfo = linkUpRestClient.jobInfo(clientId, engineJobId);
         if (jobInfo == null || jobInfo.isEmpty()) {
             return null;
         }
@@ -200,7 +200,7 @@ public class ZetaJobStatusHandler {
         List finishedJobs;
 
         try {
-            finishedJobs = seaTunnelRestClient.finishedJobs(clientId, state);
+            finishedJobs = linkUpRestClient.finishedJobs(clientId, state);
         } catch (Exception e) {
             log.debug(
                     "Query Zeta finished-jobs failed, clientId={}, engineJobId={}, state={}",
