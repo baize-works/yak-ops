@@ -4,18 +4,37 @@ import io.yak.ops.plugin.spi.plugin.PrioritySPIFactory;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannel;
 import org.apache.seatunnel.plugin.alarm.api.AlarmChannelFactory;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-/** Discovers alarm factories and creates their channels outside the SPI artifact. */
+/**
+ * 发现告警通道工厂，并创建对应的告警通道。
+ */
 public final class AlarmChannelRegistry {
+
     private final Map<String, AlarmChannelFactory> factories;
     private final Map<String, AlarmChannel> channels;
 
     public AlarmChannelRegistry() {
-        factories = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(new PrioritySPIFactory<>(AlarmChannelFactory.class).getSPIMap()));
-        channels = factories.entrySet().stream().collect(Collectors.toUnmodifiableMap(
-                Map.Entry::getKey, entry -> entry.getValue().create()));
+        Map<String, AlarmChannelFactory> factoryMap =
+                new PrioritySPIFactory<>(AlarmChannelFactory.class)
+                        .getSPIMap();
+
+        this.factories = Collections.unmodifiableMap(
+                new LinkedHashMap<>(factoryMap));
+
+        Map<String, AlarmChannel> channelMap = new LinkedHashMap<>();
+
+        for (Map.Entry<String, AlarmChannelFactory> entry
+                : factories.entrySet()) {
+
+            channelMap.put(
+                    entry.getKey(),
+                    entry.getValue().create());
+        }
+
+        this.channels = Collections.unmodifiableMap(channelMap);
     }
 
     public Map<String, AlarmChannelFactory> factories() {
