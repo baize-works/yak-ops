@@ -22,6 +22,16 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <file_encoding>UTF-8</file_encoding>
     </properties>
+    <!--
+      Module migration matrix (old -> owner):
+      yak-ops-core          -> yak-ops-domain + yak-ops-application + yak-ops-infrastructure (never recreate)
+      yak-ops-api           -> yak-ops-web + yak-ops-web-contract (never recreate; application contracts are not HTTP APIs)
+      yak-ops-engine-client -> yak-ops-engine-api + yak-ops-engine-support + vendor adapters (never recreate)
+      yak-ops-engine-spi    -> yak-ops-engine-api
+      yak-ops-engine-runtime-> yak-ops-engine-support
+      yak-ops-spi           -> yak-ops-plugin-spi (compatibility facade removed)
+      yak-ops-application-support -> application logic in yak-ops-application; vendor/config adapters in adapters
+    -->
     <modules>
         <module>yak-ops-domain</module>
         <module>yak-ops-application</module>
@@ -38,10 +48,8 @@
         <module>yak-ops-bom</module>
         <module>yak-ops-plugin-spi</module>
         <module>yak-ops-web-contract</module>
-        <module>yak-ops-spi</module>
-        <module>yak-ops-application-support</module>
-        <module>yak-ops-engine-runtime</module>
-        <module>yak-ops-engine-spi</module>
+        <module>yak-ops-engine-support</module>
+        <module>yak-ops-engine-api</module>
         <module>yak-ops-engine-seatunnel</module>
         <module>yak-ops-engine-all</module>
         <module>yak-ops-dist</module>
@@ -107,11 +115,6 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-spi</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.baize.flow</groupId>
                 <artifactId>yak-ops-web</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -122,7 +125,7 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-engine-runtime</artifactId>
+                <artifactId>yak-ops-engine-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -137,17 +140,12 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-engine-spi</artifactId>
+                <artifactId>yak-ops-engine-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
                 <artifactId>yak-ops-datasource-connection</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-application-support</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -274,6 +272,18 @@
                             <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
                             <arguments>
                                 <argument>tools/architecture_check.py</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-aggregate-module-boundaries</id>
+                        <phase>validate</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>${maven.multiModuleProjectDirectory}/tools/verify-module-boundaries.sh</argument>
+                                <argument>${maven.multiModuleProjectDirectory}</argument>
                             </arguments>
                         </configuration>
                     </execution>

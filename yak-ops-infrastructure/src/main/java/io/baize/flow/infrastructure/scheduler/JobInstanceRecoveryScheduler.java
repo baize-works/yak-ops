@@ -2,7 +2,7 @@ package io.baize.flow.infrastructure.scheduler;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import io.baize.flow.api.service.application.job.SynchronizeJobStatusUseCase;
+import io.baize.flow.application.service.application.job.SynchronizeJobStatusUseCase;
 import io.baize.flow.dao.entity.JobInstance;
 import io.baize.flow.dao.repository.JobInstanceDao;
 import org.springframework.beans.factory.annotation.Value;

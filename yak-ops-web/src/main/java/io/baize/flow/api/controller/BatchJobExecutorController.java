@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.baize.flow.api.exceptions.ApiException;
-import io.baize.flow.api.service.BatchJobExecutorService;
+import io.baize.flow.application.service.BatchJobExecutorService;
 import io.baize.flow.domain.enums.RunMode;
 import io.baize.flow.web.contract.dto.command.BatchJobDefinitionOperateCommand;
 import io.baize.flow.web.contract.response.Result;

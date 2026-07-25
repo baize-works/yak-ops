@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import io.baize.flow.api.exceptions.ApiException;
-import io.baize.flow.api.service.ConnectorParamMetaService;
+import io.baize.flow.application.service.ConnectorParamMetaService;
 import io.baize.flow.web.contract.dto.ConnectorParamMetaCreateDTO;
 import io.baize.flow.web.contract.dto.ConnectorParamMetaQueryDTO;
 import io.baize.flow.web.contract.dto.ConnectorParamMetaUpdateDTO;

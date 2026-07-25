@@ -1,6 +1,6 @@
 package io.baize.flow.infrastructure.persistence.legacy;
 
-import io.baize.flow.api.port.EngineEndpointRepository;
+import io.baize.flow.application.port.EngineEndpointRepository;
 import io.baize.flow.dao.entity.SeaTunnelClient;
 import io.baize.flow.dao.repository.SeaTunnelClientDao;
 import io.baize.flow.engine.api.EngineConnectionConfig;

@@ -1,11 +1,11 @@
 package io.baize.flow.infrastructure.security.impl;
 
 import jakarta.annotation.Resource;
-import io.baize.flow.api.security.Authenticator;
-import io.baize.flow.api.security.SecurityConfiguration;
-import io.baize.flow.api.model.User;
-import io.baize.flow.api.service.SessionService;
-import io.baize.flow.api.service.UsersService;
+import io.baize.flow.application.security.Authenticator;
+import io.baize.flow.application.security.SecurityConfiguration;
+import io.baize.flow.application.model.User;
+import io.baize.flow.application.service.SessionService;
+import io.baize.flow.application.service.UsersService;
 import io.baize.flow.common.constants.Constants;
 import io.baize.flow.common.enums.Flag;
 import org.slf4j.Logger;

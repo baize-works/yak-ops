@@ -1,8 +1,8 @@
 package io.baize.flow.infrastructure.persistence;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import io.baize.flow.api.model.User;
-import io.baize.flow.api.port.UserRepository;
+import io.baize.flow.application.model.User;
+import io.baize.flow.application.port.UserRepository;
 import io.baize.flow.dao.mapper.UserMapper;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
