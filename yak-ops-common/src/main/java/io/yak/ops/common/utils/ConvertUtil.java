@@ -2,7 +2,6 @@ package io.yak.ops.common.utils;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +46,7 @@ public class ConvertUtil {
     }
 
 
-    private static void copyProperties(Object source, Object target) throws ReflectiveOperationException {
+    private static void copyProperties(Object source, Object target) throws Exception {
         for (java.beans.PropertyDescriptor descriptor : java.beans.Introspector.getBeanInfo(source.getClass()).getPropertyDescriptors()) {
             if (descriptor.getReadMethod() == null) continue;
             try {
