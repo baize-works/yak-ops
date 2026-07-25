@@ -2,10 +2,12 @@ package io.yak.ops.boot;
 
 import io.yak.ops.dao.DaoConfiguration;
 import org.apache.seatunnel.plugin.datasource.api.plugin.DataSourceProcessorProvider;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
 
@@ -25,12 +27,11 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class YakOpsApplication {
 
     public static void main(String[] args) {
-        try {
-            SpringApplication sa = new SpringApplication(YakOpsApplication.class);
-            sa.run(args);
-            DataSourceProcessorProvider.initialize();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        SpringApplication.run(YakOpsApplication.class, args);
+    }
+
+    @Bean
+    public ApplicationRunner dataSourceProcessorInitializer() {
+        return args -> DataSourceProcessorProvider.initialize();
     }
 }
