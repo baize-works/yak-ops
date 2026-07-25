@@ -6,8 +6,6 @@ import io.yak.ops.common.thread.ThreadLocalContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -202,8 +200,8 @@ public final class DateUtils {
         return null;
     }
 
-    public static ZonedDateTime parseZoneDateTime(@Nonnull String date, @Nonnull DateTimeFormatter dateTimeFormatter,
-                                                  @Nullable String timezone) {
+    public static ZonedDateTime parseZoneDateTime(String date, DateTimeFormatter dateTimeFormatter,
+                                                  String timezone) {
         ZonedDateTime zonedDateTime = ZonedDateTime.parse(date, dateTimeFormatter);
         if (StringUtils.isNotEmpty(timezone)) {
             return zonedDateTime.withZoneSameInstant(ZoneId.of(timezone));
@@ -217,11 +215,11 @@ public final class DateUtils {
      * @param date date string
      * @return yyyy-MM-dd HH:mm:ss format
      */
-    public static @Nullable Date stringToDate(String date) {
+    public static Date stringToDate(String date) {
         return parse(date, YYYY_MM_DD_HH_MM_SS, null);
     }
 
-    public static ZonedDateTime stringToZoneDateTime(@Nonnull String date) {
+    public static ZonedDateTime stringToZoneDateTime(String date) {
         Date d = stringToDate(date);
         if (d == null) {
             throw new IllegalArgumentException(String.format(
@@ -634,7 +632,7 @@ public final class DateUtils {
      * @param timeStamp time stamp (milliseconds)
      * @return local date
      */
-    public static @Nullable Date timeStampToDate(long timeStamp) {
+    public static Date timeStampToDate(long timeStamp) {
         return timeStamp <= 0L ? null : new Date(timeStamp);
     }
 

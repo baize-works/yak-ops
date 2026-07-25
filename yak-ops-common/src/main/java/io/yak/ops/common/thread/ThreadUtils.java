@@ -1,6 +1,5 @@
 package io.yak.ops.common.thread;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @UtilityClass
 public class ThreadUtils {
@@ -22,7 +22,15 @@ public class ThreadUtils {
      * @return ExecutorService
      */
     public static ExecutorService newDaemonFixedThreadExecutor(String threadName, int threadsNum) {
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat(threadName).build();
+        final String threadNamePrefix =
+                threadName == null || threadName.trim().isEmpty() ? "yak-ops-worker" : threadName;
+        final AtomicInteger threadNumber = new AtomicInteger(1);
+        ThreadFactory threadFactory = runnable -> {
+            Thread thread = new Thread(
+                    runnable, threadNamePrefix + "-" + threadNumber.getAndIncrement());
+            thread.setDaemon(true);
+            return thread;
+        };
         return Executors.newFixedThreadPool(threadsNum, threadFactory);
     }
 

@@ -97,8 +97,7 @@ public final class JSONUtils {
      * @return an object of type T from the string
      * classOfT
      */
-    public static @Nullable
-    <T> T parseObject(String json, Class<T> clazz) {
+    public static <T> T parseObject(String json, Class<T> clazz) {
         if (clazz == null) {
             throw new IllegalArgumentException("Class type cannot be null");
         }
