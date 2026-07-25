@@ -51,7 +51,7 @@
         <module>yak-ops-engine-support</module>
         <module>yak-ops-engine-contract</module>
         <module>yak-ops-engine-contract-testkit</module>
-        <module>yak-ops-engine-seatunnel</module>
+        <module>yak-ops-engine-legacy</module>
         <module>yak-ops-engine-all</module>
         <module>yak-ops-dist</module>
     </modules>
@@ -81,7 +81,7 @@
             </dependency>
             <dependency>
                 <groupId>io.baize.flow</groupId>
-                <artifactId>yak-ops-engine-seatunnel</artifactId>
+                <artifactId>yak-ops-engine-legacy</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

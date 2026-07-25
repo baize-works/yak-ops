@@ -19,8 +19,8 @@ import io.baize.flow.dao.entity.SeaTunnelClientNode;
 import io.baize.flow.dao.repository.JobDefinitionDao;
 import io.baize.flow.dao.repository.SeaTunnelClientDao;
 import io.baize.flow.dao.repository.SeaTunnelClientNodeDao;
-import io.baize.flow.engine.seatunnel.model.SeaTunnelClientAuth;
-import io.baize.flow.engine.seatunnel.rest.SeaTunnelRestClient;
+import io.baize.flow.engine.legacy.LegacyClientAuthentication;
+import io.baize.flow.engine.legacy.LegacyRestClient;
 import io.baize.flow.web.contract.dto.SeaTunnelClientDTO;
 import io.baize.flow.web.contract.dto.SeaTunnelClientEndpointDTO;
 import io.baize.flow.plugin.spi.enums.Status;
@@ -55,7 +55,7 @@ public class SeaTunnelClientLifecycleAppService {
     private SeaTunnelClientNodeDao seaTunnelClientNodeDao;
 
     @Resource
-    private SeaTunnelRestClient seaTunnelRestClient;
+    private LegacyRestClient seaTunnelRestClient;
 
     @Resource
     private SeaTunnelClientTopologyBuilder topologyBuilder;
@@ -644,8 +644,8 @@ public class SeaTunnelClientLifecycleAppService {
     /**
      * Builds authentication information used when calling SeaTunnel REST API.
      */
-    private SeaTunnelClientAuth buildAuth(SeaTunnelClient entity) {
-        SeaTunnelClientAuth auth = new SeaTunnelClientAuth();
+    private LegacyClientAuthentication buildAuth(SeaTunnelClient entity) {
+        LegacyClientAuthentication auth = new LegacyClientAuthentication();
 
         if (entity == null) {
             return auth;
