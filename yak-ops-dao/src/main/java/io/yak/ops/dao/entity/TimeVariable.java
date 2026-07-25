@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("t_baize_flow_time_variable")
+@TableName("t_yak_ops_time_variable")
 public class TimeVariable extends BaseEntity{
 
     @TableId(type = IdType.ASSIGN_ID)

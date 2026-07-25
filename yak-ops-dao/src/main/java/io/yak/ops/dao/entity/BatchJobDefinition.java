@@ -14,7 +14,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@TableName("t_baize_flow_job_definition")
+@TableName("t_yak_ops_job_definition")
 public class BatchJobDefinition {
 
     @TableId(type = IdType.INPUT)

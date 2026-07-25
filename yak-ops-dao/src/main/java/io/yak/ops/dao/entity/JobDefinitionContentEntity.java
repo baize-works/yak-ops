@@ -13,7 +13,7 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("t_baize_flow_job_definition_content")
+@TableName("t_yak_ops_job_definition_content")
 public class JobDefinitionContentEntity {
 
     private Long id;

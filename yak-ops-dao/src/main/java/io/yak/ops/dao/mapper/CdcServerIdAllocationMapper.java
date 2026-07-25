@@ -10,12 +10,12 @@ import java.util.List;
 
 public interface CdcServerIdAllocationMapper extends BaseMapper<CdcServerIdAllocation> {
 
-    @Update("UPDATE t_baize_flow_cdc_server_id_allocation SET active = NULL, released_time = NOW(), update_time = NOW() WHERE job_definition_id = #{jobDefinitionId} AND active = 1")
+    @Update("UPDATE t_yak_ops_cdc_server_id_allocation SET active = NULL, released_time = NOW(), update_time = NOW() WHERE job_definition_id = #{jobDefinitionId} AND active = 1")
     int releaseActiveByJobDefinitionId(Long jobDefinitionId);
 
     @Select({
             "<script>",
-            "SELECT server_id FROM t_baize_flow_cdc_server_id_allocation",
+            "SELECT server_id FROM t_yak_ops_cdc_server_id_allocation",
             "WHERE pool_id = #{poolId} AND active = 1",
             "<if test='serverIds != null and serverIds.size() > 0'>",
             "AND server_id IN",
@@ -27,6 +27,6 @@ public interface CdcServerIdAllocationMapper extends BaseMapper<CdcServerIdAlloc
     List<Long> selectActiveServerIdsForUpdate(@Param("poolId") Long poolId,
                                               @Param("serverIds") List<Long> serverIds);
 
-    @Select("SELECT server_id FROM t_baize_flow_cdc_server_id_allocation WHERE pool_id = #{poolId} AND active = 1 FOR UPDATE")
+    @Select("SELECT server_id FROM t_yak_ops_cdc_server_id_allocation WHERE pool_id = #{poolId} AND active = 1 FOR UPDATE")
     List<Long> selectActiveServerIdsByPoolForUpdate(Long poolId);
 }

@@ -9,7 +9,7 @@ import java.util.Date;
 /**
  * session
  */
-@TableName("t_baize_flow_session")
+@TableName("t_yak_ops_session")
 public class Session {
 
     /**

@@ -240,7 +240,7 @@ cp .env.without-mysql.example .env.without-mysql
 ```env
 MYSQL_HOST=host.docker.internal
 MYSQL_PORT=3306
-MYSQL_DATABASE=baize_flow
+MYSQL_DATABASE=yak_ops
 MYSQL_USER=seatunnel
 MYSQL_PASSWORD=change_me
 ```
@@ -257,7 +257,7 @@ MySQL 用户必须允许来自 Docker 宿主机的连接，建议创建独立数
 
 ```sql
 CREATE USER IF NOT EXISTS 'seatunnel'@'%' IDENTIFIED BY 'change_me';
-GRANT ALL PRIVILEGES ON baize_flow.* TO 'seatunnel'@'%';
+GRANT ALL PRIVILEGES ON yak_ops.* TO 'seatunnel'@'%';
 FLUSH PRIVILEGES;
 ```
 

@@ -11,7 +11,7 @@ import io.yak.ops.common.enums.ReleaseState;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@TableName("t_baize_flow_job_definition")
+@TableName("t_yak_ops_job_definition")
 public class JobDefinitionEntity extends BaseEntity {
 
     private String jobName;

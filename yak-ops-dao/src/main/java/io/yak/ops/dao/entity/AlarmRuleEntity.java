@@ -18,7 +18,7 @@ import lombok.EqualsAndHashCode;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@TableName("t_baize_flow_alarm_rule")
+@TableName("t_yak_ops_alarm_rule")
 public class AlarmRuleEntity extends BaseEntity {
 
     private String name;

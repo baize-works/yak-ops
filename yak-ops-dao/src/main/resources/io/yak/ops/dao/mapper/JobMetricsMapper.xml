@@ -19,7 +19,7 @@
                  SELECT job_instance_id,
                         SUM(write_row_count) AS inc_records,
                         SUM(write_bytes) AS inc_bytes
-                 FROM t_baize_flow_job_metrics
+                 FROM t_yak_ops_job_metrics
                  WHERE update_time &gt;= #{startTime}
                    AND update_time &lt;= #{endTime}
                  GROUP BY job_instance_id
@@ -36,7 +36,7 @@
         AS bucket,
         job_instance_id,
         SUM(read_row_count) AS inc_records
-        FROM t_baize_flow_job_metrics
+        FROM t_yak_ops_job_metrics
         WHERE update_time &gt;= #{startTime}
         AND update_time &lt;= #{endTime}
         GROUP BY bucket, job_instance_id
@@ -55,7 +55,7 @@
         AS bucket,
         job_instance_id,
         SUM(read_bytes) AS inc_bytes
-        FROM t_baize_flow_job_metrics
+        FROM t_yak_ops_job_metrics
         WHERE update_time &gt;= #{startTime}
         AND update_time &lt;= #{endTime}
         GROUP BY bucket, job_instance_id
@@ -69,7 +69,7 @@
         <include refid="BucketExpr"/>
         AS date,
         CAST(AVG(write_qps) AS SIGNED) AS value
-        FROM t_baize_flow_job_metrics
+        FROM t_yak_ops_job_metrics
         WHERE update_time &gt;= #{startTime}
         AND update_time &lt;= #{endTime}
         GROUP BY date
@@ -81,7 +81,7 @@
         <include refid="BucketExpr"/>
         AS date,
         CAST(AVG(write_bps) AS SIGNED) AS value
-        FROM t_baize_flow_job_metrics
+        FROM t_yak_ops_job_metrics
         WHERE update_time &gt;= #{startTime}
         AND update_time &lt;= #{endTime}
         GROUP BY date

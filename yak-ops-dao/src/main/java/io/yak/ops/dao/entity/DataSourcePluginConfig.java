@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 import io.yak.ops.plugin.spi.enums.DbType;
 
 @Data
-@TableName("t_baize_flow_datasource_plugin_config")
+@TableName("t_yak_ops_datasource_plugin_config")
 @EqualsAndHashCode(callSuper = true)
 public class DataSourcePluginConfig extends BaseEntity {
 

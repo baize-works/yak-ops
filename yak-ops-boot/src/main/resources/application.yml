@@ -34,7 +34,7 @@ spring:
   flyway:
     enabled: ${SPRING_FLYWAY_ENABLED:true}
     locations: classpath:db/migration/{vendor}
-    table: t_baize_flow_schema_history
+    table: t_yak_ops_schema_history
     validate-on-migrate: true
     out-of-order: false
     clean-disabled: true

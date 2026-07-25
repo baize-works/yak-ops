@@ -12,7 +12,7 @@ import java.util.Date;
  * SeaTunnel table level metrics.
  */
 @Data
-@TableName("t_baize_flow_job_table_metrics")
+@TableName("t_yak_ops_job_table_metrics")
 public class JobTableMetrics {
 
     @TableId(value = "id", type = IdType.INPUT)

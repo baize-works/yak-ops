@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("t_baize_flow_client")
+@TableName("t_yak_ops_client")
 public class SeaTunnelClient {
 
     private Long id;

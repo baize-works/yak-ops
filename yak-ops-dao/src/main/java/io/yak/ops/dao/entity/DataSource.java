@@ -10,7 +10,7 @@ import io.yak.ops.plugin.spi.enums.DbType;
 
 
 @Data
-@TableName("t_baize_flow_datasource")
+@TableName("t_yak_ops_datasource")
 @EqualsAndHashCode(callSuper = true)
 public class DataSource extends BaseEntity {
 

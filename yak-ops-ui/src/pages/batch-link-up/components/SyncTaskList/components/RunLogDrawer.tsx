@@ -24,7 +24,7 @@ interface RunLogDrawerProps {
 
   /**
    * 任务实例 ID。
-   * 离线任务：t_baize_flow_job_instance.id
+   * 离线任务：t_yak_ops_job_instance.id
    */
   instanceId?: string | number;
 

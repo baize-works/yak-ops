@@ -20,9 +20,9 @@ services:
       YAK_OPS_DATABASE_TYPE: mysql
       YAK_OPS_DATABASE_HOST: ${MYSQL_HOST:-host.docker.internal}
       YAK_OPS_DATABASE_PORT: ${MYSQL_PORT:-3306}
-      YAK_OPS_DATABASE_NAME: ${MYSQL_DATABASE:-baize_flow}
+      YAK_OPS_DATABASE_NAME: ${MYSQL_DATABASE:-yak_ops}
 
-      SPRING_DATASOURCE_URL: "jdbc:mysql://${MYSQL_HOST:-host.docker.internal}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-baize_flow}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${MYSQL_HOST:-host.docker.internal}:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-yak_ops}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true"
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:?set MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
 

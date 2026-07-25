@@ -2,7 +2,7 @@
 -- Generated content: JDBC Source + JDBC Sink
 -- Note: Parameter names follow the SeaTunnel configuration options provided by the user, such as fetch_size and split.size.
 
-ALTER TABLE `t_baize_flow_connector_param_meta`
+ALTER TABLE `t_yak_ops_connector_param_meta`
 DROP INDEX `uk_connector_param`,
   ADD UNIQUE KEY `uk_connector_param`
   (`type`, `connector_name`, `connector_type`, `param_name`, `deleted`);
@@ -10,7 +10,7 @@ DROP INDEX `uk_connector_param`,
 START TRANSACTION;
 
 -- ==================== Jdbc Source：31 个参数 ====================
-INSERT INTO `t_baize_flow_connector_param_meta`
+INSERT INTO `t_yak_ops_connector_param_meta`
 (`type`, `connector_name`, `connector_type`, `param_name`, `param_desc`,
  `param_type`, `required_flag`, `default_value`, `example_value`, `param_context`,
  `remark`, `deleted`)
@@ -51,7 +51,7 @@ ON DUPLICATE KEY UPDATE
                          `update_time` = CURRENT_TIMESTAMP;
 
 -- ==================== Jdbc Sink：31 个参数 ====================
-INSERT INTO `t_baize_flow_connector_param_meta`
+INSERT INTO `t_yak_ops_connector_param_meta`
 (`type`, `connector_name`, `connector_type`, `param_name`, `param_desc`,
  `param_type`, `required_flag`, `default_value`, `example_value`, `param_context`,
  `remark`, `deleted`)
