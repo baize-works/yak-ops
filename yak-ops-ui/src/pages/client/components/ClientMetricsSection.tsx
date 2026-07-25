@@ -1,10 +1,5 @@
 import React, {useMemo} from "react";
-import {
-  ClockCircleOutlined,
-  CloudServerOutlined,
-  HddOutlined,
-  RadarChartOutlined,
-} from "@ant-design/icons";
+import {ClockCircleOutlined, CloudServerOutlined, HddOutlined, RadarChartOutlined,} from "@ant-design/icons";
 import {Progress} from "antd";
 import {formatPercent, formatText, getSafeNumber} from "../utils";
 

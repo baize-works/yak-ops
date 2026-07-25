@@ -1,4 +1,4 @@
-const SQLServer = ({ height = '24', width = '24' }) => {
+const SQLServer = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1762145473195"

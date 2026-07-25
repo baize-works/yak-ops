@@ -1,5 +1,5 @@
-import { Database, GitCompareArrows, MoveRight, Table2 } from "lucide-react";
-import React, { useMemo } from "react";
+import {Database, GitCompareArrows, MoveRight, Table2} from "lucide-react";
+import React, {useMemo} from "react";
 import TableColumnsPopover from "../components/TableColumnsPopover";
 
 interface TableTabProps {
@@ -58,9 +58,10 @@ const parseTableList = (tableValue?: string): TableItem[] => {
   }
 };
 
-const EmptyTableState: React.FC<{ text: string }> = ({ text }) => {
+const EmptyTableState: React.FC<{ text: string }> = ({text}) => {
   return (
-    <div className="flex h-[92px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 text-xs text-slate-400">
+    <div
+      className="flex h-[92px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 text-xs text-slate-400">
       {text}
     </div>
   );
@@ -70,7 +71,7 @@ const TableNode: React.FC<{
   item: TableItem;
   type: "source" | "sink";
   instanceItem: any;
-}> = ({ item, type, instanceItem }) => {
+}> = ({item, type, instanceItem}) => {
   const isSource = type === "source";
   const datasourceId =
     item.sourceId ||
@@ -98,7 +99,7 @@ const TableNode: React.FC<{
               : "border-emerald-100 bg-emerald-50 text-emerald-600",
           ].join(" ")}
         >
-          <Table2 size={15} strokeWidth={1.9} />
+          <Table2 size={15} strokeWidth={1.9}/>
         </span>
 
         <span className="min-w-0 flex-1">
@@ -122,7 +123,7 @@ const TableGroup: React.FC<{
   emptyText: string;
   type: "source" | "sink";
   instanceItem: any;
-}> = ({ title, typeLabel, dbType, items, emptyText, type, instanceItem }) => {
+}> = ({title, typeLabel, dbType, items, emptyText, type, instanceItem}) => {
   const isSource = type === "source";
 
   return (
@@ -137,7 +138,7 @@ const TableGroup: React.FC<{
                 : "border-emerald-100 bg-emerald-50 text-emerald-600",
             ].join(" ")}
           >
-            <Database size={16} strokeWidth={1.9} />
+            <Database size={16} strokeWidth={1.9}/>
           </div>
 
           <div className="min-w-0">
@@ -164,14 +165,14 @@ const TableGroup: React.FC<{
             />
           ))
         ) : (
-          <EmptyTableState text={emptyText} />
+          <EmptyTableState text={emptyText}/>
         )}
       </div>
     </div>
   );
 };
 
-const TableTab: React.FC<TableTabProps> = ({ instanceItem }) => {
+const TableTab: React.FC<TableTabProps> = ({instanceItem}) => {
   const sourceTableList = useMemo(
     () => parseTableList(instanceItem?.sourceTable),
     [instanceItem?.sourceTable]
@@ -186,8 +187,9 @@ const TableTab: React.FC<TableTabProps> = ({ instanceItem }) => {
     <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
-            <GitCompareArrows size={16} strokeWidth={1.9} />
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
+            <GitCompareArrows size={16} strokeWidth={1.9}/>
           </div>
 
           <div className="min-w-0">
@@ -213,8 +215,9 @@ const TableTab: React.FC<TableTabProps> = ({ instanceItem }) => {
         />
 
         <div className="hidden h-full items-center justify-center xl:flex">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm">
-            <MoveRight size={18} strokeWidth={1.8} />
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm">
+            <MoveRight size={18} strokeWidth={1.8}/>
           </div>
         </div>
 

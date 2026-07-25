@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BaseEdge, type EdgeProps, getBezierPath } from 'reactflow';
+import React, {useState} from 'react';
+import {BaseEdge, type EdgeProps, getBezierPath} from 'reactflow';
 
 const DEFAULT_EDGE_COLOR = '#d0d5dc';
 const ACTIVE_EDGE_COLOR = '#315EFB';
@@ -22,18 +22,18 @@ interface CustomEdgeData {
 }
 
 const CustomEdge: React.FC<EdgeProps> = ({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  data,
-  markerEnd,
-  selected,
-}) => {
+                                           id,
+                                           sourceX,
+                                           sourceY,
+                                           targetX,
+                                           targetY,
+                                           sourcePosition,
+                                           targetPosition,
+                                           style = {},
+                                           data,
+                                           markerEnd,
+                                           selected,
+                                         }) => {
   const [hovered, setHovered] = useState(false);
   const [insertButtonHovered, setInsertButtonHovered] = useState(false);
   const edgeData = data as CustomEdgeData | undefined;
@@ -66,7 +66,7 @@ const CustomEdge: React.FC<EdgeProps> = ({
     const buttonRect = event.currentTarget.getBoundingClientRect();
 
     edgeData?.onOpenInsertMenu?.(id, {
-      flowPosition: { x: labelX, y: labelY },
+      flowPosition: {x: labelX, y: labelY},
       screenPosition: {
         x: buttonRect.left + buttonRect.width / 2,
         y: buttonRect.top + buttonRect.height / 2,
@@ -88,7 +88,7 @@ const CustomEdge: React.FC<EdgeProps> = ({
         event.stopPropagation();
         edgeData?.onEdgeClick?.(id);
       }}
-      style={{ cursor: 'pointer' }}
+      style={{cursor: 'pointer'}}
     >
       <path
         d={edgePath}

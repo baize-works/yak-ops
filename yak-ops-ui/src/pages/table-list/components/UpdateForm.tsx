@@ -6,10 +6,10 @@ import {
   ProFormTextArea,
   StepsForm,
 } from '@ant-design/pro-components';
-import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
-import { Modal, message } from 'antd';
-import React, { cloneElement, useCallback, useState } from 'react';
-import { updateRule } from '@/services/ant-design-pro/api';
+import {FormattedMessage, useIntl, useRequest} from '@umijs/max';
+import {message, Modal} from 'antd';
+import React, {cloneElement, useCallback, useState} from 'react';
+import {updateRule} from '@/services/ant-design-pro/api';
 
 export type FormValueType = {
   target?: string;
@@ -26,7 +26,7 @@ export type UpdateFormProps = {
 };
 
 const UpdateForm: React.FC<UpdateFormProps> = (props) => {
-  const { onOk, values, trigger } = props;
+  const {onOk, values, trigger} = props;
 
   const intl = useIntl();
 
@@ -34,7 +34,7 @@ const UpdateForm: React.FC<UpdateFormProps> = (props) => {
 
   const [messageApi, contextHolder] = message.useMessage();
 
-  const { run } = useRequest(updateRule, {
+  const {run} = useRequest(updateRule, {
     manual: true,
     onSuccess: () => {
       messageApi.success('Configuration is successful');
@@ -55,7 +55,7 @@ const UpdateForm: React.FC<UpdateFormProps> = (props) => {
 
   const onFinish = useCallback(
     async (values?: any) => {
-      await run({ data: values });
+      await run({data: values});
 
       onCancel();
     },
@@ -67,8 +67,8 @@ const UpdateForm: React.FC<UpdateFormProps> = (props) => {
       {contextHolder}
       {trigger
         ? cloneElement(trigger, {
-            onClick: onOpen,
-          })
+          onClick: onOpen,
+        })
         : null}
       <StepsForm
         stepsProps={{
@@ -78,7 +78,7 @@ const UpdateForm: React.FC<UpdateFormProps> = (props) => {
           return (
             <Modal
               width={640}
-              bodyStyle={{ padding: '32px 40px 48px' }}
+              bodyStyle={{padding: '32px 40px 48px'}}
               destroyOnClose
               title={intl.formatMessage({
                 id: 'pages.searchTable.updateForm.ruleConfig',

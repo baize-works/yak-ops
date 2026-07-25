@@ -1,4 +1,4 @@
-const SQLite = ({ height = '24', width = '24' }) => {
+const SQLite = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1762144301260"

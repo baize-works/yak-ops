@@ -1,21 +1,16 @@
-import { message, Select, Spin } from "antd";
-import { motion } from "framer-motion";
-import {
-  BarChart3,
-  Clock3,
-  Database,
-  Target,
-} from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchChartData, fetchSummaryData } from "./api";
+import {Select, Spin} from "antd";
+import {motion} from "framer-motion";
+import {BarChart3, Clock3, Database, Target,} from "lucide-react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import {fetchChartData, fetchSummaryData} from "./api";
 import BarChart from "./BarChart";
 import "./index.less";
 import LineChart from "./LineChart";
-import { ChartData, SummaryData, TaskType, TimeRange } from "./types";
-import { transformChartData } from "./utils";
+import {ChartData, SummaryData, TaskType, TimeRange} from "./types";
+import {transformChartData} from "./utils";
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
+  hidden: {opacity: 0, y: 18},
   visible: {
     opacity: 1,
     y: 0,
@@ -47,10 +42,10 @@ const cardStagger = {
 
 const App: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData>({
-    recordsTrend: { data: [], xAxis: [] },
-    bytesTrend: { data: [], xAxis: [] },
-    recordsSpeedTrend: { data: [], xAxis: [] },
-    bytesSpeedTrend: { data: [], xAxis: [] },
+    recordsTrend: {data: [], xAxis: []},
+    bytesTrend: {data: [], xAxis: []},
+    recordsSpeedTrend: {data: [], xAxis: []},
+    bytesSpeedTrend: {data: [], xAxis: []},
   });
 
   const [loading, setLoading] = useState(false);
@@ -97,7 +92,7 @@ const App: React.FC = () => {
       await Promise.all([refreshSummaryData(), refreshChartData()]);
       setPageReady(true);
     } catch (error: any) {
-      
+
     } finally {
       setLoading(false);
     }
@@ -121,7 +116,7 @@ const App: React.FC = () => {
       subText: `单位：${summaryData.totalRecordsUnit || "-"}`,
       iconBg: "bg-blue-500/10",
       iconColor: "text-blue-500",
-      icon: <BarChart3 size={18} strokeWidth={2} />,
+      icon: <BarChart3 size={18} strokeWidth={2}/>,
     },
     {
       title: "同步数据量",
@@ -129,7 +124,7 @@ const App: React.FC = () => {
       subText: `单位：${summaryData.totalBytesUnit || "-"}`,
       iconBg: "bg-emerald-500/10",
       iconColor: "text-emerald-500",
-      icon: <Database size={18} strokeWidth={2} />,
+      icon: <Database size={18} strokeWidth={2}/>,
     },
     {
       title: "执行任务数",
@@ -137,7 +132,7 @@ const App: React.FC = () => {
       subText: "单位：次",
       iconBg: "bg-amber-500/10",
       iconColor: "text-amber-500",
-      icon: <Clock3 size={18} strokeWidth={2} />,
+      icon: <Clock3 size={18} strokeWidth={2}/>,
     },
     {
       title: "成功率",
@@ -145,7 +140,7 @@ const App: React.FC = () => {
       subText: `成功任务 ${summaryData.successTasks || 0} 个`,
       iconBg: "bg-violet-500/10",
       iconColor: "text-violet-500",
-      icon: <Target size={18} strokeWidth={2} />,
+      icon: <Target size={18} strokeWidth={2}/>,
     },
   ];
 
@@ -201,12 +196,12 @@ const App: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       className="h-7 w-7"
-                      style={{ color: "hsl(231 48% 48%)" }}
+                      style={{color: "hsl(231 48% 48%)"}}
                     >
-                      <path d="M3 3v16a2 2 0 0 0 2 2h16" />
-                      <path d="M18 17V9" />
-                      <path d="M13 17V5" />
-                      <path d="M8 17v-3" />
+                      <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
+                      <path d="M18 17V9"/>
+                      <path d="M13 17V5"/>
+                      <path d="M8 17v-3"/>
                     </svg>
                     任务洞察
                   </h1>
@@ -219,14 +214,14 @@ const App: React.FC = () => {
                   <Select
                     value={timeRange}
                     onChange={(value) => setTimeRange(value)}
-                    style={{ width: 140 }}
+                    style={{width: 140}}
                     options={[
-                      { label: "近 1 小时", value: "H1" },
-                      { label: "近 6 小时", value: "H6" },
-                      { label: "近 12 小时", value: "H12" },
-                      { label: "近 24 小时", value: "H24" },
-                      { label: "近 7 天", value: "D7" },
-                      { label: "近 30 天", value: "D30" },
+                      {label: "近 1 小时", value: "H1"},
+                      {label: "近 6 小时", value: "H6"},
+                      {label: "近 12 小时", value: "H12"},
+                      {label: "近 24 小时", value: "H24"},
+                      {label: "近 7 天", value: "D7"},
+                      {label: "近 30 天", value: "D30"},
                     ]}
                   />
                 </div>
@@ -244,7 +239,7 @@ const App: React.FC = () => {
                       <motion.div
                         key={item.title}
                         variants={fadeUp}
-                        whileHover={{ y: -4, transition: { duration: 0.18 } }}
+                        whileHover={{y: -4, transition: {duration: 0.18}}}
                         className="rounded-3xl border border-border/50 bg-white shadow-sm"
                       >
                         <div className="p-4 pt-6 md:p-6 md:pt-6">
@@ -375,10 +370,10 @@ const App: React.FC = () => {
 const ChartCard: React.FC<{
   title: string;
   children: React.ReactNode;
-}> = ({ title, children }) => {
+}> = ({title, children}) => {
   return (
     <motion.div
-      whileHover={{ y: -2, transition: { duration: 0.18 } }}
+      whileHover={{y: -2, transition: {duration: 0.18}}}
       className="rounded-3xl border border-border/50 bg-white shadow-sm"
     >
       <div className="flex flex-col space-y-1.5 p-4 md:p-6">

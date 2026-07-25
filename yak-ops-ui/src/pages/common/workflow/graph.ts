@@ -1,4 +1,4 @@
-import type { Edge, Node, XYPosition } from 'reactflow';
+import type {Edge, Node, XYPosition} from 'reactflow';
 
 export interface TransformNodeConfig {
   position: XYPosition;
@@ -9,11 +9,11 @@ export interface TransformNodeConfig {
 }
 
 const createTransformData = ({
-  nodeType = 'transform',
-  label,
-  componentType,
-  iconType,
-}: Omit<TransformNodeConfig, 'position'>) => {
+                               nodeType = 'transform',
+                               label,
+                               componentType,
+                               iconType,
+                             }: Omit<TransformNodeConfig, 'position'>) => {
   if (componentType === 'FIELDMAPPER') {
     return {
       label,
@@ -71,12 +71,12 @@ const createTransformData = ({
 };
 
 export const createTransformNode = ({
-  position,
-  nodeType = 'transform',
-  label,
-  componentType,
-  iconType,
-}: TransformNodeConfig): Node => {
+                                      position,
+                                      nodeType = 'transform',
+                                      label,
+                                      componentType,
+                                      iconType,
+                                    }: TransformNodeConfig): Node => {
   const id = `${nodeType}-${Date.now()}-${Math.random()
     .toString(36)
     .slice(2, 8)}`;

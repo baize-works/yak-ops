@@ -1,25 +1,16 @@
 import HttpUtils from "@/utils/HttpUtils";
-import { InfoCircleOutlined, LoadingOutlined } from "@ant-design/icons";
-import { useIntl } from "@umijs/max";
-import {
-  Button,
-  Form,
-  Input,
-  InputNumber,
-  message,
-  Select,
-  Switch,
-  Tooltip,
-} from "antd";
+import {InfoCircleOutlined, LoadingOutlined} from "@ant-design/icons";
+import {useIntl} from "@umijs/max";
+import {Button, Form, Input, InputNumber, message, Select, Switch, Tooltip,} from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import DatabaseIcons from "../../icon/DatabaseIcons";
-import { DataSourceOperateType, DynamicDataSourceFormProps } from "../../types";
+import {DataSourceOperateType, DynamicDataSourceFormProps} from "../../types";
 import CustomKVList from "./components/CustomKVList";
 import DriverLocationField from "./components/DriverLocationField";
-import { getConfigInitialValues, transformRules } from "./utils/formUtils";
+import {getConfigInitialValues, transformRules} from "./utils/formUtils";
 
-import { Code2, FlaskConical, ShieldCheck } from "lucide-react";
+import {Code2, FlaskConical, ShieldCheck} from "lucide-react";
 
 const DEFAULT_ENVIRONMENT = "DEVELOP";
 
@@ -95,7 +86,7 @@ const ENV_OPTIONS = [
     label: (
       <div className="flex items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-          <Code2 size={13} />
+          <Code2 size={13}/>
         </span>
         <span className="text-[13px] font-medium text-slate-700">开发环境</span>
       </div>
@@ -106,7 +97,7 @@ const ENV_OPTIONS = [
     label: (
       <div className="flex items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-          <FlaskConical size={13} />
+          <FlaskConical size={13}/>
         </span>
         <span className="text-[13px] font-medium text-slate-700">测试环境</span>
       </div>
@@ -117,7 +108,7 @@ const ENV_OPTIONS = [
     label: (
       <div className="flex items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
-          <ShieldCheck size={13} />
+          <ShieldCheck size={13}/>
         </span>
         <span className="text-[13px] font-medium text-slate-700">生产环境</span>
       </div>
@@ -144,12 +135,12 @@ const isCreateOperateType = (operateType?: DataSourceOperateType) => {
 };
 
 const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
-  dbType,
-  form,
-  configForm,
-  operateType,
-  initialConfig,
-}) => {
+                                                                       dbType,
+                                                                       form,
+                                                                       configForm,
+                                                                       operateType,
+                                                                       initialConfig,
+                                                                     }) => {
   const intl = useIntl();
 
   const [formConfig, setFormConfig] = useState<any[]>([]);
@@ -230,7 +221,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
 
         if (response?.code === 0) {
           const data = response?.data || {};
-                  
+
           // 检查是否需要安装插件
           if (data.installRequired) {
             setNeedInstall(true);
@@ -239,13 +230,13 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
             configForm.resetFields();
             return;
           }
-                  
+
           const fields = data.formFields || [];
-        
+
           setNeedInstall(false);
           setLoadErrMsg("");
           setFormConfig(fields);
-        
+
           /**
            * 注意：
            * 这里不要用"只 patch 空值"的方式。
@@ -254,7 +245,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
            */
           const init = getConfigInitialValues(fields);
           configForm.resetFields();
-          
+
           /**
            * 编辑模式：使用传入的 initialConfig 覆盖默认值
            * 创建模式：使用表单的默认值
@@ -284,10 +275,10 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
         setNeedInstall(true);
         setLoadErrMsg(
           error?.message ||
-            intl.formatMessage({
-              id: "pages.datasource.form.loadConfigFail",
-              defaultMessage: "Failed to load form config",
-            })
+          intl.formatMessage({
+            id: "pages.datasource.form.loadConfigFail",
+            defaultMessage: "Failed to load form config",
+          })
         );
         setFormConfig([]);
         configForm.resetFields();
@@ -356,7 +347,8 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
       placeholder: field.placeholder,
       onChange: () => {
         setTimeout(() => {
-          configForm.validateFields([field.key]).catch(() => {});
+          configForm.validateFields([field.key]).catch(() => {
+          });
         }, 0);
       },
     };
@@ -390,7 +382,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
         );
 
       case "NUMBER":
-        return <InputNumber {...commonProps} className="!w-full" />;
+        return <InputNumber {...commonProps} className="!w-full"/>;
 
       case "SWITCH":
         return <Switch {...commonProps} />;
@@ -405,9 +397,10 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
 
   if (loading) {
     return (
-      <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#E8EDF3] bg-[#FCFDFE] p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div
+        className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#E8EDF3] bg-[#FCFDFE] p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <div className="flex items-center gap-2.5 text-sm text-slate-500">
-          <LoadingOutlined />
+          <LoadingOutlined/>
           <span>正在加载数据源配置...</span>
         </div>
       </div>
@@ -458,7 +451,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
                   defaultMessage: "Env",
                 })}
                 <Tooltip title="Deployment environment of the datasource">
-                  <InfoCircleOutlined className="ml-1 text-slate-400" />
+                  <InfoCircleOutlined className="ml-1 text-slate-400"/>
                 </Tooltip>
               </span>
             }
@@ -500,7 +493,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
         </Form.Item>
 
         <Form.Item name="connectionParams" hidden>
-          <Input type="hidden" />
+          <Input type="hidden"/>
         </Form.Item>
 
         {needInstall && (
@@ -531,7 +524,7 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
 
                 <span className="inline-flex items-center gap-1.5">
                   <span>({dbType})</span>
-                  <DatabaseIcons dbType={dbType} height="18" width="18" />
+                  <DatabaseIcons dbType={dbType} height="18" width="18"/>
                 </span>
               </span>
             </Button>
@@ -549,14 +542,14 @@ const DynamicDataSourceForm: React.FC<DynamicDataSourceFormProps> = ({
           <Form
             form={configForm}
             component={false}
-            labelCol={{ flex: "110px" }}
-            wrapperCol={{ flex: "1" }}
+            labelCol={{flex: "110px"}}
+            wrapperCol={{flex: "1"}}
             labelAlign="left"
           >
             {formConfig.map((field) => {
               if (field.type === "CUSTOM_SELECT") {
                 return (
-                  <CustomKVList key={field.key} intl={intl} field={field} />
+                  <CustomKVList key={field.key} intl={intl} field={field}/>
                 );
               }
 

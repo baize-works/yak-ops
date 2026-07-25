@@ -1,6 +1,4 @@
-import CommonClientLinkSection, {
-  ConnectivityStatus,
-} from "@/pages/common/components/CommonClientLinkSection";
+import CommonClientLinkSection, {ConnectivityStatus,} from "@/pages/common/components/CommonClientLinkSection";
 
 interface Props {
   activeStep: "base" | "client";

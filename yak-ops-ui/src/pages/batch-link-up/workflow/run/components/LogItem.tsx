@@ -1,6 +1,6 @@
-import type { LogEntry } from "../types";
+import type {LogEntry} from "../types";
 
-export const LogItem = ({ entry }: { entry: LogEntry }) => {
+export const LogItem = ({entry}: { entry: LogEntry }) => {
   return (
     <div
       style={{
@@ -16,7 +16,7 @@ export const LogItem = ({ entry }: { entry: LogEntry }) => {
         gap: "8px",
       }}
     >
-      <span style={{ color: "white", minWidth: "70px" }}>
+      <span style={{color: "white", minWidth: "70px"}}>
         [{entry.timestamp}]
       </span>
       <span

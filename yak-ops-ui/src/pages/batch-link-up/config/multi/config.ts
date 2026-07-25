@@ -1,4 +1,4 @@
-import { DbTypeValue, TableItem } from "./types";
+import {DbTypeValue, TableItem} from "./types";
 
 export const DEFAULT_DB_TYPE: DbTypeValue = {
   dbType: "MYSQL",
@@ -17,21 +17,21 @@ export const DEFAULT_FORM_VALUES = {
 };
 
 export const SCHEMA_SAVE_MODE_OPTIONS = [
-  { label: "不存在则创建", value: "CREATE_SCHEMA_WHEN_NOT_EXIST" },
-  { label: "重新创建", value: "RECREATE_SCHEMA" },
-  { label: "不存在则报错", value: "ERROR_WHEN_SCHEMA_NOT_EXIST" },
-  { label: "忽略", value: "IGNORE" },
+  {label: "不存在则创建", value: "CREATE_SCHEMA_WHEN_NOT_EXIST"},
+  {label: "重新创建", value: "RECREATE_SCHEMA"},
+  {label: "不存在则报错", value: "ERROR_WHEN_SCHEMA_NOT_EXIST"},
+  {label: "忽略", value: "IGNORE"},
 ];
 
 export const DATA_SAVE_MODE_OPTIONS = [
-  { label: "追加数据", value: "APPEND_DATA" },
-  { label: "清空后写入", value: "DROP_DATA" },
+  {label: "追加数据", value: "APPEND_DATA"},
+  {label: "清空后写入", value: "DROP_DATA"},
 ];
 
 export const FIELD_IDE_OPTIONS = [
-  { label: "保持原样", value: "ORIGINAL" },
-  { label: "转大写", value: "UPPERCASE" },
-  { label: "转小写", value: "LOWERCASE" },
+  {label: "保持原样", value: "ORIGINAL"},
+  {label: "转大写", value: "UPPERCASE"},
+  {label: "转小写", value: "LOWERCASE"},
 ];
 
 export const buildDataSourceOptions = (list: any[] = []) => {

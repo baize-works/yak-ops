@@ -1,7 +1,7 @@
-import { history, useLocation, useParams } from "@umijs/max";
-import { Empty, message, Spin } from "antd";
-import { useEffect, useState } from "react";
-import { seatunnelJobDefinitionApi } from "../../api";
+import {history, useLocation, useParams} from "@umijs/max";
+import {Empty, message, Spin} from "antd";
+import {useEffect, useState} from "react";
+import {seatunnelJobDefinitionApi} from "../../api";
 import Workflow from "../../workflow";
 import {
   BasicConfig,
@@ -205,15 +205,15 @@ const buildPageParamsForEdit = (editData?: any) => {
     state: editData?.state
       ? buildSyncedState(editData.state)
       : buildSyncedState({
-          releaseState: editData?.releaseState,
-          jobVersion: editData?.jobVersion,
-          contentVersion: editData?.contentVersion,
-        }),
+        releaseState: editData?.releaseState,
+        jobVersion: editData?.jobVersion,
+        contentVersion: editData?.contentVersion,
+      }),
   };
 };
 
 export default function SingleConfigPage() {
-  const { id } = useParams<{ id: string }>();
+  const {id} = useParams<{ id: string }>();
   const location = useLocation();
 
   const [pageScene, setPageScene] = useState<PageScene>("create");
@@ -336,7 +336,7 @@ export default function SingleConfigPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <Spin />
+        <Spin/>
       </div>
     );
   }
@@ -344,7 +344,7 @@ export default function SingleConfigPage() {
   if (!params) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <Empty description="未找到配置数据，请检查任务是否存在" />
+        <Empty description="未找到配置数据，请检查任务是否存在"/>
       </div>
     );
   }

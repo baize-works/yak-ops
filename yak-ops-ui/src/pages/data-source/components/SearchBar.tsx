@@ -1,29 +1,29 @@
-import { useIntl } from "@umijs/max";
-import React, { useEffect, useRef, useState } from "react";
+import {useIntl} from "@umijs/max";
+import React, {useEffect, useRef, useState} from "react";
 
 interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ value, onChange }) => {
+const SearchBar: React.FC<SearchBarProps> = ({value, onChange}) => {
   const intl = useIntl();
   const [open, setOpen] = useState(false);
-    const wrapperRef = useRef<HTMLDivElement | null>(null);
-  
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (!wrapperRef.current) return;
-        if (!wrapperRef.current.contains(event.target as Node)) {
-          setOpen(false);
-        }
-      };
-  
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }, []);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   return (
     <div className="datasource-search-bar" ref={wrapperRef}>
       {/* <Input
@@ -76,8 +76,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange }) => {
             strokeLinejoin="round"
             className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
           >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
           </svg>
         </div>
       </div>

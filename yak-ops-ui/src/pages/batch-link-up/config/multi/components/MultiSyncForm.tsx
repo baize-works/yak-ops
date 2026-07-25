@@ -1,7 +1,7 @@
 import React from "react";
-import { Col, Form, Input, Radio, Row, Select } from "antd";
+import {Col, Form, Input, Radio, Row, Select} from "antd";
 
-const { TextArea } = Input;
+const {TextArea} = Input;
 
 interface Props {
   form: any;
@@ -17,20 +17,20 @@ interface Props {
 const formItemClass = "[&_.ant-form-item-label>label]:text-[13px] [&_.ant-form-item-label>label]:text-slate-600";
 
 const MultiSyncForm: React.FC<Props> = ({
-  form,
-  sourceOption,
-  targetOption,
-  matchMode,
-  tableKeyword,
-  onSourceIdChange,
-  onMatchModeChange,
-  onKeywordChange,
-}) => {
+                                          form,
+                                          sourceOption,
+                                          targetOption,
+                                          matchMode,
+                                          tableKeyword,
+                                          onSourceIdChange,
+                                          onMatchModeChange,
+                                          onKeywordChange,
+                                        }) => {
   return (
     <div className="rounded-2xl ">
       <Form
         form={form}
-        initialValues={{ matchMode: "1" }}
+        initialValues={{matchMode: "1"}}
         layout="vertical"
       >
         <Row gutter={20}>
@@ -38,7 +38,7 @@ const MultiSyncForm: React.FC<Props> = ({
             <Form.Item
               label="来源数据源"
               name="sourceId"
-              rules={[{ required: true, message: "请选择来源数据源" }]}
+              rules={[{required: true, message: "请选择来源数据源"}]}
               className={formItemClass}
             >
               <Select
@@ -56,7 +56,7 @@ const MultiSyncForm: React.FC<Props> = ({
             <Form.Item
               label="目标数据源"
               name="sinkId"
-              rules={[{ required: true, message: "请选择目标数据源" }]}
+              rules={[{required: true, message: "请选择目标数据源"}]}
               className={formItemClass}
             >
               <Select

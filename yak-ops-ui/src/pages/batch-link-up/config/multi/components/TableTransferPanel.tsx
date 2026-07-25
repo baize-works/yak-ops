@@ -1,7 +1,7 @@
-import { Spin, Transfer, type TransferProps } from "antd";
+import {Spin, Transfer, type TransferProps} from "antd";
 import React from "react";
-import { TableItem } from "../types";
-import { Table2 } from "lucide-react";
+import {TableItem} from "../types";
+import {Table2} from "lucide-react";
 
 interface Props {
   loading: boolean;
@@ -12,12 +12,12 @@ interface Props {
 }
 
 const TableTransferPanel: React.FC<Props> = ({
-  loading,
-  data,
-  targetKeys,
-  matchMode,
-  onChange,
-}) => {
+                                               loading,
+                                               data,
+                                               targetKeys,
+                                               matchMode,
+                                               onChange,
+                                             }) => {
   const renderFooter: TransferProps["footer"] = (_, info) => {
     const totalTables = data.length;
     const selectedTables = targetKeys.length;
@@ -51,7 +51,7 @@ const TableTransferPanel: React.FC<Props> = ({
         <div className="st-transfer-wrap">
           <Transfer
             dataSource={data}
-            listStyle={{ width: "100%", height: 420 }}
+            listStyle={{width: "100%", height: 420}}
             operations={["", ""]}
             targetKeys={targetKeys}
             onChange={(nextKeys) => {
@@ -60,8 +60,9 @@ const TableTransferPanel: React.FC<Props> = ({
             }}
             render={(item) => (
               <div className="flex min-w-0 items-center gap-2 py-0.5">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
-                  <Table2 className="h-3.5 w-3.5" />
+                <div
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500">
+                  <Table2 className="h-3.5 w-3.5"/>
                 </div>
 
                 <div className="min-w-0 flex-1">

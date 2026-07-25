@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.yak.ops</groupId>
@@ -8,24 +9,75 @@
     </parent>
     <artifactId>yak-ops-boot</artifactId>
     <dependencies>
-        <dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-models</artifactId></dependency>
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-web</artifactId></dependency>
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-infrastructure</artifactId></dependency>
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-models</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-infrastructure</artifactId>
+        </dependency>
         <!--
           Status, which is exposed by web annotations, implements DomainErrorCode.
           Keep the domain classes as an explicit runtime requirement of the executable
           module instead of relying on an IDE to retain a multi-hop transitive edge.
         -->
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-domain</artifactId></dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-domain</artifactId>
+        </dependency>
         <!-- Runtime adapters are assembled here rather than leaking into core modules. -->
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-engine-all</artifactId></dependency>
-        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
-        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webflux</artifactId></dependency>
-        <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId></dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-engine-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
         <!-- Select complete plugin families; concrete vendors stay behind aggregators. -->
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-datasource-all</artifactId></dependency>
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-alarm-all</artifactId></dependency>
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-persistence-all</artifactId></dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-datasource-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-alarm-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-persistence-all</artifactId>
+        </dependency>
     </dependencies>
-    <build><finalName>${project.artifactId}</finalName><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>io.yak.ops.boot.YakOpsApplication</mainClass></configuration><executions><execution><goals><goal>repackage</goal></goals></execution></executions></plugin></plugins></build>
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>io.yak.ops.boot.YakOpsApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

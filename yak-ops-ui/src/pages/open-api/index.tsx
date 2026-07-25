@@ -1,13 +1,8 @@
-import {
-  ApiOutlined,
-  ArrowLeftOutlined,
-  LinkOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
-import { Alert, Button, Input, Skeleton, Tag } from "antd";
-import React, { useMemo, useState } from "react";
+import {ApiOutlined, ArrowLeftOutlined, LinkOutlined, SearchOutlined,} from "@ant-design/icons";
+import {Alert, Button, Input, Skeleton, Tag} from "antd";
+import React, {useMemo, useState} from "react";
 import MethodSegmented from "./MethodSegmented";
-import { HttpMethod, useOpenApiData } from "./openapi-parser";
+import {HttpMethod, useOpenApiData} from "./openapi-parser";
 import "./index.less";
 import {history} from "umi";
 
@@ -26,7 +21,7 @@ const methodColorMap: Record<HttpMethod, string> = {
 const OPEN_API_URL = "http://localhost:9527/v3/api-docs";
 
 const ApiManagementPage: React.FC = () => {
-  const { loading, error, title, description, version, controllers, apis } =
+  const {loading, error, title, description, version, controllers, apis} =
     useOpenApiData(OPEN_API_URL);
 
   const [activeController, setActiveController] = useState<string>("all");
@@ -66,8 +61,9 @@ const ApiManagementPage: React.FC = () => {
       <div className="border-b border-[#F2F4F7] bg-white">
         <div className="mx-auto flex max-w-[1540px] items-center justify-between gap-4 px-6 py-5">
           <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EFF8FF] text-[20px] text-[#1570EF]">
-              <ApiOutlined />
+            <div
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EFF8FF] text-[20px] text-[#1570EF]">
+              <ApiOutlined/>
             </div>
 
             <div className="min-w-0">
@@ -89,7 +85,7 @@ const ApiManagementPage: React.FC = () => {
 
           <Button
             type="text"
-            icon={<ArrowLeftOutlined />}
+            icon={<ArrowLeftOutlined/>}
             onClick={() => {
               history.push("/data-source");
             }}
@@ -113,10 +109,11 @@ const ApiManagementPage: React.FC = () => {
 
         <div className="grid grid-cols-[320px_minmax(0,1fr)] gap-6">
           <div className="rounded-[28px] border border-[#EAECF0] bg-white p-5 shadow-[0_10px_30px_rgba(16,24,40,0.05)]">
-            <div className="mb-4 flex items-center justify-between" style={{borderBottom : "1px solid rgb(242 244 247)"}}>
+            <div className="mb-4 flex items-center justify-between"
+                 style={{borderBottom: "1px solid rgb(242 244 247)"}}>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-[#1570EF]" />
+                  <div className="h-2 w-2 rounded-full bg-[#1570EF]"/>
                   <div className="text-[16px] font-semibold tracking-[-0.01em] text-[#101828]">
                     Controller 列表
                   </div>
@@ -129,7 +126,7 @@ const ApiManagementPage: React.FC = () => {
 
             {loading ? (
               <div className="space-y-3">
-                {Array.from({ length: 6 }).map((_, index) => (
+                {Array.from({length: 6}).map((_, index) => (
                   <Skeleton.Button
                     key={index}
                     active
@@ -161,7 +158,7 @@ const ApiManagementPage: React.FC = () => {
                       ].join(" ")}
                     >
                       {/* 左侧强调条 */}
-                      <div />
+                      <div/>
 
                       <div className="flex items-start justify-between gap-3 pl-2">
                         <div className="min-w-0 flex-1">
@@ -209,7 +206,7 @@ const ApiManagementPage: React.FC = () => {
           <div className="rounded-[24px] border border-[#EAECF0] bg-white p-5 shadow-[0_8px_24px_rgba(16,24,40,0.04)]">
             <div
               className="flex flex-wrap items-center gap-3"
-              style={{ justifyContent: "space-between" }}
+              style={{justifyContent: "space-between"}}
             >
               <div className="w-full max-w-[420px]">
                 <Input
@@ -217,17 +214,17 @@ const ApiManagementPage: React.FC = () => {
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder="搜索接口名称、路径、描述"
-                  prefix={<SearchOutlined className="text-[#98A2B3]" />}
+                  prefix={<SearchOutlined className="text-[#98A2B3]"/>}
                   className="!h-9 !rounded-[26px]"
                 />
               </div>
 
-              <MethodSegmented method={method} setMethod={setMethod} />
+              <MethodSegmented method={method} setMethod={setMethod}/>
             </div>
 
             <div className="mt-5 space-y-3">
               {loading ? (
-                Array.from({ length: 6 }).map((_, index) => (
+                Array.from({length: 6}).map((_, index) => (
                   <Skeleton.Button
                     key={index}
                     active
@@ -262,7 +259,7 @@ const ApiManagementPage: React.FC = () => {
                         </div>
 
                         <div className="mt-3 flex items-center gap-2 text-[13px] text-[#475467]">
-                          <LinkOutlined className="text-[#98A2B3]" />
+                          <LinkOutlined className="text-[#98A2B3]"/>
                           <code className="rounded-md bg-[#F8FAFC] px-2 py-1 text-[12px] text-[#344054]">
                             {item.path}
                           </code>
@@ -280,7 +277,8 @@ const ApiManagementPage: React.FC = () => {
                       </div>
 
                       <div className="shrink-0">
-                        <Button className="!h-9 !rounded-full !border-[#D0D5DD] !px-4 hover:!border-[#B2DDFF] hover:!text-[#1570EF]">
+                        <Button
+                          className="!h-9 !rounded-full !border-[#D0D5DD] !px-4 hover:!border-[#B2DDFF] hover:!text-[#1570EF]">
                           查看详情
                         </Button>
                       </div>
@@ -288,7 +286,8 @@ const ApiManagementPage: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div className="flex h-[240px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[#D0D5DD] bg-[#FCFCFD] text-center">
+                <div
+                  className="flex h-[240px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[#D0D5DD] bg-[#FCFCFD] text-center">
                   <div className="text-[16px] font-semibold text-[#101828]">
                     暂无匹配接口
                   </div>

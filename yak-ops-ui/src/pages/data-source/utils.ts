@@ -1,8 +1,4 @@
-import type {
-  DataSourceConnectionFormValues,
-  DataSourceFormValues,
-  DataSourceRecord,
-} from './types';
+import type {DataSourceConnectionFormValues, DataSourceFormValues, DataSourceRecord,} from './types';
 
 export function filterDataSourceList(
   list: DataSourceRecord[],

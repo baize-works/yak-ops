@@ -1,12 +1,12 @@
-import { LogItem } from "./LogItem";
-import type { LogEntry } from "../types";
+import {LogItem} from "./LogItem";
+import type {LogEntry} from "../types";
 
 interface Props {
   logs: LogEntry[];
   containerRef: any;
 }
 
-export const LogList = ({ logs, containerRef }: Props) => {
+export const LogList = ({logs, containerRef}: Props) => {
   return (
     <div
       ref={containerRef}
@@ -34,7 +34,7 @@ export const LogList = ({ logs, containerRef }: Props) => {
           No logs yet, waiting for connection...
         </div>
       ) : (
-        logs.map((entry) => <LogItem key={entry.id} entry={entry} />)
+        logs.map((entry) => <LogItem key={entry.id} entry={entry}/>)
       )}
     </div>
   );

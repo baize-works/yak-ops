@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Card, Empty, Spin, Table, Tag, Tooltip, message } from "antd";
-import { useIntl } from "@umijs/max";
+import React, {useEffect, useMemo, useState} from "react";
+import {Card, Empty, message, Spin, Table, Tag, Tooltip} from "antd";
+import {useIntl} from "@umijs/max";
 import CountUp from "react-countup";
 import {
   ArrowDownToLine,
@@ -12,7 +12,7 @@ import {
   Table2,
   TrendingUp,
 } from "lucide-react";
-import { batchJobInstanceApi } from "../api";
+import {batchJobInstanceApi} from "../api";
 
 
 interface MetricsTabProps {
@@ -123,7 +123,7 @@ const getResponseData = (res: any) => {
   return [];
 };
 
-const SparkLine: React.FC<SparkLineProps> = ({ data }) => {
+const SparkLine: React.FC<SparkLineProps> = ({data}) => {
   const safeData = data.length > 1 ? data : [0, 0];
   const max = Math.max(...safeData, 1);
   const min = Math.min(...safeData, 0);
@@ -158,16 +158,17 @@ const SparkLine: React.FC<SparkLineProps> = ({ data }) => {
 };
 
 const MetricCard: React.FC<MetricCardProps> = ({
-  title,
-  value,
-  unit,
-  hint,
-  icon,
-  accentClassName,
-  trendData,
-}) => {
+                                                 title,
+                                                 value,
+                                                 unit,
+                                                 hint,
+                                                 icon,
+                                                 accentClassName,
+                                                 trendData,
+                                               }) => {
   return (
-    <div className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-slate-300 hover:shadow-[0_10px_28px_rgba(15,23,42,0.07)]">
+    <div
+      className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-slate-300 hover:shadow-[0_10px_28px_rgba(15,23,42,0.07)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs font-medium uppercase tracking-[0.08em] text-slate-400">
@@ -176,7 +177,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
           <div className="mt-3 flex items-end gap-1.5">
             <span className="text-[28px] font-semibold leading-none tracking-[-0.04em] text-slate-950">
-              <CountUp end={value} duration={1.1} separator="," decimals={0} />
+              <CountUp end={value} duration={1.1} separator="," decimals={0}/>
             </span>
             <span className="pb-0.5 text-xs font-medium text-slate-400">
               {unit}
@@ -196,11 +197,12 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
       <div className="mt-4 flex items-end gap-3">
         <div className={["h-10 flex-1", accentClassName].join(" ")}>
-          <SparkLine data={trendData} />
+          <SparkLine data={trendData}/>
         </div>
 
-        <div className="mb-1 inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-500">
-          <TrendingUp size={12} strokeWidth={1.8} />
+        <div
+          className="mb-1 inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-500">
+          <TrendingUp size={12} strokeWidth={1.8}/>
           {hint}
         </div>
       </div>
@@ -213,11 +215,12 @@ const SectionHeader: React.FC<{
   description: string;
   icon: React.ReactNode;
   extra?: React.ReactNode;
-}> = ({ title, description, icon, extra }) => {
+}> = ({title, description, icon, extra}) => {
   return (
     <div className="mb-3 flex items-center justify-between gap-4">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
           {icon}
         </div>
 
@@ -235,21 +238,21 @@ const SectionHeader: React.FC<{
 const buildTrend = (value: number, seed = 1) => {
   const base = Math.max(value, 1);
 
-  return Array.from({ length: 12 }, (_, index) => {
+  return Array.from({length: 12}, (_, index) => {
     const wave = Math.sin((index + seed) * 0.8) * 0.12;
     const slope = index * 0.015;
     return Math.max(Math.round(base * (0.82 + wave + slope)), 0);
   });
 };
 
-const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
+const MetricsTab: React.FC<MetricsTabProps> = ({instanceItem}) => {
   const intl = useIntl();
 
   const [tableMetrics, setTableMetrics] = useState<any[]>([]);
   const [tableMetricsLoading, setTableMetricsLoading] = useState(false);
 
   const t = (id: string, defaultMessage: string) =>
-    intl.formatMessage({ id, defaultMessage });
+    intl.formatMessage({id, defaultMessage});
 
   const instanceId = instanceItem?.id;
 
@@ -315,8 +318,9 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
         render: (value: string) => (
           <Tooltip title={value}>
             <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600">
-                <Table2 size={14} strokeWidth={1.9} />
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600">
+                <Table2 size={14} strokeWidth={1.9}/>
               </span>
 
               <div className="min-w-0">
@@ -338,7 +342,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
         align: "center" as const,
         render: () => (
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-50 text-slate-400">
-            <ArrowRight size={14} strokeWidth={1.9} />
+            <ArrowRight size={14} strokeWidth={1.9}/>
           </span>
         ),
       },
@@ -350,8 +354,9 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
         render: (value: string) => (
           <Tooltip title={value}>
             <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-600">
-                <Table2 size={14} strokeWidth={1.9} />
+              <span
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-600">
+                <Table2 size={14} strokeWidth={1.9}/>
               </span>
 
               <div className="min-w-0">
@@ -428,12 +433,12 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
     <Card
       size="small"
       className="mt-2 !rounded-2xl !border-slate-200 !shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
-      bodyStyle={{ padding: 16,marginBottom: 116 }}
+      bodyStyle={{padding: 16, marginBottom: 116}}
     >
-      <div className="space-y-6" >
+      <div className="space-y-6">
         <section>
           <SectionHeader
-            icon={<Gauge size={16} strokeWidth={1.9} />}
+            icon={<Gauge size={16} strokeWidth={1.9}/>}
             title={t("pages.job.detail.metrics.throughput", "吞吐速率")}
             description={t(
               "pages.job.detail.metrics.throughputDesc",
@@ -447,7 +452,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
               value={readQps}
               unit={t("pages.job.detail.metrics.unit.rowsPerSecond", "行/秒")}
               hint={t("pages.job.detail.metrics.recentTrend", "最近趋势")}
-              icon={<ArrowDownToLine size={17} strokeWidth={1.9} />}
+              icon={<ArrowDownToLine size={17} strokeWidth={1.9}/>}
               accentClassName="border-blue-100 bg-blue-50 text-blue-600"
               trendData={metrics.readQpsTrend}
             />
@@ -457,7 +462,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
               value={writeQps}
               unit={t("pages.job.detail.metrics.unit.rowsPerSecond", "行/秒")}
               hint={t("pages.job.detail.metrics.recentTrend", "最近趋势")}
-              icon={<ArrowUpFromLine size={17} strokeWidth={1.9} />}
+              icon={<ArrowUpFromLine size={17} strokeWidth={1.9}/>}
               accentClassName="border-emerald-100 bg-emerald-50 text-emerald-600"
               trendData={metrics.writeQpsTrend}
             />
@@ -466,7 +471,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
 
         <section>
           <SectionHeader
-            icon={<Database size={16} strokeWidth={1.9} />}
+            icon={<Database size={16} strokeWidth={1.9}/>}
             title={t("pages.job.detail.metrics.totalVolume", "同步总量")}
             description={t(
               "pages.job.detail.metrics.totalVolumeDesc",
@@ -480,7 +485,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
               value={readRows}
               unit={t("pages.job.detail.metrics.unit.records", "行")}
               hint={t("pages.job.detail.metrics.accumulated", "累计")}
-              icon={<ArrowDownToLine size={17} strokeWidth={1.9} />}
+              icon={<ArrowDownToLine size={17} strokeWidth={1.9}/>}
               accentClassName="border-amber-100 bg-amber-50 text-amber-600"
               trendData={metrics.readRowsTrend}
             />
@@ -490,7 +495,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
               value={writeRows}
               unit={t("pages.job.detail.metrics.unit.records", "行")}
               hint={t("pages.job.detail.metrics.accumulated", "累计")}
-              icon={<ArrowUpFromLine size={17} strokeWidth={1.9} />}
+              icon={<ArrowUpFromLine size={17} strokeWidth={1.9}/>}
               accentClassName="border-violet-100 bg-violet-50 text-violet-600"
               trendData={metrics.writeRowsTrend}
             />
@@ -499,7 +504,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
 
         <section>
           <SectionHeader
-            icon={<Layers3 size={16} strokeWidth={1.9} />}
+            icon={<Layers3 size={16} strokeWidth={1.9}/>}
             title="表级同步明细"
             description="查看当前运行实例的来源表与目标表同步情况"
             extra={
@@ -522,7 +527,7 @@ const MetricsTab: React.FC<MetricsTabProps> = ({ instanceItem }) => {
                 columns={tableColumns}
                 dataSource={tableMetrics}
                 pagination={false}
-                scroll={{ x: 980 }}
+                scroll={{x: 980}}
                 locale={{
                   emptyText: (
                     <Empty

@@ -1,4 +1,4 @@
-const ClickhouseIcon = ({ height = '24', width = '24' }) => {
+const ClickhouseIcon = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1763126974122"

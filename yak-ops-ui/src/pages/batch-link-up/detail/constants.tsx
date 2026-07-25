@@ -1,5 +1,5 @@
-import { Tag } from "antd";
-import type { ClientItem } from "./types";
+import {Tag} from "antd";
+import type {ClientItem} from "./types";
 
 export const STEP_THEME = {
   base: {
@@ -22,13 +22,13 @@ export const STEP_THEME = {
 };
 
 export const mockSourceClients: ClientItem[] = [
-  { id: "s1", name: "InfluxDB-Client-01", type: "InfluxDB", status: "online" },
-  { id: "s2", name: "InfluxDB-Client-02", type: "InfluxDB", status: "untested" },
+  {id: "s1", name: "InfluxDB-Client-01", type: "InfluxDB", status: "online"},
+  {id: "s2", name: "InfluxDB-Client-02", type: "InfluxDB", status: "untested"},
 ];
 
 export const mockTargetClients: ClientItem[] = [
-  { id: "t1", name: "ClickHouse-Client-01", type: "ClickHouse", status: "online" },
-  { id: "t2", name: "ClickHouse-Client-02", type: "ClickHouse", status: "untested" },
+  {id: "t1", name: "ClickHouse-Client-01", type: "ClickHouse", status: "online"},
+  {id: "t2", name: "ClickHouse-Client-02", type: "ClickHouse", status: "untested"},
 ];
 
 export const getStatusTag = (status?: ClientItem["status"]) => {

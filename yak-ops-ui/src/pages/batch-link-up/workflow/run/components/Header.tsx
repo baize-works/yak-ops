@@ -1,5 +1,5 @@
 import CloseIcon from "../../icon/CloseIcon";
-import type { MetricsData } from "../types";
+import type {MetricsData} from "../types";
 
 interface HeaderProps {
   connectionStatus: string;
@@ -7,7 +7,7 @@ interface HeaderProps {
   onClose: () => void;
 }
 
-export const Header = ({ connectionStatus, latestMetrics, onClose }: HeaderProps) => {
+export const Header = ({connectionStatus, latestMetrics, onClose}: HeaderProps) => {
   // ✅ 只支持新结构：metrics 是 Map 序列化后的对象
   const firstPipeline =
     latestMetrics && latestMetrics.metrics
@@ -23,7 +23,7 @@ export const Header = ({ connectionStatus, latestMetrics, onClose }: HeaderProps
         marginBottom: "8px",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <div style={{display: "flex", alignItems: "center", gap: "12px"}}>
         <strong>Running Log</strong>
 
         <span
@@ -42,17 +42,17 @@ export const Header = ({ connectionStatus, latestMetrics, onClose }: HeaderProps
         </span>
 
         {latestMetrics && (
-          <span style={{ fontSize: "12px", color: "#1890ff" }}>
+          <span style={{fontSize: "12px", color: "#1890ff"}}>
             Sync: {firstPipeline?.readRowCount ?? 0} rows
           </span>
         )}
       </div>
 
       <span
-        style={{ fontSize: "16px", color: "#999", cursor: "pointer" }}
+        style={{fontSize: "16px", color: "#999", cursor: "pointer"}}
         onClick={onClose}
       >
-        <CloseIcon />
+        <CloseIcon/>
       </span>
     </div>
   );

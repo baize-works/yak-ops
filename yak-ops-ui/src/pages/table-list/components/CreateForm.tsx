@@ -1,21 +1,21 @@
-import { PlusOutlined } from '@ant-design/icons';
+import {PlusOutlined} from '@ant-design/icons';
+import {FormattedMessage, useIntl, useRequest} from '@umijs/max';
+import {Button, message} from 'antd';
+import type {FC} from 'react';
+import {addRule} from '@/services/ant-design-pro/api';
 import {
   type ActionType,
   ModalForm,
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
-import { Button, message } from 'antd';
-import type { FC } from 'react';
-import { addRule } from '@/services/ant-design-pro/api';
 
 interface CreateFormProps {
   reload?: ActionType['reload'];
 }
 
 const CreateForm: FC<CreateFormProps> = (props) => {
-  const { reload } = props;
+  const {reload} = props;
 
   const [messageApi, contextHolder] = message.useMessage();
   /**
@@ -24,7 +24,7 @@ const CreateForm: FC<CreateFormProps> = (props) => {
    * */
   const intl = useIntl();
 
-  const { run, loading } = useRequest(addRule, {
+  const {run, loading} = useRequest(addRule, {
     manual: true,
     onSuccess: () => {
       messageApi.success('Added successfully');
@@ -44,14 +44,14 @@ const CreateForm: FC<CreateFormProps> = (props) => {
           defaultMessage: 'New rule',
         })}
         trigger={
-          <Button type="primary" icon={<PlusOutlined />}>
-            <FormattedMessage id="pages.searchTable.new" defaultMessage="New" />
+          <Button type="primary" icon={<PlusOutlined/>}>
+            <FormattedMessage id="pages.searchTable.new" defaultMessage="New"/>
           </Button>
         }
         width="400px"
-        modalProps={{ okButtonProps: { loading } }}
+        modalProps={{okButtonProps: {loading}}}
         onFinish={async (value) => {
-          await run({ data: value as API.RuleListItem });
+          await run({data: value as API.RuleListItem});
 
           return true;
         }}
@@ -71,7 +71,7 @@ const CreateForm: FC<CreateFormProps> = (props) => {
           width="md"
           name="name"
         />
-        <ProFormTextArea width="md" name="desc" />
+        <ProFormTextArea width="md" name="desc"/>
       </ModalForm>
     </>
   );

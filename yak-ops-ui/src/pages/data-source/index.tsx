@@ -1,20 +1,16 @@
 import ClickSpark from "@/components/ClickSpark";
-import { useIntl } from "@umijs/max";
-import { message, Modal, Spin } from "antd";
-import { motion } from "framer-motion";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import {useIntl} from "@umijs/max";
+import {message, Modal, Spin} from "antd";
+import {motion} from "framer-motion";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import AddOrEditDataSourceModal from "./components/AddOrEditDataSourceModal";
 import DataSourceCard from "./components/DataSourceCard";
 import EmptyState from "./components/EmptyState";
 import PageHeader from "./components/PageHeader";
 import SearchBar from "./components/SearchBar";
-import { PAGE_ANIMATION, PAGE_DEFAULT_PAGINATION } from "./constants";
+import {PAGE_ANIMATION, PAGE_DEFAULT_PAGINATION} from "./constants";
 import "./index.less";
-import {
-  deleteDataSource,
-  fetchDataSourcePage,
-  testDataSourceConnection,
-} from "./service";
+import {deleteDataSource, fetchDataSourcePage, testDataSourceConnection,} from "./service";
 import type {
   DataSourceModalRef,
   DataSourceOperateType,
@@ -22,9 +18,9 @@ import type {
   DataSourceRecord,
   PaginationInfo,
 } from "./types";
-import { filterDataSourceList } from "./utils";
+import {filterDataSourceList} from "./utils";
 
-const { confirm } = Modal;
+const {confirm} = Modal;
 
 const DataSourcePage: React.FC = () => {
   const intl = useIntl();
@@ -50,14 +46,14 @@ const DataSourcePage: React.FC = () => {
       const response = await fetchDataSourcePage(requestParams);
 
       if (response.code !== 0) {
-        
+
         return;
       }
 
       setDataSourceList(response.data?.bizData || []);
       setPagination(response.data?.pagination || PAGE_DEFAULT_PAGINATION);
     } catch (error: any) {
-     
+
     } finally {
       setLoading(false);
     }
@@ -106,10 +102,10 @@ const DataSourcePage: React.FC = () => {
               defaultMessage: "Are you sure you delete datasource [{name}] ?",
             },
             {
-              name: <span style={{ color: "orange" }}>{record.name}</span>,
+              name: <span style={{color: "orange"}}>{record.name}</span>,
             }
           )}
-          <br />
+          <br/>
           {intl.formatMessage({
             id: "pages.datasource.delete.confirmContentLine2",
             defaultMessage:
@@ -145,14 +141,14 @@ const DataSourcePage: React.FC = () => {
           const response = await deleteDataSource(record.id);
 
           if (response.code !== 0) {
-            
+
             return;
           }
 
           message.success(response.message || "Delete success");
           handleRefresh();
         } catch (error: any) {
-          
+
         }
       },
     });
@@ -180,7 +176,8 @@ const DataSourcePage: React.FC = () => {
       );
 
       handleRefresh();
-    } catch (_) {}
+    } catch (_) {
+    }
   };
 
   return (
@@ -202,11 +199,11 @@ const DataSourcePage: React.FC = () => {
               variants={PAGE_ANIMATION.sectionStagger}
             >
               <motion.div variants={PAGE_ANIMATION.fadeUp}>
-                <PageHeader onCreate={handleCreate} />
+                <PageHeader onCreate={handleCreate}/>
               </motion.div>
 
               <motion.div variants={PAGE_ANIMATION.fadeUp}>
-                <SearchBar value={searchKeyword} onChange={setSearchKeyword} />
+                <SearchBar value={searchKeyword} onChange={setSearchKeyword}/>
               </motion.div>
 
               <motion.p
@@ -239,7 +236,7 @@ const DataSourcePage: React.FC = () => {
                   </div>
 
                   {!loading && filteredDataSourceList.length === 0 && (
-                    <EmptyState onCreate={handleCreate} />
+                    <EmptyState onCreate={handleCreate}/>
                   )}
                 </motion.div>
               </Spin>
@@ -248,7 +245,7 @@ const DataSourcePage: React.FC = () => {
         </div>
       </ClickSpark>
 
-      <AddOrEditDataSourceModal ref={modalRef} />
+      <AddOrEditDataSourceModal ref={modalRef}/>
     </>
   );
 };

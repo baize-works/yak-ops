@@ -1,14 +1,14 @@
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Form, Input } from "antd";
+import {MinusCircleOutlined, PlusOutlined} from "@ant-design/icons";
+import {Button, Form, Input} from "antd";
 
 export default function CustomKVList(props: { intl: any; field: any }) {
-  const { intl, field } = props;
+  const {intl, field} = props;
 
   return (
-    <Form.Item label={field.label} style={{ marginBottom: 18 }}>
+    <Form.Item label={field.label} style={{marginBottom: 18}}>
       <Form.List name={field.key}>
-        {(fields, { add, remove }) => (
-          <div style={{ width: "100%" }}>
+        {(fields, {add, remove}) => (
+          <div style={{width: "100%"}}>
             <div
               style={{
                 display: "flex",
@@ -16,7 +16,7 @@ export default function CustomKVList(props: { intl: any; field: any }) {
                 gap: 10,
               }}
             >
-              {fields.map(({ key, name, ...restField }) => (
+              {fields.map(({key, name, ...restField}) => (
                 <div
                   key={key}
                   style={{
@@ -29,7 +29,7 @@ export default function CustomKVList(props: { intl: any; field: any }) {
                   <Form.Item
                     {...restField}
                     name={[name, "key"]}
-                    style={{ marginBottom: 0 }}
+                    style={{marginBottom: 0}}
                     rules={[
                       {
                         required: true,
@@ -51,7 +51,7 @@ export default function CustomKVList(props: { intl: any; field: any }) {
                   <Form.Item
                     {...restField}
                     name={[name, "value"]}
-                    style={{ marginBottom: 0 }}
+                    style={{marginBottom: 0}}
                     rules={[
                       {
                         required: true,
@@ -81,18 +81,18 @@ export default function CustomKVList(props: { intl: any; field: any }) {
                     }}
                     onClick={() => remove(name)}
                   >
-                    <MinusCircleOutlined />
+                    <MinusCircleOutlined/>
                   </div>
                 </div>
               ))}
             </div>
 
-            <Form.Item style={{ marginBottom: 0, marginTop: 12 }}>
+            <Form.Item style={{marginBottom: 0, marginTop: 12}}>
               <Button
                 type="dashed"
-                onClick={() => add({ key: "", value: "" })}
+                onClick={() => add({key: "", value: ""})}
                 block
-                icon={<PlusOutlined />}
+                icon={<PlusOutlined/>}
                 style={{borderRadius: 16}}
                 className="h-8 rounded-[10px] border-[#D0D5DD] bg-[#FCFCFD] text-[#475467] transition-all duration-200 hover:border-[hsl(231 48% 48%)] hover:bg-[hsl(231 48% 48%)] hover:text-[hsl(231 48% 48%)] active:border-[#98A2B3] active:bg-[#F2F4F7]"
               >

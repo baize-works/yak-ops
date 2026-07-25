@@ -1,13 +1,13 @@
-import { Form, Radio } from "antd";
+import {Form, Radio} from "antd";
 import ModeCard from "./ModeCard";
-import type { SyncMode } from "../types";
+import type {SyncMode} from "../types";
 
 interface Props {
   mode?: any;
   setMode: (value: SyncMode) => void;
 }
 
-const ModeSection: React.FC<Props> = ({ mode, setMode }) => {
+const ModeSection: React.FC<Props> = ({mode, setMode}) => {
   return (
     <div className="px-6 py-6">
       <div className="mb-5">

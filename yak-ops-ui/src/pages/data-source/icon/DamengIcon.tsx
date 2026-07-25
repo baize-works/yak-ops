@@ -1,4 +1,4 @@
-const DaMengIcon = ({ height = '24', width = '24' }) => {
+const DaMengIcon = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1762389721774"

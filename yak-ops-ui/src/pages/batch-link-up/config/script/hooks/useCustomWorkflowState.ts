@@ -1,8 +1,8 @@
-import { message } from "antd";
-import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import {message} from "antd";
 
-import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
-import { hoconTemplateApi } from "../hoconTemplateApi";
+import {seatunnelJobDefinitionApi} from "@/pages/batch-link-up/api";
+import {hoconTemplateApi} from "../hoconTemplateApi";
+import {useEffect, useRef, useState, type Dispatch, type SetStateAction} from "react";
 import {
   markJobDefinitionDirty,
   markJobDefinitionSynced,
@@ -71,12 +71,12 @@ const syncSessionCache = (id: number | string | undefined, data: any) => {
 };
 
 export function useCustomWorkflowState({
-  params,
-  setParams,
-  basicConfig,
-  scheduleConfig,
-  envConfig,
-}: UseCustomWorkflowStateProps) {
+                                         params,
+                                         setParams,
+                                         basicConfig,
+                                         scheduleConfig,
+                                         envConfig,
+                                       }: UseCustomWorkflowStateProps) {
   const [activeTab, setActiveTab] = useState<any>(null);
   const [hoconContent, setHoconContent] = useState<string>("");
 
@@ -85,9 +85,7 @@ export function useCustomWorkflowState({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [templateLoading, setTemplateLoading] = useState(false);
 
-  const [publishedJobDefineId, setPublishedJobDefineId] = useState<
-    number | string | undefined
-  >(params?.id);
+  const [publishedJobDefineId, setPublishedJobDefineId] = useState<number | string | undefined>(params?.id);
 
   const [publishLoading, setPublishLoading] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
@@ -327,8 +325,8 @@ export function useCustomWorkflowState({
   const runDisabledReason = !publishedJobDefineId
     ? "请先发布任务，再执行"
     : isDirty
-    ? "当前内容已变更，请重新发布后再执行"
-    : "";
+      ? "当前内容已变更，请重新发布后再执行"
+      : "";
 
   const handleRun = async () => {
     const pass = await validateBeforeSubmit();

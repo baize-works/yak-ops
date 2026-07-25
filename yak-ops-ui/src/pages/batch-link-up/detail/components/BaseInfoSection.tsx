@@ -1,10 +1,10 @@
-import { Form, Input, Radio } from "antd";
-import DataSourceSelect, { generateDataSourceOptions } from "../../DataSourceSelect";
+import {Form, Input, Radio} from "antd";
+import DataSourceSelect, {generateDataSourceOptions} from "../../DataSourceSelect";
 import IconRightArrow from "../../IconRightArrow";
 import ModeCard from "./ModeCard";
-import type { SyncMode } from "../types";
+import type {SyncMode} from "../types";
 
-const { TextArea } = Input;
+const {TextArea} = Input;
 
 interface Props {
   sourceType: any;
@@ -16,13 +16,13 @@ interface Props {
 }
 
 const BaseConfigSection: React.FC<Props> = ({
-  sourceType,
-  targetType,
-  handleSourceChange,
-  handleTargetChange,
-  mode,
-  setMode,
-}) => {
+                                              sourceType,
+                                              targetType,
+                                              handleSourceChange,
+                                              handleTargetChange,
+                                              mode,
+                                              setMode,
+                                            }) => {
   return (
     <div className="p-6">
       {/* 整体卡片 */}
@@ -45,7 +45,7 @@ const BaseConfigSection: React.FC<Props> = ({
             />
 
             <div className="text-[#98A2B3]">
-              <IconRightArrow />
+              <IconRightArrow/>
             </div>
 
             <DataSourceSelect
@@ -69,7 +69,7 @@ const BaseConfigSection: React.FC<Props> = ({
             <Form.Item
               label="任务名称"
               name="jobName"
-              rules={[{ required: true, message: "请输入任务名称" }]}
+              rules={[{required: true, message: "请输入任务名称"}]}
               className="mb-0"
             >
               <Input

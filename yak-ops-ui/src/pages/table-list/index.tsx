@@ -1,18 +1,9 @@
-import type {
-  ActionType,
-  ProColumns,
-  ProDescriptionsItemProps,
-} from '@ant-design/pro-components';
-import {
-  FooterToolbar,
-  PageContainer,
-  ProDescriptions,
-  ProTable,
-} from '@ant-design/pro-components';
-import { FormattedMessage, useIntl, useRequest } from '@umijs/max';
-import { Button, Drawer, Input, message } from 'antd';
-import React, { useCallback, useRef, useState } from 'react';
-import { removeRule, rule } from '@/services/ant-design-pro/api';
+import type {ActionType, ProColumns, ProDescriptionsItemProps,} from '@ant-design/pro-components';
+import {FooterToolbar, PageContainer, ProDescriptions, ProTable,} from '@ant-design/pro-components';
+import {FormattedMessage, useIntl, useRequest} from '@umijs/max';
+import {Button, Drawer, Input, message} from 'antd';
+import React, {useCallback, useRef, useState} from 'react';
+import {removeRule, rule} from '@/services/ant-design-pro/api';
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
 
@@ -31,7 +22,7 @@ const TableList: React.FC = () => {
 
   const [messageApi, contextHolder] = message.useMessage();
 
-  const { run: delRun, loading } = useRequest(removeRule, {
+  const {run: delRun, loading} = useRequest(removeRule, {
     manual: true,
     onSuccess: () => {
       setSelectedRows([]);
@@ -150,7 +141,7 @@ const TableList: React.FC = () => {
       sorter: true,
       dataIndex: 'updatedAt',
       valueType: 'dateTime',
-      renderFormItem: (item, { defaultRender, ...rest }, form) => {
+      renderFormItem: (item, {defaultRender, ...rest}, form) => {
         const status = form.getFieldValue('status');
         if (`${status}` === '0') {
           return false;
@@ -239,7 +230,7 @@ const TableList: React.FC = () => {
           labelWidth: 120,
         }}
         toolBarRender={() => [
-          <CreateForm key="create" reload={actionRef.current?.reload} />,
+          <CreateForm key="create" reload={actionRef.current?.reload}/>,
         ]}
         request={rule}
         columns={columns}
@@ -257,7 +248,7 @@ const TableList: React.FC = () => {
                 id="pages.searchTable.chosen"
                 defaultMessage="Chosen"
               />{' '}
-              <a style={{ fontWeight: 600 }}>{selectedRowsState.length}</a>{' '}
+              <a style={{fontWeight: 600}}>{selectedRowsState.length}</a>{' '}
               <FormattedMessage
                 id="pages.searchTable.item"
                 defaultMessage="项"

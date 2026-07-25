@@ -1,5 +1,5 @@
 // SVG 文件内容（你可以直接复制 SVG 代码或者引入 SVG 文件）
-const Icon = ({ height = "1em", width = "1em" }) => {
+const Icon = ({height = "1em", width = "1em"}) => {
   return (
     <svg
       t="1727332137277"

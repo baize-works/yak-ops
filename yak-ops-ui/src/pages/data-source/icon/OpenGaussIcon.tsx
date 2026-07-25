@@ -1,4 +1,4 @@
-const App = ({ height = '24', width = '24' }) => {
+const App = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1761874041717"

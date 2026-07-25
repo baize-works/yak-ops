@@ -1,4 +1,4 @@
-const Icon = ({ width = 24, height = 24, fill = "#fa8c16", className = "" }) => {
+const Icon = ({width = 24, height = 24, fill = "#fa8c16", className = ""}) => {
   return (
     <svg
       className={className}

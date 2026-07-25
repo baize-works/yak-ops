@@ -1,6 +1,6 @@
-import { PlusOutlined } from "@ant-design/icons";
-import { useIntl } from "@umijs/max";
-import { Button } from "antd";
+import {PlusOutlined} from "@ant-design/icons";
+import {useIntl} from "@umijs/max";
+import {Button} from "antd";
 import React from "react";
 import "./index.less";
 
@@ -8,20 +8,20 @@ type EmptyStateProps = {
   onCreate?: () => void;
 };
 
-const EmptyState: React.FC<EmptyStateProps> = ({ onCreate }) => {
+const EmptyState: React.FC<EmptyStateProps> = ({onCreate}) => {
   const intl = useIntl();
 
   return (
     <div className="datasource-empty-state">
       <div className="datasource-empty-state__bg">
-        <span className="bubble bubble-1" />
-        <span className="bubble bubble-2" />
-        <span className="bubble bubble-3" />
+        <span className="bubble bubble-1"/>
+        <span className="bubble bubble-2"/>
+        <span className="bubble bubble-3"/>
       </div>
 
       <div className="datasource-empty-state__emoji-wrap">
         <div className="datasource-empty-state__emoji">🥹</div>
-        <div className="datasource-empty-state__shadow" />
+        <div className="datasource-empty-state__shadow"/>
       </div>
 
       <div className="datasource-empty-state__title">
@@ -68,7 +68,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onCreate }) => {
               })}
             </span>
             <span className="hover-icon">
-              <PlusOutlined />
+              <PlusOutlined/>
             </span>
           </span>
         </Button>

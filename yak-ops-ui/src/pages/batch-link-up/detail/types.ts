@@ -1,4 +1,4 @@
-import type { FormInstance } from "antd";
+import type {FormInstance} from "antd";
 
 export type SyncMode = "GUIDE_SINGLE" | "GUIDE_MULTI" | "SCRIPT";
 export type StepKey = "base" | "client";
@@ -21,6 +21,7 @@ interface DataSourceOptionItem {
   name?: string;
   label?: string;
   value?: string;
+
   [key: string]: any;
 }
 

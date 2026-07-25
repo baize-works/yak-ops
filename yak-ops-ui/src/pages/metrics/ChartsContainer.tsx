@@ -2,7 +2,7 @@ import React from "react";
 import LineChart from "./LineChart";
 
 import BarChart from "./BarChart";
-import { ChartData } from "./types";
+import {ChartData} from "./types";
 
 interface ChartsContainerProps {
   chartData: ChartData;
@@ -10,9 +10,9 @@ interface ChartsContainerProps {
 }
 
 const ChartsContainer: React.FC<ChartsContainerProps> = ({
-  chartData,
-  loading,
-}) => {
+                                                           chartData,
+                                                           loading,
+                                                         }) => {
   const charts = [
     {
       data: chartData.recordsTrend.data,
@@ -66,11 +66,11 @@ const ChartsContainer: React.FC<ChartsContainerProps> = ({
         <div key={index} className="echart-container col-2">
           <div
             className="dc-loading dc-loading-inline"
-            style={{ width: "100%" }}
+            style={{width: "100%"}}
           >
             <div
               className="dc-loading-wrap"
-              style={{ width: "100%", padding: 16 }}
+              style={{width: "100%", padding: 16}}
             >
               {renderChart(chart)}
             </div>

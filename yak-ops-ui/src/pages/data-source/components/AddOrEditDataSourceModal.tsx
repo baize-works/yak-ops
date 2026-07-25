@@ -1,20 +1,11 @@
-import { useIntl } from "@umijs/max";
-import { Button, Form, message, Modal } from "antd";
-import React, {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import {useIntl} from "@umijs/max";
+import {Button, Form, message, Modal} from "antd";
+import React, {forwardRef, useImperativeHandle, useRef, useState,} from "react";
 import DynamicDataSourceForm from "./DynamicDataSourceForm";
 import DatabaseIcons from "../icon/DatabaseIcons";
-import { dataSourceGroupList } from "../constants";
-import {
-  createDataSource,
-  testDataSourceConnectionWithParams,
-  updateDataSource,
-} from "../service";
-import { buildSubmitPayload, parseOriginalJson } from "../utils";
+import {dataSourceGroupList} from "../constants";
+import {createDataSource, testDataSourceConnectionWithParams, updateDataSource,} from "../service";
+import {buildSubmitPayload, parseOriginalJson} from "../utils";
 import DataSourceTypeSelector from "./DataSourceTypeSelector";
 import type {
   DataSourceFormValues,
@@ -71,12 +62,12 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
   useImperativeHandle(ref, () => ({
     open: ({
-      operateType: nextOperateType,
-      currentRecord: nextRecord,
-      onSuccess,
-      dbType,
-      hideBack,
-    }: DataSourceModalOpenPayload) => {
+             operateType: nextOperateType,
+             currentRecord: nextRecord,
+             onSuccess,
+             dbType,
+             hideBack,
+           }: DataSourceModalOpenPayload) => {
       /**
        * 每次打开前，先清理上一次弹窗状态。
        * 这里非常关键，避免 MySQL / PostgreSQL 动态表单互相污染。
@@ -191,7 +182,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
       if (isEditMode) {
         if (!currentRecord?.id) {
-          
+
           return;
         }
 
@@ -219,13 +210,13 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const modalActionText =
     operateType === ("EDIT" as DataSourceOperateType)
       ? intl.formatMessage({
-          id: "pages.datasource.modal.title.edit",
-          defaultMessage: "Edit",
-        })
+        id: "pages.datasource.modal.title.edit",
+        defaultMessage: "Edit",
+      })
       : intl.formatMessage({
-          id: "pages.datasource.modal.title.add",
-          defaultMessage: "Add",
-        });
+        id: "pages.datasource.modal.title.add",
+        defaultMessage: "Add",
+      });
 
   return (
     <Modal
@@ -269,7 +260,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
             paddingRight: 24,
           }}
         >
-          <div style={{ minWidth: 0 }}>
+          <div style={{minWidth: 0}}>
             <div
               style={{
                 display: "flex",
@@ -290,10 +281,10 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
                   flexShrink: 0,
                 }}
               >
-                <DatabaseIcons dbType={selectedDbType} width="18" height="18" />
+                <DatabaseIcons dbType={selectedDbType} width="18" height="18"/>
               </div>
 
-              <div style={{ minWidth: 0 }}>
+              <div style={{minWidth: 0}}>
                 <div
                   style={{
                     fontSize: 18,
@@ -340,14 +331,14 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
               isCreateMode && !hideBackButton ? (
                 <Button
                   onClick={handleBackToTypeSelection}
-                  style={{ height: 32, borderRadius: 16 }}
+                  style={{height: 32, borderRadius: 16}}
                 >
                   上一步
                 </Button>
               ) : (
                 <Button
                   onClick={handleClose}
-                  style={{ height: 32, borderRadius: 16 }}
+                  style={{height: 32, borderRadius: 16}}
                 >
                   取消
                 </Button>
@@ -355,7 +346,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
             ) : (
               <Button
                 onClick={handleClose}
-                style={{ height: 32, borderRadius: 16 }}
+                style={{height: 32, borderRadius: 16}}
               >
                 取消
               </Button>
@@ -363,10 +354,10 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
           </div>
 
           {showFormStep ? (
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{display: "flex", gap: 10}}>
               <Button
                 onClick={handleTestConnection}
-                style={{ height: 32, borderRadius: 16 }}
+                style={{height: 32, borderRadius: 16}}
               >
                 连接测试
               </Button>
@@ -374,7 +365,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
               <Button
                 type="primary"
                 onClick={handleSubmit}
-                style={{ height: 32, borderRadius: 16, paddingInline: 18 }}
+                style={{height: 32, borderRadius: 16, paddingInline: 18}}
               >
                 完成
               </Button>
@@ -393,7 +384,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
           initialConfig={isEditMode ? parseOriginalJson(currentRecord?.originalJson) : undefined}
         />
       ) : (
-        <div style={{ padding: "4px 0 8px" }}>
+        <div style={{padding: "4px 0 8px"}}>
           <DataSourceTypeSelector
             dataSourceGroups={dataSourceGroupList}
             onSelect={handleSelectDbType}

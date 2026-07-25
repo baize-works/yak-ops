@@ -1,4 +1,4 @@
-import type { FormInstance } from 'antd';
+import type {FormInstance} from 'antd';
 
 export enum DataSourceOperateType {
   Create = 'CREATE',
@@ -56,7 +56,7 @@ export interface DataSourceModalOpenPayload {
   operateType: DataSourceOperateType;
   currentRecord?: DataSourceRecord;
   onSuccess?: () => void;
-   /**
+  /**
    * 外部创建入口已确定 dbType 时传入。
    * 传入后弹窗会跳过数据源类型选择页。
    */

@@ -1,4 +1,4 @@
-const CacheIcon = ({ height = '24', width = '24' }) => {
+const CacheIcon = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1762248164835"

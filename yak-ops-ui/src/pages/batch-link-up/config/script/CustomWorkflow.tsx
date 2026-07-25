@@ -1,14 +1,14 @@
-import { ArrowLeftOutlined, SendOutlined } from "@ant-design/icons";
-import { Button, Popconfirm, Popover, Space, Tooltip } from "antd";
-import { Eye, FileCode2, PlayCircle, RefreshCw } from "lucide-react";
+import {ArrowLeftOutlined, SendOutlined} from "@ant-design/icons";
+import {Button, Popconfirm, Popover, Space, Tooltip} from "antd";
+import {Eye, FileCode2, PlayCircle, RefreshCw} from "lucide-react";
 import React from "react";
 
-import { EnvConfig } from "../../workflow/components/ScheduleConfigContent/types";
+import {EnvConfig} from "../../workflow/components/ScheduleConfigContent/types";
 import CodeBlockWithCopy from "../../workflow/operator/CodeBlockWithCopy";
 import RightConfigPanel from "../../workflow/RightConfigPanel";
-import { useResizablePanel } from "../multi/hooks/useResizablePanel";
+import {useResizablePanel} from "../multi/hooks/useResizablePanel";
 import HoconEditorPanel from "./HoconEditorPanel";
-import { useCustomWorkflowState } from "./hooks/useCustomWorkflowState";
+import {useCustomWorkflowState} from "./hooks/useCustomWorkflowState";
 import {
   canRunByDefinitionState,
   getRunDisabledReasonByState,
@@ -29,17 +29,17 @@ interface CustomWorkflowProps {
 }
 
 export default function CustomWorkflow({
-  params,
-  setParams,
-  goBack,
-  basicConfig,
-  setBasicConfig,
-  scheduleConfig,
-  setScheduleConfig,
-  envConfig,
-  setEnvConfig,
-}: CustomWorkflowProps) {
-  const { rightWidth, handleResizeStart } = useResizablePanel(520);
+                                         params,
+                                         setParams,
+                                         goBack,
+                                         basicConfig,
+                                         setBasicConfig,
+                                         scheduleConfig,
+                                         setScheduleConfig,
+                                         envConfig,
+                                         setEnvConfig,
+                                       }: CustomWorkflowProps) {
+  const {rightWidth, handleResizeStart} = useResizablePanel(520);
 
   const {
     activeTab,
@@ -153,8 +153,9 @@ export default function CustomWorkflow({
       <div className="shrink-0 border-b border-slate-100 bg-white px-6 pb-4 pt-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3.5">
-            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-indigo-50 text-indigo-600">
-              <FileCode2 size={18} />
+            <div
+              className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-indigo-50 text-indigo-600">
+              <FileCode2 size={18}/>
             </div>
 
             <div>
@@ -170,7 +171,7 @@ export default function CustomWorkflow({
           <div>
             <Button
               type="text"
-              icon={<ArrowLeftOutlined />}
+              icon={<ArrowLeftOutlined/>}
               onClick={goBack}
               className="!h-10 !rounded-full !border !border-slate-200 !bg-white !px-4 !text-slate-700 !shadow-sm hover:!border-slate-300 hover:!bg-slate-50 hover:!text-slate-800"
             >
@@ -181,11 +182,14 @@ export default function CustomWorkflow({
       </div>
 
       <div className="min-h-0 flex-1 overflow-hidden p-[18px]">
-        <div className="h-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-b from-white via-white to-slate-50 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div
+          className="h-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-b from-white via-white to-slate-50 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
           <div className="flex h-full min-w-0 items-stretch">
             <div className="h-full min-w-0 flex-1 overflow-hidden">
-              <div className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
-                <div className="flex h-14 shrink-0 items-center justify-between border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 px-[18px]">
+              <div
+                className="flex h-full flex-col overflow-hidden rounded-lg bg-white shadow-[0_4px_18px_rgba(15,23,42,0.03)]">
+                <div
+                  className="flex h-14 shrink-0 items-center justify-between border-b border-slate-100 bg-gradient-to-b from-white to-slate-50 px-[18px]">
                   <div>
                     <div className="text-[15px] font-semibold text-slate-800">
                       HOCON 编排
@@ -201,7 +205,7 @@ export default function CustomWorkflow({
                       <span className="inline-flex">
                         <Button
                           type="default"
-                          icon={<PlayCircle size={15} strokeWidth={1.9} />}
+                          icon={<PlayCircle size={15} strokeWidth={1.9}/>}
                           onClick={handleRun}
                           disabled={!finalCanRun}
                           className={actionButtonClass}
@@ -293,7 +297,7 @@ export default function CustomWorkflow({
 
                     <Button
                       type="default"
-                      icon={<SendOutlined />}
+                      icon={<SendOutlined/>}
                       onClick={handleSave}
                       loading={publishLoading}
                       className={actionButtonClass}
@@ -304,7 +308,8 @@ export default function CustomWorkflow({
                 </div>
 
                 <div className="min-h-0 flex-1 p-[18px]">
-                  <div className="h-full overflow-hidden rounded-2xl bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                  <div
+                    className="h-full overflow-hidden rounded-2xl bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                     <HoconEditorPanel
                       value={hoconContent}
                       onChange={handleHoconContentChange}
@@ -324,17 +329,18 @@ export default function CustomWorkflow({
                 aria-orientation="vertical"
                 aria-label="调整左右面板宽度"
               >
-                <div className="h-full w-px bg-slate-200 transition-colors duration-100" />
-                <div className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
-                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
-                  <span className="block h-1 w-1 rounded-full bg-slate-400" />
+                <div className="h-full w-px bg-slate-200 transition-colors duration-100"/>
+                <div
+                  className="absolute left-1/2 top-1/2 flex h-[46px] w-5 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-full border border-slate-200 bg-white opacity-90 shadow-sm transition-all duration-200 hover:opacity-100 hover:shadow-[0_10px_28px_rgba(15,23,42,0.1)]">
+                  <span className="block h-1 w-1 rounded-full bg-slate-400"/>
+                  <span className="block h-1 w-1 rounded-full bg-slate-400"/>
                 </div>
               </div>
             )}
 
             <div
               className="h-full shrink-0 overflow-hidden"
-              style={{ width: activeTab ? rightWidth : 58 }}
+              style={{width: activeTab ? rightWidth : 58}}
             >
               <RightConfigPanel
                 activeTab={activeTab}

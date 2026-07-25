@@ -1,10 +1,10 @@
-import { openPrettyNotification } from "@/utils/prettyNotification";
-import { Form } from "antd";
+import {openPrettyNotification} from "@/utils/prettyNotification";
+import {Form} from "antd";
 import BaseInfoSection from "./components/BaseInfoSection";
 import BottomActionBar from "./components/BottomActionBar";
 import ClientLinkSection from "./components/ClientLinkSection";
 import PageHeader from "./components/PageHeader";
-import { STEP_THEME } from "./constants";
+import {STEP_THEME} from "./constants";
 import useDetailPage from "./hooks/useDetailPage";
 
 export type ConnectivityStatus = "idle" | "loading" | "success" | "error";
@@ -130,7 +130,7 @@ const DetailPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <PageHeader onBack={goBack} />
+      <PageHeader onBack={goBack}/>
 
       <div className="mx-auto max-w-[1540px] px-6 pb-28 pt-6">
         <div className="sticky top-0 z-20 mb-6 bg-white/95 pt-1 backdrop-blur">
@@ -187,10 +187,11 @@ const DetailPage = () => {
 
         <div
           ref={scrollRef}
-          style={{ height: "calc(100vh - 260px)", overflow: "auto" }}
+          style={{height: "calc(100vh - 260px)", overflow: "auto"}}
         >
           <Form form={form} layout="vertical">
-            <div className="overflow-hidden rounded-[24px] border border-[#EAECF0] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+            <div
+              className="overflow-hidden rounded-[24px] border border-[#EAECF0] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               {isBaseStep && (
                 <BaseInfoSection
                   sourceType={sourceType}

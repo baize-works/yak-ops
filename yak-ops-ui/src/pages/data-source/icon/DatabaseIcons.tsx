@@ -1,5 +1,5 @@
-import { DatabaseOutlined } from '@ant-design/icons';
-import type { CSSProperties } from 'react';
+import {DatabaseOutlined} from '@ant-design/icons';
+import type {CSSProperties} from 'react';
 
 import CacheIcon from './CacheIcon';
 import ClickhouseIcon from './ClickhouseIcon';
@@ -26,10 +26,10 @@ interface DatabaseIconsProps {
 }
 
 const DatabaseIcons = ({
-  dbType,
-  width = '20px',
-  height = '20px',
-}: DatabaseIconsProps) => {
+                         dbType,
+                         width = '20px',
+                         height = '20px',
+                       }: DatabaseIconsProps) => {
   const normalizedType = dbType?.toLowerCase?.();
   console.log(normalizedType);
   const fallbackStyle: CSSProperties = {
@@ -43,42 +43,42 @@ const DatabaseIcons = ({
 
   switch (normalizedType) {
     case 'mysql':
-      return <MysqlIcon width={width} height={height} />;
+      return <MysqlIcon width={width} height={height}/>;
     case 'oracle':
-      return <OracleIcon width={width} height={height} />;
+      return <OracleIcon width={width} height={height}/>;
     case 'doris':
-      return <DorisIcon width={width} height={height} />;
+      return <DorisIcon width={width} height={height}/>;
     case 'elasticsearch':
-      return <ElasticSearchIcon width={width} height={height} />;
+      return <ElasticSearchIcon width={width} height={height}/>;
     case 'postgre_sql':
     case 'postgresql':
-      return <PsSqlIcon width={width} height={height} />;
+      return <PsSqlIcon width={width} height={height}/>;
     case 'opengauss':
-      return <OpenGaussIcon width={width} height={height} />;
+      return <OpenGaussIcon width={width} height={height}/>;
     case 'sqlite':
-      return <SQLite width={width} height={height} />;
+      return <SQLite width={width} height={height}/>;
     case 'sqlserver':
-      return <SQLServer width={width} height={height} />;
+      return <SQLServer width={width} height={height}/>;
     case 'cache':
-      return <CacheIcon width={width} height={height} />;
+      return <CacheIcon width={width} height={height}/>;
     case 'hive3':
-      return <HiveIcon width={width} height={height} />;
+      return <HiveIcon width={width} height={height}/>;
     case 'dameng':
-      return <DaMengIcon width={width} height={height} />;
+      return <DaMengIcon width={width} height={height}/>;
     case 'kingbase':
-      return <KingBaseIcon width={width} height={height} />;
+      return <KingBaseIcon width={width} height={height}/>;
     case 'mongodb':
-      return <MongoDBIcon width={width} height={height} />;
+      return <MongoDBIcon width={width} height={height}/>;
     case 'db2':
-      return <DB2Icon width={width} height={height} />;
+      return <DB2Icon width={width} height={height}/>;
     case 'starrocks':
-      return <StarRocksIcon width={width} height={height} />;
+      return <StarRocksIcon width={width} height={height}/>;
     case 'clickhouse':
-      return <ClickhouseIcon width={width} height={height} />;
+      return <ClickhouseIcon width={width} height={height}/>;
     case 'tidb':
-      return <TiDBIcon width={width} height={height} />;
+      return <TiDBIcon width={width} height={height}/>;
     default:
-      return <DatabaseOutlined style={fallbackStyle} />;
+      return <DatabaseOutlined style={fallbackStyle}/>;
   }
 };
 

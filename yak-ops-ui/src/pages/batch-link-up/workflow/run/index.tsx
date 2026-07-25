@@ -1,10 +1,10 @@
-import { Client } from "@stomp/stompjs";
-import { message } from "antd";
-import type { FC, ReactNode } from "react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import {Client} from "@stomp/stompjs";
+import {message} from "antd";
+import type {FC, ReactNode} from "react";
+import {memo, useEffect, useMemo, useRef, useState} from "react";
 import SockJS from "sockjs-client";
 import CloseIcon from "../icon/CloseIcon";
-import { seatunnelJobDefinitionApi, seatunnelJobExecuteApi } from "../../api";
+import {seatunnelJobDefinitionApi, seatunnelJobExecuteApi} from "../../api";
 import "./index.less";
 
 interface RunLogProps {
@@ -95,12 +95,12 @@ const WS_URL = "http://127.0.0.1:9527/ws";
 const WS_TOPIC = "/topic/log/test";
 
 const RunLog: FC<RunLogProps> = ({
-  setRunVisible,
-  runVisible,
-  footer,
-  baseForm,
-  params,
-}) => {
+                                   setRunVisible,
+                                   runVisible,
+                                   footer,
+                                   baseForm,
+                                   params,
+                                 }) => {
   const [panelHeight, setPanelHeight] = useState(460);
   const [isDragging, setIsDragging] = useState(false);
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
@@ -110,9 +110,7 @@ const RunLog: FC<RunLogProps> = ({
   const stompClientRef = useRef<Client | null>(null);
   const connectTimerRef = useRef<number | null>(null);
 
-  const metricsCacheRef = useRef<
-    Map<number, { data: MetricsMessage; timestamp: number }>
-  >(new Map());
+  const metricsCacheRef = useRef<Map<number, { data: MetricsMessage; timestamp: number }>>(new Map());
 
   const panelStyle = useMemo(
     () => ({
@@ -190,7 +188,7 @@ const RunLog: FC<RunLogProps> = ({
       currPipeline.readQps === prevPipeline.readQps &&
       currPipeline.writeQps === prevPipeline.writeQps &&
       currPipeline.intermediateQueueSize ===
-        prevPipeline.intermediateQueueSize &&
+      prevPipeline.intermediateQueueSize &&
       (currPipeline.status ?? "") === (prevPipeline.status ?? "") &&
       (currTable?.status ?? "") === (prevTable?.status ?? "")
     );
@@ -499,7 +497,7 @@ const RunLog: FC<RunLogProps> = ({
           }`}
           onMouseDown={handleMouseDown}
         >
-          <div className="run-log__resize-handle" />
+          <div className="run-log__resize-handle"/>
         </div>
 
         <section className="run-log__drawer" style={panelStyle}>
@@ -535,7 +533,7 @@ const RunLog: FC<RunLogProps> = ({
               onClick={() => setRunVisible(false)}
               aria-label="关闭运行日志面板"
             >
-              <CloseIcon />
+              <CloseIcon/>
             </button>
           </header>
 

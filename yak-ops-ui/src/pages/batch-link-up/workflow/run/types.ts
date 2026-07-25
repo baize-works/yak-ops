@@ -3,16 +3,14 @@ export interface MetricsData {
   instanceId: number;
   engineId: string;
   vertexCount: number;
-  vertices: Record<
-    string,
+  vertices: Record<string,
     {
       readRowCount: number;
       writeRowCount: number;
       readQps: number;
       writeQps: number;
       status: string;
-    }
-  >;
+    }>;
   timestamp?: number;
 }
 

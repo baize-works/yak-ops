@@ -1,20 +1,13 @@
-import { FormInstance, message } from "antd";
-import { debounce } from "lodash";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {FormInstance, message} from "antd";
+import {debounce} from "lodash";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 
-import {
-  dataSourceCatalogApi,
-  fetchDataSourceOptions,
-} from "@/pages/data-source/service";
+import {dataSourceCatalogApi, fetchDataSourceOptions,} from "@/pages/data-source/service";
 
-import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
-import {
-  buildTableItems,
-  DEFAULT_DB_TYPE,
-  DEFAULT_FORM_VALUES,
-} from "../config";
-import { DbTypeValue, RightPanelTab, TableItem } from "../types";
-import { JobDefinitionState, markJobDefinitionSynced, normalizeJobDefinitionState } from "../jobDefinitionState";
+import {seatunnelJobDefinitionApi} from "@/pages/batch-link-up/api";
+import {buildTableItems, DEFAULT_DB_TYPE, DEFAULT_FORM_VALUES,} from "../config";
+import {DbTypeValue, TableItem} from "../types";
+import {JobDefinitionState, markJobDefinitionSynced, normalizeJobDefinitionState} from "../jobDefinitionState";
 
 interface UseMultiWorkflowStateProps {
   form: FormInstance;
@@ -121,13 +114,13 @@ const syncBatchSessionCache = (id: number | string | undefined, data: any) => {
 };
 
 export function useMultiWorkflowState({
-  form,
-  params,
-  setParams,
-  basicConfig,
-  scheduleConfig,
-  envConfig,
-}: UseMultiWorkflowStateProps) {
+                                        form,
+                                        params,
+                                        setParams,
+                                        basicConfig,
+                                        scheduleConfig,
+                                        envConfig,
+                                      }: UseMultiWorkflowStateProps) {
   const [activeTab, setActiveTab] = useState<any>(null);
 
   const [loading, setLoading] = useState(false);
@@ -155,9 +148,7 @@ export function useMultiWorkflowState({
   const [previewContent, setPreviewContent] = useState("");
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  const [publishedJobDefineId, setPublishedJobDefineId] = useState<
-    number | string | undefined
-  >(params?.id);
+  const [publishedJobDefineId, setPublishedJobDefineId] = useState<number | string | undefined>(params?.id);
 
   const [publishLoading, setPublishLoading] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
@@ -355,16 +346,16 @@ export function useMultiWorkflowState({
 
         const sourceId = Number(
           params?.sourceDataSourceId ||
-            workflow?.sourceDataSourceId ||
-            workflow?.sourceId ||
-            workflow?.source?.datasourceId
+          workflow?.sourceDataSourceId ||
+          workflow?.sourceId ||
+          workflow?.source?.datasourceId
         );
 
         const sinkId = Number(
           params?.targetDataSourceId ||
-            workflow?.targetDataSourceId ||
-            workflow?.targetId ||
-            workflow?.target?.datasourceId
+          workflow?.targetDataSourceId ||
+          workflow?.targetId ||
+          workflow?.target?.datasourceId
         );
 
         const nextMatchMode =
@@ -541,83 +532,83 @@ export function useMultiWorkflowState({
     return true;
   };
 
- const handleSave = async () => {
-  try {
-    const pass = await validateBeforeSubmit();
-    if (!pass) return;
+  const handleSave = async () => {
+    try {
+      const pass = await validateBeforeSubmit();
+      if (!pass) return;
 
-    setPublishLoading(true);
+      setPublishLoading(true);
 
-    const workflowData = buildWorkflowData();
-    const finalPayload = {
-      ...buildFinalPayload(),
-      content: workflowData,
-    };
-
-    const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti(
-      finalPayload
-    );
-
-    if (res?.code !== 0) {
-      return;
-    }
-
-    const saveData = getSaveResponseData(res);
-    const jobDefineId = saveData.id ?? finalPayload.id;
-
-    if (!jobDefineId) {
-      message.error("发布成功但未返回任务定义ID");
-      return;
-    }
-
-    setPublishedJobDefineId(jobDefineId);
-
-    setParams((prev: any) => {
-      const nextState = saveData.state
-        ? normalizeJobDefinitionState(saveData.state)
-        : markJobDefinitionSynced(prev?.state);
-
-      const nextParams = {
-        ...(prev || {}),
-        id: jobDefineId,
-        state: nextState,
-
-        workflow: workflowData,
+      const workflowData = buildWorkflowData();
+      const finalPayload = {
+        ...buildFinalPayload(),
         content: workflowData,
-
-        sourceDataSourceId: workflowData.source.datasourceId,
-        targetDataSourceId: workflowData.target.datasourceId,
-
-        scheduleConfig,
-        schedule: finalPayload.schedule,
-
-        env: envConfig,
       };
 
-      /**
-       * create 场景是从 sessionStorage 初始化的。
-       * 发布成功后同步缓存，避免刷新后又变回未发布。
-       */
-      syncBatchSessionCache(prev?.id, nextParams);
-      syncBatchSessionCache(jobDefineId, nextParams);
+      const res = await seatunnelJobDefinitionApi.saveOrUpdateGuideMulti(
+        finalPayload
+      );
 
-      return nextParams;
-    });
+      if (res?.code !== 0) {
+        return;
+      }
 
-    baselineSignatureRef.current = stableStringify({
-      basic: finalPayload.basic,
-      content: workflowData,
-      schedule: finalPayload.schedule,
-      env: finalPayload.env,
-    });
+      const saveData = getSaveResponseData(res);
+      const jobDefineId = saveData.id ?? finalPayload.id;
 
-    message.success("发布成功");
-  } catch (error: any) {
-    console.error(error);
-  } finally {
-    setPublishLoading(false);
-  }
-};
+      if (!jobDefineId) {
+        message.error("发布成功但未返回任务定义ID");
+        return;
+      }
+
+      setPublishedJobDefineId(jobDefineId);
+
+      setParams((prev: any) => {
+        const nextState = saveData.state
+          ? normalizeJobDefinitionState(saveData.state)
+          : markJobDefinitionSynced(prev?.state);
+
+        const nextParams = {
+          ...(prev || {}),
+          id: jobDefineId,
+          state: nextState,
+
+          workflow: workflowData,
+          content: workflowData,
+
+          sourceDataSourceId: workflowData.source.datasourceId,
+          targetDataSourceId: workflowData.target.datasourceId,
+
+          scheduleConfig,
+          schedule: finalPayload.schedule,
+
+          env: envConfig,
+        };
+
+        /**
+         * create 场景是从 sessionStorage 初始化的。
+         * 发布成功后同步缓存，避免刷新后又变回未发布。
+         */
+        syncBatchSessionCache(prev?.id, nextParams);
+        syncBatchSessionCache(jobDefineId, nextParams);
+
+        return nextParams;
+      });
+
+      baselineSignatureRef.current = stableStringify({
+        basic: finalPayload.basic,
+        content: workflowData,
+        schedule: finalPayload.schedule,
+        env: finalPayload.env,
+      });
+
+      message.success("发布成功");
+    } catch (error: any) {
+      console.error(error);
+    } finally {
+      setPublishLoading(false);
+    }
+  };
 
   const handlePreview = async () => {
     try {

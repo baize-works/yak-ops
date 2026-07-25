@@ -1,19 +1,20 @@
-import type { FormInstance, UploadProps } from "antd";
-import { Button, Input, message, Upload } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
-import { uploadDriverJar } from "../services/pluginConfig";
+import type {FormInstance, UploadProps} from "antd";
+import {Button, Input, message, Upload} from "antd";
+import {UploadOutlined} from "@ant-design/icons";
+import {uploadDriverJar} from "../services/pluginConfig";
 
 export default function DriverLocationField(props: {
   field: any;
   dbType: string;
   configForm: FormInstance;
 }) {
-  const { field, dbType, configForm } = props;
+  const {field, dbType, configForm} = props;
 
   const handleChange = (value: string) => {
     configForm.setFieldValue(field.key, value);
     setTimeout(() => {
-      configForm.validateFields([field.key]).catch(() => {});
+      configForm.validateFields([field.key]).catch(() => {
+      });
     }, 0);
   };
 
@@ -37,7 +38,7 @@ export default function DriverLocationField(props: {
       return true;
     },
     customRequest: async (options) => {
-      const { file, onSuccess, onError } = options;
+      const {file, onSuccess, onError} = options;
 
       try {
         const data = await uploadDriverJar(dbType, file as File);
@@ -55,7 +56,7 @@ export default function DriverLocationField(props: {
         message.success("驱动包上传成功");
         onSuccess?.(data);
       } catch (e: any) {
-        
+
         onError?.(e);
       }
     },
@@ -79,7 +80,7 @@ export default function DriverLocationField(props: {
 
       <Upload {...uploadProps}>
         <Button
-          icon={<UploadOutlined />}
+          icon={<UploadOutlined/>}
           style={{
             height: 32,
             borderRadius: 10,

@@ -1,4 +1,4 @@
-const PostgreSQL = ({ height = '24', width = '24' }) => {
+const PostgreSQL = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1761802914474"

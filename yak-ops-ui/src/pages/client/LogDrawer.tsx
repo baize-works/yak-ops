@@ -1,6 +1,6 @@
 // src/pages/devops/multi-cluster/LogDrawer.tsx
-import { forwardRef, useImperativeHandle, useState } from "react";
-import { Drawer, Empty } from "antd";
+import {forwardRef, useImperativeHandle, useState} from "react";
+import {Drawer, Empty} from "antd";
 import "./index.less";
 
 export interface LogDrawerRef {
@@ -50,7 +50,7 @@ const LogDrawer = forwardRef<LogDrawerRef>((_, ref) => {
           {content}
         </pre>
       ) : (
-        <Empty description="暂无日志内容" />
+        <Empty description="暂无日志内容"/>
       )}
     </Drawer>
   );

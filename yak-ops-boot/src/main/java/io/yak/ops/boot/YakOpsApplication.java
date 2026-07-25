@@ -17,6 +17,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
         "io.yak.ops.api",
         "io.yak.ops.application",
         "io.yak.ops.infrastructure",
+        "io.yak.ops.domain",
         "io.yak.ops.dao",
         "io.yak.ops.engine",
         "org.apache.seatunnel.plugin.datasource.api"

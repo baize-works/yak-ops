@@ -1,5 +1,5 @@
-import { Radio } from "antd";
-import type { SyncMode } from "../types";
+import {Radio} from "antd";
+import type {SyncMode} from "../types";
 
 interface Props {
   value: SyncMode;
@@ -11,13 +11,13 @@ interface Props {
 }
 
 const ModeCard: React.FC<Props> = ({
-  value,
-  current,
-  title,
-  desc,
-  tag,
-  onSelect,
-}) => {
+                                     value,
+                                     current,
+                                     title,
+                                     desc,
+                                     tag,
+                                     onSelect,
+                                   }) => {
   const active = current === value;
 
   return (

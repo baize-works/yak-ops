@@ -1,12 +1,12 @@
 import React from "react";
-import { useIntl } from "@umijs/max";
-import { SummaryData } from "./types";
+import {useIntl} from "@umijs/max";
+import {SummaryData} from "./types";
 
 interface SummaryCardsProps {
   summaryData: SummaryData;
 }
 
-const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData }) => {
+const SummaryCards: React.FC<SummaryCardsProps> = ({summaryData}) => {
   const intl = useIntl();
 
   const cards = [
@@ -68,7 +68,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ summaryData }) => {
         }}
       >
         {cards.map((item, index) => (
-          <div key={index} style={{ flex: "1", width: "100%" }}>
+          <div key={index} style={{flex: "1", width: "100%"}}>
             <div className="css-1qqgizd">
               <div className="title">{item.title}</div>
               <div className="big-number">{item.value || 0}</div>

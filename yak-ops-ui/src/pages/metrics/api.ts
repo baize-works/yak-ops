@@ -1,5 +1,5 @@
 import HttpUtils from "@/utils/HttpUtils";
-import { TaskType, TimeRange } from "./types";
+import {TaskType, TimeRange} from "./types";
 
 export const fetchSummaryData = async (
   timeRange: TimeRange,

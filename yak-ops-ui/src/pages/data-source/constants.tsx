@@ -1,6 +1,6 @@
-import { Code2, FlaskConical, ShieldCheck } from "lucide-react";
+import {Code2, FlaskConical, ShieldCheck} from "lucide-react";
 import React from "react";
-import type { DataSourceGroup, DataSourceOptionItem } from "./types";
+import type {DataSourceGroup, DataSourceOptionItem} from "./types";
 
 export const PAGE_DEFAULT_PAGINATION = {
   pageNo: 1,
@@ -9,18 +9,18 @@ export const PAGE_DEFAULT_PAGINATION = {
 };
 
 export const COMMON_DB_OPTIONS: DataSourceOptionItem[] = [
-  { label: "MYSQL", value: "MYSQL" },
-  { label: "ORACLE", value: "ORACLE" },
-  { label: "POSTGRE_SQL", value: "POSTGRE_SQL" },
-  { label: "DORIS", value: "DORIS" },
-  { label: "KINGBASE", value: "KINGBASE" },
-  { label: "DAMENG", value: "DAMENG" },
+  {label: "MYSQL", value: "MYSQL"},
+  {label: "ORACLE", value: "ORACLE"},
+  {label: "POSTGRE_SQL", value: "POSTGRE_SQL"},
+  {label: "DORIS", value: "DORIS"},
+  {label: "KINGBASE", value: "KINGBASE"},
+  {label: "DAMENG", value: "DAMENG"},
 ];
 
 export const ENVIRONMENT_OPTIONS: DataSourceOptionItem[] = [
-  { label: "DEVELOP", value: "DEVELOP" },
-  { label: "TEST", value: "TEST" },
-  { label: "PROD", value: "PROD" },
+  {label: "DEVELOP", value: "DEVELOP"},
+  {label: "TEST", value: "TEST"},
+  {label: "PROD", value: "PROD"},
 ];
 
 export const dataSourceGroupList: DataSourceGroup[] = [
@@ -72,15 +72,13 @@ export const dataSourceGroupList: DataSourceGroup[] = [
   },
 ];
 
-export const environmentTagConfigMap: Record<
-  string,
+export const environmentTagConfigMap: Record<string,
   {
     text: string;
     color: string;
     backgroundColor: string;
     icon: React.ReactNode;
-  }
-> = {
+  }> = {
   PROD: {
     text: "生产",
     color: "#ff4d4f",
@@ -90,7 +88,7 @@ export const environmentTagConfigMap: Record<
         {" "}
         <div className="flex items-center gap-2">
           <span className="flex h-4 w-4 items-center justify-center rounded-lg ">
-            <ShieldCheck size={12} />
+            <ShieldCheck size={12}/>
           </span>
         </div>
       </div>
@@ -105,7 +103,7 @@ export const environmentTagConfigMap: Record<
         {" "}
         <div className="flex items-center gap-2">
           <span className="flex h-4 w-4 items-center justify-center rounded-lg ">
-            <FlaskConical size={12} />
+            <FlaskConical size={12}/>
           </span>
         </div>
       </div>
@@ -120,7 +118,7 @@ export const environmentTagConfigMap: Record<
         {" "}
         <div className="flex items-center gap-2">
           <span className="flex h-4 w-4 items-center justify-center rounded-lg ">
-            <Code2 size={12} />
+            <Code2 size={12}/>
           </span>
         </div>
       </div>
@@ -130,7 +128,7 @@ export const environmentTagConfigMap: Record<
 
 export const PAGE_ANIMATION = {
   fadeUp: {
-    hidden: { opacity: 0, y: 18 },
+    hidden: {opacity: 0, y: 18},
     visible: {
       opacity: 1,
       y: 0,

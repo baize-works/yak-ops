@@ -1,6 +1,5 @@
-
-import type { FormInstance } from "antd";
-import { Input, InputNumber, Select, Switch } from "antd";
+import type {FormInstance} from "antd";
+import {Input, InputNumber, Select, Switch} from "antd";
 
 
 export default function FieldRenderer(props: {
@@ -8,7 +7,7 @@ export default function FieldRenderer(props: {
   dbType: string;
   configForm: FormInstance;
 }) {
-  const { field, dbType, configForm } = props;
+  const {field, dbType, configForm} = props;
 
 //   if (field.key === "driverLocation") {
 //     return (
@@ -26,9 +25,9 @@ export default function FieldRenderer(props: {
 
   switch (field.type) {
     case "INPUT":
-      return <Input {...common} size="small" />;
+      return <Input {...common} size="small"/>;
     case "PASSWORD":
-      return <Input.Password {...common} size="small" />;
+      return <Input.Password {...common} size="small"/>;
     case "SELECT":
       return (
         <Select
@@ -41,12 +40,12 @@ export default function FieldRenderer(props: {
         />
       );
     case "NUMBER":
-      return <InputNumber {...common} size="small" style={{ width: "100%" }} />;
+      return <InputNumber {...common} size="small" style={{width: "100%"}}/>;
     case "SWITCH":
-      return <Switch size="small" />;
+      return <Switch size="small"/>;
     case "TEXTAREA":
-      return <Input.TextArea rows={4} {...common} size="small" />;
+      return <Input.TextArea rows={4} {...common} size="small"/>;
     default:
-      return <Input {...common} size="small" />;
+      return <Input {...common} size="small"/>;
   }
 }

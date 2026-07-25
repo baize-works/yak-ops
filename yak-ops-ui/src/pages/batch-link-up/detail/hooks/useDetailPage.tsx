@@ -1,8 +1,8 @@
-import { history, useParams } from "@umijs/max";
-import { Form, message } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { getDbLabel } from "../constants";
-import type { DetailFormValues, SourceTargetType, StepKey } from "../types";
+import {history, useParams} from "@umijs/max";
+import {Form, message} from "antd";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {getDbLabel} from "../constants";
+import type {DetailFormValues, SourceTargetType, StepKey} from "../types";
 
 const defaultSourceType: SourceTargetType = {
   dbType: "MYSQL",
@@ -17,7 +17,7 @@ const defaultTargetType: SourceTargetType = {
 };
 
 export default function useDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const {id} = useParams<{ id: string }>();
   const [form] = Form.useForm<DetailFormValues>();
 
   const [params, setParams] = useState<any>(null);
@@ -103,7 +103,7 @@ export default function useDetailPage() {
   const goStep = async (step: StepKey) => {
     if (step === "base") {
       setActiveStep("base");
-      scrollRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      scrollRef.current?.scrollTo?.({top: 0, behavior: "smooth"});
       return;
     }
 
@@ -115,7 +115,7 @@ export default function useDetailPage() {
       }
 
       setActiveStep("client");
-      scrollRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+      scrollRef.current?.scrollTo?.({top: 0, behavior: "smooth"});
     } catch (error) {
       console.log(error);
     }
@@ -132,7 +132,7 @@ export default function useDetailPage() {
         }
 
         setActiveStep("client");
-        scrollRef.current?.scrollTo?.({ top: 0, behavior: "smooth" });
+        scrollRef.current?.scrollTo?.({top: 0, behavior: "smooth"});
       } catch (error) {
         console.log(error);
       }

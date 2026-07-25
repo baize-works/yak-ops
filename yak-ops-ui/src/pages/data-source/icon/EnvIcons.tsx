@@ -1,4 +1,4 @@
-import { Tooltip } from 'antd';
+import {Tooltip} from 'antd';
 import DevIcon from './env/DevIcon';
 import ProIcon from './env/ProIcon';
 import TestIcon from './env/TestIcon';
@@ -7,12 +7,12 @@ interface EnvIconsProps {
   env: number;
 }
 
-const EnvIcons = ({ env }: EnvIconsProps) => {
+const EnvIcons = ({env}: EnvIconsProps) => {
   if (env === 1) {
     return (
       <Tooltip title="开发环境">
         <span>
-          <DevIcon />
+          <DevIcon/>
         </span>
       </Tooltip>
     );
@@ -20,7 +20,7 @@ const EnvIcons = ({ env }: EnvIconsProps) => {
     return (
       <Tooltip title="测试环境">
         <span>
-          <TestIcon />
+          <TestIcon/>
         </span>
       </Tooltip>
     );
@@ -28,7 +28,7 @@ const EnvIcons = ({ env }: EnvIconsProps) => {
     return (
       <Tooltip title="生产环境">
         <span>
-          <ProIcon />
+          <ProIcon/>
         </span>
       </Tooltip>
     );

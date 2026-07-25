@@ -1,5 +1,5 @@
 // SVG 文件内容（你可以直接复制 SVG 代码或者引入 SVG 文件）
-const MysqlIcon = ({ height = '24', width = '24' }) => {
+const MysqlIcon = ({height = '24', width = '24'}) => {
   return (
     <svg
       t="1763127154553"

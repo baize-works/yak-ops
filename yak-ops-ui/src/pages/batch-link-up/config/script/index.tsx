@@ -1,7 +1,7 @@
-import { history, useLocation, useParams } from "@umijs/max";
-import { Empty, message, Spin } from "antd";
-import { useEffect, useState } from "react";
-import { seatunnelJobDefinitionApi } from "../../api";
+import {history, useLocation, useParams} from "@umijs/max";
+import {Empty, message, Spin} from "antd";
+import {useEffect, useState} from "react";
+import {seatunnelJobDefinitionApi} from "../../api";
 import {
   BasicConfig,
   defaultEnvConfig,
@@ -9,10 +9,7 @@ import {
   ScheduleConfig,
 } from "../../workflow/components/ScheduleConfigContent/types";
 import CustomWorkflow from "./CustomWorkflow";
-import {
-  buildUnpublishedJobDefinitionState,
-  normalizeJobDefinitionState,
-} from "./jobDefinitionState";
+import {buildUnpublishedJobDefinitionState, normalizeJobDefinitionState,} from "./jobDefinitionState";
 
 type CustomBasicConfig = BasicConfig & {
   sourcePluginName?: string;
@@ -283,7 +280,7 @@ const buildPageParamsForEdit = (editData?: any) => {
 };
 
 export default function CustomConfigPage() {
-  const { id } = useParams<{ id: string }>();
+  const {id} = useParams<{ id: string }>();
   const location = useLocation();
 
   const [params, setParams] = useState<any>(null);
@@ -383,7 +380,7 @@ export default function CustomConfigPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <Spin />
+        <Spin/>
       </div>
     );
   }
@@ -391,7 +388,7 @@ export default function CustomConfigPage() {
   if (!params) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-        <Empty description="未找到配置数据，请检查任务是否存在" />
+        <Empty description="未找到配置数据，请检查任务是否存在"/>
       </div>
     );
   }

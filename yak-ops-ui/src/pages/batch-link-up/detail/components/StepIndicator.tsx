@@ -1,11 +1,11 @@
-import { STEP_THEME } from "../constants";
-import type { StepKey } from "../types";
+import {STEP_THEME} from "../constants";
+import type {StepKey} from "../types";
 
 interface Props {
   activeStep: StepKey;
 }
 
-const StepIndicator: React.FC<Props> = ({ activeStep }) => {
+const StepIndicator: React.FC<Props> = ({activeStep}) => {
   return (
     <div className="sticky top-0 z-20 mb-6 bg-white/95 pt-1 backdrop-blur">
       <div className="flex items-center gap-3">
@@ -30,7 +30,7 @@ const StepIndicator: React.FC<Props> = ({ activeStep }) => {
           基础配置
         </div>
 
-        <div className="h-px flex-1 bg-[#EAECF0]" />
+        <div className="h-px flex-1 bg-[#EAECF0]"/>
 
         <div
           className={[

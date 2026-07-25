@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { Button, Empty, Input } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import React, {useMemo, useState} from 'react';
+import {Button, Empty, Input} from 'antd';
+import {SearchOutlined} from '@ant-design/icons';
 
 import DatabaseIcons from '../icon/DatabaseIcons';
-import { COMMON_DB_OPTIONS } from '../constants';
-import type { DataSourceGroup } from '../types';
+import {COMMON_DB_OPTIONS} from '../constants';
+import type {DataSourceGroup} from '../types';
 
 interface DataSourceTypeSelectorProps {
   dataSourceGroups: DataSourceGroup[];
@@ -12,9 +12,9 @@ interface DataSourceTypeSelectorProps {
 }
 
 const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
-  dataSourceGroups,
-  onSelect,
-}) => {
+                                                                         dataSourceGroups,
+                                                                         onSelect,
+                                                                       }) => {
   const [query, setQuery] = useState('');
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
 
@@ -63,7 +63,8 @@ const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
         connectorType: matched?.connectorType,
         groupName: matched?.groupName,
       };
-    }).filter((item) => item.dbType).slice(0, 3);;
+    }).filter((item) => item.dbType).slice(0, 3);
+    ;
   }, [flatDatasourceList]);
 
   const showSuggested = !keyword && suggestedDatasourceList.length > 0;
@@ -73,7 +74,7 @@ const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
       <div>
         <Input
           allowClear
-          prefix={<SearchOutlined className="text-[#98A2B3]" />}
+          prefix={<SearchOutlined className="text-[#98A2B3]"/>}
           placeholder="搜索数据源类型，例如 MySQL、PostgreSQL、Oracle..."
           value={query}
           className={[
@@ -185,7 +186,7 @@ const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
                     'group-hover:bg-[hsl(231_48%_48%/0.06)]',
                   ].join(' ')}
                 >
-                  <DatabaseIcons dbType={item.dbType} width="18px" height="18px" />
+                  <DatabaseIcons dbType={item.dbType} width="18px" height="18px"/>
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -245,7 +246,7 @@ const DataSourceTypeSelector: React.FC<DataSourceTypeSelectorProps> = ({
                       'group-hover:bg-[hsl(231_48%_48%/0.06)]',
                     ].join(' ')}
                   >
-                    <DatabaseIcons dbType={item.dbType} width="17px" height="17px" />
+                    <DatabaseIcons dbType={item.dbType} width="17px" height="17px"/>
                   </div>
 
                   <div className="min-w-0 flex-1">

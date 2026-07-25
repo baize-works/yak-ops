@@ -1,8 +1,8 @@
 import React from 'react';
-import { Segmented, Select } from 'antd';
-import { useIntl } from '@umijs/max';
-import { TimeRange, TaskType } from './types';
-import { timeRangeMap, taskTypeOptions } from './utils';
+import {Segmented, Select} from 'antd';
+import {useIntl} from '@umijs/max';
+import {TaskType, TimeRange} from './types';
+import {taskTypeOptions, timeRangeMap} from './utils';
 
 interface HeaderProps {
   timeRange: TimeRange;
@@ -12,11 +12,11 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  timeRange,
-  taskType,
-  onTimeRangeChange,
-  onTaskTypeChange,
-}) => {
+                                         timeRange,
+                                         taskType,
+                                         onTimeRangeChange,
+                                         onTaskTypeChange,
+                                       }) => {
   const intl = useIntl();
 
   const getDefaultSegmentedValue = () => {
@@ -50,9 +50,9 @@ const Header: React.FC<HeaderProps> = ({
         }}
       >
         📊 {intl.formatMessage({
-          id: 'pages.job.overview.title',
-          defaultMessage: 'Job Overview',
-        })}
+        id: 'pages.job.overview.title',
+        defaultMessage: 'Job Overview',
+      })}
       </div>
 
       <div
@@ -63,8 +63,8 @@ const Header: React.FC<HeaderProps> = ({
         }}
       >
         {/* Job Mode */}
-        <div style={{ margin: '6px 0' }}>
-          <span style={{ fontWeight: 400, fontSize: 12 }}>
+        <div style={{margin: '6px 0'}}>
+          <span style={{fontWeight: 400, fontSize: 12}}>
             ✨{' '}
             {intl.formatMessage({
               id: 'pages.job.overview.mode',
@@ -75,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({
 
           <Select
             size="small"
-            style={{ width: '30vh' }}
+            style={{width: '30vh'}}
             value={taskType}
             onChange={onTaskTypeChange}
             options={taskTypeOptions}
@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Time Range */}
-        <div style={{ width: '330px' }}>
+        <div style={{width: '330px'}}>
           <Segmented
             options={Object.keys(timeRangeMap)}
             size="small"

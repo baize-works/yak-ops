@@ -1,4 +1,4 @@
-import { ChartDataItem, TimeRange } from './types';
+import {ChartDataItem, TimeRange} from './types';
 
 
 export const transformChartData = (trendData: ChartDataItem[], timeRange: TimeRange) => {

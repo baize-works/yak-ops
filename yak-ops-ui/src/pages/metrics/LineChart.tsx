@@ -1,5 +1,5 @@
 import * as echarts from 'echarts';
-import React, { useEffect, useRef } from 'react';
+import React, {useEffect, useRef} from 'react';
 
 interface LineChartProps {
   data: number[];
@@ -9,7 +9,7 @@ interface LineChartProps {
   loading: boolean;
 }
 
-const LineChart: React.FC<LineChartProps> = ({ data, xAxisData, title, unit, loading }) => {
+const LineChart: React.FC<LineChartProps> = ({data, xAxisData, title, unit, loading}) => {
   const chartRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!chartRef.current) return;
@@ -21,11 +21,11 @@ const LineChart: React.FC<LineChartProps> = ({ data, xAxisData, title, unit, loa
       //   text: title,
       //   left: 'left',
       //   textStyle: {
-         
+
       //     color: '#333',
-      //     fontSize: 16, 
-      //     fontWeight: 'bold', 
-      //     fontFamily: 'Arial, sans-serif', 
+      //     fontSize: 16,
+      //     fontWeight: 'bold',
+      //     fontFamily: 'Arial, sans-serif',
       //   },
       // },
       tooltip: {

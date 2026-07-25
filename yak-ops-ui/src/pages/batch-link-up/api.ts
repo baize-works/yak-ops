@@ -1,6 +1,4 @@
 import HttpUtils from '@/utils/HttpUtils';
-import { FormInstance, TablePaginationConfig } from 'antd';
-import { Key } from 'antd/es/table/interface';
 
 export enum Operate {
   Add,
@@ -50,8 +48,8 @@ export const seatunnelJobDefinitionApi = {
   },
 
   /**
-  * 编辑页详情查询
-  */
+   * 编辑页详情查询
+   */
   selectEditDetail: (
     id: any,
   ): Promise<{ code: number; data: any; message?: string; msg?: string }> => {
@@ -67,8 +65,8 @@ export const seatunnelJobDefinitionApi = {
   },
 
   /**
- * 任务上线
- */
+   * 任务上线
+   */
   online: (id: string | number): Promise<{ code: number; data: boolean; message?: string; msg?: string }> => {
     return HttpUtils.put(`${apiPrefix}/${id}/online`);
   },

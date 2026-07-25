@@ -1,6 +1,6 @@
-import type { MetricsData } from "../types";
+import type {MetricsData} from "../types";
 
-export const MetricsSummary = ({ data }: { data: MetricsData }) => {
+export const MetricsSummary = ({data}: { data: MetricsData }) => {
   const metricsMap = data?.metrics || {};
   const entries = Object.entries(metricsMap);
 
@@ -39,12 +39,12 @@ export const MetricsSummary = ({ data }: { data: MetricsData }) => {
             }}
           >
             实例ID：
-            <span style={{ color: "#0f172a", fontWeight: 600 }}>
+            <span style={{color: "#0f172a", fontWeight: 600}}>
               {data.instanceId}
             </span>
           </span>
 
-          <span style={{ color: "#cbd5e1" }}>|</span>
+          <span style={{color: "#cbd5e1"}}>|</span>
 
           <span
             style={{
@@ -54,7 +54,7 @@ export const MetricsSummary = ({ data }: { data: MetricsData }) => {
             }}
           >
             引擎ID：
-            <span style={{ color: "#0f172a", fontWeight: 600 }}>
+            <span style={{color: "#0f172a", fontWeight: 600}}>
               {data.engineId}
             </span>
           </span>
@@ -101,7 +101,7 @@ export const MetricsSummary = ({ data }: { data: MetricsData }) => {
                 border: "1px solid #e2e8f0",
               }}
             >
-              <div style={{ minWidth: 0 }}>
+              <div style={{minWidth: 0}}>
                 <div
                   style={{
                     fontSize: "12px",
@@ -124,23 +124,23 @@ export const MetricsSummary = ({ data }: { data: MetricsData }) => {
                 >
                   <span>
                     读{" "}
-                    <span style={{ color: "#0f172a", fontWeight: 600 }}>
+                    <span style={{color: "#0f172a", fontWeight: 600}}>
                       {v.readRowCount ?? 0}
                     </span>
                   </span>
                   <span>
                     写{" "}
-                    <span style={{ color: "#0f172a", fontWeight: 600 }}>
+                    <span style={{color: "#0f172a", fontWeight: 600}}>
                       {v.writeRowCount ?? 0}
                     </span>
                   </span>
                   <span>
                     QPS{" "}
-                    <span style={{ color: "#2563eb", fontWeight: 600 }}>
+                    <span style={{color: "#2563eb", fontWeight: 600}}>
                       {v.readQps ?? 0}
                     </span>
-                    <span style={{ color: "#cbd5e1", margin: "0 4px" }}>/</span>
-                    <span style={{ color: "#7c3aed", fontWeight: 600 }}>
+                    <span style={{color: "#cbd5e1", margin: "0 4px"}}>/</span>
+                    <span style={{color: "#7c3aed", fontWeight: 600}}>
                       {v.writeQps ?? 0}
                     </span>
                   </span>

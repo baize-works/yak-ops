@@ -1,6 +1,6 @@
-import { Button, Typography } from "antd";
+import {Button, Typography} from "antd";
 
-const { Text } = Typography;
+const {Text} = Typography;
 
 interface Props {
   onCancel: () => void;
@@ -12,13 +12,13 @@ interface Props {
 }
 
 const BottomActionBar: React.FC<Props> = ({
-  onCancel,
-  onNext,
-  onPrev,
-  nextText = "下一步",
-  hintText = "完成基础信息与客户端链接配置后，即可进入下一步",
-  nextDisabled = false,
-}) => {
+                                            onCancel,
+                                            onNext,
+                                            onPrev,
+                                            nextText = "下一步",
+                                            hintText = "完成基础信息与客户端链接配置后，即可进入下一步",
+                                            nextDisabled = false,
+                                          }) => {
   return (
     <div
       className="fixed bottom-0 right-0 z-[99] border-t border-[#EAECF0] bg-white/95 px-6 py-4 backdrop-blur"

@@ -1,5 +1,5 @@
 import * as echarts from 'echarts';
-import React, { useEffect, useRef } from 'react';
+import React, {useEffect, useRef} from 'react';
 
 interface BChartProps {
   data: number[];
@@ -9,7 +9,7 @@ interface BChartProps {
   loading: boolean;
 }
 
-const BarChart: React.FC<BChartProps> = ({ data, xAxisData, title, unit, loading }) => {
+const BarChart: React.FC<BChartProps> = ({data, xAxisData, title, unit, loading}) => {
   const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

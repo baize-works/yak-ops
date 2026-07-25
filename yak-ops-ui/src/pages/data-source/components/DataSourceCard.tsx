@@ -1,13 +1,9 @@
-import {
-  ArrowRightOutlined,
-  DeleteOutlined,
-  DisconnectOutlined,
-} from "@ant-design/icons";
-import { Button, Card } from "antd";
+import {ArrowRightOutlined, DeleteOutlined, DisconnectOutlined,} from "@ant-design/icons";
+import {Button, Card} from "antd";
 import React from "react";
-import { environmentTagConfigMap } from "../constants";
+import {environmentTagConfigMap} from "../constants";
 import DatabaseIcons from "../icon/DatabaseIcons";
-import type { DataSourceRecord } from "../types";
+import type {DataSourceRecord} from "../types";
 import DataSourceStatus from "./DataSourceStatus";
 
 interface DataSourceCardProps {
@@ -18,14 +14,14 @@ interface DataSourceCardProps {
 }
 
 const DataSourceCard: React.FC<DataSourceCardProps> = ({
-  record,
-  onEdit,
-  onDelete,
-  onTestConnection,
-}) => {
+                                                         record,
+                                                         onEdit,
+                                                         onDelete,
+                                                         onTestConnection,
+                                                       }) => {
   const environmentConfig = environmentTagConfigMap[
-    record.environment || ""
-  ] || {
+  record.environment || ""
+    ] || {
     text: record.environmentName || "-",
     color: "#8c8c8c",
     backgroundColor: "#fafafa",
@@ -34,7 +30,7 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
 
   return (
     <Card
-      bodyStyle={{ padding: 0 }}
+      bodyStyle={{padding: 0}}
       className={[
         "group relative overflow-hidden rounded-3xl border border-[#F0F0F0]",
         "bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]",
@@ -52,7 +48,7 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
             "shadow-[0_4px_12px_rgba(0,0,0,0.12)]",
           ].join(" ")}
         >
-          <DatabaseIcons dbType={record.dbType} width="28" height="28" />
+          <DatabaseIcons dbType={record.dbType} width="28" height="28"/>
         </div>
 
         <div className="absolute right-5 top-4">
@@ -93,7 +89,7 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
               onDelete(record);
             }}
           >
-            <DeleteOutlined />
+            <DeleteOutlined/>
           </button>
 
           <button
@@ -110,7 +106,7 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
               onTestConnection(record);
             }}
           >
-            <DisconnectOutlined />
+            <DisconnectOutlined/>
           </button>
         </div>
       </div>
@@ -131,7 +127,7 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
         </div>
 
         <div className="mb-4">
-          <DataSourceStatus status={record.connStatus} />
+          <DataSourceStatus status={record.connStatus}/>
         </div>
 
         <div className="mb-4 mt-3 text-xs text-[#8C8C8C]">
@@ -184,7 +180,7 @@ const DataSourceCard: React.FC<DataSourceCardProps> = ({
                 "group-hover/detail:translate-x-0 group-hover/detail:opacity-100",
               ].join(" ")}
             >
-              <ArrowRightOutlined />
+              <ArrowRightOutlined/>
             </span>
           </span>
         </Button>

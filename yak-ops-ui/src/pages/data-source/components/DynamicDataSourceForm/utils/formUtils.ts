@@ -1,11 +1,7 @@
-
-
-
-
 export const transformRules = (rules: any[] | undefined): any[] => {
   if (!rules) return [];
   return rules.map((rule) => {
-    const formRule: any = { message: rule.message };
+    const formRule: any = {message: rule.message};
     if (rule.required === true) formRule.required = true;
     return formRule;
   });

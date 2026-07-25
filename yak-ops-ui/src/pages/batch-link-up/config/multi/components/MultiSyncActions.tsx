@@ -1,8 +1,8 @@
-import { seatunnelJobDefinitionApi } from "@/pages/batch-link-up/api";
+import {seatunnelJobDefinitionApi} from "@/pages/batch-link-up/api";
 import CloseIcon from "@/pages/batch-link-up/workflow/icon/CloseIcon";
 import CodeBlockWithCopy from "@/pages/batch-link-up/workflow/operator/CodeBlockWithCopy";
-import { FileTextOutlined, SaveOutlined } from "@ant-design/icons";
-import { Button, Divider, message, Popover, Tooltip } from "antd";
+import {FileTextOutlined, SaveOutlined} from "@ant-design/icons";
+import {Button, Divider, message, Popover, Tooltip} from "antd";
 import React from "react";
 
 interface Props {
@@ -18,16 +18,16 @@ interface Props {
 }
 
 const MultiSyncActions: React.FC<Props> = ({
-  form,
-  baseForm,
-  goBack,
-  idFromUrl,
-  sourceType,
-  targetType,
-  matchMode,
-  multiTableList,
-  buildTaskDraft,
-}) => {
+                                             form,
+                                             baseForm,
+                                             goBack,
+                                             idFromUrl,
+                                             sourceType,
+                                             targetType,
+                                             matchMode,
+                                             multiTableList,
+                                             buildTaskDraft,
+                                           }) => {
   const [open, setOpen] = React.useState(false);
   const [content, setContent] = React.useState<any>("");
 
@@ -112,24 +112,24 @@ const MultiSyncActions: React.FC<Props> = ({
         bottom: 0,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div style={{display: "flex", justifyContent: "space-between"}}>
         <div>
           <Button
             size="small"
-            style={{ width: 70 }}
+            style={{width: 70}}
             type="primary"
-            icon={<SaveOutlined />}
+            icon={<SaveOutlined/>}
             onClick={handleSave}
           >
             Save
           </Button>
 
-          <Divider type="vertical" />
+          <Divider type="vertical"/>
 
           <Popover
             open={open}
             content={
-              <div className="publish-popover" style={{ width: 600 }}>
+              <div className="publish-popover" style={{width: 600}}>
                 <div
                   style={{
                     display: "flex",
@@ -138,27 +138,27 @@ const MultiSyncActions: React.FC<Props> = ({
                     marginBottom: 6,
                   }}
                 >
-                  <div className="latest-publish" style={{ fontWeight: 500 }}>
+                  <div className="latest-publish" style={{fontWeight: 500}}>
                     Seatunnel Hocon
                   </div>
                   <div
                     onClick={() => setOpen(false)}
-                    style={{ cursor: "pointer" }}
+                    style={{cursor: "pointer"}}
                   >
-                    <CloseIcon />
+                    <CloseIcon/>
                   </div>
                 </div>
                 <Tooltip title="hocon模拟生成">
-                  <CodeBlockWithCopy content={content} />
+                  <CodeBlockWithCopy content={content}/>
                 </Tooltip>
               </div>
             }
           >
             <Button
-              style={{ width: 75 }}
+              style={{width: 75}}
               size="small"
               type="primary"
-              icon={<FileTextOutlined />}
+              icon={<FileTextOutlined/>}
               onClick={handlePreviewHocon}
             >
               Hocon
