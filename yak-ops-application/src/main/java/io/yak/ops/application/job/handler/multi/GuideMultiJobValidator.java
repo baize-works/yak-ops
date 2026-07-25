@@ -2,7 +2,7 @@ package io.yak.ops.application.job.handler.multi;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import io.yak.ops.web.contract.dto.config.GuideMultiJobContent;
+import io.yak.ops.application.model.dto.config.GuideMultiJobContent;
 import org.springframework.stereotype.Component;
 
 @Component

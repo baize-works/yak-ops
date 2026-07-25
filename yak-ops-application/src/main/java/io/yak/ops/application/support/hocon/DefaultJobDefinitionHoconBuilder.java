@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.domain.exceptions.ServiceException;
 import io.yak.ops.application.job.handler.JobDefinitionModeHandler;
 import io.yak.ops.application.job.registry.JobDefinitionModeHandlerRegistry;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Component;
 

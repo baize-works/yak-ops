@@ -8,8 +8,8 @@ import io.yak.ops.dao.entity.JobInstance;
 import io.yak.ops.dao.entity.SeaTunnelClient;
 import io.yak.ops.dao.repository.JobInstanceDao;
 import io.yak.ops.dao.repository.SeaTunnelClientDao;
-import io.yak.ops.engine.legacy.LegacyRestClient;
-import io.yak.ops.web.contract.vo.SeaTunnelClientMetricsVO;
+import io.yak.ops.engine.api.EngineClientPort;
+import io.yak.ops.application.model.vo.SeaTunnelClientMetricsVO;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +35,7 @@ public class SeaTunnelClientRuntimeAppService {
 
 
     @Resource
-    private LegacyRestClient seaTunnelRestClient;
+    private EngineClientPort seaTunnelRestClient;
 
     /**
      * Queries runtime metrics of a SeaTunnel client.

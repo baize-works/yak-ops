@@ -4,7 +4,7 @@ import io.yak.ops.domain.enums.JobMode;
 import io.yak.ops.domain.enums.JobStatus;
 import io.yak.ops.domain.enums.RunMode;
 import io.yak.ops.dao.entity.JobInstance;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;

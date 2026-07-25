@@ -5,8 +5,8 @@ import io.yak.ops.application.modal.ParsedJobMetrics;
 import io.yak.ops.common.enums.TimeRange;
 import io.yak.ops.dao.entity.JobMetrics;
 import io.yak.ops.dao.entity.JobTableMetrics;
-import io.yak.ops.web.contract.vo.OverviewChartsVO;
-import io.yak.ops.web.contract.vo.OverviewSummaryVO;
+import io.yak.ops.application.model.vo.OverviewChartsVO;
+import io.yak.ops.application.model.vo.OverviewSummaryVO;
 
 import java.util.List;
 

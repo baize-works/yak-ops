@@ -2,11 +2,11 @@ package io.yak.ops.application.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.yak.ops.dao.entity.SeaTunnelClient;
-import io.yak.ops.web.contract.dto.ClientDatasourceVerifyDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientEndpointDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientPageDTO;
-import io.yak.ops.web.contract.vo.*;
+import io.yak.ops.application.model.dto.ClientDatasourceVerifyDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientEndpointDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientPageDTO;
+import io.yak.ops.application.model.vo.*;
 
 import java.util.List;
 import java.util.Map;

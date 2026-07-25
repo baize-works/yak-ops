@@ -15,7 +15,7 @@ import io.yak.ops.application.support.builder.context.DagBuildContext;
 import io.yak.ops.application.support.time.TimeVariableJdbcSqlRenderService;
 import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.dao.repository.DataSourceDao;
-import io.yak.ops.web.contract.dto.config.JobScheduleConfig;
+import io.yak.ops.application.model.dto.config.JobScheduleConfig;
 import io.yak.ops.plugin.spi.enums.DbType;
 import org.springframework.stereotype.Component;
 

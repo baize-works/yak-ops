@@ -8,6 +8,10 @@
     </parent>
     <artifactId>yak-ops-web</artifactId>
     <dependencies>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-web-contract</artifactId>
+        </dependency>
         <dependency><groupId>io.swagger.core.v3</groupId><artifactId>swagger-annotations</artifactId></dependency>
         <dependency>
             <groupId>io.yak.ops</groupId>

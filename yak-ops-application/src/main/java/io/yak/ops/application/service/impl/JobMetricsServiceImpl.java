@@ -11,12 +11,12 @@ import io.yak.ops.dao.entity.JobMetrics;
 import io.yak.ops.dao.entity.JobTableMetrics;
 import io.yak.ops.dao.repository.JobMetricsDao;
 import io.yak.ops.dao.repository.JobTableMetricsDao;
-import io.yak.ops.engine.legacy.LegacyRuntimeRestClient;
+import io.yak.ops.engine.api.EngineRuntimeClientPort;
 import io.yak.ops.spi.bean.entity.Scale;
 import io.yak.ops.spi.bean.entity.TimeWindow;
-import io.yak.ops.web.contract.vo.ChartDataItemVO;
-import io.yak.ops.web.contract.vo.OverviewChartsVO;
-import io.yak.ops.web.contract.vo.OverviewSummaryVO;
+import io.yak.ops.application.model.vo.ChartDataItemVO;
+import io.yak.ops.application.model.vo.OverviewChartsVO;
+import io.yak.ops.application.model.vo.OverviewSummaryVO;
 
 import org.springframework.stereotype.Service;
 
@@ -41,7 +41,7 @@ import java.util.*;
 public class JobMetricsServiceImpl implements JobMetricsService {
 
     @Resource
-    private LegacyRuntimeRestClient engineRestClient;
+    private EngineRuntimeClientPort engineRestClient;
 
     @Resource
     private JobMetricsDao jobMetricsDao;

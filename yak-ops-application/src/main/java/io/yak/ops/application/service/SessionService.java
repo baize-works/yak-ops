@@ -1,7 +1,6 @@
 package io.yak.ops.application.service;
 
 
-import javax.servlet.http.HttpServletRequest;
 import io.yak.ops.application.model.Session;
 import io.yak.ops.application.model.User;
 
@@ -11,12 +10,13 @@ import io.yak.ops.application.model.User;
 public interface SessionService {
 
     /**
-     * get user session from request
+     * Get a user session without exposing transport-specific request objects.
      *
-     * @param request request
+     * @param sessionId session identifier supplied by the transport layer
+     * @param clientIp client address used for diagnostics
      * @return session
      */
-    Session getSession(HttpServletRequest request);
+    Session getSession(String sessionId, String clientIp);
 
     /**
      * create session

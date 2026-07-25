@@ -8,10 +8,10 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.yak.ops.api.exceptions.ApiException;
 import io.yak.ops.application.service.DataSourceCatalogService;
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.response.Result;
 import io.yak.ops.common.QueryResult;
-import io.yak.ops.web.contract.vo.ColumnOptionVO;
-import io.yak.ops.web.contract.vo.OptionVO;
+import io.yak.ops.application.model.vo.ColumnOptionVO;
+import io.yak.ops.application.model.vo.OptionVO;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

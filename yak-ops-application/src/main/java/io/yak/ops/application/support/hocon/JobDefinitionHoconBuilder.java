@@ -1,6 +1,6 @@
 package io.yak.ops.application.support.hocon;
 
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
 
 /**
  * Build executable hocon config from job definition command.

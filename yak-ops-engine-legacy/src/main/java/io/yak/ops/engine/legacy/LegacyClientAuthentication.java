@@ -1,25 +1,9 @@
 package io.yak.ops.engine.legacy;
 
-import lombok.Data;
+import io.yak.ops.engine.api.EngineClientAuthentication;
 
 /**
  * Authentication configuration for SeaTunnel client.
  */
-@Data
-public class LegacyClientAuthentication {
-
-    /**
-     * Whether authentication is enabled.
-     */
-    private Boolean authEnabled;
-
-    /**
-     * Username for authentication.
-     */
-    private String username;
-
-    /**
-     * Password for authentication.
-     */
-    private String password;
-}
+@Deprecated
+public class LegacyClientAuthentication extends EngineClientAuthentication { }

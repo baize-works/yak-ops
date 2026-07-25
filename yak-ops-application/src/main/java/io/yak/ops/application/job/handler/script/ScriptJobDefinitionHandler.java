@@ -7,9 +7,9 @@ import io.yak.ops.common.enums.JobDefinitionMode;
 import io.yak.ops.common.modal.JobDefinitionAnalysisResult;
 import io.yak.ops.common.utils.JSONUtils;
 import io.yak.ops.application.job.handler.JobDefinitionModeHandler;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.command.ScriptJobContentCommand;
-import io.yak.ops.web.contract.dto.config.ScriptJobContent;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.command.ScriptJobContentCommand;
+import io.yak.ops.application.model.dto.config.ScriptJobContent;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -3,7 +3,7 @@ package io.yak.ops.infrastructure.verify;
 import io.yak.ops.infrastructure.verify.modal.DatasourceVerifyContext;
 import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.dao.entity.SeaTunnelClient;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyVO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
 import io.yak.ops.plugin.spi.enums.DbType;
 
 /**

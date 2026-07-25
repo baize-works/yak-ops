@@ -1,10 +1,10 @@
 package io.yak.ops.application.service;
 
 import io.yak.ops.dao.entity.DataSource;
-import io.yak.ops.web.contract.dto.DataSourceDTO;
-import io.yak.ops.web.contract.response.PaginationResult;
-import io.yak.ops.web.contract.vo.DBOptionVO;
-import io.yak.ops.web.contract.vo.DataSourceVO;
+import io.yak.ops.application.model.dto.DataSourceDTO;
+import io.yak.ops.application.model.response.PaginationResult;
+import io.yak.ops.application.model.vo.DBOptionVO;
+import io.yak.ops.application.model.vo.DataSourceVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

@@ -9,9 +9,9 @@ import io.yak.ops.domain.dag.DagGraph;
 import io.yak.ops.application.job.handler.JobRuntimeContext;
 import io.yak.ops.application.job.handler.JobRuntimeContextFactory;
 import io.yak.ops.application.support.dag.DagUtil;
-import io.yak.ops.web.contract.dto.command.JobDefinitionSaveCommand;
-import io.yak.ops.web.contract.dto.config.GuideMultiJobContent;
-import io.yak.ops.web.contract.dto.config.JobEnvConfig;
+import io.yak.ops.application.model.dto.command.JobDefinitionSaveCommand;
+import io.yak.ops.application.model.dto.config.GuideMultiJobContent;
+import io.yak.ops.application.model.dto.config.JobEnvConfig;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;

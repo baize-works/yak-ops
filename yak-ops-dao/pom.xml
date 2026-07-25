@@ -52,10 +52,6 @@
             <optional>true</optional>
         </dependency>
 
-        <dependency>
-            <groupId>io.yak.ops</groupId>
-            <artifactId>yak-ops-domain</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

@@ -1,8 +1,8 @@
 package io.yak.ops.application.service;
 
 import io.yak.ops.common.QueryResult;
-import io.yak.ops.web.contract.vo.ColumnOptionVO;
-import io.yak.ops.web.contract.vo.OptionVO;
+import io.yak.ops.application.model.vo.ColumnOptionVO;
+import io.yak.ops.application.model.vo.OptionVO;
 
 import java.util.List;
 import java.util.Map;

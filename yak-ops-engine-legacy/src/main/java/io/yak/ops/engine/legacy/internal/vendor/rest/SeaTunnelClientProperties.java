@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Reads the deprecated vendor-prefixed transport settings for compatibility only. */
 @Data
-@Deprecated(forRemoval = true)
+@Deprecated
 @ConfigurationProperties(prefix = "seatunnel.client")
 public class SeaTunnelClientProperties {
     private Integer connectTimeoutMs;

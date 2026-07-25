@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import io.yak.ops.api.exceptions.ApiException;
 import io.yak.ops.domain.exceptions.ServiceException;
 import io.yak.ops.application.service.DatasourcePluginService;
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.response.Result;
 import io.yak.ops.plugin.spi.enums.Status;
 import io.yak.ops.plugin.spi.form.PluginConfigResponse;
 import org.springframework.web.bind.annotation.*;

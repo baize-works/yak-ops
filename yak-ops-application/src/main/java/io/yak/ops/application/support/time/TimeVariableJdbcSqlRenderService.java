@@ -6,9 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.seatunnel.plugin.datasource.api.hocon.DataSourceHoconBuilder;
 import io.yak.ops.domain.exceptions.ServiceException;
 import io.yak.ops.dao.entity.TimeVariable;
-import io.yak.ops.web.contract.dto.TimeVariableRenderReq;
-import io.yak.ops.web.contract.dto.config.JobScheduleConfig;
-import io.yak.ops.web.contract.vo.TimeVariableRenderVO;
+import io.yak.ops.application.model.dto.TimeVariableRenderReq;
+import io.yak.ops.application.model.dto.config.JobScheduleConfig;
+import io.yak.ops.application.model.vo.TimeVariableRenderVO;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Service;
 

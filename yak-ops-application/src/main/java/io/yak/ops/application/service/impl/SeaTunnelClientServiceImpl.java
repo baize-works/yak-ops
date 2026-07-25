@@ -8,13 +8,13 @@ import io.yak.ops.application.service.impl.client.SeaTunnelClientLifecycleAppSer
 import io.yak.ops.application.service.impl.client.SeaTunnelClientQueryAppService;
 import io.yak.ops.application.service.impl.client.SeaTunnelClientRuntimeAppService;
 import io.yak.ops.dao.entity.SeaTunnelClient;
-import io.yak.ops.web.contract.dto.ClientDatasourceVerifyDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientEndpointDTO;
-import io.yak.ops.web.contract.dto.SeaTunnelClientPageDTO;
-import io.yak.ops.web.contract.vo.ClientDatasourceVerifyVO;
-import io.yak.ops.web.contract.vo.OptionVO;
-import io.yak.ops.web.contract.vo.SeaTunnelClientMetricsVO;
+import io.yak.ops.application.model.dto.ClientDatasourceVerifyDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientEndpointDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientPageDTO;
+import io.yak.ops.application.model.vo.ClientDatasourceVerifyVO;
+import io.yak.ops.application.model.vo.OptionVO;
+import io.yak.ops.application.model.vo.SeaTunnelClientMetricsVO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

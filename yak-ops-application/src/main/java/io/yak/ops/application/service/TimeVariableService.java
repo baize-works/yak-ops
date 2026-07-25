@@ -1,13 +1,13 @@
 package io.yak.ops.application.service;
 
 import io.yak.ops.application.support.time.TimeVariableRenderService;
-import io.yak.ops.web.contract.dto.TimeVariableCreateDTO;
-import io.yak.ops.web.contract.dto.TimeVariablePageReq;
-import io.yak.ops.web.contract.dto.TimeVariablePreviewReq;
-import io.yak.ops.web.contract.dto.TimeVariableUpdateDTO;
-import io.yak.ops.web.contract.response.PaginationResult;
-import io.yak.ops.web.contract.vo.TimeVariablePreviewVO;
-import io.yak.ops.web.contract.vo.TimeVariableVO;
+import io.yak.ops.application.model.dto.TimeVariableCreateDTO;
+import io.yak.ops.application.model.dto.TimeVariablePageReq;
+import io.yak.ops.application.model.dto.TimeVariablePreviewReq;
+import io.yak.ops.application.model.dto.TimeVariableUpdateDTO;
+import io.yak.ops.application.model.response.PaginationResult;
+import io.yak.ops.application.model.vo.TimeVariablePreviewVO;
+import io.yak.ops.application.model.vo.TimeVariableVO;
 
 public interface TimeVariableService{
 

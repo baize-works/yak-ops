@@ -2,17 +2,20 @@ package io.yak.ops.api.controller;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Cookie;
 import io.yak.ops.api.aspect.AccessLogAnnotation;
 import io.yak.ops.application.model.User;
 import io.yak.ops.application.service.SessionService;
 import io.yak.ops.application.service.UsersService;
 import io.yak.ops.common.constants.Constants;
-import io.yak.ops.web.contract.dto.UserDTO;
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.dto.UserDTO;
+import io.yak.ops.application.model.response.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.WebUtils;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -48,7 +51,12 @@ public class UsersController extends BaseController {
         User loginUser = (User) request.getAttribute(Constants.SESSION_USER);
 
         if (loginUser == null) {
-            Session session = sessionService.getSession(request);
+            String sessionId = request.getHeader(Constants.SESSION_ID);
+            if (StringUtils.isBlank(sessionId)) {
+                Cookie cookie = WebUtils.getCookie(request, Constants.SESSION_ID);
+                sessionId = cookie == null ? null : cookie.getValue();
+            }
+            Session session = sessionService.getSession(sessionId, getClientIpAddress(request));
             if (session == null) {
                 return Result.buildFailure("NOT_LOGIN");
             }

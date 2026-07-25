@@ -12,10 +12,10 @@ import io.yak.ops.dao.entity.SeaTunnelClient;
 import io.yak.ops.dao.entity.SeaTunnelClientNode;
 import io.yak.ops.dao.repository.SeaTunnelClientDao;
 import io.yak.ops.dao.repository.SeaTunnelClientNodeDao;
-import io.yak.ops.web.contract.dto.SeaTunnelClientEndpointDTO;
+import io.yak.ops.application.model.dto.SeaTunnelClientEndpointDTO;
 import io.yak.ops.dao.model.result.SeaTunnelClientEndpoint;
-import io.yak.ops.web.contract.dto.SeaTunnelClientPageDTO;
-import io.yak.ops.web.contract.vo.OptionVO;
+import io.yak.ops.application.model.dto.SeaTunnelClientPageDTO;
+import io.yak.ops.application.model.vo.OptionVO;
 import io.yak.ops.plugin.spi.enums.Status;
 import org.springframework.stereotype.Service;
 

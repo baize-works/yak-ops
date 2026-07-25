@@ -2,7 +2,7 @@ package io.yak.ops.application.service;
 
 import io.yak.ops.domain.enums.ScheduleStatusEnum;
 import io.yak.ops.dao.entity.JobSchedule;
-import io.yak.ops.web.contract.dto.SeaTunnelJobScheduleDTO;
+import io.yak.ops.application.model.dto.SeaTunnelJobScheduleDTO;
 
 import java.util.Date;
 import java.util.List;

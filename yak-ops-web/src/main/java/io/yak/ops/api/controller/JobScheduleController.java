@@ -8,7 +8,7 @@ import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import io.yak.ops.api.exceptions.ApiException;
 import io.yak.ops.application.service.JobScheduleService;
-import io.yak.ops.web.contract.response.Result;
+import io.yak.ops.application.model.response.Result;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 

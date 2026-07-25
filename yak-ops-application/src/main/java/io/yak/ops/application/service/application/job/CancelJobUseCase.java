@@ -5,7 +5,7 @@ import io.yak.ops.application.service.application.BatchJobSubmissionUseCase;
 import io.yak.ops.domain.exceptions.ServiceException;
 import io.yak.ops.dao.entity.JobInstance;
 import io.yak.ops.domain.enums.JobStatus;
-import io.yak.ops.web.contract.vo.JobInstanceVO;
+import io.yak.ops.application.model.vo.JobInstanceVO;
 import io.yak.ops.plugin.spi.enums.Status;
 import java.util.Date;
 import org.springframework.stereotype.Component;

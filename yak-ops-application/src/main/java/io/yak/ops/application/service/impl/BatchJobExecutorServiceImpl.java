@@ -3,7 +3,7 @@ package io.yak.ops.application.service.impl;
 import io.yak.ops.application.service.BatchJobExecutorService;
 import io.yak.ops.application.service.application.job.BatchExecuteJobsUseCase;
 import io.yak.ops.domain.enums.RunMode;
-import io.yak.ops.web.contract.vo.BatchJobOperateResultVO;
+import io.yak.ops.application.model.vo.BatchJobOperateResultVO;
 import java.util.List;
 import org.springframework.stereotype.Service;
 /** @deprecated Compatibility facade. New callers should use the job execution use cases. */

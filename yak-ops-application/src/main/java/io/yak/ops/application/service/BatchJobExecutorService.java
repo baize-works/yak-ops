@@ -1,7 +1,7 @@
 package io.yak.ops.application.service;
 
 import io.yak.ops.domain.enums.RunMode;
-import io.yak.ops.web.contract.vo.BatchJobOperateResultVO;
+import io.yak.ops.application.model.vo.BatchJobOperateResultVO;
 
 import java.util.List;
 

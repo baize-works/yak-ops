@@ -1,14 +1,14 @@
 package io.yak.ops.application.service;
 
 import io.yak.ops.common.enums.ReleaseState;
-import io.yak.ops.web.contract.dto.BatchJobDefinitionQueryDTO;
-import io.yak.ops.web.contract.dto.batch.BatchGuideMultiJobSaveCommand;
-import io.yak.ops.web.contract.dto.batch.BatchGuideSingleJobSaveCommand;
-import io.yak.ops.web.contract.dto.batch.BatchScriptJobSaveCommand;
-import io.yak.ops.web.contract.response.PaginationResult;
-import io.yak.ops.web.contract.vo.BatchJobDefinitionVO;
-import io.yak.ops.web.contract.vo.JobDefinitionEditDetailVO;
-import io.yak.ops.web.contract.vo.JobDefinitionSaveResultVO;
+import io.yak.ops.application.model.dto.BatchJobDefinitionQueryDTO;
+import io.yak.ops.application.model.dto.batch.BatchGuideMultiJobSaveCommand;
+import io.yak.ops.application.model.dto.batch.BatchGuideSingleJobSaveCommand;
+import io.yak.ops.application.model.dto.batch.BatchScriptJobSaveCommand;
+import io.yak.ops.application.model.response.PaginationResult;
+import io.yak.ops.application.model.vo.BatchJobDefinitionVO;
+import io.yak.ops.application.model.vo.JobDefinitionEditDetailVO;
+import io.yak.ops.application.model.vo.JobDefinitionSaveResultVO;
 
 import java.util.List;
 
