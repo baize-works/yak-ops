@@ -110,7 +110,11 @@ public class BatchJobInstanceServiceImpl implements BatchJobInstanceService {
                 records.forEach(this::maskSensitiveFields);
             }
 
-            return PaginationResult.buildSuc(records, pageResult);
+            return PaginationResult.buildSuc(
+                    records,
+                    pageResult.getTotal(),
+                    pageResult.getCurrent(),
+                    pageResult.getSize());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {

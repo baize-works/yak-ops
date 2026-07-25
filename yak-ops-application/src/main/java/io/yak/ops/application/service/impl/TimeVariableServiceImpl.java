@@ -160,7 +160,11 @@ public class TimeVariableServiceImpl implements TimeVariableService {
                     .map(this::toVO)
                     .collect(java.util.stream.Collectors.toList());
 
-            return PaginationResult.buildSuc(records, pageResult);
+            return PaginationResult.buildSuc(
+                    records,
+                    pageResult.getTotal(),
+                    pageResult.getCurrent(),
+                    pageResult.getSize());
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
