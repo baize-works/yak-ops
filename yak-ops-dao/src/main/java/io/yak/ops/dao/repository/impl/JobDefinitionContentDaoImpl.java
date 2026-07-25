@@ -2,14 +2,14 @@ package io.yak.ops.dao.repository.impl;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import javax.annotation.Resource;
-import lombok.NonNull;
 import io.yak.ops.dao.entity.JobDefinitionContentEntity;
 import io.yak.ops.dao.mapper.JobDefinitionContentMapper;
 import io.yak.ops.dao.repository.BaseDao;
 import io.yak.ops.dao.repository.JobDefinitionContentDao;
+import lombok.NonNull;
 import org.springframework.stereotype.Repository;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 @Repository

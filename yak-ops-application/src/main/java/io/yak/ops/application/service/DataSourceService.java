@@ -1,10 +1,10 @@
 package io.yak.ops.application.service;
 
-import io.yak.ops.dao.entity.DataSource;
 import io.yak.ops.application.model.dto.DataSourceDTO;
 import io.yak.ops.application.model.response.PaginationResult;
 import io.yak.ops.application.model.vo.DBOptionVO;
 import io.yak.ops.application.model.vo.DataSourceVO;
+import io.yak.ops.dao.entity.DataSource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -31,7 +31,7 @@ public interface DataSourceService {
      *
      * <p>If connection parameters change, connectivity should be revalidated.</p>
      *
-     * @param id primary key of the datasource
+     * @param id  primary key of the datasource
      * @param dto updated values (only non-null fields are applied)
      * @return the updated datasource ID
      * @throws RuntimeException if datasource does not exist or validation fails
@@ -126,9 +126,9 @@ public interface DataSourceService {
      * <p>The uploaded driver will be stored and associated with
      * the specified plugin type.</p>
      *
-     * @param file uploaded JDBC driver (usually a .jar)
+     * @param file       uploaded JDBC driver (usually a .jar)
      * @param pluginType plugin identifier (e.g. mysql, postgres)
-     * @param overwrite whether to overwrite an existing driver
+     * @param overwrite  whether to overwrite an existing driver
      * @return result metadata such as file path or status
      */
     Map<String, Object> uploadJdbcDriver(

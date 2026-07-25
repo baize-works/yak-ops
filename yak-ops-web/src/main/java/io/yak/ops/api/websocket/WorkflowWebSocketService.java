@@ -40,7 +40,12 @@ public class WorkflowWebSocketService implements WorkflowMetricsPublisher {
         sendMessage(channel, message);
     }
 
-    public void sendMessage(String channel, Map<String, Object> message) {
-        messagingTemplate.convertAndSend("/topic/log/test", message);
+    public void sendMessage(
+            String channel,
+            Map<String, Object> message) {
+
+        messagingTemplate.convertAndSend(
+                "/topic/log/" + channel,
+                message);
     }
 }
