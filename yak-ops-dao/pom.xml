@@ -8,18 +8,6 @@
     </parent>
     <artifactId>yak-ops-dao</artifactId>
     <name>${project.artifactId}</name>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-domain</artifactId>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-web-contract</artifactId>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
