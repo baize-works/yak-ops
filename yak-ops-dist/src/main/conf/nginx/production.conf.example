@@ -50,6 +50,30 @@ server {
         proxy_redirect off;
     }
 
+    # The trailing slash strips the ingress-only /yak-security/ prefix.
+    location /yak-security/ {
+        limit_req zone=api_limit burst=120 nodelay;
+        proxy_pass http://yak-ops-api:9527/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Rewrite an explicit upstream Domain to this public host and keep the
+        # cookie off unrelated routes. SameSite=Lax supports this same-origin flow.
+        proxy_cookie_domain ~.+ $host;
+        proxy_cookie_path / /yak-security/;
+        proxy_cookie_flags ~ samesite=lax secure;
+
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+        proxy_buffering off;
+        proxy_redirect off;
+    }
+
     location /ws {
         proxy_pass http://yak-ops-api:9527;
         proxy_http_version 1.1;
