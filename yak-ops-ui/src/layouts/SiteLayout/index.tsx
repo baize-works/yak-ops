@@ -8,6 +8,7 @@ import {
   type NavigationIconKey,
   type NavigationRoute,
 } from "@/config/navigation";
+import { RouteAccessBoundary } from "@/components/security";
 import { history, Outlet, useLocation, useModel } from "@umijs/max";
 import {
   Activity,
@@ -142,23 +143,6 @@ const navigationIcons: Record<NavigationIconKey, ReactNode> = {
   ),
 };
 
-const standaloneRoutes = getStandaloneNavigationRoutes();
-const navigationGroups = getMainNavigationGroups();
-const quickCreateRoutes = getQuickCreateRoutes();
-
-/**
- * 首页单独作为第一菜单区域。
- */
-const homeRoutes = standaloneRoutes.filter((route) => route.id === "home");
-
-/**
- * 数据源管理等业务一级菜单，
- * 显示在首页分割线之后、数据集成之前。
- */
-const businessStandaloneRoutes = standaloneRoutes.filter(
-  (route) => route.id !== "home"
-);
-
 interface HeaderActionProps {
   icon: ReactNode;
   label: string;
@@ -267,6 +251,16 @@ function BrandLogo({ compact }: { compact: boolean }) {
 export default function SiteLayout() {
   const location = useLocation();
   const { initialState } = useModel("@@initialState");
+  const currentUser = initialState?.currentUser;
+  const permissionCodes = currentUser?.permissionCodes;
+
+  const standaloneRoutes = getStandaloneNavigationRoutes(permissionCodes);
+  const navigationGroups = getMainNavigationGroups(permissionCodes);
+  const quickCreateRoutes = getQuickCreateRoutes(permissionCodes);
+  const homeRoutes = standaloneRoutes.filter((route) => route.id === "home");
+  const businessStandaloneRoutes = standaloneRoutes.filter(
+    (route) => route.id !== "home"
+  );
 
   const quickCreateRef = useRef<HTMLDivElement>(null);
 
@@ -318,7 +312,10 @@ export default function SiteLayout() {
    * 因此这里不再使用单个 openGroupId。
    */
   const [openGroupIds, setOpenGroupIds] = useState<Set<string>>(() => {
-    const activeGroupId = getActiveNavigationGroupId(location.pathname);
+    const activeGroupId = getActiveNavigationGroupId(
+      location.pathname,
+      permissionCodes
+    );
 
     return activeGroupId ? new Set([activeGroupId]) : new Set();
   });
@@ -340,7 +337,10 @@ export default function SiteLayout() {
   }, []);
 
   useEffect(() => {
-    const activeGroupId = getActiveNavigationGroupId(location.pathname);
+    const activeGroupId = getActiveNavigationGroupId(
+      location.pathname,
+      permissionCodes
+    );
 
     if (!activeGroupId) {
       return;
@@ -356,7 +356,7 @@ export default function SiteLayout() {
 
       return next;
     });
-  }, [location.pathname]);
+  }, [location.pathname, permissionCodes]);
 
   useEffect(() => {
     setQuickCreateOpen(false);
@@ -382,13 +382,14 @@ export default function SiteLayout() {
 
   const sidebarWidth = compact ? COLLAPSED_SIDEBAR_WIDTH : SIDEBAR_WIDTH;
 
-  const activeNavigationId = getActiveNavigationId(location.pathname);
+  const activeNavigationId = getActiveNavigationId(
+    location.pathname,
+    permissionCodes
+  );
 
   const routeMetadata = getRouteMetadata(location.pathname);
 
   const pageTitle = routeMetadata?.title ?? "Yak Ops";
-
-  const currentUser = initialState?.currentUser;
 
   const userInitial = useMemo(() => {
     return currentUser?.name?.trim().slice(0, 1).toUpperCase() || "Y";
@@ -953,7 +954,9 @@ export default function SiteLayout() {
               bg-white
             "
           >
-            <Outlet />
+            <RouteAccessBoundary permissionCodes={permissionCodes}>
+              <Outlet />
+            </RouteAccessBoundary>
           </div>
         </div>
       </main>
