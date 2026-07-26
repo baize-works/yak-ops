@@ -21,9 +21,12 @@ declare namespace API {
     deptId?: number | null;
     phone?: string | null;
     email?: string | null;
-    roleList: RoleBrief[];
-    permissionCodes: string[];
-    projectList: ProjectBrief[];
+    /** Optional until AccountController/current explicitly guarantees it. */
+    roleList?: RoleBrief[] | null;
+    /** Optional until AccountController/current explicitly guarantees it. */
+    permissionCodes?: string[] | null;
+    /** Security projects authorized for this identity, not an admin list. */
+    projectList?: ProjectBrief[] | null;
   };
 
   type CurrentUser = {
