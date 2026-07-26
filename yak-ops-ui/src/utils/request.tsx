@@ -25,8 +25,58 @@ const codeMessage: Record<number, string> = {
 export interface ApiResponse<T = any> {
   code: number;
   msg: string;
+  message?: string;
   data: T;
 }
+
+export type ApiProtocolNamespace = "yak-ops" | "security";
+
+/**
+ * Backend response protocols. Keep protocol differences here instead of leaking
+ * status-code checks into pages. Yak Security currently uses HTTP-like code 200.
+ */
+export const API_PROTOCOLS: Record<
+  ApiProtocolNamespace,
+  { successCodes: readonly number[]; unauthenticatedCodes: readonly number[] }
+> = {
+  "yak-ops": { successCodes: [0], unauthenticatedCodes: [1, 401] },
+  security: { successCodes: [200], unauthenticatedCodes: [1, 401] },
+};
+
+export const getProtocolNamespace = (url?: string): ApiProtocolNamespace =>
+  url?.includes("/yak-security/") ? "security" : "yak-ops";
+
+export const isSuccessfulResponse = (
+  response: Partial<ApiResponse<any>> | null | undefined,
+  namespace: ApiProtocolNamespace = "yak-ops"
+): boolean =>
+  typeof response?.code === "number" &&
+  API_PROTOCOLS[namespace].successCodes.includes(response.code);
+
+export const extractErrorMessage = (
+  response: Partial<ApiResponse<any>> | null | undefined,
+  fallback = "操作失败"
+): string => response?.msg || response?.message || fallback;
+
+const UNAUTHENTICATED_MESSAGES = [
+  "NOT_LOGIN",
+  "UNAUTHENTICATED",
+  "SESSION_EXPIRED",
+  "SESSION_INVALID",
+];
+
+export const isUnauthenticatedResponse = (
+  response: Partial<ApiResponse<any>> | null | undefined,
+  namespace: ApiProtocolNamespace = "yak-ops"
+): boolean => {
+  const message = response?.msg || response?.message;
+  return (
+    (typeof response?.code === "number" &&
+      API_PROTOCOLS[namespace].unauthenticatedCodes.includes(response.code)) ||
+    (typeof message === "string" &&
+      UNAUTHENTICATED_MESSAGES.includes(message.toUpperCase()))
+  );
+};
 
 export class BizError extends Error {
   code?: number;
@@ -53,14 +103,40 @@ export const goLogin = () => {
   }
 };
 
-/** 唯一错误出口 */
+let authenticationFailureHandled = false;
+
+/** HTTP 401、业务未登录码与 Session 失效的唯一处理出口。 */
+export const handleAuthenticationFailure = () => {
+  if (window.location.pathname.toLowerCase().startsWith("/login")) {
+    return;
+  }
+  if (authenticationFailureHandled) return;
+
+  authenticationFailureHandled = true;
+  openPrettyNotification({
+    type: "warning",
+    title: "登录状态失效",
+    description: "当前登录信息已过期，请重新登录后继续操作。",
+    meta: "即将跳转登录页",
+  });
+  goLogin();
+
+  // Keep concurrent failures in the same request burst deduplicated. Resetting
+  // later still allows a future expired session to be reported without reload.
+  window.setTimeout(() => {
+    authenticationFailureHandled = false;
+  }, 1500);
+};
+
 /** 唯一错误出口 */
 const errorHandler = (error: any): Response | undefined => {
   const { response } = error;
 
   // 业务异常
   if (error instanceof BizError) {
-    if (!error.skipErrorHandler) {
+    if (isUnauthenticatedResponse(error.response)) {
+      handleAuthenticationFailure();
+    } else if (!error.skipErrorHandler) {
       openPrettyNotification({
         type: "error",
         title: "操作失败",
@@ -69,25 +145,15 @@ const errorHandler = (error: any): Response | undefined => {
       });
     }
 
-    if (error.code === 401) {
-      goLogin();
-    }
-
     throw error;
   }
 
   // HTTP 异常
-  if (response && response.status) {
+  if (response?.status) {
     const { status, url } = response;
 
     if (status === 401) {
-      openPrettyNotification({
-        type: "warning",
-        title: "登录状态失效",
-        description: "当前登录信息已过期，请重新登录后继续操作。",
-        meta: "即将跳转登录页",
-      });
-      goLogin();
+      handleAuthenticationFailure();
       return response;
     }
 
@@ -160,15 +226,25 @@ request.interceptors.response.use(async (response: Response, options: any) => {
   }
 
   const clonedResponse = response.clone();
-  const res: any = await clonedResponse.json();
-  if (res?.message === "NOT_LOGIN" || res?.code === 1) {
-    goLogin();
-    return response || {};
+  const res: ApiResponse<any> = await clonedResponse.json();
+  const namespace = getProtocolNamespace(response.url);
+
+  if (isUnauthenticatedResponse(res, namespace)) {
+    handleAuthenticationFailure();
+    throw new BizError(
+      extractErrorMessage(res, "登录状态失效"),
+      res.code,
+      res,
+      true
+    );
   }
 
-  if (typeof res?.code !== "undefined" && res.code !== 0) {
+  if (
+    typeof res?.code !== "undefined" &&
+    !isSuccessfulResponse(res, namespace)
+  ) {
     throw new BizError(
-      res.msg || "操作失败",
+      extractErrorMessage(res),
       res.code,
       res,
       options?.skipErrorHandler
