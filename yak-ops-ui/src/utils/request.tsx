@@ -99,11 +99,17 @@ export class BizError extends Error {
 
 export const goLogin = () => {
   if (!window.location.pathname.toLowerCase().startsWith("/login")) {
-    history.push("/login");
+    const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    history.replace(`/login?returnTo=${encodeURIComponent(returnTo)}`);
   }
 };
 
 let authenticationFailureHandled = false;
+
+/** Re-arm expiry handling only after a new Session has been established. */
+export const resetAuthenticationFailure = () => {
+  authenticationFailureHandled = false;
+};
 
 /** HTTP 401、业务未登录码与 Session 失效的唯一处理出口。 */
 export const handleAuthenticationFailure = () => {
@@ -121,11 +127,6 @@ export const handleAuthenticationFailure = () => {
   });
   goLogin();
 
-  // Keep concurrent failures in the same request burst deduplicated. Resetting
-  // later still allows a future expired session to be reported without reload.
-  window.setTimeout(() => {
-    authenticationFailureHandled = false;
-  }, 1500);
 };
 
 /** 唯一错误出口 */

@@ -1,5 +1,6 @@
-import { useModel } from '@umijs/max';
+import { history, useModel } from '@umijs/max';
 import { createStyles } from 'antd-style';
+import { logout } from '@/services/security/account';
 
 import React, { useEffect, useRef, useState } from 'react';
 import './index.less';
@@ -117,7 +118,28 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   children,
 }) => {
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { setInitialState } = useModel('@@initialState');
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      // Identity, grants and the selected Security project only live in memory.
+      // Clear them even if the server has already invalidated the Session.
+      await setInitialState((state) => ({
+        ...state,
+        currentUser: undefined,
+        currentProject: undefined,
+        securityProject: undefined,
+      }));
+      history.replace('/login');
+      setLoggingOut(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -165,7 +187,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
         className={`
     absolute right-0 top-[calc(100%+14px)]
     z-[1000]
-    flex h-[64px] w-[220px]
+    flex min-h-[64px] w-[220px]
     items-center justify-center
     rounded-[14px]
     border border-[#d1d5db]
@@ -190,13 +212,15 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           "
         />
 
-        {/* 一行排列：文字 + 表情 */}
-        <div className="relative z-10 inline-flex flex-row items-center justify-center gap-2 whitespace-nowrap">
-          <span className="text-[15px] font-semibold text-[#475569]">
-            来了你还想走？
-          </span>
+        <button
+          type="button"
+          className="relative z-10 inline-flex cursor-pointer flex-row items-center justify-center gap-2 whitespace-nowrap border-0 bg-transparent text-[15px] font-semibold text-[#475569]"
+          disabled={loggingOut}
+          onClick={handleLogout}
+        >
+          <span>{loggingOut ? '正在退出…' : '退出登录'}</span>
           <PixelCheekyFace />
-        </div>
+        </button>
       </div>
     </div>
   );

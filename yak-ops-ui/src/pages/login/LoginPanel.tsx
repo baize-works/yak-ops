@@ -4,9 +4,10 @@ import {App, Button, Checkbox, Form, Input} from "antd";
 import {useForm} from "antd/es/form/Form";
 import React, {useRef, useState} from "react";
 import {flushSync} from "react-dom";
+import {login} from "@/services/security/account";
+import {resetAuthenticationFailure} from "@/utils/request";
 import GoogleLoginButton from "./components/GoogleLoginButton";
 import "./index.less";
-import {loginApi} from "./type";
 
 type ActionType =
   | "BLINK"
@@ -61,40 +62,47 @@ export default function LoginPanel({
     }
   };
 
-  const redirectToHome = () => {
+  const redirectAfterLogin = () => {
     const urlParams = new URL(window.location.href).searchParams;
-    window.location.href = urlParams.get("redirect") || "/";
+    const requested = urlParams.get("returnTo");
+
+    if (requested) {
+      const destination = new URL(requested, window.location.origin);
+      if (destination.origin === window.location.origin &&
+        !destination.pathname.toLowerCase().startsWith("/login")) {
+        window.location.assign(
+          `${destination.pathname}${destination.search}${destination.hash}`
+        );
+        return;
+      }
+    }
+
+    window.location.assign("/");
   };
 
-  const handleAccountLogin = async (values: API.LoginParams) => {
+  const handleAccountLogin = async (values: {
+    userName: string;
+    userPassword: string;
+  }) => {
     try {
       await form.validateFields();
       setLoading(true);
 
-      const data = await loginApi.login({
-        ...values,
-        type: "account",
-      });
+      await login(values);
+      resetAuthenticationFailure();
+      message.success(
+        intl.formatMessage({
+          id: "pages.login.success",
+          defaultMessage: "登录成功！",
+        })
+      );
 
-      if (data?.code === 0) {
-        message.success(
-          intl.formatMessage({
-            id: "pages.login.success",
-            defaultMessage: "登录成功！",
-          })
-        );
+      onFieldFocusChange?.(null);
+      onFire("THANKS");
 
-        onFieldFocusChange?.(null);
-        onFire("THANKS");
-
-        await fetchUserInfo();
-        redirectToHome();
-
-        return;
-      }
-
-      onFire("TILT");
-    } catch (error) {
+      await fetchUserInfo();
+      redirectAfterLogin();
+    } catch (_error) {
       onFire("SHAKE");
     } finally {
       setLoading(false);
@@ -106,7 +114,7 @@ export default function LoginPanel({
     onFire("THANKS");
 
     await fetchUserInfo();
-    redirectToHome();
+    redirectAfterLogin();
   };
 
   return (
