@@ -2,7 +2,38 @@
 /* eslint-disable */
 
 declare namespace API {
+  type RoleBrief = {
+    id: number;
+    roleName: string;
+  };
+
+  type ProjectBrief = {
+    id: number;
+    projectCode: string;
+    projectName: string;
+  };
+
+  /** The authenticated identity returned by Yak Security. */
+  type CurrentUserVO = {
+    id: number;
+    userName: string;
+    realName?: string | null;
+    deptId?: number | null;
+    phone?: string | null;
+    email?: string | null;
+    roleList: RoleBrief[];
+    permissionCodes: string[];
+    projectList: ProjectBrief[];
+  };
+
   type CurrentUser = {
+    id?: number;
+    userName?: string;
+    realName?: string | null;
+    deptId?: number | null;
+    roleList?: RoleBrief[];
+    permissionCodes?: string[];
+    projectList?: ProjectBrief[];
     name?: string;
     avatar?: string;
     userid?: string;
