@@ -12,6 +12,19 @@ import HttpUtils from './utils/HttpUtils';
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/login';
+const currentUserPath = '/yak-security/api/v1/account/current';
+
+export const toCurrentUser = (user: API.CurrentUserVO): API.CurrentUser => ({
+  ...user,
+  // ProLayout's user widgets use these legacy display fields.
+  name: user.realName?.trim() || user.userName,
+  userid: String(user.id),
+  email: user.email ?? undefined,
+  phone: user.phone ?? undefined,
+  roleList: user.roleList ?? [],
+  permissionCodes: user.permissionCodes ?? [],
+  projectList: user.projectList ?? [],
+});
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
@@ -24,11 +37,9 @@ export async function getInitialState(): Promise<{
 }> {
   const fetchUserInfo = async () => {
     try {
-      const msg = await HttpUtils.get<API.CurrentUser | undefined>(
-        '/api/v1/users/currentUser',
-      );
+      const msg = await HttpUtils.get<API.CurrentUserVO>(currentUserPath);
 
-      return msg.data;
+      return msg.data ? toCurrentUser(msg.data) : undefined;
     } catch (_error) {
       history.push(loginPath);
     }
