@@ -1,3 +1,0 @@
-# Every entry is a Python regular expression matched against a repository-relative path.
-# Keep this list limited to the three compatibility boundaries described below.
-^yak-ops-engine-legacy/(src/.*|README\.md)$

@@ -26,37 +26,10 @@
         <file_encoding>UTF-8</file_encoding>
         <architecture.check.skip>false</architecture.check.skip>
     </properties>
-    <!--
-      Module migration matrix (old -> owner):
-      yak-ops-core          -> yak-ops-domain + yak-ops-application + yak-ops-infrastructure (never recreate)
-      yak-ops-api           -> yak-ops-web + yak-ops-web-contract (never recreate; application contracts are not HTTP APIs)
-      yak-ops-engine-client -> yak-ops-engine-contract + yak-ops-engine-support + vendor adapters (never recreate)
-      yak-ops-engine-spi    -> yak-ops-engine-contract
-      yak-ops-engine-runtime-> yak-ops-engine-support
-      yak-ops-spi           -> yak-ops-plugin-spi (compatibility facade removed)
-      yak-ops-application-support -> application logic in yak-ops-application; vendor/config adapters in adapters
-    -->
+
     <modules>
-        <module>yak-ops-domain</module>
-        <module>yak-ops-application</module>
-        <module>yak-ops-infrastructure</module>
-        <module>yak-ops-web</module>
-        <module>yak-ops-boot</module>
-        <module>yak-ops-common</module>
-        <module>yak-ops-datasource-connection</module>
-        <module>yak-ops-datasource-plugins</module>
-        <module>yak-ops-alarm-plugins</module>
+
         <module>yak-ops-ui</module>
-        <module>yak-ops-dao</module>
-        <module>yak-ops-persistence-plugins</module>
-        <module>yak-ops-bom</module>
-        <module>yak-ops-plugin-spi</module>
-        <module>yak-ops-web-contract</module>
-        <module>yak-ops-engine-support</module>
-        <module>yak-ops-engine-contract</module>
-        <!--        <module>yak-ops-engine-contract-testkit</module>-->
-        <module>yak-ops-engine-legacy</module>
-        <module>yak-ops-engine-all</module>
         <module>yak-ops-dist</module>
     </modules>
     <dependencyManagement>
@@ -283,22 +256,7 @@
                             </arguments>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>enforce-aggregate-module-boundaries</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <skip>${architecture.check.skip}</skip>
-                            <executable>bash</executable>
-                            <arguments>
-                                <argument>${maven.multiModuleProjectDirectory}/tools/verify-module-boundaries.sh
-                                </argument>
-                                <argument>${maven.multiModuleProjectDirectory}</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
+
                 </executions>
             </plugin>
         </plugins>

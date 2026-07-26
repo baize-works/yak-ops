@@ -1,8 +1,0 @@
-blank_issues_enabled: false
-contact_links:
-  - name: Security vulnerability
-    url: https://www.apache.org/security/
-    about: Please report security vulnerabilities privately instead of opening a public issue.
-  - name: Yak Ops documentation
-    url: https://doc.yak-ops.com/
-    about: Read usage guides and project documentation.
