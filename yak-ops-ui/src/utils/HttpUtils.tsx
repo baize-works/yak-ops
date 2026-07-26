@@ -1,6 +1,16 @@
-import request, { ApiResponse } from "@/utils/request";
+import request, { type ApiResponse } from "@/utils/request";
 
 class HttpUtils {
+  /** Preserve the response envelope for existing pages during migration. */
+  public static envelope<T>(response: ApiResponse<T>): ApiResponse<T> {
+    return response;
+  }
+
+  /** Unwrap an already validated response for new call sites. */
+  public static unwrap<T>(response: ApiResponse<T>): T {
+    return response.data;
+  }
+
   public static async post<T>(
     url: string,
     body?: Record<string, any>,
@@ -53,6 +63,37 @@ class HttpUtils {
       },
       ...options,
     });
+  }
+
+  public static async getData<T>(
+    url: string,
+    options?: RequestInit
+  ): Promise<T> {
+    return HttpUtils.unwrap(await HttpUtils.get<T>(url, options));
+  }
+
+  public static async postData<T>(
+    url: string,
+    body?: Record<string, any>,
+    options?: RequestInit
+  ): Promise<T> {
+    return HttpUtils.unwrap(await HttpUtils.post<T>(url, body, options));
+  }
+
+  public static async putData<T>(
+    url: string,
+    body?: Record<string, any>,
+    options?: RequestInit
+  ): Promise<T> {
+    return HttpUtils.unwrap(await HttpUtils.put<T>(url, body, options));
+  }
+
+  public static async deleteData<T>(
+    url: string,
+    data?: Record<string, any>,
+    options?: RequestInit
+  ): Promise<T> {
+    return HttpUtils.unwrap(await HttpUtils.delete<T>(url, data, options));
   }
 
   public static async put<T>(
