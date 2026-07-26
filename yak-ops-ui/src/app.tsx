@@ -8,11 +8,37 @@ import 'd3-transition';
 import defaultSettings from '../config/defaultSettings';
 import { GlobalSearch, Knowledge } from './components/RightContent';
 import { errorConfig } from './requestErrorConfig';
-import HttpUtils from './utils/HttpUtils';
+import { getCurrentUser } from './services/security/account';
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/login';
-const currentUserPath = '/yak-security/api/v1/account/current';
+
+const isLoginPage = (pathname: string) =>
+  pathname.toLowerCase().startsWith(loginPath);
+
+const currentReturnTo = () =>
+  `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+const redirectAnonymousUser = () => {
+  if (isLoginPage(window.location.pathname)) return;
+
+  const returnTo = currentReturnTo();
+  history.replace(`${loginPath}?returnTo=${encodeURIComponent(returnTo)}`);
+};
+
+const getSafeReturnTo = () => {
+  const requested = new URLSearchParams(window.location.search).get('returnTo');
+  if (!requested) return '/';
+
+  const destination = new URL(requested, window.location.origin);
+  if (
+    destination.origin !== window.location.origin ||
+    isLoginPage(destination.pathname)
+  ) {
+    return '/';
+  }
+  return `${destination.pathname}${destination.search}${destination.hash}`;
+};
 
 export const toCurrentUser = (user: API.CurrentUserVO): API.CurrentUser => ({
   ...user,
@@ -33,30 +59,26 @@ export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
   currentUser?: API.CurrentUser;
   loading?: boolean;
+  currentProject?: unknown;
+  securityProject?: unknown;
   fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
 }> {
   const fetchUserInfo = async () => {
     try {
-      const msg = await HttpUtils.get<API.CurrentUserVO>(currentUserPath);
-
-      return msg.data ? toCurrentUser(msg.data) : undefined;
+      return toCurrentUser(await getCurrentUser());
     } catch (_error) {
-      history.push(loginPath);
+      redirectAnonymousUser();
     }
     return undefined;
   };
-  // 如果不是登录页面，执行
-  const { location } = history;
-  if (![loginPath, '/login'].includes(location.pathname)) {
-    const currentUser = await fetchUserInfo();
-    return {
-      fetchUserInfo,
-      currentUser,
-      settings: defaultSettings as Partial<LayoutSettings>,
-    };
+  // Always probe the cookie-backed Session, including after a reload on login.
+  const currentUser = await fetchUserInfo();
+  if (currentUser && isLoginPage(window.location.pathname)) {
+    history.replace(getSafeReturnTo());
   }
   return {
     fetchUserInfo,
+    currentUser,
     settings: defaultSettings as Partial<LayoutSettings>,
   };
 }
@@ -91,10 +113,9 @@ export const layout: RunTimeLayoutConfig = ({
     footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
-      console.log(initialState?.currentUser);
       // 如果没有登录，重定向到 login
       if (!initialState?.currentUser && location.pathname !== loginPath) {
-        history.push(loginPath);
+        redirectAnonymousUser();
       }
     },
     bgLayoutImgList: [
