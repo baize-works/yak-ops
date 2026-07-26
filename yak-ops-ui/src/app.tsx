@@ -9,6 +9,9 @@ import defaultSettings from '../config/defaultSettings';
 import { GlobalSearch, Knowledge } from './components/RightContent';
 import { errorConfig } from './requestErrorConfig';
 import { getCurrentUser } from './services/security/account';
+import { toCurrentUser } from './services/security/currentIdentity';
+
+export { toCurrentUser } from './services/security/currentIdentity';
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/login';
@@ -39,18 +42,6 @@ const getSafeReturnTo = () => {
   }
   return `${destination.pathname}${destination.search}${destination.hash}`;
 };
-
-export const toCurrentUser = (user: API.CurrentUserVO): API.CurrentUser => ({
-  ...user,
-  // ProLayout's user widgets use these legacy display fields.
-  name: user.realName?.trim() || user.userName,
-  userid: String(user.id),
-  email: user.email ?? undefined,
-  phone: user.phone ?? undefined,
-  roleList: user.roleList ?? [],
-  permissionCodes: user.permissionCodes ?? [],
-  projectList: user.projectList ?? [],
-});
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
