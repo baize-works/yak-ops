@@ -2,6 +2,17 @@
 import { openPrettyNotification } from "@/utils/prettyNotification";
 import { history } from "umi";
 import { extend } from "umi-request";
+import {
+  extractErrorMessage,
+  isApiResponse,
+  isSuccessfulResponse,
+  isUnauthenticatedResponse,
+  protocolForUrl,
+  type ApiProtocol,
+  type ApiResponse,
+} from "@/services/http/response";
+
+export type { ApiProtocol, ApiResponse } from "@/services/http/response";
 
 const codeMessage: Record<number, string> = {
   10000: "系统未知错误，请反馈给管理员",
@@ -22,78 +33,25 @@ const codeMessage: Record<number, string> = {
   504: "网关超时。",
 };
 
-export interface ApiResponse<T = any> {
-  code: number;
-  msg: string;
-  message?: string;
-  data: T;
-}
-
-export type ApiProtocolNamespace = "yak-ops" | "security";
-
-/**
- * Backend response protocols. Keep protocol differences here instead of leaking
- * status-code checks into pages. Yak Security currently uses HTTP-like code 200.
- */
-export const API_PROTOCOLS: Record<
-  ApiProtocolNamespace,
-  { successCodes: readonly number[]; unauthenticatedCodes: readonly number[] }
-> = {
-  "yak-ops": { successCodes: [0], unauthenticatedCodes: [1, 401] },
-  security: { successCodes: [200], unauthenticatedCodes: [1, 401] },
-};
-
-export const getProtocolNamespace = (url?: string): ApiProtocolNamespace =>
-  url?.includes("/yak-security/") ? "security" : "yak-ops";
-
-export const isSuccessfulResponse = (
-  response: Partial<ApiResponse<any>> | null | undefined,
-  namespace: ApiProtocolNamespace = "yak-ops"
-): boolean =>
-  typeof response?.code === "number" &&
-  API_PROTOCOLS[namespace].successCodes.includes(response.code);
-
-export const extractErrorMessage = (
-  response: Partial<ApiResponse<any>> | null | undefined,
-  fallback = "操作失败"
-): string => response?.msg || response?.message || fallback;
-
-const UNAUTHENTICATED_MESSAGES = [
-  "NOT_LOGIN",
-  "UNAUTHENTICATED",
-  "SESSION_EXPIRED",
-  "SESSION_INVALID",
-];
-
-export const isUnauthenticatedResponse = (
-  response: Partial<ApiResponse<any>> | null | undefined,
-  namespace: ApiProtocolNamespace = "yak-ops"
-): boolean => {
-  const message = response?.msg || response?.message;
-  return (
-    (typeof response?.code === "number" &&
-      API_PROTOCOLS[namespace].unauthenticatedCodes.includes(response.code)) ||
-    (typeof message === "string" &&
-      UNAUTHENTICATED_MESSAGES.includes(message.toUpperCase()))
-  );
-};
-
 export class BizError extends Error {
   code?: number;
   response?: ApiResponse<any>;
   skipErrorHandler?: boolean;
+  protocol: ApiProtocol;
 
   constructor(
     message: string,
     code?: number,
     response?: ApiResponse<any>,
-    skipErrorHandler?: boolean
+    skipErrorHandler = false,
+    protocol: ApiProtocol = "yak-ops"
   ) {
     super(message);
     this.name = "BizError";
     this.code = code;
     this.response = response;
     this.skipErrorHandler = skipErrorHandler;
+    this.protocol = protocol;
   }
 }
 
@@ -105,6 +63,18 @@ export const goLogin = () => {
 };
 
 let authenticationFailureHandled = false;
+const recentNotifications = new Map<string, number>();
+
+const notifyOnce = (
+  key: string,
+  notification: Parameters<typeof openPrettyNotification>[0]
+) => {
+  const now = Date.now();
+  const lastShown = recentNotifications.get(key) || 0;
+  if (now - lastShown < 1000) return;
+  recentNotifications.set(key, now);
+  openPrettyNotification(notification);
+};
 
 /** Re-arm expiry handling only after a new Session has been established. */
 export const resetAuthenticationFailure = () => {
@@ -119,7 +89,7 @@ export const handleAuthenticationFailure = () => {
   if (authenticationFailureHandled) return;
 
   authenticationFailureHandled = true;
-  openPrettyNotification({
+  notifyOnce("authentication", {
     type: "warning",
     title: "登录状态失效",
     description: "当前登录信息已过期，请重新登录后继续操作。",
@@ -135,10 +105,10 @@ const errorHandler = (error: any): Response | undefined => {
 
   // 业务异常
   if (error instanceof BizError) {
-    if (isUnauthenticatedResponse(error.response)) {
+    if (isUnauthenticatedResponse(error.response, error.protocol)) {
       handleAuthenticationFailure();
     } else if (!error.skipErrorHandler) {
-      openPrettyNotification({
+      notifyOnce(`business:${error.protocol}:${error.code}:${error.message}`, {
         type: "error",
         title: "操作失败",
         description: error.message || "未知错误",
@@ -160,7 +130,7 @@ const errorHandler = (error: any): Response | undefined => {
 
     const errorText = codeMessage[status] || response.statusText || "请求失败";
 
-    openPrettyNotification({
+    notifyOnce(`http:${status}:${url || ""}`, {
       type: "error",
       title: `请求错误 ${status}`,
       description: (
@@ -186,8 +156,11 @@ const errorHandler = (error: any): Response | undefined => {
     return response;
   }
 
+  // Abort is caller-controlled (navigation, timeout, stale request), not a network fault.
+  if (error?.name === "AbortError" || error?.type === "aborted") throw error;
+
   // 网络异常
-  openPrettyNotification({
+  notifyOnce("network", {
     type: "warning",
     title: "网络异常",
     description: "当前无法连接到服务器，请检查网络或稍后再试。",
@@ -220,6 +193,7 @@ request.interceptors.request.use((url: string, options: any) => {
 
 /** 这里只识别业务异常，不做提示 */
 request.interceptors.response.use(async (response: Response, options: any) => {
+  if (response.status === 204 || options?.responseType === "blob") return response;
   const contentType = response.headers.get("content-type") || "";
 
   if (!contentType.includes("application/json")) {
@@ -227,28 +201,32 @@ request.interceptors.response.use(async (response: Response, options: any) => {
   }
 
   const clonedResponse = response.clone();
-  const res: ApiResponse<any> = await clonedResponse.json();
-  const namespace = getProtocolNamespace(response.url);
+  const res: unknown = await clonedResponse.json();
+  if (!isApiResponse(res)) return response;
+  // Explicit client protocol wins because a reverse proxy may rewrite the URL.
+  const protocol: ApiProtocol = options?.protocol || protocolForUrl(response.url);
 
-  if (isUnauthenticatedResponse(res, namespace)) {
+  if (isUnauthenticatedResponse(res, protocol)) {
     handleAuthenticationFailure();
     throw new BizError(
       extractErrorMessage(res, "登录状态失效"),
       res.code,
       res,
-      true
+      true,
+      protocol
     );
   }
 
   if (
     typeof res?.code !== "undefined" &&
-    !isSuccessfulResponse(res, namespace)
+    !isSuccessfulResponse(res, protocol)
   ) {
     throw new BizError(
       extractErrorMessage(res),
       res.code,
       res,
-      options?.skipErrorHandler
+      options?.skipErrorHandler,
+      protocol
     );
   }
 

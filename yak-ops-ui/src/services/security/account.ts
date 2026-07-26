@@ -1,4 +1,4 @@
-import HttpUtils from "@/utils/HttpUtils";
+import { securityGetData, securityPostData } from './client';
 
 /**
  * Yak Security AccountController contract.
@@ -7,7 +7,7 @@ import HttpUtils from "@/utils/HttpUtils";
  * request client sends cookies with `credentials: "include"`; no bearer token
  * is returned or stored by this module.
  */
-const ACCOUNT_API = "/yak-security/api/v1/account";
+const ACCOUNT_API = '/api/v1/account';
 
 /** AccountController's unauthenticated business/HTTP code. */
 export const ACCOUNT_UNAUTHENTICATED_CODE = 401;
@@ -18,10 +18,10 @@ export type AccountLoginDTO = {
 };
 
 export const login = (body: AccountLoginDTO): Promise<void> =>
-  HttpUtils.postData<void>(`${ACCOUNT_API}/login`, body);
+  securityPostData<void>(`${ACCOUNT_API}/login`, body);
 
 export const getCurrentUser = (): Promise<API.CurrentUserVO> =>
-  HttpUtils.getData<API.CurrentUserVO>(`${ACCOUNT_API}/current`);
+  securityGetData<API.CurrentUserVO>(`${ACCOUNT_API}/current`);
 
 export const logout = (): Promise<void> =>
-  HttpUtils.postData<void>(`${ACCOUNT_API}/logout`);
+  securityPostData<void>(`${ACCOUNT_API}/logout`);
