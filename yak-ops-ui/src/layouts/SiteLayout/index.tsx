@@ -9,7 +9,9 @@ import {
   type NavigationRoute,
 } from "@/config/navigation";
 import { RouteAccessBoundary } from "@/components/security";
+import { logout } from "@/services/security/account";
 import { history, Outlet, useLocation, useModel } from "@umijs/max";
+import { Drawer, Dropdown, Empty, type MenuProps } from "antd";
 import {
   Activity,
   ArrowLeftRight,
@@ -24,13 +26,14 @@ import {
   Database,
   FileText,
   Folder,
-  Grid2X2,
   History,
   House,
+  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
   Plug,
   Server,
+  ShieldCheck,
   SquarePlus,
   Workflow,
 } from "lucide-react";
@@ -250,13 +253,20 @@ function BrandLogo({ compact }: { compact: boolean }) {
 
 export default function SiteLayout() {
   const location = useLocation();
-  const { initialState } = useModel("@@initialState");
+  const { initialState, setInitialState } = useModel("@@initialState");
   const currentUser = initialState?.currentUser;
   const permissionCodes = currentUser?.permissionCodes;
 
-  const standaloneRoutes = getStandaloneNavigationRoutes(permissionCodes);
-  const navigationGroups = getMainNavigationGroups(permissionCodes);
-  const quickCreateRoutes = getQuickCreateRoutes(permissionCodes);
+  // Navigation metadata remains the single source of truth. Recalculate every
+  // permission-derived collection together whenever the signed-in identity changes.
+  const { standaloneRoutes, navigationGroups, quickCreateRoutes } = useMemo(
+    () => ({
+      standaloneRoutes: getStandaloneNavigationRoutes(permissionCodes),
+      navigationGroups: getMainNavigationGroups(permissionCodes),
+      quickCreateRoutes: getQuickCreateRoutes(permissionCodes),
+    }),
+    [permissionCodes],
+  );
   const homeRoutes = standaloneRoutes.filter((route) => route.id === "home");
   const businessStandaloneRoutes = standaloneRoutes.filter(
     (route) => route.id !== "home"
@@ -269,6 +279,77 @@ export default function SiteLayout() {
   const [viewportCompact, setViewportCompact] = useState(false);
 
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const projects = useMemo(
+    () => currentUser?.projectList ?? [],
+    [currentUser?.projectList],
+  );
+  const selectedProject =
+    (initialState?.securityProject as API.ProjectBrief | undefined) ??
+    (initialState?.currentProject as API.ProjectBrief | undefined) ??
+    projects[0];
+
+  const selectProject = (project: API.ProjectBrief) => {
+    setInitialState((state) => ({
+      ...state,
+      currentProject: project,
+      securityProject: project,
+    }));
+  };
+
+  const projectMenuItems = useMemo<MenuProps["items"]>(
+    () =>
+      projects.map((project) => ({
+        key: String(project.id),
+        label: project.projectName,
+        onClick: () => selectProject(project),
+      })),
+    [projects],
+  );
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      await setInitialState((state) => ({
+        ...state,
+        currentUser: undefined,
+        currentProject: undefined,
+        securityProject: undefined,
+      }));
+      history.replace("/login");
+    }
+  };
+
+  const userMenuItems: MenuProps["items"] = [
+    {
+      key: "identity",
+      disabled: true,
+      label: (
+        <div className="min-w-48 py-1">
+          <div className="font-semibold text-[#161823]">
+            {currentUser?.name ?? currentUser?.userName ?? "当前用户"}
+          </div>
+          <div className="mt-0.5 text-xs text-[rgba(22,24,35,0.5)]">
+            {currentUser?.email ?? currentUser?.title ?? "Yak Security 用户"}
+          </div>
+        </div>
+      ),
+    },
+    { type: "divider" },
+    {
+      key: "logout",
+      danger: true,
+      icon: <LogOut className="h-4 w-4" />,
+      label: loggingOut ? "正在退出…" : "退出登录",
+      disabled: loggingOut,
+      onClick: handleLogout,
+    },
+  ];
 
   const renderStandaloneItem = (route: NavigationRoute) => {
     const active = activeNavigationId === route.id;
@@ -888,13 +969,38 @@ export default function SiteLayout() {
           <HeaderAction
             icon={<Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />}
             label="通知"
-            badge
+            badge={Boolean(currentUser?.unreadCount ?? currentUser?.notifyCount)}
+            onClick={() => setNotificationOpen(true)}
           />
 
-          <HeaderAction
-            icon={<Grid2X2 className="h-[17px] w-[17px]" strokeWidth={1.8} />}
-            label="应用"
-          />
+          <Dropdown
+            menu={{
+              items: projectMenuItems,
+              selectable: true,
+              selectedKeys: selectedProject
+                ? [String(selectedProject.id)]
+                : [],
+            }}
+            trigger={["click"]}
+            disabled={projects.length === 0}
+          >
+            <button
+              type="button"
+              aria-label="切换 Security 项目"
+              className="ml-2 flex h-8 max-w-52 items-center gap-2 rounded-md border border-[rgba(28,31,35,0.08)] bg-white px-2.5 text-left text-xs text-[#1c1f23] transition-colors hover:bg-[#f5f5f6]"
+            >
+              <ShieldCheck
+                className="h-4 w-4 shrink-0 text-[#fe2c55]"
+                strokeWidth={1.8}
+              />
+              <span className="min-w-0 truncate">
+                {selectedProject?.projectName ?? "Security"}
+              </span>
+              <ChevronDown
+                className="h-3 w-3 shrink-0 text-[rgba(22,24,35,0.4)]"
+              />
+            </button>
+          </Dropdown>
 
           <div
             className="
@@ -903,31 +1009,39 @@ export default function SiteLayout() {
               pl-4
             "
           >
-            {currentUser?.avatar ? (
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name ?? "当前用户"}
-                className="
-                  h-8 w-8 rounded-full
-                  object-cover
-                "
-              />
-            ) : (
-              <span
-                className="
-                  flex h-8 w-8 items-center
-                  justify-center rounded-full
-                  bg-[#e5e7eb]
-                  text-[12px] font-semibold
-                  text-[#475569]
-                "
+            <Dropdown menu={{ items: userMenuItems }} trigger={["click"]}>
+              <button
+                type="button"
+                aria-label="打开用户菜单"
+                className="flex items-center gap-2 border-0 bg-transparent p-0"
               >
-                {userInitial}
-              </span>
-            )}
+                {currentUser?.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name ?? "当前用户"}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e5e7eb] text-[12px] font-semibold text-[#475569]">
+                    {userInitial}
+                  </span>
+                )}
+                <ChevronDown className="h-3 w-3 text-[rgba(22,24,35,0.4)]" />
+              </button>
+            </Dropdown>
           </div>
         </div>
       </header>
+
+      <Drawer
+        title="通知"
+        placement="right"
+        width={360}
+        open={notificationOpen}
+        onClose={() => setNotificationOpen(false)}
+      >
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无新通知" />
+      </Drawer>
 
       <main
         className="
