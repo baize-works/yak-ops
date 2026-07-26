@@ -1,3 +1,8 @@
+import {
+  satisfiesPermissionRequirement,
+  type PermissionRequirement,
+} from '@/utils/security/permission';
+
 export type NavigationIconKey =
   | 'home'
   | 'database'
@@ -24,7 +29,7 @@ export type NavigationIconKey =
  */
 export type NavigationSectionKey = 'task' | 'management';
 
-export interface NavigationRoute {
+export interface NavigationRoute extends PermissionRequirement {
   id: string;
   path: string;
   title: string;
@@ -403,6 +408,30 @@ const routeMap = new Map(
   appRoutes.map((route) => [route.id, route]),
 );
 
+/**
+ * Applies the same permission decision to routes and their parent navigation
+ * item. This prevents a permitted child from activating an inaccessible parent.
+ */
+export const canAccessNavigationRoute = (
+  route: NavigationRoute,
+  permissionCodes: readonly string[] | null | undefined,
+) => {
+  const visited = new Set<string>();
+  let candidate: NavigationRoute | undefined = route;
+
+  while (candidate && !visited.has(candidate.id)) {
+    visited.add(candidate.id);
+    if (!satisfiesPermissionRequirement(permissionCodes, candidate)) {
+      return false;
+    }
+    candidate = candidate.parentId
+      ? routeMap.get(candidate.parentId)
+      : undefined;
+  }
+
+  return true;
+};
+
 const normalizePath = (path: string) =>
   path.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
 
@@ -437,16 +466,22 @@ export const getRouteMetadata = (
 
 export const getActiveNavigationId = (
   pathname: string,
+  permissionCodes?: readonly string[] | null,
 ) => {
   const route = getRouteMetadata(pathname);
 
-  return route?.parentId ?? route?.id;
+  if (!route || !canAccessNavigationRoute(route, permissionCodes)) {
+    return undefined;
+  }
+
+  return route.parentId ?? route.id;
 };
 
 export const getActiveNavigationGroupId = (
   pathname: string,
+  permissionCodes?: readonly string[] | null,
 ) => {
-  const activeId = getActiveNavigationId(pathname);
+  const activeId = getActiveNavigationId(pathname, permissionCodes);
 
   return activeId
     ? routeMap.get(activeId)?.menuGroup
@@ -456,12 +491,15 @@ export const getActiveNavigationGroupId = (
 /**
  * 首页等独立一级菜单。
  */
-export const getStandaloneNavigationRoutes = () =>
+export const getStandaloneNavigationRoutes = (
+  permissionCodes?: readonly string[] | null,
+) =>
   appRoutes
     .filter(
       (route) =>
         !route.hidden &&
-        !route.menuGroup,
+        !route.menuGroup &&
+        canAccessNavigationRoute(route, permissionCodes),
     )
     .sort(sortByOrder);
 
@@ -469,7 +507,9 @@ export const getStandaloneNavigationRoutes = () =>
  * 分组菜单。
  */
 export const getMainNavigationGroups =
-  (): NavigationGroupWithRoutes[] =>
+  (
+    permissionCodes?: readonly string[] | null,
+  ): NavigationGroupWithRoutes[] =>
     [...navigationGroups]
       .sort(sortByOrder)
       .map((group) => ({
@@ -478,7 +518,8 @@ export const getMainNavigationGroups =
           .filter(
             (route) =>
               !route.hidden &&
-              route.menuGroup === group.id,
+              route.menuGroup === group.id &&
+              canAccessNavigationRoute(route, permissionCodes),
           )
           .sort(sortByOrder),
       }))
@@ -490,10 +531,13 @@ export const getMainNavigationGroups =
 /**
  * 快速创建下拉菜单。
  */
-export const getQuickCreateRoutes = () =>
+export const getQuickCreateRoutes = (
+  permissionCodes?: readonly string[] | null,
+) =>
   appRoutes
     .filter(
       (route) =>
-        Boolean(route.quickCreateLabel),
+        Boolean(route.quickCreateLabel) &&
+        canAccessNavigationRoute(route, permissionCodes),
     )
     .sort(sortByOrder);
