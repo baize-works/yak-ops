@@ -1,7 +1,4 @@
-import {
-  satisfiesPermissionRequirement,
-  type PermissionRequirement,
-} from '@/utils/security/permission';
+import { type PermissionRequirement, satisfiesPermissionRequirement } from '@/utils/security/permission';
 
 export type NavigationIconKey =
   | 'home'
@@ -29,7 +26,7 @@ export type NavigationIconKey =
  */
 export type NavigationSectionKey = 'task' | 'management';
 
-export interface NavigationRoute extends PermissionRequirement {
+interface NavigationRouteBase {
   id: string;
   path: string;
   title: string;
@@ -40,7 +37,15 @@ export interface NavigationRoute extends PermissionRequirement {
   hidden?: boolean;
   parentId?: string;
   quickCreateLabel?: string;
+  quickCreateRequirement?: PermissionRequirement;
 }
+
+/**
+ * A route is either explicitly public, explicitly protected, or a child that
+ * inherits its parent route's requirement. There is deliberately no implicit
+ * default for new root routes, so migrations cannot accidentally expose them.
+ */
+export type NavigationRoute = NavigationRouteBase & (PermissionRequirement | { parentId: string; mode?: never });
 
 export interface NavigationGroup {
   id: string;
@@ -54,10 +59,7 @@ export interface NavigationGroupWithRoutes extends NavigationGroup {
   routes: NavigationRoute[];
 }
 
-const sortByOrder = <T extends { order?: number }>(
-  left: T,
-  right: T,
-) => (left.order ?? 0) - (right.order ?? 0);
+const sortByOrder = <T extends { order?: number }>(left: T, right: T) => (left.order ?? 0) - (right.order ?? 0);
 
 /**
  * 主菜单顺序：
@@ -121,6 +123,7 @@ export const navigationGroups: readonly NavigationGroup[] = [
 export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'home',
+    mode: 'public',
     path: '/home',
     title: '首页',
     component: './home',
@@ -134,12 +137,15 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'batch-link-up',
+    mode: 'one',
+    permission: 'task:batch:read',
     path: '/sync/batch-link-up',
     title: '离线同步',
     component: './batch-link-up',
     iconKey: 'sync',
     menuGroup: 'integration',
     order: 10,
+    quickCreateRequirement: { mode: 'one', permission: 'task:batch:create' },
     quickCreateLabel: '新建离线同步',
   },
   {
@@ -177,12 +183,15 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'realtime-link-up',
+    mode: 'one',
+    permission: 'task:realtime:read',
     path: '/sync/realtime-link-up',
     title: '实时同步',
     component: './realtime-link-up',
     iconKey: 'realtime',
     menuGroup: 'integration',
     order: 20,
+    quickCreateRequirement: { mode: 'one', permission: 'task:realtime:create' },
     quickCreateLabel: '新建实时同步',
   },
   {
@@ -208,6 +217,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'workflow-project',
+    mode: 'one',
+    permission: 'workflow:project:read',
     path: '/workflow-project',
     title: '项目管理',
     component: './workflow-project',
@@ -226,12 +237,15 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'workflow-management',
+    mode: 'one',
+    permission: 'workflow:definition:read',
     path: '/workflow-management',
     title: '工作流管理',
     component: './workflow-management',
     iconKey: 'workflow',
     menuGroup: 'workflow',
     order: 20,
+    quickCreateRequirement: { mode: 'one', permission: 'workflow:definition:create' },
     quickCreateLabel: '新建工作流',
   },
   {
@@ -253,6 +267,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'workflow-instance',
+    mode: 'one',
+    permission: 'workflow:instance:read',
     path: '/workflow-instance',
     title: '工作流实例',
     component: './workflow-instance',
@@ -275,6 +291,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'data-source',
+    mode: 'one',
+    permission: 'resource:data-source:read',
     path: '/data-source',
     title: '数据源管理',
     component: './data-source',
@@ -284,6 +302,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'client',
+    mode: 'one',
+    permission: 'resource:client:read',
     path: '/client',
     title: '客户端管理',
     component: './client',
@@ -302,6 +322,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'connector',
+    mode: 'one',
+    permission: 'resource:connector:read',
     path: '/connector',
     title: '连接器管理',
     component: './connector',
@@ -324,6 +346,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'data-quality',
+    mode: 'one',
+    permission: 'quality:rule:read',
     path: '/data-quality',
     title: '质量规则',
     component: './data-quality',
@@ -342,6 +366,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'data-quality-report',
+    mode: 'one',
+    permission: 'quality:report:read',
     path: '/data-quality/report',
     title: '质量报告',
     component: './data-quality/report',
@@ -364,6 +390,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'metrics',
+    mode: 'one',
+    permission: 'operations:metrics:read',
     path: '/metrics',
     title: '运行监控',
     component: './metrics',
@@ -382,6 +410,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'alarm',
+    mode: 'one',
+    permission: 'operations:alarm:read',
     path: '/alarm',
     title: '告警管理',
     component: './alarm',
@@ -396,6 +426,8 @@ export const appRoutes: readonly NavigationRoute[] = [
 
   {
     id: 'knowledge-management',
+    mode: 'one',
+    permission: 'knowledge:read',
     path: '/knowledge-management',
     title: '知识管理',
     component: './knowledge-management',
@@ -404,9 +436,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   },
 ];
 
-const routeMap = new Map(
-  appRoutes.map((route) => [route.id, route]),
-);
+const routeMap = new Map(appRoutes.map((route) => [route.id, route]));
 
 /**
  * Applies the same permission decision to routes and their parent navigation
@@ -421,53 +451,31 @@ export const canAccessNavigationRoute = (
 
   while (candidate && !visited.has(candidate.id)) {
     visited.add(candidate.id);
-    if (!satisfiesPermissionRequirement(permissionCodes, candidate)) {
+    if (candidate.mode && !satisfiesPermissionRequirement(permissionCodes, candidate as PermissionRequirement)) {
       return false;
     }
-    candidate = candidate.parentId
-      ? routeMap.get(candidate.parentId)
-      : undefined;
+    candidate = candidate.parentId ? routeMap.get(candidate.parentId) : undefined;
   }
 
   return true;
 };
 
-const normalizePath = (path: string) =>
-  path.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
+const normalizePath = (path: string) => path.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
 
-const matchesRoute = (
-  pattern: string,
-  pathname: string,
-) => {
-  const patternParts = normalizePath(pattern)
-    .split('/')
-    .filter(Boolean);
+const matchesRoute = (pattern: string, pathname: string) => {
+  const patternParts = normalizePath(pattern).split('/').filter(Boolean);
 
-  const pathParts = normalizePath(pathname)
-    .split('/')
-    .filter(Boolean);
+  const pathParts = normalizePath(pathname).split('/').filter(Boolean);
 
   return (
     patternParts.length === pathParts.length &&
-    patternParts.every(
-      (part, index) =>
-        part.startsWith(':') ||
-        part === pathParts[index],
-    )
+    patternParts.every((part, index) => part.startsWith(':') || part === pathParts[index])
   );
 };
 
-export const getRouteMetadata = (
-  pathname: string,
-) =>
-  appRoutes.find((route) =>
-    matchesRoute(route.path, pathname),
-  );
+export const getRouteMetadata = (pathname: string) => appRoutes.find((route) => matchesRoute(route.path, pathname));
 
-export const getActiveNavigationId = (
-  pathname: string,
-  permissionCodes?: readonly string[] | null,
-) => {
+export const getActiveNavigationId = (pathname: string, permissionCodes?: readonly string[] | null) => {
   const route = getRouteMetadata(pathname);
 
   if (!route || !canAccessNavigationRoute(route, permissionCodes)) {
@@ -477,67 +485,46 @@ export const getActiveNavigationId = (
   return route.parentId ?? route.id;
 };
 
-export const getActiveNavigationGroupId = (
-  pathname: string,
-  permissionCodes?: readonly string[] | null,
-) => {
+export const getActiveNavigationGroupId = (pathname: string, permissionCodes?: readonly string[] | null) => {
   const activeId = getActiveNavigationId(pathname, permissionCodes);
 
-  return activeId
-    ? routeMap.get(activeId)?.menuGroup
-    : undefined;
+  return activeId ? routeMap.get(activeId)?.menuGroup : undefined;
 };
 
 /**
  * 首页等独立一级菜单。
  */
-export const getStandaloneNavigationRoutes = (
-  permissionCodes?: readonly string[] | null,
-) =>
+export const getStandaloneNavigationRoutes = (permissionCodes?: readonly string[] | null) =>
   appRoutes
-    .filter(
-      (route) =>
-        !route.hidden &&
-        !route.menuGroup &&
-        canAccessNavigationRoute(route, permissionCodes),
-    )
+    .filter((route) => !route.hidden && !route.menuGroup && canAccessNavigationRoute(route, permissionCodes))
     .sort(sortByOrder);
 
 /**
  * 分组菜单。
  */
-export const getMainNavigationGroups =
-  (
-    permissionCodes?: readonly string[] | null,
-  ): NavigationGroupWithRoutes[] =>
-    [...navigationGroups]
-      .sort(sortByOrder)
-      .map((group) => ({
-        ...group,
-        routes: appRoutes
-          .filter(
-            (route) =>
-              !route.hidden &&
-              route.menuGroup === group.id &&
-              canAccessNavigationRoute(route, permissionCodes),
-          )
-          .sort(sortByOrder),
-      }))
-      .filter(
-        (group) =>
-          group.routes.length > 0,
-      );
+export const getMainNavigationGroups = (permissionCodes?: readonly string[] | null): NavigationGroupWithRoutes[] =>
+  [...navigationGroups]
+    .sort(sortByOrder)
+    .map((group) => ({
+      ...group,
+      routes: appRoutes
+        .filter(
+          (route) => !route.hidden && route.menuGroup === group.id && canAccessNavigationRoute(route, permissionCodes),
+        )
+        .sort(sortByOrder),
+    }))
+    .filter((group) => group.routes.length > 0);
 
 /**
  * 快速创建下拉菜单。
  */
-export const getQuickCreateRoutes = (
-  permissionCodes?: readonly string[] | null,
-) =>
+export const getQuickCreateRoutes = (permissionCodes?: readonly string[] | null) =>
   appRoutes
     .filter(
       (route) =>
         Boolean(route.quickCreateLabel) &&
-        canAccessNavigationRoute(route, permissionCodes),
+        canAccessNavigationRoute(route, permissionCodes) &&
+        (!route.quickCreateRequirement ||
+          satisfiesPermissionRequirement(permissionCodes, route.quickCreateRequirement)),
     )
     .sort(sortByOrder);

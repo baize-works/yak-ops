@@ -581,6 +581,7 @@ function SiteLayoutContent() {
           ref={quickCreateRef}
           className={[
             "relative z-50 shrink-0",
+            quickCreateRoutes.length === 0 ? "hidden" : "",
             compact ? "mx-3 mb-4 mt-4" : "mx-6 mb-4 mt-4",
           ].join(" ")}
         >

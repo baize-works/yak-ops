@@ -1,26 +1,17 @@
 export type PermissionCode = string;
 
-export interface PermissionRequirement {
-  /** A permission that must be present. */
-  permission?: PermissionCode;
-  /** At least one of these permissions must be present. */
-  anyPermissions?: readonly PermissionCode[];
-  /** Every one of these permissions must be present. */
-  allPermissions?: readonly PermissionCode[];
-  /** A compact route-friendly list, evaluated using permissionMode. */
-  permissions?: readonly PermissionCode[];
-  permissionMode?: 'any' | 'all';
-}
+export type PermissionRequirement =
+  | { mode: 'public' }
+  | { mode: 'one'; permission: PermissionCode }
+  | { mode: 'any'; permissions: readonly PermissionCode[] }
+  | { mode: 'all'; permissions: readonly PermissionCode[] };
 
 type GrantedPermissions = readonly PermissionCode[] | null | undefined;
 
-const permissionSet = (permissions: GrantedPermissions) =>
-  new Set(permissions ?? []);
+const permissionSet = (permissions: GrantedPermissions) => new Set(permissions ?? []);
 
-export const hasPermission = (
-  permissions: GrantedPermissions,
-  permission: PermissionCode,
-): boolean => permission.length > 0 && permissionSet(permissions).has(permission);
+export const hasPermission = (permissions: GrantedPermissions, permission: PermissionCode): boolean =>
+  permission.length > 0 && permissionSet(permissions).has(permission);
 
 export const hasAnyPermission = (
   permissions: GrantedPermissions,
@@ -50,14 +41,15 @@ export const hasAllPermissions = (
 export const satisfiesPermissionRequirement = (
   permissions: GrantedPermissions,
   requirement: PermissionRequirement,
-): boolean =>
-  (!requirement.permission ||
-    hasPermission(permissions, requirement.permission)) &&
-  (!requirement.anyPermissions ||
-    hasAnyPermission(permissions, requirement.anyPermissions)) &&
-  (!requirement.allPermissions ||
-    hasAllPermissions(permissions, requirement.allPermissions)) &&
-  (!requirement.permissions ||
-    (requirement.permissionMode === 'all'
-      ? hasAllPermissions(permissions, requirement.permissions)
-      : hasAnyPermission(permissions, requirement.permissions)));
+): boolean => {
+  switch (requirement.mode) {
+    case 'public':
+      return true;
+    case 'one':
+      return hasPermission(permissions, requirement.permission);
+    case 'any':
+      return hasAnyPermission(permissions, requirement.permissions);
+    case 'all':
+      return hasAllPermissions(permissions, requirement.permissions);
+  }
+};

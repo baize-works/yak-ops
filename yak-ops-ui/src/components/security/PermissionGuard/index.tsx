@@ -1,16 +1,14 @@
 import { useModel } from '@umijs/max';
-import type { ReactNode } from 'react';
-import {
-  satisfiesPermissionRequirement,
-  type PermissionRequirement,
-} from '@/utils/security/permission';
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
+import { type PermissionRequirement, satisfiesPermissionRequirement } from '@/utils/security/permission';
 
-export interface PermissionGuardProps extends PermissionRequirement {
+export type PermissionGuardProps = PermissionRequirement & {
   children: ReactNode;
   fallback?: ReactNode;
+  behavior?: 'hide' | 'disable';
   /** Primarily useful for isolated components and tests. */
   permissionCodes?: readonly string[];
-}
+};
 
 /**
  * Hides UI that the current user cannot operate. This is not a security
@@ -19,22 +17,23 @@ export interface PermissionGuardProps extends PermissionRequirement {
 export default function PermissionGuard({
   children,
   fallback = null,
+  behavior = 'hide',
   permissionCodes,
-  permission,
-  anyPermissions,
-  allPermissions,
-  permissions,
-  permissionMode,
+  ...requirement
 }: PermissionGuardProps) {
   const { initialState } = useModel('@@initialState');
   const granted = permissionCodes ?? initialState?.currentUser?.permissionCodes;
-  const allowed = satisfiesPermissionRequirement(granted, {
-    permission,
-    anyPermissions,
-    allPermissions,
-    permissions,
-    permissionMode,
-  });
+  const allowed = satisfiesPermissionRequirement(granted, requirement);
 
-  return <>{allowed ? children : fallback}</>;
+  if (allowed) return <>{children}</>;
+  if (behavior === 'hide') return <>{fallback}</>;
+
+  if (isValidElement(children)) {
+    return cloneElement(children as ReactElement<Record<string, unknown>>, {
+      disabled: true,
+      'aria-disabled': true,
+    });
+  }
+
+  return <span aria-disabled="true">{children}</span>;
 }

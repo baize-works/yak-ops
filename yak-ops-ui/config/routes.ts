@@ -24,9 +24,17 @@ export default [
       ...appRoutes.map(({ path, component, hidden }) => ({
         path,
         component,
+        access: 'isAuthenticated',
+        wrappers: ['@/components/security/RouteAccessBoundary'],
         ...(hidden ? { hideInMenu: true, hideInBreadcrumb: true } : {}),
       })),
     ],
+  },
+  {
+    path: '/403',
+    component: './403',
+    layout: false,
+    hideInMenu: true,
   },
   {
     path: '*',
