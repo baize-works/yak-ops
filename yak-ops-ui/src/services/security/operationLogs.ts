@@ -1,39 +1,150 @@
-import { securityGetData } from './client';
+import {
+  securityGetData,
+  securityPostData,
+} from './client';
 
 const OPLOG_API = '/api/v1/oplog';
+
 export interface OperationLog {
-  id: number | string;
-  operationType: string;
-  operatorName?: string;
+  id: number;
+  operatorIp?: string;
+  operator?: string;
+  operatePage?: string;
+  operateType?: string;
+  operationMethods?: string;
+  target?: string;
   targetType?: string;
-  targetId?: string;
-  result?: string;
-  ip?: string;
-  operationTime?: string;
+  detail?: string;
+  createTime?: string;
+  updateTime?: string;
 }
-export interface OperationLogDetail extends OperationLog {
-  requestJson?: string | Record<string, unknown>;
-  responseJson?: string | Record<string, unknown>;
-  detailJson?: string | Record<string, unknown>;
+
+export type OperationLogDetail = OperationLog;
+
+export interface OperationLogOptions {
+  operateTypes: string[];
+  operatePages: string[];
+  operationMethods: string[];
+  targetTypes: string[];
 }
-export interface OperationLogPage { records: OperationLog[]; total: number }
+
 export interface OperationLogQuery {
-  pageNum: number; pageSize: number; operationType?: string; operatorName?: string;
-  target?: string; startTime?: string; endTime?: string;
+  pageNum: number;
+  pageSize: number;
+  operateType?: string;
+  operatePage?: string;
+  operationMethods?: string;
+  operator?: string;
+  operatorIp?: string;
+  target?: string;
+  targetType?: string;
+  detail?: string;
+  startTime?: number;
+  endTime?: number;
 }
-const query = (values: object) => {
-  const params = new URLSearchParams();
-  Object.entries(values as Record<string, unknown>).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+
+export interface OperationLogPage {
+  records: OperationLog[];
+  total: number;
+}
+
+interface BackendPagingData<T> {
+  bizData?: T[];
+  pagination?: {
+    total?: number;
+    pages?: number;
+    pageNo?: number;
+    pageSize?: number;
+  };
+}
+
+const normalizeOptions = (
+  value?: Partial<OperationLogOptions>,
+): OperationLogOptions => ({
+  operateTypes: Array.isArray(value?.operateTypes)
+    ? value.operateTypes
+    : [],
+  operatePages: Array.isArray(value?.operatePages)
+    ? value.operatePages
+    : [],
+  operationMethods: Array.isArray(value?.operationMethods)
+    ? value.operationMethods
+    : [],
+  targetTypes: Array.isArray(value?.targetTypes)
+    ? value.targetTypes
+    : [],
+});
+
+export const pageOperationLogs = async (
+  params: OperationLogQuery,
+): Promise<OperationLogPage> => {
+  const data = await securityPostData<
+    BackendPagingData<OperationLog>
+  >(`${OPLOG_API}/page`, {
+    page: params.pageNum,
+    size: params.pageSize,
+    operateType: params.operateType,
+    operatePage: params.operatePage,
+    operationMethods: params.operationMethods,
+    operator: params.operator,
+    operatorIp: params.operatorIp,
+    target: params.target,
+    targetType: params.targetType,
+    detail: params.detail,
+    startTime: params.startTime,
+    endTime: params.endTime,
   });
-  return params.toString();
+
+  return {
+    records: Array.isArray(data?.bizData)
+      ? data.bizData
+      : [],
+    total: Number(data?.pagination?.total ?? 0),
+  };
 };
-export const pageOperationLogs = (params: OperationLogQuery) =>
-  securityGetData<OperationLogPage>(`${OPLOG_API}/page?${query(params)}`);
-export const getOperationLog = (id: number | string) =>
-  securityGetData<OperationLogDetail>(`${OPLOG_API}/detail?id=${encodeURIComponent(id)}`);
+
+export const getOperationLog = (
+  id: number | string,
+): Promise<OperationLogDetail> =>
+  securityGetData<OperationLogDetail>(
+    `${OPLOG_API}/${encodeURIComponent(String(id))}`,
+  );
+
+export const getOperationLogOptions = async (): Promise<OperationLogOptions> =>
+  normalizeOptions(
+    await securityGetData<Partial<OperationLogOptions>>(
+      `${OPLOG_API}/options`,
+    ),
+  );
 
 export const formatJsonText = (value: unknown): string => {
-  if (typeof value !== 'string') return JSON.stringify(value ?? '', null, 2);
-  try { return JSON.stringify(JSON.parse(value), null, 2); } catch { return value; }
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+
+  if (typeof value !== 'string') {
+    return JSON.stringify(value, null, 2);
+  }
+
+  const text = value.trim();
+  if (!text) return '';
+
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return value;
+  }
+};
+
+export const isJsonText = (value: unknown): boolean => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return false;
+  }
+
+  try {
+    JSON.parse(value);
+    return true;
+  } catch {
+    return false;
+  }
 };
