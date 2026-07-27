@@ -1,18 +1,19 @@
-import type {
-  ActionType,
-  ProColumns,
-} from '@ant-design/pro-components';
 import {
-  AutoComplete,
+  DeleteOutlined,
+  EditOutlined,
+  EyeOutlined,
+} from '@ant-design/icons';
+import type { ProColumns } from '@ant-design/pro-components';
+import {
   Button,
-  Form,
-  Input,
   Modal,
-  Select,
   Space,
   Switch,
+  Tag,
+  Typography,
   message,
 } from 'antd';
+import dayjs from 'dayjs';
 import {
   useCallback,
   useEffect,
@@ -23,350 +24,361 @@ import {
 
 import {
   PermissionGuard,
+  SecurityPagination,
   SecurityQueryTable,
 } from '@/components/security';
 import {
-  type ConfigInput,
   type ConfigStatus,
-  createConfig,
+  type SystemConfig,
   deleteConfig,
   listConfigGroups,
   pageConfigs,
-  type SystemConfig,
   toggleConfig,
-  updateConfig,
 } from '@/services/security/configs';
 
-/**
- * 系统配置权限编码。
- */
-const permission = (
-  action: string,
-): string => `security:config:${action}`;
+import ConfigDetailDrawer, {
+  type ConfigDetailDrawerRef,
+} from './components/ConfigDetailDrawer';
+import ConfigEditorModal, {
+  type ConfigEditorModalRef,
+} from './components/ConfigEditorModal';
+import ConfigFilterBar, {
+  type ConfigFilterValues,
+} from './components/ConfigFilterBar';
 
-/**
- * 后端配置状态：
- *
- * 1：正常
- * 2：禁用
- */
+interface ConfigPaginationState {
+  current: number;
+  pageSize: number;
+  total: number;
+}
+
+const DEFAULT_PAGINATION: ConfigPaginationState = {
+  current: 1,
+  pageSize: 10,
+  total: 0,
+};
+
 const CONFIG_STATUS_ENABLED: ConfigStatus = 1;
 const CONFIG_STATUS_DISABLED: ConfigStatus = 2;
 
-/**
- * 新增配置默认值。
- */
-const initialValues: ConfigInput = {
-  valueGroup: '',
-  valueName: '',
-  value: '',
-  status: CONFIG_STATUS_ENABLED,
-  memo: '',
-};
+const configPermission = (action: string): string =>
+  `security:config:${action}`;
 
-/**
- * 将表格搜索参数中的状态转换为后端需要的数字状态。
- */
-const normalizeStatus = (
-  value: unknown,
-): ConfigStatus | undefined => {
-  const status = Number(value);
+const errorText = (error: unknown, fallback: string): string =>
+  error instanceof Error && error.message
+    ? error.message
+    : fallback;
 
-  if (
-    status === CONFIG_STATUS_ENABLED ||
-    status === CONFIG_STATUS_DISABLED
-  ) {
-    return status as ConfigStatus;
-  }
-
-  return undefined;
-};
+const dateText = (value?: string): string =>
+  value && dayjs(value).isValid()
+    ? dayjs(value).format('YYYY-MM-DD HH:mm:ss')
+    : '-';
 
 export default function ConfigsPage() {
-  const actionRef = useRef<ActionType>();
-  const [form] = Form.useForm<ConfigInput>();
+  const editorRef = useRef<ConfigEditorModalRef>(null);
+  const detailRef = useRef<ConfigDetailDrawerRef>(null);
+  const requestSequenceRef = useRef(0);
 
-  const [groups, setGroups] =
-    useState<string[]>([]);
-  const [editing, setEditing] =
-    useState<SystemConfig>();
-  const [open, setOpen] =
-    useState(false);
-  const [saving, setSaving] =
-    useState(false);
+  const [configs, setConfigs] = useState<SystemConfig[]>([]);
+  const [groups, setGroups] = useState<string[]>([]);
+  const [filters, setFilters] = useState<ConfigFilterValues>({});
+  const [pagination, setPagination] =
+    useState<ConfigPaginationState>(DEFAULT_PAGINATION);
+  const [loading, setLoading] = useState(false);
+  const [switchingIds, setSwitchingIds] = useState<Set<number>>(
+    () => new Set(),
+  );
 
-  /**
-   * 查询配置分组。
-   */
   const loadGroups = useCallback(async () => {
     try {
-      const data =
-        await listConfigGroups();
-
-      const normalizedGroups =
-        Array.isArray(data)
-          ? data
-              .filter(
-                (
-                  value,
-                ): value is string =>
-                  typeof value ===
-                    'string' &&
-                  value.trim().length >
-                    0,
-              )
-              .map((value) =>
-                value.trim(),
-              )
-          : [];
-
-      setGroups([
-        ...new Set(
-          normalizedGroups,
-        ),
-      ]);
+      setGroups(await listConfigGroups());
     } catch {
       setGroups([]);
     }
   }, []);
 
+  const loadConfigs = useCallback(async () => {
+    const sequence = ++requestSequenceRef.current;
+    setLoading(true);
+
+    try {
+      const result = await pageConfigs({
+        pageNum: pagination.current,
+        pageSize: pagination.pageSize,
+        id: filters.id,
+        valueGroup: filters.valueGroup,
+        valueName: filters.valueName,
+        status: filters.status,
+        memo: filters.memo,
+        operator: filters.operator,
+      });
+
+      if (sequence !== requestSequenceRef.current) return;
+
+      setConfigs(result.records ?? []);
+      setPagination((current) => ({
+        ...current,
+        total: result.total ?? 0,
+      }));
+    } catch (error) {
+      if (sequence !== requestSequenceRef.current) return;
+
+      setConfigs([]);
+      setPagination((current) => ({
+        ...current,
+        total: 0,
+      }));
+      message.error(errorText(error, '系统配置加载失败'));
+    } finally {
+      if (sequence === requestSequenceRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [
+    filters,
+    pagination.current,
+    pagination.pageSize,
+  ]);
+
   useEffect(() => {
     void loadGroups();
   }, [loadGroups]);
 
-  /**
-   * 分组下拉选项。
-   */
-  const groupOptions = useMemo(
-    () =>
-      (
-        Array.isArray(groups)
-          ? groups
-          : []
-      ).map((value) => ({
-        value,
-        label: value,
-      })),
-    [groups],
-  );
+  useEffect(() => {
+    void loadConfigs();
+  }, [loadConfigs]);
 
-  /**
-   * 刷新分页表格。
-   */
   const reload = useCallback(() => {
-    actionRef.current?.reload();
+    void loadConfigs();
+  }, [loadConfigs]);
+
+  const reloadAll = useCallback(() => {
+    void Promise.all([loadConfigs(), loadGroups()]);
+  }, [loadConfigs, loadGroups]);
+
+  const handleSearch = useCallback((values: ConfigFilterValues) => {
+    setFilters(values);
+    setPagination((current) => ({
+      ...current,
+      current: 1,
+    }));
   }, []);
 
-  /**
-   * 关闭编辑弹窗。
-   */
-  const closeForm = () => {
-    setOpen(false);
-    setEditing(undefined);
-    form.resetFields();
-  };
+  const handlePageChange = useCallback(
+    (nextCurrent: number, nextPageSize: number) => {
+      setPagination((current) => {
+        const pageSizeChanged = current.pageSize !== nextPageSize;
 
-  /**
-   * 打开新增或编辑弹窗。
-   */
-  const showForm = (
-    row?: SystemConfig,
-  ) => {
-    setEditing(row);
-
-    if (row) {
-      form.setFieldsValue({
-        valueGroup:
-          row.valueGroup ?? '',
-        valueName:
-          row.valueName ?? '',
-        value: row.value ?? '',
-        status:
-          row.status ??
-          CONFIG_STATUS_ENABLED,
-        memo: row.memo ?? '',
+        return {
+          ...current,
+          current: pageSizeChanged ? 1 : nextCurrent,
+          pageSize: nextPageSize,
+        };
       });
-    } else {
-      form.setFieldsValue(
-        initialValues,
-      );
-    }
+    },
+    [],
+  );
 
-    setOpen(true);
-  };
+  const showDetail = useCallback((config: SystemConfig) => {
+    detailRef.current?.open(config);
+  }, []);
 
-  /**
-   * 删除配置。
-   */
-  const remove = (
-    row: SystemConfig,
-  ) => {
-    Modal.confirm({
-      title: `删除配置“${row.valueName}”？`,
-      content:
-        '删除后无法恢复，请确认该配置已经不再使用。',
-      okText: '删除',
-      cancelText: '取消',
-      okButtonProps: {
-        danger: true,
-      },
-      onOk: async () => {
-        try {
-          await deleteConfig(
-            row.id,
-          );
+  const showEdit = useCallback((config: SystemConfig) => {
+    editorRef.current?.openEdit(config);
+  }, []);
 
-          message.success(
-            '配置已删除',
-          );
+  const changeStatus = useCallback(
+    async (config: SystemConfig, checked: boolean) => {
+      if (switchingIds.has(config.id)) return;
 
-          reload();
-          await loadGroups();
-        } catch (error) {
-          Modal.error({
-            title: '删除配置失败',
-            content:
-              error instanceof Error
-                ? error.message
-                : '删除配置时发生异常，请稍后重试。',
-          });
+      setSwitchingIds((current) => {
+        const next = new Set(current);
+        next.add(config.id);
+        return next;
+      });
 
-          throw error;
-        }
-      },
-    });
-  };
+      try {
+        await toggleConfig(
+          config.id,
+          checked
+            ? CONFIG_STATUS_ENABLED
+            : CONFIG_STATUS_DISABLED,
+        );
+        message.success(
+          checked ? '配置已启用' : '配置已停用',
+        );
+        reload();
+      } catch (error) {
+        message.error(errorText(error, '配置状态更新失败'));
+      } finally {
+        setSwitchingIds((current) => {
+          const next = new Set(current);
+          next.delete(config.id);
+          return next;
+        });
+      }
+    },
+    [reload, switchingIds],
+  );
 
-  /**
-   * 配置表格列。
-   */
-  const columns: ProColumns<SystemConfig>[] =
-    [
-      {
-        title: '配置分组',
-        dataIndex: 'valueGroup',
-        valueType: 'select',
-        fieldProps: {
-          options: groupOptions,
-          showSearch: true,
-          allowClear: true,
-          optionFilterProp:
-            'label',
+  const remove = useCallback(
+    (config: SystemConfig) => {
+      Modal.confirm({
+        title: '删除系统配置',
+        width: 500,
+        centered: true,
+        okText: '删除',
+        cancelText: '取消',
+        okButtonProps: { danger: true },
+        content: (
+          <div className="space-y-3">
+            <div>
+              确定删除配置
+              <span className="mx-1 font-medium text-slate-900">
+                {config.valueGroup}/{config.valueName}
+              </span>
+              吗？
+            </div>
+            <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm leading-6 text-red-700">
+              删除后无法恢复。依赖该配置的业务会读取默认值或出现运行异常，请先确认调用方已停止使用。
+            </div>
+          </div>
+        ),
+        onOk: async () => {
+          try {
+            await deleteConfig(config.id);
+            message.success('配置已删除');
+
+            if (configs.length === 1 && pagination.current > 1) {
+              setPagination((current) => ({
+                ...current,
+                current: current.current - 1,
+              }));
+            } else {
+              reload();
+            }
+            void loadGroups();
+          } catch (error) {
+            message.error(errorText(error, '配置删除失败'));
+            throw error;
+          }
         },
-      },
+      });
+    },
+    [
+      configs.length,
+      loadGroups,
+      pagination.current,
+      reload,
+    ],
+  );
+
+  const columns = useMemo<ProColumns<SystemConfig>[]>(
+    () => [
       {
-        title: '配置名称',
+        title: '配置项',
         dataIndex: 'valueName',
+        width: 260,
+        render: (_, row) => (
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <Typography.Text
+                strong
+                ellipsis={{ tooltip: row.valueName }}
+                className="min-w-0"
+              >
+                {row.valueName || '未命名配置'}
+              </Typography.Text>
+              <Tag className="shrink-0 !mr-0">
+                {row.valueGroup || '未分组'}
+              </Tag>
+            </div>
+            <div className="mt-1 text-xs text-slate-400">
+              ID {row.id}
+            </div>
+          </div>
+        ),
       },
       {
         title: '配置值',
         dataIndex: 'value',
-        search: false,
-        ellipsis: true,
-        copyable: true,
+        width: 300,
+        render: (_, row) => (
+          <Typography.Text
+            code
+            copyable={{ text: row.value ?? '' }}
+            ellipsis={{ tooltip: row.value || '(空字符串)' }}
+            className="max-w-[270px]"
+          >
+            {row.value || '(空字符串)'}
+          </Typography.Text>
+        ),
       },
       {
         title: '备注',
         dataIndex: 'memo',
-        search: false,
+        width: 240,
         ellipsis: true,
-        renderText: (
-          value,
-        ) => value || '-',
+        renderText: (value) => value || '-',
       },
       {
         title: '状态',
         dataIndex: 'status',
-        valueType: 'select',
-        valueEnum: {
-          1: {
-            text: '启用',
-            status: 'Success',
-          },
-          2: {
-            text: '停用',
-            status: 'Default',
-          },
-        },
+        width: 120,
+        align: 'center',
         render: (_, row) => (
           <PermissionGuard
             mode="one"
-            permission={permission(
-              'toggle',
-            )}
+            permission={configPermission('toggle')}
             behavior="disable"
           >
             <Switch
-              checked={
-                row.status ===
-                CONFIG_STATUS_ENABLED
-              }
+              checked={row.status === CONFIG_STATUS_ENABLED}
+              loading={switchingIds.has(row.id)}
               checkedChildren="启用"
               unCheckedChildren="停用"
-              onChange={async (
-                checked,
-              ) => {
-                try {
-                  await toggleConfig(
-                    row.id,
-                    checked
-                      ? CONFIG_STATUS_ENABLED
-                      : CONFIG_STATUS_DISABLED,
-                  );
-
-                  message.success(
-                    '配置状态已更新',
-                  );
-
-                  reload();
-                } catch {
-                  message.error(
-                    '配置状态更新失败',
-                  );
-                }
-              }}
+              onChange={(checked) =>
+                void changeStatus(row, checked)
+              }
             />
           </PermissionGuard>
         ),
       },
       {
-        title: '操作人',
+        title: '最后操作人',
         dataIndex: 'operator',
-        search: false,
-        renderText: (
-          value,
-        ) => value || '-',
-      },
-      {
-        title: '创建时间',
-        dataIndex: 'createTime',
-        valueType: 'dateTime',
-        search: false,
+        width: 140,
+        renderText: (value) => value || '-',
       },
       {
         title: '更新时间',
         dataIndex: 'updateTime',
-        valueType: 'dateTime',
-        search: false,
+        width: 180,
+        renderText: (value) => dateText(value),
       },
       {
         title: '操作',
         valueType: 'option',
         fixed: 'right',
-        width: 140,
+        width: 190,
         render: (_, row) => (
           <Space size={0}>
+            <Button
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => showDetail(row)}
+            >
+              详情
+            </Button>
+
             <PermissionGuard
               mode="one"
-              permission={permission(
-                'update',
-              )}
+              permission={configPermission('update')}
             >
               <Button
                 type="link"
-                onClick={() =>
-                  showForm(row)
-                }
+                icon={<EditOutlined />}
+                onClick={() => showEdit(row)}
               >
                 编辑
               </Button>
@@ -374,16 +386,13 @@ export default function ConfigsPage() {
 
             <PermissionGuard
               mode="one"
-              permission={permission(
-                'delete',
-              )}
+              permission={configPermission('delete')}
             >
               <Button
                 type="link"
                 danger
-                onClick={() =>
-                  remove(row)
-                }
+                icon={<DeleteOutlined />}
+                onClick={() => remove(row)}
               >
                 删除
               </Button>
@@ -391,280 +400,64 @@ export default function ConfigsPage() {
           </Space>
         ),
       },
-    ];
-
-  /**
-   * 保存配置。
-   */
-  const handleSave = async (
-    values: ConfigInput,
-  ) => {
-    setSaving(true);
-
-    try {
-      const body: ConfigInput = {
-        valueGroup:
-          values.valueGroup.trim(),
-        valueName:
-          values.valueName.trim(),
-        value: values.value,
-        status:
-          values.status,
-        memo:
-          values.memo?.trim() ??
-          '',
-      };
-
-      if (editing) {
-        await updateConfig(
-          editing.id,
-          body,
-        );
-      } else {
-        await createConfig(body);
-      }
-
-      message.success(
-        editing
-          ? '配置已更新'
-          : '配置已创建',
-      );
-
-      closeForm();
-      reload();
-      await loadGroups();
-    } catch {
-      message.error(
-        editing
-          ? '配置更新失败'
-          : '配置创建失败',
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+    ],
+    [changeStatus, remove, showDetail, showEdit, switchingIds],
+  );
 
   return (
-    <section className="p-6">
-      <SecurityQueryTable<SystemConfig>
-        actionRef={actionRef}
-        rowKey="id"
-        columns={columns}
-        scroll={{
-          x: 1100,
-        }}
-        request={async (
-          params,
-        ) => {
-          try {
-            const result =
-              await pageConfigs({
-                pageNum:
-                  params.current ??
-                  1,
-                pageSize:
-                  params.pageSize ??
-                  10,
-                valueGroup:
-                  typeof params.valueGroup ===
-                  'string'
-                    ? params.valueGroup
-                    : undefined,
-                valueName:
-                  typeof params.valueName ===
-                  'string'
-                    ? params.valueName
-                    : undefined,
-                status:
-                  normalizeStatus(
-                    params.status,
-                  ),
-              });
+    <section
+      className="box-border flex flex-col bg-slate-50/50 p-6"
+      style={{
+        minHeight: 'calc(100vh - 64px)',
+        overflow: 'hidden',
+      }}
+    >
+      <div className="shrink-0">
+        <h1
+          className="mb-4 font-semibold"
+          style={{ fontSize: 18, color: '#282828' }}
+        >
+          系统配置
+        </h1>
 
-            return {
-              data:
-                Array.isArray(
-                  result.records,
-                )
-                  ? result.records
-                  : [],
-              total: Number(
-                result.total ?? 0,
-              ),
-              success: true,
-            };
-          } catch {
-            return {
-              data: [],
-              total: 0,
-              success: false,
-            };
-          }
-        }}
-        toolBarRender={() => [
-          <PermissionGuard
-            key="create"
-            mode="one"
-            permission={permission(
-              'create',
-            )}
-          >
-            <Button
-              type="primary"
-              onClick={() =>
-                showForm()
-              }
-            >
-              新增配置
-            </Button>
-          </PermissionGuard>,
-        ]}
+        <ConfigFilterBar
+          groups={groups}
+          loading={loading}
+          onSearch={handleSearch}
+          onRefresh={reload}
+          onCreate={() => editorRef.current?.openCreate()}
+        />
+
+        <SecurityQueryTable<SystemConfig>
+          rowKey="id"
+          columns={columns}
+          dataSource={configs}
+          loading={loading}
+          search={false}
+          options={false}
+          pagination={false}
+          bordered
+          scroll={{ x: 'max-content' }}
+        />
+      </div>
+
+      <div className="min-h-6 flex-1" />
+
+      <SecurityPagination
+        current={pagination.current}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        disabled={loading}
+        onChange={handlePageChange}
       />
 
-      <Modal
-        open={open}
-        title={
-          editing
-            ? '编辑配置'
-            : '新增配置'
-        }
-        destroyOnClose
-        maskClosable={false}
-        confirmLoading={saving}
-        okText="保存"
-        cancelText="取消"
-        onCancel={closeForm}
-        onOk={() =>
-          form.submit()
-        }
-      >
-        <Form<ConfigInput>
-          form={form}
-          layout="vertical"
-          initialValues={
-            initialValues
-          }
-          preserve={false}
-          onFinish={
-            handleSave
-          }
-        >
-          <Form.Item
-            name="valueGroup"
-            label="配置分组"
-            rules={[
-              {
-                required: true,
-                message:
-                  '请输入配置分组',
-              },
-              {
-                whitespace: true,
-                message:
-                  '配置分组不能为空',
-              },
-            ]}
-          >
-            <AutoComplete
-              options={
-                groupOptions
-              }
-              filterOption={(
-                inputValue,
-                option,
-              ) =>
-                String(
-                  option?.value ??
-                    '',
-                )
-                  .toLowerCase()
-                  .includes(
-                    inputValue.toLowerCase(),
-                  )
-              }
-              placeholder="请选择或输入配置分组"
-            />
-          </Form.Item>
+      <ConfigEditorModal
+        ref={editorRef}
+        groups={groups}
+        onSuccess={reloadAll}
+      />
 
-          <Form.Item
-            name="valueName"
-            label="配置名称"
-            rules={[
-              {
-                required: true,
-                message:
-                  '请输入配置名称',
-              },
-              {
-                whitespace: true,
-                message:
-                  '配置名称不能为空',
-              },
-            ]}
-          >
-            <Input
-              placeholder="请输入配置名称"
-              maxLength={128}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="value"
-            label="配置值"
-            rules={[
-              {
-                required: true,
-                message:
-                  '请输入配置值',
-              },
-            ]}
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder="请输入配置值"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="status"
-            label="状态"
-            rules={[
-              {
-                required: true,
-                message:
-                  '请选择配置状态',
-              },
-            ]}
-          >
-            <Select
-              options={[
-                {
-                  value:
-                    CONFIG_STATUS_ENABLED,
-                  label: '启用',
-                },
-                {
-                  value:
-                    CONFIG_STATUS_DISABLED,
-                  label: '停用',
-                },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="memo"
-            label="备注"
-          >
-            <Input.TextArea
-              rows={3}
-              maxLength={500}
-              showCount
-              placeholder="请输入备注"
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <ConfigDetailDrawer ref={detailRef} />
     </section>
   );
 }
