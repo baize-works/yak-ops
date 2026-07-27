@@ -2,7 +2,7 @@ import {
   hasAllPermissions as checkAllPermissions,
   hasAnyPermission as checkAnyPermission,
   hasPermission as checkPermission,
-} from '@/utils/security/permission';
+} from './utils/security/permission';
 
 /**
  * @see https://umijs.org/docs/max/access#access
@@ -25,4 +25,4 @@ export {
   hasAllPermissions,
   hasAnyPermission,
   hasPermission,
-} from '@/utils/security/permission';
+} from './utils/security/permission';

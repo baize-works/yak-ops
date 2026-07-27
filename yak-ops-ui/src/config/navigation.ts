@@ -1,4 +1,4 @@
-import { type PermissionRequirement, satisfiesPermissionRequirement } from '@/utils/security/permission';
+import { type PermissionRequirement, satisfiesPermissionRequirement } from '../utils/security/permission';
 
 export type NavigationIconKey =
   | 'home'

@@ -1,6 +1,6 @@
 import { useModel } from '@umijs/max';
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
-import { type PermissionRequirement, satisfiesPermissionRequirement } from '@/utils/security/permission';
+import { type PermissionRequirement, satisfiesPermissionRequirement } from '../../../utils/security/permission';
 
 export type PermissionGuardProps = PermissionRequirement & {
   children: ReactNode;
