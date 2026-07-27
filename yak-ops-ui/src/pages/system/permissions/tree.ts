@@ -224,3 +224,65 @@ export const getPermissionTreeStats = (
 export const getDirectChildren = (
   node?: PermissionVO,
 ): PermissionVO[] => safeChildren(node);
+
+/**
+ * Compatibility helper shared by department management.
+ *
+ * Search endpoints may return only the matching nodes. This function filters
+ * the original tree while retaining every ancestor of a matched node, so the
+ * result keeps its hierarchy. String-normalized IDs also support mixed numeric
+ * and string identifiers, and the traversal guards against cyclic data.
+ */
+export const retainMatchedAncestors = <
+  T extends {
+    id: TreeId;
+    children?: T[];
+  },
+>(
+  tree: T[] | null | undefined,
+  matches: T[] | null | undefined,
+): T[] => {
+  const safeArray = (
+    value: T[] | null | undefined,
+  ): T[] => (Array.isArray(value) ? value : []);
+
+  const matchedIds = new Set<string>();
+
+  const collectMatchedIds = (
+    nodes: T[] | null | undefined,
+    path: Set<string>,
+  ) => {
+    for (const node of safeArray(nodes)) {
+      const key = String(node.id);
+      if (path.has(key)) continue;
+
+      matchedIds.add(key);
+
+      const nextPath = new Set(path);
+      nextPath.add(key);
+      collectMatchedIds(node.children, nextPath);
+    }
+  };
+
+  collectMatchedIds(matches, new Set());
+
+  const visit = (
+    nodes: T[] | null | undefined,
+    path: Set<string>,
+  ): T[] =>
+    safeArray(nodes).flatMap((node) => {
+      const key = String(node.id);
+      if (path.has(key)) return [];
+
+      const nextPath = new Set(path);
+      nextPath.add(key);
+
+      const children = visit(node.children, nextPath);
+
+      return matchedIds.has(key) || children.length > 0
+        ? [{ ...node, children } as T]
+        : [];
+    });
+
+  return visit(tree, new Set());
+};
