@@ -9,7 +9,10 @@ export interface ApiResponse<T = unknown> {
 
 const protocolRules: Record<ApiProtocol, { success: readonly number[]; unauthenticated: readonly number[] }> = {
   'yak-ops': { success: [0], unauthenticated: [1, 401] },
-  security: { success: [200], unauthenticated: [401] },
+  security: {
+    success: [200],
+    unauthenticated: [401, 2001],
+  },
 };
 
 const unauthenticatedMessages = new Set([

@@ -21,12 +21,14 @@ export default {
     // concern, so the local backend receives (for example) /api/v1/account.
     '/yak-security/': {
       target: 'http://localhost:8080',
-      changeOrigin: true,
-      pathRewrite: { '^/yak-security': '' },
+      // changeOrigin: true,
+      // pathRewrite: { '^/yak-security': '' },
       // Do not leak an upstream Domain, and scope its session to this ingress.
       // The backend remains responsible for HttpOnly/Secure and SameSite=Lax.
       cookieDomainRewrite: '',
-      cookiePathRewrite: { '*': '/yak-security/' },
+      cookiePathRewrite: {
+        '*': '/',
+      },
     },
     '/profile/avatar/': {
       changeOrigin: true,

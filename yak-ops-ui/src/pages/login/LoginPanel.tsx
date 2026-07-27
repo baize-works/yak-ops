@@ -1,12 +1,12 @@
-import {ArrowRightOutlined} from "@ant-design/icons";
-import {history, useIntl, useModel} from "@umijs/max";
-import {App, Button, Form, Input} from "antd";
-import {useForm} from "antd/es/form/Form";
-import React, {useRef, useState} from "react";
-import {flushSync} from "react-dom";
-import {login} from "@/services/security/account";
-import {resetAuthenticationFailure} from "@/utils/request";
-import {getSafeReturnTo} from "@/utils/security/redirect";
+import { login } from "@/services/security/account";
+import { resetAuthenticationFailure } from "@/utils/request";
+import { getSafeReturnTo } from "@/utils/security/redirect";
+import { ArrowRightOutlined } from "@ant-design/icons";
+import { history, useIntl, useModel } from "@umijs/max";
+import { App, Button, Form, Input } from "antd";
+import { useForm } from "antd/es/form/Form";
+import { useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import GoogleLoginButton from "./components/GoogleLoginButton";
 import "./index.less";
 
@@ -28,16 +28,16 @@ type LoginPanelProps = {
 };
 
 export default function LoginPanel({
-                                     onFire,
-                                     onPanelHoverChange,
-                                     onFieldFocusChange,
-                                   }: LoginPanelProps) {
+  onFire,
+  onPanelHoverChange,
+  onFieldFocusChange,
+}: LoginPanelProps) {
   const [loading, setLoading] = useState(false);
   const [form] = useForm();
   const lastFireRef = useRef<Record<string, number>>({});
 
-  const {initialState, setInitialState} = useModel("@@initialState");
-  const {message} = App.useApp();
+  const { initialState, setInitialState } = useModel("@@initialState");
+  const { message } = App.useApp();
   const intl = useIntl();
 
   const fireThrottled = (key: string, type: ActionType, gapMs = 900) => {
@@ -65,7 +65,9 @@ export default function LoginPanel({
   };
 
   const redirectAfterLogin = () => {
-    const requested = new URLSearchParams(window.location.search).get("returnTo");
+    const requested = new URLSearchParams(window.location.search).get(
+      "returnTo"
+    );
     history.replace(getSafeReturnTo(requested));
   };
 
@@ -77,7 +79,10 @@ export default function LoginPanel({
       await form.validateFields();
       setLoading(true);
 
-      await login(values);
+      await login({
+        userName: values.userName,
+        pw: values.userPassword,
+      });
       resetAuthenticationFailure();
       message.success(
         intl.formatMessage({
@@ -131,7 +136,7 @@ export default function LoginPanel({
           maxWidth: 380,
         }}
       >
-        <div style={{marginBottom: 32, textAlign: "center"}}>
+        <div style={{ marginBottom: 32, textAlign: "center" }}>
           <h1
             style={{
               margin: 0,
@@ -178,8 +183,8 @@ export default function LoginPanel({
               </span>
             }
             name="userName"
-            style={{marginBottom: 18}}
-            rules={[{required: true, message: "请输入用户名"}]}
+            style={{ marginBottom: 18 }}
+            rules={[{ required: true, message: "请输入用户名" }]}
           >
             <Input
               className="login-input"
@@ -210,7 +215,7 @@ export default function LoginPanel({
               </span>
             }
             name="userPassword"
-            style={{marginBottom: 14}}
+            style={{ marginBottom: 14 }}
             rules={[
               {
                 required: true,
@@ -242,7 +247,7 @@ export default function LoginPanel({
               fontSize: 14,
             }}
           >
-            <Button type="link" style={{padding: 0}}>
+            <Button type="link" style={{ padding: 0 }}>
               Forgot password?
             </Button>
           </div>
@@ -260,14 +265,14 @@ export default function LoginPanel({
             <span className="hover-layer">
               <span className="hover-label">Log in</span>
               <span className="hover-icon">
-                <ArrowRightOutlined/>
+                <ArrowRightOutlined />
               </span>
             </span>
           </Button>
 
           <GoogleLoginButton
             className="animated-profile-btn-v2"
-            style={{marginTop: 14}}
+            style={{ marginTop: 14 }}
             loading={loading}
             onStart={() => {
               onFieldFocusChange?.(null);
@@ -292,7 +297,7 @@ export default function LoginPanel({
             Don&apos;t have an account?{" "}
             <Button
               type="link"
-              style={{padding: 0, fontWeight: 600}}
+              style={{ padding: 0, fontWeight: 600 }}
               onMouseEnter={() => fireThrottled("signup_hover", "TILT", 900)}
             >
               Sign Up

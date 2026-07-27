@@ -14,7 +14,7 @@ export const ACCOUNT_UNAUTHENTICATED_CODE = 401;
 
 export type AccountLoginDTO = {
   userName: string;
-  userPassword: string;
+  pw: string;
 };
 
 export const login = (body: AccountLoginDTO): Promise<void> =>
