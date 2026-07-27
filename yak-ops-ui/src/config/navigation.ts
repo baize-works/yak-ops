@@ -16,7 +16,8 @@ export type NavigationIconKey =
   | 'alarm'
   | 'knowledge'
   | 'api'
-  | 'insight';
+  | 'insight'
+  | 'system';
 
 /**
  * 主菜单业务区域：
@@ -24,7 +25,7 @@ export type NavigationIconKey =
  * task：任务创建、数据同步和流程编排；
  * management：资源、质量及运行管理。
  */
-export type NavigationSectionKey = 'task' | 'management';
+export type NavigationSectionKey = 'task' | 'management' | 'system';
 
 interface NavigationRouteBase {
   id: string;
@@ -111,6 +112,13 @@ export const navigationGroups: readonly NavigationGroup[] = [
     iconKey: 'monitor',
     section: 'management',
     order: 50,
+  },
+  {
+    id: 'system',
+    title: '系统管理',
+    iconKey: 'system',
+    section: 'system',
+    order: 60,
   },
 ];
 
@@ -434,6 +442,19 @@ export const appRoutes: readonly NavigationRoute[] = [
     iconKey: 'knowledge',
     hidden: true,
   },
+
+  // ---------------------------------------------------------------------------
+  // 系统管理（权限编码来自阶段 0 合同矩阵）
+  // ---------------------------------------------------------------------------
+
+  { id: 'system-users', mode: 'one', permission: 'system:user:read', path: '/system/users', title: '用户管理', component: './system/users', iconKey: 'system', menuGroup: 'system', order: 10 },
+  { id: 'system-roles', mode: 'one', permission: 'system:role:read', path: '/system/roles', title: '角色管理', component: './system/roles', iconKey: 'system', menuGroup: 'system', order: 20 },
+  { id: 'system-permissions', mode: 'one', permission: 'system:permission:read', path: '/system/permissions', title: '权限管理', component: './system/permissions', iconKey: 'system', menuGroup: 'system', order: 30 },
+  { id: 'system-departments', mode: 'one', permission: 'system:department:read', path: '/system/departments', title: '部门管理', component: './system/departments', iconKey: 'system', menuGroup: 'system', order: 40 },
+  { id: 'system-projects', mode: 'one', permission: 'system:project:read', path: '/system/projects', title: 'Security 授权项目', component: './system/projects', iconKey: 'system', menuGroup: 'system', order: 50 },
+  { id: 'system-resource-permissions', mode: 'one', permission: 'system:resource-permission:read', path: '/system/resource-permissions', title: '资源授权', component: './system/resource-permissions', iconKey: 'system', menuGroup: 'system', order: 60 },
+  { id: 'system-configs', mode: 'one', permission: 'system:config:read', path: '/system/configs', title: '系统配置', component: './system/configs', iconKey: 'system', menuGroup: 'system', order: 70 },
+  { id: 'system-operation-logs', mode: 'one', permission: 'system:operation-log:read', path: '/system/operation-logs', title: '操作日志', component: './system/operation-logs', iconKey: 'system', menuGroup: 'system', order: 80 },
 ];
 
 const routeMap = new Map(appRoutes.map((route) => [route.id, route]));
