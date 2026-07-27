@@ -13,7 +13,7 @@ import SecurityProjectSwitcher from "@/components/security/SecurityProjectSwitch
 import { SecurityProjectProvider, useSecurityProject } from "@/contexts/SecurityProjectContext";
 import { logout } from "@/services/security/account";
 import { history, Outlet, useLocation, useModel } from "@umijs/max";
-import { Drawer, Dropdown, Empty, type MenuProps } from "antd";
+import { Badge, Button, Drawer, Dropdown, type MenuProps } from "antd";
 import {
   Activity,
   ArrowLeftRight,
@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import MessageList, { MESSAGE_COUNT_CHANGED_EVENT } from "@/pages/system/messages/MessageList";
+import { getUnreadMessageCount } from "@/services/security/messages";
 
 const HEADER_HEIGHT = 48;
 const SIDEBAR_WIDTH = 200;
@@ -158,6 +160,7 @@ interface HeaderActionProps {
   icon: ReactNode;
   label: string;
   badge?: boolean;
+  badgeCount?: number;
   onClick?: () => void;
 }
 
@@ -165,6 +168,7 @@ function HeaderAction({
   icon,
   label,
   badge = false,
+  badgeCount,
   onClick,
 }: HeaderActionProps) {
   return (
@@ -185,9 +189,9 @@ function HeaderAction({
           justify-center text-[17px]
         "
       >
-        {icon}
+        <Badge count={badgeCount} size="small" overflowCount={99}>{icon}</Badge>
 
-        {badge && (
+        {badge && !badgeCount && (
           <span
             className="
               absolute right-0 top-0 h-1.5 w-1.5
@@ -288,9 +292,18 @@ function SiteLayoutContent() {
 
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const { clearProject } = useSecurityProject();
+
+  useEffect(() => {
+    let active = true;
+    const refresh = () => getUnreadMessageCount().then((count) => { if (active) setUnreadCount(count); }).catch(() => undefined);
+    refresh();
+    window.addEventListener(MESSAGE_COUNT_CHANGED_EVENT, refresh);
+    return () => { active = false; window.removeEventListener(MESSAGE_COUNT_CHANGED_EVENT, refresh); };
+  }, [currentUser?.userid]);
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -954,7 +967,8 @@ function SiteLayoutContent() {
           <HeaderAction
             icon={<Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />}
             label="通知"
-            badge={Boolean(currentUser?.unreadCount ?? currentUser?.notifyCount)}
+            badge={unreadCount > 0}
+            badgeCount={unreadCount}
             onClick={() => setNotificationOpen(true)}
           />
 
@@ -992,13 +1006,14 @@ function SiteLayoutContent() {
       </header>
 
       <Drawer
-        title="通知"
+        title="消息中心"
         placement="right"
-        width={360}
+        width={720}
         open={notificationOpen}
         onClose={() => setNotificationOpen(false)}
       >
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无新通知" />
+        <MessageList compact />
+        <Button block onClick={() => { setNotificationOpen(false); history.push('/system/messages'); }}>查看全部消息</Button>
       </Drawer>
 
       <main
