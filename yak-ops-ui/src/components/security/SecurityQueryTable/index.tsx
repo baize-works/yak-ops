@@ -1,8 +1,13 @@
+
+import YakOpsEmpty from '@/components/YakOpsEmpty';
 import {
+  Empty,
   Table,
   type SpinProps,
   type TableProps,
 } from 'antd';
+
+
 
 export default function SecurityQueryTable<T extends object>({
   className,
@@ -11,8 +16,14 @@ export default function SecurityQueryTable<T extends object>({
   bordered = true,
   size = 'middle',
   loading = false,
+  locale,
   ...props
 }: TableProps<T>) {
+  const isSpinning =
+    typeof loading === 'boolean'
+      ? loading
+      : loading.spinning ?? true;
+
   const tableLoading: boolean | SpinProps =
     typeof loading === 'boolean'
       ? {
@@ -36,15 +47,48 @@ export default function SecurityQueryTable<T extends object>({
           tip: loading.tip ?? '加载中，请稍候...',
         };
 
+  /**
+   * 外部传入 locale.emptyText 时优先使用外部配置；
+   * 未传入时默认使用 YakOpsEmpty。
+   */
+  const emptyText =
+    locale?.emptyText !== undefined ? (
+      locale.emptyText
+    ) : (
+      <Empty
+        image={
+          <YakOpsEmpty
+            width={220}
+            height={174}
+            className="mx-auto"
+          />
+        }
+        imageStyle={{
+          height: 174,
+        }}
+        description={
+          <span className="text-sm text-slate-400">
+            暂无数据
+          </span>
+        }
+      />
+    );
+
   return (
     <>
       <Table<T>
+        {...props}
         rowKey={rowKey}
         bordered={bordered}
         pagination={pagination}
         size={size}
         loading={tableLoading}
-        {...props}
+        locale={{
+          ...locale,
+
+          // 加载过程中不显示空状态插画
+          emptyText: isSpinning ? null : emptyText,
+        }}
         className={[
           '[&_.ant-table]:bg-white',
 
@@ -79,7 +123,9 @@ export default function SecurityQueryTable<T extends object>({
           '[&_.ant-table-tbody>tr:hover>td]:!bg-slate-50/80',
 
           // 空数据区域
-          '[&_.ant-table-placeholder>td]:!py-16',
+          '[&_.ant-table-placeholder>td]:!py-10',
+          '[&_.ant-table-placeholder_.ant-empty]:!my-0',
+          '[&_.ant-table-placeholder_.ant-empty-image]:!mb-3',
 
           className,
         ]
