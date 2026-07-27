@@ -154,15 +154,25 @@ export default function AssignmentDrawer(
         </Space>
       }
     >
-      <Input.Search
-        allowClear
-        value={keyword}
-        placeholder="搜索用户名或姓名"
-        className="mb-3"
-        onChange={(event) =>
-          setKeyword(event.target.value)
-        }
-      />
+      <div className="mb-3 flex items-center gap-2">
+        <Input.Search
+          allowClear
+          value={keyword}
+          placeholder="搜索用户名或姓名"
+          onChange={(event) =>
+            setKeyword(event.target.value)
+          }
+        />
+        {allowEmpty && selected.length > 0 && (
+          <Button
+            type="text"
+            size="small"
+            onClick={() => setSelected([])}
+          >
+            清空
+          </Button>
+        )}
+      </div>
       <Spin spinning={Boolean(loading)}>
         {body}
       </Spin>
