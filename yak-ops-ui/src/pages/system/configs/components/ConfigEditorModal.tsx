@@ -187,7 +187,7 @@ const ConfigEditorModal = forwardRef<
       open={open}
       title={editingId !== undefined ? '编辑配置' : '新增配置'}
       width={620}
-      destroyOnClose
+      forceRender
       maskClosable={false}
       keyboard={!saving}
       closable={!saving}
