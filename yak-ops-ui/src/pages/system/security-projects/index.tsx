@@ -390,7 +390,7 @@ export default function SecurityProjectsPage() {
   return (
     <section className="m-4 rounded-xl bg-white p-6">
       <Typography.Title level={4}>
-        Security 授权项目
+        Security 授权项目1
       </Typography.Title>
 
       <SecurityQueryTable<SecurityProjectSummary>

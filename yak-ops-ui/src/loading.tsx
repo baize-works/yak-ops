@@ -2,131 +2,51 @@ import React from 'react';
 
 const Loading: React.FC = () => {
   return (
-    <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center">
-      <div className="flex items-center gap-2">
-        <div className="running-man">
-          <div className="head" />
-          <div className="body" />
-          <div className="arm arm-left" />
-          <div className="arm arm-right" />
-          <div className="leg leg-left" />
-          <div className="leg leg-right" />
-        </div>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+      <div className="flex flex-col items-center gap-4">
+        <div className="loading-spinner" aria-label="加载中" />
 
-        <span className="text-[13px] font-medium text-slate-500">
-          Loading
+        <span className="text-[14px] font-normal text-[#655750]">
+          加载中，请稍候...
         </span>
       </div>
 
       <style>
         {`
-          .running-man {
-            position: relative;
+          .loading-spinner {
             width: 28px;
-            height: 30px;
-            animation: man-bounce 0.42s ease-in-out infinite alternate;
+            height: 28px;
+            border-radius: 50%;
+            background: conic-gradient(
+              from 0deg,
+              transparent 0deg,
+              transparent 210deg,
+              rgba(255, 82, 126, 0.2) 245deg,
+              #ff527e 300deg,
+              #ff527e 360deg
+            );
+            -webkit-mask: radial-gradient(
+              farthest-side,
+              transparent calc(100% - 4px),
+              #000 calc(100% - 3px)
+            );
+            mask: radial-gradient(
+              farthest-side,
+              transparent calc(100% - 4px),
+              #000 calc(100% - 3px)
+            );
+            animation: loading-spin 0.75s linear infinite;
           }
 
-          .running-man .head {
-            position: absolute;
-            left: 10px;
-            top: 0;
-            width: 9px;
-            height: 9px;
-            border-radius: 999px;
-            background: #1f2937;
-          }
-
-          .running-man .body {
-            position: absolute;
-            left: 13px;
-            top: 9px;
-            width: 3px;
-            height: 12px;
-            border-radius: 999px;
-            background: #1f2937;
-            transform-origin: top center;
-            transform: rotate(-8deg);
-          }
-
-          .running-man .arm,
-          .running-man .leg {
-            position: absolute;
-            width: 3px;
-            height: 11px;
-            border-radius: 999px;
-            background: #1f2937;
-            transform-origin: top center;
-          }
-
-          .running-man .arm-left {
-            left: 13px;
-            top: 10px;
-            animation: arm-left-run 0.52s ease-in-out infinite;
-          }
-
-          .running-man .arm-right {
-            left: 14px;
-            top: 10px;
-            animation: arm-right-run 0.52s ease-in-out infinite;
-          }
-
-          .running-man .leg-left {
-            left: 13px;
-            top: 20px;
-            height: 12px;
-            animation: leg-left-run 0.52s ease-in-out infinite;
-          }
-
-          .running-man .leg-right {
-            left: 14px;
-            top: 20px;
-            height: 12px;
-            animation: leg-right-run 0.52s ease-in-out infinite;
-          }
-
-          @keyframes man-bounce {
-            from {
-              transform: translateY(0);
-            }
+          @keyframes loading-spin {
             to {
-              transform: translateY(-2px);
+              transform: rotate(360deg);
             }
           }
 
-          @keyframes arm-left-run {
-            0%, 100% {
-              transform: rotate(48deg);
-            }
-            50% {
-              transform: rotate(-42deg);
-            }
-          }
-
-          @keyframes arm-right-run {
-            0%, 100% {
-              transform: rotate(-42deg);
-            }
-            50% {
-              transform: rotate(48deg);
-            }
-          }
-
-          @keyframes leg-left-run {
-            0%, 100% {
-              transform: rotate(-48deg);
-            }
-            50% {
-              transform: rotate(42deg);
-            }
-          }
-
-          @keyframes leg-right-run {
-            0%, 100% {
-              transform: rotate(42deg);
-            }
-            50% {
-              transform: rotate(-48deg);
+          @media (prefers-reduced-motion: reduce) {
+            .loading-spinner {
+              animation-duration: 1.5s;
             }
           }
         `}
