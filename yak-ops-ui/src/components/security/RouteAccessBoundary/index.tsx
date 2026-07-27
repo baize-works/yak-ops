@@ -1,7 +1,7 @@
-import { getRouteMetadata, canAccessNavigationRoute, type NavigationRoute } from '@/config/navigation';
-import { Result } from 'antd';
 import { useLocation, useModel } from '@umijs/max';
 import type { ReactNode } from 'react';
+import { canAccessNavigationRoute, getRouteMetadata, type NavigationRoute } from '@/config/navigation';
+import ForbiddenPage from '@/pages/403';
 
 export interface RouteAccessBoundaryProps {
   children: ReactNode;
@@ -11,13 +11,7 @@ export interface RouteAccessBoundaryProps {
   permissionCodes?: readonly string[];
 }
 
-const defaultFallback = (
-  <Result
-    status="403"
-    title="403"
-    subTitle="抱歉，您没有权限访问此页面。"
-  />
-);
+const defaultFallback = <ForbiddenPage />;
 
 /**
  * Blocks rendering for inaccessible route metadata. It complements, but never
@@ -33,7 +27,10 @@ export default function RouteAccessBoundary({
   const { initialState } = useModel('@@initialState');
   const metadata = route ?? getRouteMetadata(location.pathname);
   const granted = permissionCodes ?? initialState?.currentUser?.permissionCodes;
-  const allowed = !metadata || canAccessNavigationRoute(metadata, granted);
+  // A failed identity request is not evidence of missing permission. The app
+  // keeps the URL in that case and lets its existing retry/error UI take over.
+  const identityPending = !initialState?.currentUser && initialState?.currentUserLoadError;
+  const allowed = identityPending || !metadata || canAccessNavigationRoute(metadata, granted);
 
   return <>{allowed ? children : fallback}</>;
 }

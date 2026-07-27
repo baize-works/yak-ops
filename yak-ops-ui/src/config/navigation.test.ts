@@ -1,24 +1,32 @@
 import {
+  appRoutes,
   canAccessNavigationRoute,
   getActiveNavigationId,
-  type NavigationRoute,
+  getMainNavigationGroups,
+  getQuickCreateRoutes,
 } from './navigation';
 
 describe('permission-aware navigation', () => {
-  it('uses route permission metadata for route decisions', () => {
-    const route: NavigationRoute = {
-      id: 'protected-test-route',
-      path: '/protected-test-route',
-      title: 'Protected',
-      component: './protected',
-      anyPermissions: ['protected:read', 'protected:admin'],
-    };
+  const batchRead = ['task:batch:read'];
 
-    expect(canAccessNavigationRoute(route, ['protected:read'])).toBe(true);
-    expect(canAccessNavigationRoute(route, ['unrelated:read'])).toBe(false);
+  it('uses route permission metadata and lets details inherit their parent', () => {
+    const list = appRoutes.find((route) => route.id === 'batch-link-up')!;
+    const detail = appRoutes.find((route) => route.id === 'batch-link-up-detail')!;
+    expect(canAccessNavigationRoute(list, batchRead)).toBe(true);
+    expect(canAccessNavigationRoute(list, [])).toBe(false);
+    expect(canAccessNavigationRoute(detail, batchRead)).toBe(true);
+    expect(canAccessNavigationRoute(detail, [])).toBe(false);
+    expect(getActiveNavigationId('/sync/batch-link-up/42/detail', batchRead)).toBe('batch-link-up');
   });
 
-  it('does not activate a route whose metadata denies access', () => {
+  it('removes empty groups and filters quick-create independently', () => {
+    expect(getMainNavigationGroups([])).toEqual([]);
+    expect(getMainNavigationGroups(batchRead).map((group) => group.id)).toEqual(['integration']);
+    expect(getQuickCreateRoutes(batchRead)).toEqual([]);
+    expect(getQuickCreateRoutes([...batchRead, 'task:batch:create']).map((route) => route.id)).toEqual(['batch-link-up']);
+  });
+
+  it('keeps explicitly public navigation available', () => {
     expect(getActiveNavigationId('/home', [])).toBe('home');
   });
 });
