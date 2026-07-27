@@ -1,11 +1,12 @@
 import {ArrowRightOutlined} from "@ant-design/icons";
-import {useIntl, useModel} from "@umijs/max";
-import {App, Button, Checkbox, Form, Input} from "antd";
+import {history, useIntl, useModel} from "@umijs/max";
+import {App, Button, Form, Input} from "antd";
 import {useForm} from "antd/es/form/Form";
 import React, {useRef, useState} from "react";
 import {flushSync} from "react-dom";
 import {login} from "@/services/security/account";
 import {resetAuthenticationFailure} from "@/utils/request";
+import {getSafeReturnTo} from "@/utils/security/redirect";
 import GoogleLoginButton from "./components/GoogleLoginButton";
 import "./index.less";
 
@@ -60,24 +61,12 @@ export default function LoginPanel({
         }));
       });
     }
+    return userInfo;
   };
 
   const redirectAfterLogin = () => {
-    const urlParams = new URL(window.location.href).searchParams;
-    const requested = urlParams.get("returnTo");
-
-    if (requested) {
-      const destination = new URL(requested, window.location.origin);
-      if (destination.origin === window.location.origin &&
-        !destination.pathname.toLowerCase().startsWith("/login")) {
-        window.location.assign(
-          `${destination.pathname}${destination.search}${destination.hash}`
-        );
-        return;
-      }
-    }
-
-    window.location.assign("/");
+    const requested = new URLSearchParams(window.location.search).get("returnTo");
+    history.replace(getSafeReturnTo(requested));
   };
 
   const handleAccountLogin = async (values: {
@@ -100,7 +89,8 @@ export default function LoginPanel({
       onFieldFocusChange?.(null);
       onFire("THANKS");
 
-      await fetchUserInfo();
+      const userInfo = await fetchUserInfo();
+      if (!userInfo) throw new Error("登录后无法加载当前用户");
       redirectAfterLogin();
     } catch (_error) {
       onFire("SHAKE");
@@ -113,7 +103,8 @@ export default function LoginPanel({
     onFieldFocusChange?.(null);
     onFire("THANKS");
 
-    await fetchUserInfo();
+    const userInfo = await fetchUserInfo();
+    if (!userInfo) return;
     redirectAfterLogin();
   };
 
@@ -183,18 +174,18 @@ export default function LoginPanel({
                   fontFamily: "Inter, sans-serif",
                 }}
               >
-                Email
+                用户名
               </span>
             }
             name="userName"
             style={{marginBottom: 18}}
-            rules={[{required: true, message: "Please enter your Email"}]}
+            rules={[{required: true, message: "请输入用户名"}]}
           >
             <Input
               className="login-input"
               size="large"
-              placeholder="you@example.com"
-              autoComplete="email"
+              placeholder="请输入用户名"
+              autoComplete="username"
               onFocus={() => {
                 onFieldFocusChange?.("userName");
                 fireThrottled("focus_user", "SURPRISE", 1200);
@@ -251,10 +242,6 @@ export default function LoginPanel({
               fontSize: 14,
             }}
           >
-            <Form.Item name="remember" valuePropName="checked" noStyle>
-              <Checkbox>Remember for 30 days</Checkbox>
-            </Form.Item>
-
             <Button type="link" style={{padding: 0}}>
               Forgot password?
             </Button>

@@ -83,6 +83,7 @@ export const resetAuthenticationFailure = () => {
 
 /** HTTP 401、业务未登录码与 Session 失效的唯一处理出口。 */
 export const handleAuthenticationFailure = () => {
+  window.dispatchEvent(new Event("yak-security:session-expired"));
   if (window.location.pathname.toLowerCase().startsWith("/login")) {
     return;
   }
