@@ -7,3 +7,4 @@ export type { RouteAccessBoundaryProps } from './RouteAccessBoundary';
 export { default as RouteAccessBoundary } from './RouteAccessBoundary';
 export { default as SecurityQueryTable } from './SecurityQueryTable';
 export { default as TreeSearch } from './TreeSearch';
+export { default as SecurityPagination } from "./SecurityPagination";
