@@ -43,3 +43,15 @@ export const securityPostData = async <T>(
       data,
     })
   ).data;
+
+export const securityDeleteData = async <T>(
+  path: string,
+  options?: SecurityRequestOptions,
+): Promise<T> => (await securityRequest<T>(path, { ...options, method: 'DELETE' })).data;
+
+/** Send an import file without forcing a JSON content type or serialising FormData. */
+export const securityUploadData = async <T>(path: string, file: File): Promise<T> => {
+  const body = new FormData();
+  body.append('file', file);
+  return (await securityRequest<T>(path, { method: 'POST', body })).data;
+};
