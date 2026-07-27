@@ -41,13 +41,14 @@ export async function getInitialState(): Promise<{
   let currentUser: API.CurrentUser | undefined;
   let currentUserLoadError = false;
   try {
-    currentUser = await fetchUserInfo();
-  } catch (error) {
-    // Authentication failures redirect; network/server failures retain the
-    // current URL so a transient outage is not misrepresented as logout.
-    if (error instanceof BizError && error.code === 401) redirectAnonymousUser();
-    else currentUserLoadError = true;
-  }
+  currentUser = await fetchUserInfo();
+} catch (error) {
+  currentUserLoadError = true;
+
+  // 当前用户获取失败时，至少先让登录页面正常展示，
+  // 避免一直停留在初始化动画。
+  redirectAnonymousUser();
+}
   if (currentUser && isLoginPath(window.location.pathname)) {
     const requested = new URLSearchParams(window.location.search).get('returnTo');
     history.replace(getSafeReturnTo(requested));

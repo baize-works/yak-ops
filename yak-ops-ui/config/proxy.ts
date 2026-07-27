@@ -13,14 +13,14 @@
 export default {
   dev: {
     '/api/': {
-      target: 'http://localhost:9527',
+      target: 'http://localhost:8080',
       changeOrigin: true,
       pathRewrite: { '^/api': '/api' },
     },
     // Keep security calls same-origin in development. The prefix is an ingress
     // concern, so the local backend receives (for example) /api/v1/account.
     '/yak-security/': {
-      target: 'http://localhost:9527',
+      target: 'http://localhost:8080',
       changeOrigin: true,
       pathRewrite: { '^/yak-security': '' },
       // Do not leak an upstream Domain, and scope its session to this ingress.
