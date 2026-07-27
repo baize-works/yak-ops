@@ -152,3 +152,35 @@ OpenAPI 或固定版本依赖；尝试从 `https://github.com/yak-framework/yak-
 解除门禁所需的最小交付物是一个可审计的 yak-security commit SHA，以及该 SHA 对应的 User/Role
 Controller、请求与响应 DTO/VO、统一异常处理、权限注解、权限初始化 SQL 和数据库约束/迁移。
 取得这些材料后，应先回填第 3 至 5 节，再实现 service 和页面；不得用页面需求文字反向生成接口。
+
+## 10. 资源授权阶段字段审计与门禁复核
+
+2026-07-27 在资源授权开发前再次检查了工作区的 Java 源码、OpenAPI/Swagger
+产物和 Maven 依赖，未找到 `Resource Permission Controller`、其 DTO/VO、权限注解或
+资源权限 SQL。对 `https://github.com/yak-framework/yak-security.git` 的 `git ls-remote`
+仍被 HTTPS CONNECT 403 拒绝。因此第 4 节的 Resource Permission 行仍为待确认，
+不能新增 `services/security/resourcePermissions.ts` 或将资源授权页面接入猜测的接口。
+
+### 10.1 禁止猜测的字段
+
+| 字段 | 需从后端源码确认的语义 | 当前结论 |
+| --- | --- | --- |
+| `showLevel` | 是响应的展示深度、查询层级还是授权级别；类型、枚举原值及各端点的可选范围 | **待确认**；不得声明为布尔值 |
+| `controlLevel` | 权限控制开关作用于全局、项目、资源类型还是资源；枚举原值和关闭后的鉴权行为 | **待确认**；不得声明为布尔值 |
+| `assignFlag` | 是显式授权、继承授权、选择状态还是查询条件；是否可写及枚举原值 | **待确认**；不得声明为布尔值 |
+| `projectId` / `resourceTypeId` / `resourceId` | 项目、资源类型、具体资源三层中每层的必填组合，以及缺失、`null` 和 `0` 的不同语义 | **待确认**；不得在前端自行归一化 |
+| `userIdList` | 是 assign/batch 的目标用户，还是查询过滤条件；空、缺失、重复 ID 的语义 | **待确认** |
+| `excludeUserIdList` | 排除的是用户还是授权主体，可用于哪些层级和视角 | **待确认**；禁止与 `excludeIdList` 互换 |
+| `excludeIdList` | 元素是资源 ID、授权关系 ID 还是其他 ID，可用于哪些层级和视角 | **待确认**；禁止与 `excludeUserIdList` 互换 |
+
+### 10.2 解除实现门禁所需证据
+
+必须在一个固定的 yak-security commit SHA 上逐项登记：按用户查询、按资源查询、
+assign、revoke、batch、exclude、resource-type import 和 control toggle 的 Controller
+方法与组合路径；每个方法的 query/path/body/header、校验注解、DTO/VO 与返回泛型；
+Session 要求、项目 Header 精确名称及必填范围；权限注解原文与初始化 SQL 的编码对应。
+
+另需从实现或测试锁定以下行为：取消授权是删除显式关系还是恢复继承；预览影响范围
+与最终校验是否使用同一快照/版本；批量部分成功的逐项结果结构；继承来源和原始层级的
+返回方式；项目切换时旧请求的取消与响应隔离策略。证据补齐前，页面保持无可提交的占位状态，
+且不建立会持久化授权身份的 Zustand store。
