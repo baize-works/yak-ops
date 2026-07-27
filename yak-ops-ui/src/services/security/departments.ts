@@ -1,33 +1,36 @@
-import { securityGetData, securityUploadData } from './client';
-import type { ImportReport, TreeId } from './permissions';
+import {
+  securityGetData,
+  securityPostData,
+} from './client';
 
-const DEPARTMENT_API = '/api/v1/department';
+const DEPARTMENT_API = '/api/v1/dept';
 
+/** Department tree node returned by Yak Security. */
 export interface DepartmentVO {
-  id: TreeId;
-  name: string;
-  code?: string | null;
-  parentId?: TreeId | null;
-  leader?: string | null;
-  children?: DepartmentVO[];
+  id: number;
+  deptName?: string;
+  description?: string | null;
+  parentId?: number | null;
+  leaf?: boolean;
+  childList?: DepartmentVO[];
 }
 
-const queryString = (params: { name?: string; code?: string }) => {
-  const query = new URLSearchParams();
-  if (params.name?.trim()) query.set('name', params.name.trim());
-  if (params.code?.trim()) query.set('code', params.code.trim());
-  const value = query.toString();
-  return value ? `?${value}` : '';
-};
+/** DTO accepted by POST /dept/import. */
+export interface DepartmentImportItem {
+  deptName: string;
+  description?: string;
+  childDeptDTOList?: DepartmentImportItem[];
+}
 
-export const getDepartmentTree = (): Promise<DepartmentVO[]> =>
-  securityGetData<DepartmentVO[]>(`${DEPARTMENT_API}/tree`);
+/** Query the complete department tree, including the backend virtual root. */
+export const getDepartmentTree = (): Promise<DepartmentVO> =>
+  securityGetData<DepartmentVO>(`${DEPARTMENT_API}/tree`);
 
-export const searchDepartments = (params: { name?: string; code?: string }): Promise<DepartmentVO[]> =>
-  securityGetData<DepartmentVO[]>(`${DEPARTMENT_API}/search${queryString(params)}`);
-
-export const getDepartmentDetail = (id: TreeId): Promise<DepartmentVO> =>
-  securityGetData<DepartmentVO>(`${DEPARTMENT_API}/${encodeURIComponent(String(id))}`);
-
-export const importDepartments = (file: File): Promise<ImportReport> =>
-  securityUploadData<ImportReport>(`${DEPARTMENT_API}/import`, file);
+/** Import a JSON department DTO tree. */
+export const importDepartments = (
+  departments: DepartmentImportItem[],
+): Promise<void> =>
+  securityPostData<void>(
+    `${DEPARTMENT_API}/import`,
+    departments,
+  );
