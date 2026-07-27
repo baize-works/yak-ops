@@ -1,52 +1,62 @@
-import { securityDeleteData, securityGetData, securityUploadData } from './client';
+import {
+  securityDeleteData,
+  securityGetData,
+  securityPostData,
+} from './client';
 
 const PERMISSION_API = '/api/v1/permission';
 
 export type TreeId = string | number;
 
+/**
+ * Permission tree node returned by Yak Security.
+ *
+ * The backend returns one virtual root node whose real permissions live in
+ * childList. The virtual root has id=0 and no name/code.
+ */
 export interface PermissionVO {
-  id: TreeId;
-  name: string;
-  code: string;
-  type: string;
-  parentId?: TreeId | null;
-  resource?: string | null;
+  id: number;
+  has?: boolean;
+  permissionCode?: string;
+  permissionName?: string;
+  parentId?: number | null;
+  leaf?: boolean;
   description?: string | null;
-  sort?: number | null;
-  status?: string | number | boolean | null;
-  children?: PermissionVO[];
+  active?: boolean;
+  declared?: boolean;
+  childList?: PermissionVO[];
 }
 
-export interface PermissionSearchParams {
-  name?: string;
-  code?: string;
-  type?: string;
+/** DTO accepted by POST /permission/import. */
+export interface PermissionImportItem {
+  permissionCode: string;
+  permissionName: string;
+  description?: string;
+  childPermissionDTOList?: PermissionImportItem[];
 }
 
-export interface ImportReport {
-  successCount: number;
-  failureCount: number;
-  failures?: Array<{ row?: number; code?: string; message: string }>;
-}
+/** Query the complete permission tree. */
+export const getPermissionTree = (): Promise<PermissionVO> =>
+  securityGetData<PermissionVO>(`${PERMISSION_API}/tree`);
 
-const queryString = (params: PermissionSearchParams) => {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) if (value?.trim()) query.set(key, value.trim());
-  const value = query.toString();
-  return value ? `?${value}` : '';
-};
+/**
+ * Import a permission DTO tree.
+ *
+ * The backend accepts a JSON array rather than multipart/form-data, so files
+ * are parsed in the browser before this request is sent.
+ */
+export const importPermissions = (
+  permissions: PermissionImportItem[],
+): Promise<void> =>
+  securityPostData<void>(
+    `${PERMISSION_API}/import`,
+    permissions,
+  );
 
-export const getPermissionTree = (): Promise<PermissionVO[]> =>
-  securityGetData<PermissionVO[]>(`${PERMISSION_API}/tree`);
-
-export const searchPermissions = (params: PermissionSearchParams): Promise<PermissionVO[]> =>
-  securityGetData<PermissionVO[]>(`${PERMISSION_API}/search${queryString(params)}`);
-
-export const getPermissionDetail = (id: TreeId): Promise<PermissionVO> =>
-  securityGetData<PermissionVO>(`${PERMISSION_API}/${encodeURIComponent(String(id))}`);
-
-export const importPermissions = (file: File): Promise<ImportReport> =>
-  securityUploadData<ImportReport>(`${PERMISSION_API}/import`, file);
-
-export const deletePermission = (id: TreeId): Promise<void> =>
-  securityDeleteData<void>(`${PERMISSION_API}/${encodeURIComponent(String(id))}`);
+/** Delete one permission and its role-permission relationships. */
+export const deletePermission = (
+  id: TreeId,
+): Promise<void> =>
+  securityDeleteData<void>(
+    `${PERMISSION_API}/${encodeURIComponent(String(id))}`,
+  );
