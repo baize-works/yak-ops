@@ -140,10 +140,10 @@ export default defineConfig({
    * @name <head> 中额外的 script
    * @description 配置 <head> 中额外的 script
    */
-  headScripts: [
-    // 解决首次加载时白屏的问题
-    { src: join(PUBLIC_PATH, "scripts/loading.js"), async: true },
-  ],
+  // headScripts: [
+  //   // 解决首次加载时白屏的问题
+  //   { src: join(PUBLIC_PATH, "scripts/loading.js"), async: true },
+  // ],
 
   //================ pro 插件配置 =================
   presets: ["umi-presets-pro"],
@@ -176,7 +176,7 @@ export default defineConfig({
    * @description 使用 mako 极速研发
    * @doc https://umijs.org/docs/api/config#mako
    */
-  mako: {},
+  // mako: {},
   esbuildMinifyIIFE: true,
   requestRecord: {},
    // 当前使用 Nginx SPA 部署，不启用静态路由导出

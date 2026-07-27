@@ -1,21 +1,22 @@
-import { AvatarDropdown, AvatarName, Footer } from '@/components';
-import type { Settings as LayoutSettings } from '@ant-design/pro-components';
-import { SettingDrawer } from '@ant-design/pro-components';
-import '@ant-design/v5-patch-for-react-19';
-import type { RunTimeLayoutConfig } from '@umijs/max';
-import { history } from '@umijs/max';
-import 'd3-transition';
-import defaultSettings from '../config/defaultSettings';
-import { GlobalSearch, Knowledge } from './components/RightContent';
-import { getCurrentUser } from './services/security/account';
-import { toCurrentUser } from './services/security/currentIdentity';
-import { BizError } from './utils/request';
-import { getCurrentReturnTo, getSafeReturnTo, isLoginPath } from './utils/security/redirect';
+import { AvatarDropdown, AvatarName, Footer } from "@/components";
+import type { Settings as LayoutSettings } from "@ant-design/pro-components";
+import { SettingDrawer } from "@ant-design/pro-components";
+import "@ant-design/v5-patch-for-react-19";
+import type { RunTimeLayoutConfig } from "@umijs/max";
+import { history } from "@umijs/max";
 
-export { toCurrentUser } from './services/security/currentIdentity';
+import defaultSettings from "../config/defaultSettings";
+import { GlobalSearch, Knowledge } from "./components/RightContent";
+import { getCurrentUser } from "./services/security/account";
+import { toCurrentUser } from "./services/security/currentIdentity";
+import {
+  getCurrentReturnTo,
+  getSafeReturnTo,
+  isLoginPath,
+} from "./utils/security/redirect";
 
-const isDev = process.env.NODE_ENV === 'development';
-const loginPath = '/login';
+const isDev = process.env.NODE_ENV === "development";
+const loginPath = "/login";
 
 const redirectAnonymousUser = () => {
   if (isLoginPath(window.location.pathname)) return;
@@ -41,16 +42,18 @@ export async function getInitialState(): Promise<{
   let currentUser: API.CurrentUser | undefined;
   let currentUserLoadError = false;
   try {
-  currentUser = await fetchUserInfo();
-} catch (error) {
-  currentUserLoadError = true;
+    currentUser = await fetchUserInfo();
+  } catch (error) {
+    currentUserLoadError = true;
 
-  // 当前用户获取失败时，至少先让登录页面正常展示，
-  // 避免一直停留在初始化动画。
-  redirectAnonymousUser();
-}
+    // 当前用户获取失败时，至少先让登录页面正常展示，
+    // 避免一直停留在初始化动画。
+    redirectAnonymousUser();
+  }
   if (currentUser && isLoginPath(window.location.pathname)) {
-    const requested = new URLSearchParams(window.location.search).get('returnTo');
+    const requested = new URLSearchParams(window.location.search).get(
+      "returnTo"
+    );
     history.replace(getSafeReturnTo(requested));
   }
   return {
@@ -68,7 +71,7 @@ export const layout: RunTimeLayoutConfig = ({
 }) => {
   return {
     menuProps: {
-      defaultOpenKeys: ['/sync'],
+      defaultOpenKeys: ["/sync"],
     },
     actionsRender: () => [
       <GlobalSearch key="globalsearch" />,
@@ -102,22 +105,22 @@ export const layout: RunTimeLayoutConfig = ({
     },
     bgLayoutImgList: [
       {
-        src: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/D2LWSqNny4sAAAAAAAAAAAAAFl94AQBr',
+        src: "https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/D2LWSqNny4sAAAAAAAAAAAAAFl94AQBr",
         left: 85,
         bottom: 100,
-        height: '303px',
+        height: "303px",
       },
       {
-        src: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/C2TWRpJpiC0AAAAAAAAAAAAAFl94AQBr',
+        src: "https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/C2TWRpJpiC0AAAAAAAAAAAAAFl94AQBr",
         bottom: -68,
         right: -45,
-        height: '303px',
+        height: "303px",
       },
       {
-        src: 'https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/F6vSTbj8KpYAAAAAAAAAAAAAFl94AQBr',
+        src: "https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/F6vSTbj8KpYAAAAAAAAAAAAAFl94AQBr",
         bottom: 0,
         left: 0,
-        width: '331px',
+        width: "331px",
       },
     ],
     links: [],

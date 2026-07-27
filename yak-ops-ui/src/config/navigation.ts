@@ -450,7 +450,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-users',
     mode: 'one',
-    permission: 'system:user:read',
+    permission: 'security:user:read',
     path: '/system/users',
     title: '用户管理',
     component: './system/users',
@@ -461,7 +461,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-roles',
     mode: 'one',
-    permission: 'system:role:read',
+    permission: 'security:role:read',
     path: '/system/roles',
     title: '角色管理',
     component: './system/roles',
@@ -472,7 +472,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-permissions',
     mode: 'one',
-    permission: 'system:permission:read',
+    permission: 'security:permission:read',
     path: '/system/permissions',
     title: '权限管理',
     component: './system/permissions',
@@ -483,7 +483,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-departments',
     mode: 'one',
-    permission: 'system:department:read',
+    permission: 'security:department:read',
     path: '/system/departments',
     title: '部门管理',
     component: './system/departments',
@@ -494,7 +494,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-security-projects',
     mode: 'one',
-    permission: 'system:project:read',
+    permission: 'security:project:read',
     path: '/system/projects',
     title: 'Security 授权项目',
     component: './system/security-projects',
@@ -505,7 +505,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-resource-permissions',
     mode: 'one',
-    permission: 'system:resource-permission:read',
+    permission: 'security:resource-permission:read',
     path: '/system/resource-permissions',
     title: '资源授权',
     component: './system/resource-permissions',
@@ -516,7 +516,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-configs',
     mode: 'one',
-    permission: 'system:config:read',
+    permission: 'security:config:read',
     path: '/system/configs',
     title: '系统配置',
     component: './system/configs',
@@ -527,7 +527,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'system-operation-logs',
     mode: 'one',
-    permission: 'system:operation-log:read',
+    permission: 'security:operation-log:read',
     path: '/system/oplogs',
     title: '操作日志',
     component: './system/oplogs',
