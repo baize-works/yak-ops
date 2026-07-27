@@ -9,37 +9,19 @@ import defaultSettings from '../config/defaultSettings';
 import { GlobalSearch, Knowledge } from './components/RightContent';
 import { getCurrentUser } from './services/security/account';
 import { toCurrentUser } from './services/security/currentIdentity';
+import { BizError } from './utils/request';
+import { getCurrentReturnTo, getSafeReturnTo, isLoginPath } from './utils/security/redirect';
 
 export { toCurrentUser } from './services/security/currentIdentity';
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/login';
 
-const isLoginPage = (pathname: string) =>
-  pathname.toLowerCase().startsWith(loginPath);
-
-const currentReturnTo = () =>
-  `${window.location.pathname}${window.location.search}${window.location.hash}`;
-
 const redirectAnonymousUser = () => {
-  if (isLoginPage(window.location.pathname)) return;
+  if (isLoginPath(window.location.pathname)) return;
 
-  const returnTo = currentReturnTo();
+  const returnTo = getCurrentReturnTo();
   history.replace(`${loginPath}?returnTo=${encodeURIComponent(returnTo)}`);
-};
-
-const getSafeReturnTo = () => {
-  const requested = new URLSearchParams(window.location.search).get('returnTo');
-  if (!requested) return '/';
-
-  const destination = new URL(requested, window.location.origin);
-  if (
-    destination.origin !== window.location.origin ||
-    isLoginPage(destination.pathname)
-  ) {
-    return '/';
-  }
-  return `${destination.pathname}${destination.search}${destination.hash}`;
 };
 
 /**
@@ -51,24 +33,29 @@ export async function getInitialState(): Promise<{
   loading?: boolean;
   currentProject?: unknown;
   securityProject?: unknown;
+  currentUserLoadError?: boolean;
   fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
 }> {
-  const fetchUserInfo = async () => {
-    try {
-      return toCurrentUser(await getCurrentUser());
-    } catch (_error) {
-      redirectAnonymousUser();
-    }
-    return undefined;
-  };
+  const fetchUserInfo = async () => toCurrentUser(await getCurrentUser());
   // Always probe the cookie-backed Session, including after a reload on login.
-  const currentUser = await fetchUserInfo();
-  if (currentUser && isLoginPage(window.location.pathname)) {
-    history.replace(getSafeReturnTo());
+  let currentUser: API.CurrentUser | undefined;
+  let currentUserLoadError = false;
+  try {
+    currentUser = await fetchUserInfo();
+  } catch (error) {
+    // Authentication failures redirect; network/server failures retain the
+    // current URL so a transient outage is not misrepresented as logout.
+    if (error instanceof BizError && error.code === 401) redirectAnonymousUser();
+    else currentUserLoadError = true;
+  }
+  if (currentUser && isLoginPath(window.location.pathname)) {
+    const requested = new URLSearchParams(window.location.search).get('returnTo');
+    history.replace(getSafeReturnTo(requested));
   }
   return {
     fetchUserInfo,
     currentUser,
+    currentUserLoadError,
     settings: defaultSettings as Partial<LayoutSettings>,
   };
 }
@@ -104,7 +91,11 @@ export const layout: RunTimeLayoutConfig = ({
     onPageChange: () => {
       const { location } = history;
       // 如果没有登录，重定向到 login
-      if (!initialState?.currentUser && location.pathname !== loginPath) {
+      if (
+        !initialState?.currentUser &&
+        !initialState?.currentUserLoadError &&
+        location.pathname !== loginPath
+      ) {
         redirectAnonymousUser();
       }
     },

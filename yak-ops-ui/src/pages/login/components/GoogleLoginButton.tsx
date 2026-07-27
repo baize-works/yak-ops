@@ -1,7 +1,7 @@
 import {GoogleOutlined} from "@ant-design/icons";
 import {App, Button} from "antd";
 import React, {useEffect, useRef, useState} from "react";
-import {loginApi} from "../type";
+import {googleLogin} from "../type";
 
 declare global {
   interface Window {
@@ -98,16 +98,8 @@ const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
               setInnerLoading(true);
               onStartRef.current?.();
 
-              const data = await loginApi.googleLogin({
-                credential: response.credential,
-              });
-
-              if (data?.code === 0) {
-                await onSuccessRef.current?.(data);
-                return;
-              }
-
-              onErrorRef.current?.(data);
+              await googleLogin(response.credential);
+              await onSuccessRef.current?.();
             } catch (error) {
               console.error(error);
               onErrorRef.current?.(error);

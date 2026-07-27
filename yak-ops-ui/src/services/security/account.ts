@@ -20,6 +20,9 @@ export type AccountLoginDTO = {
 export const login = (body: AccountLoginDTO): Promise<void> =>
   securityPostData<void>(`${ACCOUNT_API}/login`, body);
 
+export const googleLogin = (credential: string): Promise<void> =>
+  securityPostData<void>('/api/v1/auth/google/login', { credential });
+
 export const getCurrentUser = (): Promise<API.CurrentUserVO> =>
   securityGetData<API.CurrentUserVO>(`${ACCOUNT_API}/current`);
 

@@ -9,6 +9,8 @@ import {
   type NavigationRoute,
 } from "@/config/navigation";
 import { RouteAccessBoundary } from "@/components/security";
+import SecurityProjectSwitcher from "@/components/security/SecurityProjectSwitcher";
+import { SecurityProjectProvider, useSecurityProject } from "@/contexts/SecurityProjectContext";
 import { logout } from "@/services/security/account";
 import { history, Outlet, useLocation, useModel } from "@umijs/max";
 import { Drawer, Dropdown, Empty, type MenuProps } from "antd";
@@ -33,7 +35,6 @@ import {
   PanelLeftOpen,
   Plug,
   Server,
-  ShieldCheck,
   SquarePlus,
   Workflow,
 } from "lucide-react";
@@ -251,7 +252,7 @@ function BrandLogo({ compact }: { compact: boolean }) {
   );
 }
 
-export default function SiteLayout() {
+function SiteLayoutContent() {
   const location = useLocation();
   const { initialState, setInitialState } = useModel("@@initialState");
   const currentUser = initialState?.currentUser;
@@ -282,32 +283,7 @@ export default function SiteLayout() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const projects = useMemo(
-    () => currentUser?.projectList ?? [],
-    [currentUser?.projectList],
-  );
-  const selectedProject =
-    (initialState?.securityProject as API.ProjectBrief | undefined) ??
-    (initialState?.currentProject as API.ProjectBrief | undefined) ??
-    projects[0];
-
-  const selectProject = (project: API.ProjectBrief) => {
-    setInitialState((state) => ({
-      ...state,
-      currentProject: project,
-      securityProject: project,
-    }));
-  };
-
-  const projectMenuItems = useMemo<MenuProps["items"]>(
-    () =>
-      projects.map((project) => ({
-        key: String(project.id),
-        label: project.projectName,
-        onClick: () => selectProject(project),
-      })),
-    [projects],
-  );
+  const { clearProject } = useSecurityProject();
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -315,6 +291,7 @@ export default function SiteLayout() {
     try {
       await logout();
     } finally {
+      clearProject();
       await setInitialState((state) => ({
         ...state,
         currentUser: undefined,
@@ -973,34 +950,7 @@ export default function SiteLayout() {
             onClick={() => setNotificationOpen(true)}
           />
 
-          <Dropdown
-            menu={{
-              items: projectMenuItems,
-              selectable: true,
-              selectedKeys: selectedProject
-                ? [String(selectedProject.id)]
-                : [],
-            }}
-            trigger={["click"]}
-            disabled={projects.length === 0}
-          >
-            <button
-              type="button"
-              aria-label="切换 Security 项目"
-              className="ml-2 flex h-8 max-w-52 items-center gap-2 rounded-md border border-[rgba(28,31,35,0.08)] bg-white px-2.5 text-left text-xs text-[#1c1f23] transition-colors hover:bg-[#f5f5f6]"
-            >
-              <ShieldCheck
-                className="h-4 w-4 shrink-0 text-[#fe2c55]"
-                strokeWidth={1.8}
-              />
-              <span className="min-w-0 truncate">
-                {selectedProject?.projectName ?? "Security"}
-              </span>
-              <ChevronDown
-                className="h-3 w-3 shrink-0 text-[rgba(22,24,35,0.4)]"
-              />
-            </button>
-          </Dropdown>
+          <SecurityProjectSwitcher />
 
           <div
             className="
@@ -1076,4 +1026,8 @@ export default function SiteLayout() {
       </main>
     </div>
   );
+}
+
+export default function SiteLayout() {
+  return <SecurityProjectProvider><SiteLayoutContent /></SecurityProjectProvider>;
 }
