@@ -7,7 +7,6 @@ import {
   Input,
   Modal,
   Select,
-  Space,
   message,
 } from 'antd';
 import {
@@ -66,6 +65,14 @@ const ConfigEditorModal = forwardRef<
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const resetAndClose = useCallback(() => {
+    requestSequenceRef.current += 1;
+    setOpen(false);
+    setEditingId(undefined);
+    setLoading(false);
+    form.resetFields();
+  }, [form]);
+
   const openCreate = useCallback(() => {
     requestSequenceRef.current += 1;
     setEditingId(undefined);
@@ -119,16 +126,11 @@ const ConfigEditorModal = forwardRef<
   );
 
   const close = () => {
-    if (saving) return;
-    requestSequenceRef.current += 1;
-    setOpen(false);
-    setEditingId(undefined);
-    setLoading(false);
-    form.resetFields();
+    if (!saving) resetAndClose();
   };
 
   const formatValue = () => {
-    const value = form.getFieldValue('value');
+    const value = form.getFieldValue('value') ?? '';
     const formatted = formatConfigValue(value);
 
     if (formatted === value) {
@@ -143,6 +145,7 @@ const ConfigEditorModal = forwardRef<
     if (saving) return;
     setSaving(true);
 
+    const currentEditingId = editingId;
     const body: ConfigInput = {
       valueGroup: values.valueGroup.trim(),
       valueName: values.valueName.trim(),
@@ -152,22 +155,24 @@ const ConfigEditorModal = forwardRef<
     };
 
     try {
-      if (editingId !== undefined) {
-        await updateConfig(editingId, body);
+      if (currentEditingId !== undefined) {
+        await updateConfig(currentEditingId, body);
       } else {
         await createConfig(body);
       }
 
       message.success(
-        editingId !== undefined ? '配置已更新' : '配置已创建',
+        currentEditingId !== undefined
+          ? '配置已更新'
+          : '配置已创建',
       );
-      close();
+      resetAndClose();
       onSuccess();
     } catch (error) {
       message.error(
         errorText(
           error,
-          editingId !== undefined
+          currentEditingId !== undefined
             ? '配置更新失败'
             : '配置创建失败',
         ),
@@ -186,7 +191,7 @@ const ConfigEditorModal = forwardRef<
       maskClosable={false}
       keyboard={!saving}
       closable={!saving}
-      confirmLoading={saving}
+      confirmLoading={saving || loading}
       okText="保存"
       cancelText="取消"
       onCancel={close}
@@ -254,7 +259,7 @@ const ConfigEditorModal = forwardRef<
         <Form.Item
           name="value"
           label={
-            <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <span>配置值</span>
               <Button
                 type="link"
@@ -274,27 +279,25 @@ const ConfigEditorModal = forwardRef<
           />
         </Form.Item>
 
-        <Space size={16} align="start" className="w-full">
-          <Form.Item
-            name="status"
-            label="配置状态"
-            className="w-[180px]"
-            rules={[{ required: true, message: '请选择配置状态' }]}
-          >
-            <Select
-              options={[
-                {
-                  value: CONFIG_STATUS_ENABLED,
-                  label: '启用',
-                },
-                {
-                  value: CONFIG_STATUS_DISABLED,
-                  label: '停用',
-                },
-              ]}
-            />
-          </Form.Item>
-        </Space>
+        <Form.Item
+          name="status"
+          label="配置状态"
+          className="w-[180px]"
+          rules={[{ required: true, message: '请选择配置状态' }]}
+        >
+          <Select
+            options={[
+              {
+                value: CONFIG_STATUS_ENABLED,
+                label: '启用',
+              },
+              {
+                value: CONFIG_STATUS_DISABLED,
+                label: '停用',
+              },
+            ]}
+          />
+        </Form.Item>
 
         <Form.Item name="memo" label="备注">
           <Input.TextArea
