@@ -33,12 +33,10 @@ import {
 } from 'antd';
 import dayjs from 'dayjs';
 import {
-  forwardRef,
   type Key,
   type ReactNode,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -115,9 +113,6 @@ const SEARCH_PLACEHOLDERS: Record<RoleSearchField, string> = {
   id: '请输入角色 ID',
 };
 
-const rolePermission = (action: string): string =>
-  `security:role:${action}`;
-
 const cleanText = (value?: string): string =>
   value?.trim() ?? '';
 
@@ -127,35 +122,34 @@ const errorText = (error: unknown, fallback: string): string =>
     : fallback;
 
 const formatDateTime = (value?: string): string => {
-  if (!value) {
-    return '-';
-  }
+  if (!value) return '-';
 
   const date = dayjs(value);
-
   return date.isValid()
     ? date.format('YYYY-MM-DD HH:mm:ss')
     : value;
 };
+
+const rolePermission = (action: string): string =>
+  `security:role:${action}`;
 
 const permissionNodeKey = (
   node: PermissionTreeNode,
   path: number[],
 ): Key => {
   const id = Number(node.id);
-
   return Number.isFinite(id)
     ? id
     : `permission-${path.join('-')}`;
 };
 
-const createPermissionTreeNode = (
+const toPermissionTreeNode = (
   node: PermissionTreeNode,
   path: number[],
 ): PermissionTreeDataNode => {
   const children = Array.isArray(node.childList)
     ? node.childList.map((child, index) =>
-        createPermissionTreeNode(child, [...path, index]),
+        toPermissionTreeNode(child, [...path, index]),
       )
     : [];
 
@@ -181,56 +175,51 @@ const createPermissionTreeNode = (
           )}
       </span>
     ),
-    ...(children.length > 0 ? { children } : {}),
+    ...(children.length ? { children } : {}),
   };
 };
 
-const createPermissionTreeData = (
+const toPermissionTreeData = (
   tree?: PermissionTreeNode,
 ): PermissionTreeDataNode[] => {
-  if (!tree) {
-    return [];
-  }
+  if (!tree) return [];
 
-  const hasRootIdentity =
+  const hasRoot =
     Number.isFinite(Number(tree.id)) ||
     Boolean(tree.permissionName) ||
     Boolean(tree.permissionCode);
 
-  if (!hasRootIdentity) {
-    return Array.isArray(tree.childList)
-      ? tree.childList.map((node, index) =>
-          createPermissionTreeNode(node, [index]),
-        )
-      : [];
+  if (!hasRoot) {
+    return tree.childList?.map((node, index) =>
+      toPermissionTreeNode(node, [index]),
+    ) ?? [];
   }
 
-  return [createPermissionTreeNode(tree, [0])];
+  return [toPermissionTreeNode(tree, [0])];
 };
 
-const collectCheckedPermissionKeys = (
+const collectCheckedKeys = (
   tree?: PermissionTreeNode,
 ): Key[] => {
-  if (!tree) {
-    return [];
-  }
-
   const keys: Key[] = [];
 
-  const visit = (node: PermissionTreeNode) => {
+  const visit = (node?: PermissionTreeNode) => {
+    if (!node) return;
+
     const id = Number(node.id);
-
-    if (node.has && Number.isFinite(id)) {
-      keys.push(id);
-    }
-
+    if (node.has && Number.isFinite(id)) keys.push(id);
     node.childList?.forEach(visit);
   };
 
   visit(tree);
-
   return keys;
 };
+
+const unwrapCheckedKeys = (
+  value:
+    | Key[]
+    | { checked: Key[]; halfChecked: Key[] },
+): Key[] => (Array.isArray(value) ? value : value.checked);
 
 const checkedKeysToIds = (keys: Key[]): number[] =>
   Array.from(
@@ -240,15 +229,6 @@ const checkedKeysToIds = (keys: Key[]): number[] =>
         .filter(Number.isFinite),
     ),
   );
-
-const unwrapCheckedKeys = (
-  value:
-    | Key[]
-    | {
-        checked: Key[];
-        halfChecked: Key[];
-      },
-): Key[] => (Array.isArray(value) ? value : value.checked);
 
 interface RoleFilterBarProps {
   total: number;
@@ -263,41 +243,23 @@ function RoleFilterBar({
   onRefresh,
   onCreate,
 }: RoleFilterBarProps) {
-  const [searchField, setSearchField] =
+  const [field, setField] =
     useState<RoleSearchField>('roleName');
   const [keyword, setKeyword] = useState('');
 
-  const createFilters = (
+  const buildFilters = (
     nextKeyword = keyword,
-    nextSearchField = searchField,
+    nextField = field,
   ): RoleFilterValues => {
-    const normalized = cleanText(nextKeyword);
+    const value = cleanText(nextKeyword);
+    if (!value) return {};
 
-    if (!normalized) {
-      return {};
+    if (nextField === 'id') {
+      const id = Number(value);
+      return Number.isInteger(id) && id > 0 ? { id } : {};
     }
 
-    if (nextSearchField === 'id') {
-      const id = Number(normalized);
-
-      return Number.isInteger(id) && id > 0
-        ? { id }
-        : {};
-    }
-
-    return {
-      [nextSearchField]: normalized,
-    } as RoleFilterValues;
-  };
-
-  const submit = () => {
-    onSearch(createFilters());
-  };
-
-  const changeSearchField = (field: RoleSearchField) => {
-    setSearchField(field);
-    setKeyword('');
-    onSearch({});
+    return { [nextField]: value } as RoleFilterValues;
   };
 
   return (
@@ -314,52 +276,42 @@ function RoleFilterBar({
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         <div className="flex h-8 w-[360px] max-w-full overflow-hidden rounded-md bg-[#f2f2f4]">
           <Select<RoleSearchField>
-            value={searchField}
+            value={field}
             options={SEARCH_FIELD_OPTIONS}
             variant="borderless"
             popupMatchSelectWidth={120}
-            className={[
-              'h-8 w-[104px] shrink-0',
-              '[&_.ant-select-selector]:!h-8',
-              '[&_.ant-select-selector]:!px-3',
-              '[&_.ant-select-selector]:!bg-transparent',
-              '[&_.ant-select-selection-item]:!leading-[30px]',
-            ].join(' ')}
-            onChange={changeSearchField}
+            className="h-8 w-[104px] shrink-0 [&_.ant-select-selector]:!h-8 [&_.ant-select-selector]:!bg-transparent [&_.ant-select-selector]:!px-3 [&_.ant-select-selection-item]:!leading-[30px]"
+            onChange={(nextField) => {
+              setField(nextField);
+              setKeyword('');
+              onSearch({});
+            }}
           />
-
           <div className="my-2 w-px shrink-0 bg-slate-200" />
-
           <Input
             allowClear
             value={keyword}
             variant="borderless"
-            inputMode={searchField === 'id' ? 'numeric' : 'text'}
-            placeholder={SEARCH_PLACEHOLDERS[searchField]}
+            inputMode={field === 'id' ? 'numeric' : 'text'}
+            placeholder={SEARCH_PLACEHOLDERS[field]}
             suffix={
               <SearchOutlined
                 className="cursor-pointer text-slate-400 transition-colors hover:text-slate-700"
-                onClick={submit}
+                onClick={() => onSearch(buildFilters())}
               />
             }
             className="min-w-0 flex-1 !h-8 !bg-transparent !py-0 !shadow-none [&_.ant-input]:!bg-transparent"
             onChange={(event) => {
-              const nextKeyword = event.target.value;
-              setKeyword(nextKeyword);
-
-              if (!nextKeyword) {
-                onSearch({});
-              }
+              const value = event.target.value;
+              setKeyword(value);
+              if (!value) onSearch({});
             }}
-            onPressEnter={submit}
+            onPressEnter={() => onSearch(buildFilters())}
           />
         </div>
 
         <Tooltip title="刷新列表">
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={onRefresh}
-          />
+          <Button icon={<ReloadOutlined />} onClick={onRefresh} />
         </Tooltip>
 
         <PermissionGuard
@@ -384,104 +336,79 @@ interface RoleFormValues {
   description?: string;
 }
 
-interface RoleEditorDrawerRef {
-  openCreate: () => Promise<void>;
-  openEdit: (role: SystemRole) => Promise<void>;
-}
-
 interface RoleEditorDrawerProps {
+  open: boolean;
+  role?: SystemRole;
+  onClose: () => void;
   onSuccess: () => void;
 }
 
-const RoleEditorDrawer = forwardRef<
-  RoleEditorDrawerRef,
-  RoleEditorDrawerProps
->(({ onSuccess }, ref) => {
+function RoleEditorDrawer({
+  open,
+  role,
+  onClose,
+  onSuccess,
+}: RoleEditorDrawerProps) {
   const [form] = Form.useForm<RoleFormValues>();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<SystemRole>();
+  const [detail, setDetail] = useState<SystemRole>();
   const [permissionTree, setPermissionTree] =
     useState<PermissionTreeNode>();
   const [checkedKeys, setCheckedKeys] = useState<Key[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const close = useCallback(() => {
-    if (saving) {
-      return;
-    }
+  useEffect(() => {
+    if (!open) return;
 
-    setOpen(false);
-    setEditing(undefined);
+    let active = true;
+    setDetail(undefined);
     setPermissionTree(undefined);
     setCheckedKeys([]);
     form.resetFields();
-  }, [form, saving]);
-
-  const openCreate = useCallback(async () => {
-    setEditing(undefined);
-    setPermissionTree(undefined);
-    setCheckedKeys([]);
-    form.resetFields();
-    form.setFieldsValue({
-      roleName: '',
-      description: '',
-    });
-    setOpen(true);
+    form.setFieldsValue({ roleName: '', description: '' });
     setLoading(true);
 
-    try {
-      setPermissionTree(await getPermissionTree());
-    } catch (error) {
-      message.error(errorText(error, '权限树加载失败'));
-    } finally {
-      setLoading(false);
-    }
-  }, [form]);
-
-  const openEdit = useCallback(
-    async (row: SystemRole) => {
-      setEditing(row);
-      setPermissionTree(undefined);
-      setCheckedKeys([]);
-      form.resetFields();
-      setOpen(true);
-      setLoading(true);
-
+    const load = async () => {
       try {
-        const detail = await getRoleDetail(row.id);
+        if (role) {
+          const value = await getRoleDetail(role.id);
+          if (!active) return;
 
-        setEditing(detail);
-        setPermissionTree(detail.permissionTreeVO);
-        setCheckedKeys(
-          collectCheckedPermissionKeys(
-            detail.permissionTreeVO,
-          ),
-        );
-        form.setFieldsValue({
-          roleName: detail.roleName,
-          description: detail.description ?? '',
-        });
+          setDetail(value);
+          setPermissionTree(value.permissionTreeVO);
+          setCheckedKeys(
+            collectCheckedKeys(value.permissionTreeVO),
+          );
+          form.setFieldsValue({
+            roleName: value.roleName,
+            description: value.description ?? '',
+          });
+        } else {
+          const tree = await getPermissionTree();
+          if (active) setPermissionTree(tree);
+        }
       } catch (error) {
-        message.error(errorText(error, '角色详情加载失败'));
+        if (active) {
+          message.error(
+            errorText(
+              error,
+              role ? '角色详情加载失败' : '权限树加载失败',
+            ),
+          );
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
-    },
-    [form],
-  );
+    };
 
-  useImperativeHandle(
-    ref,
-    () => ({ openCreate, openEdit }),
-    [openCreate, openEdit],
-  );
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [form, open, role]);
 
   const save = async (values: RoleFormValues) => {
-    if (saving || loading) {
-      return;
-    }
-
+    if (saving || loading) return;
     setSaving(true);
 
     try {
@@ -491,25 +418,23 @@ const RoleEditorDrawer = forwardRef<
         permissionIdList: checkedKeysToIds(checkedKeys),
       };
 
-      if (editing) {
+      if (role) {
         await updateRole({
           ...body,
-          id: editing.id,
+          id: detail?.id ?? role.id,
         });
       } else {
         await createRole(body);
       }
 
-      message.success(
-        editing ? '角色已更新' : '角色已创建',
-      );
-      close();
+      message.success(role ? '角色已更新' : '角色已创建');
+      onClose();
       onSuccess();
     } catch (error) {
       message.error(
         errorText(
           error,
-          editing ? '角色更新失败' : '角色创建失败',
+          role ? '角色更新失败' : '角色创建失败',
         ),
       );
     } finally {
@@ -518,22 +443,23 @@ const RoleEditorDrawer = forwardRef<
   };
 
   const treeData = useMemo(
-    () => createPermissionTreeData(permissionTree),
+    () => toPermissionTreeData(permissionTree),
     [permissionTree],
   );
 
   return (
     <Drawer
       open={open}
-      title={editing ? '编辑角色' : '新增角色'}
+      title={role ? '编辑角色' : '新增角色'}
       width={620}
       forceRender
       maskClosable={false}
       keyboard={!saving}
-      onClose={close}
+      closable={!saving}
+      onClose={onClose}
       extra={
-        <div className="flex items-center gap-2">
-          <Button disabled={saving} onClick={close}>
+        <Space>
+          <Button disabled={saving} onClick={onClose}>
             取消
           </Button>
           <Button
@@ -542,9 +468,9 @@ const RoleEditorDrawer = forwardRef<
             disabled={loading}
             onClick={() => form.submit()}
           >
-            {editing ? '更新' : '保存'}
+            {role ? '更新' : '保存'}
           </Button>
-        </div>
+        </Space>
       }
     >
       <Form<RoleFormValues>
@@ -607,250 +533,243 @@ const RoleEditorDrawer = forwardRef<
       </Form>
     </Drawer>
   );
-});
-
-RoleEditorDrawer.displayName = 'RoleEditorDrawer';
-
-interface RoleDetailDrawerRef {
-  open: (role: SystemRole) => Promise<void>;
 }
 
-const RoleDetailDrawer = forwardRef<RoleDetailDrawerRef>(
-  (_, ref) => {
-    const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [role, setRole] = useState<SystemRole>();
+interface RoleDetailDrawerProps {
+  open: boolean;
+  role?: SystemRole;
+  onClose: () => void;
+}
 
-    const show = useCallback(async (row: SystemRole) => {
-      setRole(row);
-      setOpen(true);
-      setLoading(true);
+function RoleDetailDrawer({
+  open,
+  role,
+  onClose,
+}: RoleDetailDrawerProps) {
+  const [detail, setDetail] = useState<SystemRole>();
+  const [loading, setLoading] = useState(false);
 
-      try {
-        setRole(await getRoleDetail(row.id));
-      } catch (error) {
-        message.error(errorText(error, '角色详情加载失败'));
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+  useEffect(() => {
+    if (!open || !role) return;
 
-    useImperativeHandle(ref, () => ({ open: show }), [show]);
+    let active = true;
+    setDetail(role);
+    setLoading(true);
 
-    const treeData = useMemo(
-      () => createPermissionTreeData(role?.permissionTreeVO),
-      [role?.permissionTreeVO],
-    );
-    const checkedKeys = useMemo(
-      () =>
-        collectCheckedPermissionKeys(
-          role?.permissionTreeVO,
-        ),
-      [role?.permissionTreeVO],
-    );
-    const users = Array.isArray(role?.authedUsers)
-      ? role.authedUsers
-      : [];
+    void getRoleDetail(role.id)
+      .then((value) => {
+        if (active) setDetail(value);
+      })
+      .catch((error) => {
+        if (active) {
+          message.error(errorText(error, '角色详情加载失败'));
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-    return (
-      <Drawer
-        open={open}
-        title="角色详情"
-        width={620}
-        onClose={() => setOpen(false)}
-      >
-        <Spin spinning={loading}>
-          {role && (
-            <div className="space-y-5">
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                <Avatar
-                  size={48}
-                  icon={<SafetyCertificateOutlined />}
-                  className="shrink-0 !bg-slate-600"
-                />
-                <div className="min-w-0">
-                  <Typography.Title
-                    level={5}
-                    className="!mb-0 !text-slate-800"
-                  >
-                    {role.roleName}
-                  </Typography.Title>
-                  <div className="mt-1 text-xs text-slate-400">
-                    {role.roleCode || '暂无角色编码'} · ID {role.id}
-                  </div>
-                </div>
-              </div>
+    return () => {
+      active = false;
+    };
+  }, [open, role]);
 
-              <Descriptions
-                bordered
-                size="small"
-                column={1}
-                items={[
-                  {
-                    key: 'description',
-                    label: '角色描述',
-                    children: role.description || '暂无描述',
-                  },
-                  {
-                    key: 'lastReviser',
-                    label: '最后修改人',
-                    children: role.lastReviser || '-',
-                  },
-                  {
-                    key: 'createTime',
-                    label: '创建时间',
-                    children: formatDateTime(role.createTime),
-                  },
-                  {
-                    key: 'updateTime',
-                    label: '更新时间',
-                    children: formatDateTime(role.updateTime),
-                  },
-                ]}
+  const treeData = useMemo(
+    () => toPermissionTreeData(detail?.permissionTreeVO),
+    [detail?.permissionTreeVO],
+  );
+  const checkedKeys = useMemo(
+    () => collectCheckedKeys(detail?.permissionTreeVO),
+    [detail?.permissionTreeVO],
+  );
+  const users = Array.isArray(detail?.authedUsers)
+    ? detail.authedUsers
+    : [];
+
+  return (
+    <Drawer
+      open={open}
+      title="角色详情"
+      width={620}
+      onClose={onClose}
+    >
+      <Spin spinning={loading}>
+        {detail && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+              <Avatar
+                size={48}
+                icon={<SafetyCertificateOutlined />}
+                className="shrink-0 !bg-slate-600"
               />
-
-              <div>
-                <div className="mb-2 font-medium text-slate-800">
-                  已授权用户
-                  <span className="ml-2 text-xs font-normal text-slate-400">
-                    {role.authedUserCnt ?? users.length} 人
-                  </span>
-                </div>
-                <div className="rounded-lg border border-slate-200 bg-white p-3">
-                  {users.length === 0 ? (
-                    <span className="text-sm text-slate-400">
-                      暂无授权用户
-                    </span>
-                  ) : (
-                    <Space size={[6, 8]} wrap>
-                      {users.map((userName) => (
-                        <Tag key={userName}>{userName}</Tag>
-                      ))}
-                    </Space>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 font-medium text-slate-800">
-                  权限明细
-                </div>
-                <div className="min-h-40 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
-                  {treeData.length === 0 ? (
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="暂无权限"
-                    />
-                  ) : (
-                    <Tree
-                      checkable
-                      selectable={false}
-                      defaultExpandAll
-                      disabled
-                      checkedKeys={checkedKeys}
-                      treeData={treeData}
-                    />
-                  )}
+              <div className="min-w-0">
+                <Typography.Title
+                  level={5}
+                  className="!mb-0 !text-slate-800"
+                >
+                  {detail.roleName}
+                </Typography.Title>
+                <div className="mt-1 text-xs text-slate-400">
+                  {detail.roleCode || '暂无角色编码'} · ID {detail.id}
                 </div>
               </div>
             </div>
-          )}
-        </Spin>
-      </Drawer>
-    );
-  },
-);
 
-RoleDetailDrawer.displayName = 'RoleDetailDrawer';
+            <Descriptions
+              bordered
+              size="small"
+              column={1}
+              items={[
+                {
+                  key: 'description',
+                  label: '角色描述',
+                  children: detail.description || '暂无描述',
+                },
+                {
+                  key: 'lastReviser',
+                  label: '最后修改人',
+                  children: detail.lastReviser || '-',
+                },
+                {
+                  key: 'createTime',
+                  label: '创建时间',
+                  children: formatDateTime(detail.createTime),
+                },
+                {
+                  key: 'updateTime',
+                  label: '更新时间',
+                  children: formatDateTime(detail.updateTime),
+                },
+              ]}
+            />
 
-interface RoleUserAssignmentDrawerRef {
-  open: (role: SystemRole) => Promise<void>;
+            <div>
+              <div className="mb-2 font-medium text-slate-800">
+                已授权用户
+                <span className="ml-2 text-xs font-normal text-slate-400">
+                  {detail.authedUserCnt ?? users.length} 人
+                </span>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                {users.length === 0 ? (
+                  <span className="text-sm text-slate-400">
+                    暂无授权用户
+                  </span>
+                ) : (
+                  <Space size={[6, 8]} wrap>
+                    {users.map((userName) => (
+                      <Tag key={userName}>{userName}</Tag>
+                    ))}
+                  </Space>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-2 font-medium text-slate-800">
+                权限明细
+              </div>
+              <div className="min-h-40 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+                {treeData.length === 0 ? (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description="暂无权限"
+                  />
+                ) : (
+                  <Tree
+                    checkable
+                    selectable={false}
+                    defaultExpandAll
+                    disabled
+                    checkedKeys={checkedKeys}
+                    treeData={treeData}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </Spin>
+    </Drawer>
+  );
 }
 
 interface RoleUserAssignmentDrawerProps {
+  open: boolean;
+  role?: SystemRole;
+  onClose: () => void;
   onSuccess: () => void;
 }
 
-const RoleUserAssignmentDrawer = forwardRef<
-  RoleUserAssignmentDrawerRef,
-  RoleUserAssignmentDrawerProps
->(({ onSuccess }, ref) => {
-  const [open, setOpen] = useState(false);
-  const [target, setTarget] = useState<SystemRole>();
+function RoleUserAssignmentDrawer({
+  open,
+  role,
+  onClose,
+  onSuccess,
+}: RoleUserAssignmentDrawerProps) {
   const [assignments, setAssignments] = useState<
     RoleAssignmentInfo[]
   >([]);
-  const [selectedUserIds, setSelectedUserIds] =
-    useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const close = useCallback(() => {
-    if (saving) {
-      return;
-    }
+  useEffect(() => {
+    if (!open || !role) return;
 
-    setOpen(false);
-    setTarget(undefined);
+    let active = true;
     setAssignments([]);
-    setSelectedUserIds([]);
+    setSelectedIds([]);
     setKeyword('');
-  }, [saving]);
-
-  const show = useCallback(async (role: SystemRole) => {
-    setTarget(role);
-    setAssignments([]);
-    setSelectedUserIds([]);
-    setKeyword('');
-    setOpen(true);
     setLoading(true);
 
-    try {
-      const data = await getRoleUserAssignments(role.id);
-      const values = Array.isArray(data) ? data : [];
+    void getRoleUserAssignments(role.id)
+      .then((values) => {
+        if (!active) return;
 
-      setAssignments(values);
-      setSelectedUserIds(
-        values
-          .filter((item) => item.has)
-          .map((item) => Number(item.id))
-          .filter(Number.isFinite),
-      );
-    } catch (error) {
-      message.error(
-        errorText(error, '用户分配信息加载失败'),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        const data = Array.isArray(values) ? values : [];
+        setAssignments(data);
+        setSelectedIds(
+          data
+            .filter((item) => item.has)
+            .map((item) => Number(item.id))
+            .filter(Number.isFinite),
+        );
+      })
+      .catch((error) => {
+        if (active) {
+          message.error(
+            errorText(error, '用户分配信息加载失败'),
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-  useImperativeHandle(ref, () => ({ open: show }), [show]);
+    return () => {
+      active = false;
+    };
+  }, [open, role]);
 
   const visibleAssignments = useMemo(() => {
-    const normalized = keyword.trim().toLowerCase();
-
-    if (!normalized) {
-      return assignments;
-    }
+    const value = keyword.trim().toLowerCase();
+    if (!value) return assignments;
 
     return assignments.filter((item) =>
-      item.name.toLowerCase().includes(normalized),
+      item.name.toLowerCase().includes(value),
     );
   }, [assignments, keyword]);
 
   const save = async () => {
-    if (!target || saving || loading) {
-      return;
-    }
-
+    if (!role || loading || saving) return;
     setSaving(true);
 
     try {
-      await assignUsersToRole(target.id, selectedUserIds);
+      await assignUsersToRole(role.id, selectedIds);
       message.success('角色用户已更新');
-      close();
+      onClose();
       onSuccess();
     } catch (error) {
       message.error(errorText(error, '用户分配失败'));
@@ -867,31 +786,32 @@ const RoleUserAssignmentDrawer = forwardRef<
       forceRender
       maskClosable={false}
       keyboard={!saving}
-      onClose={close}
+      closable={!saving}
+      onClose={onClose}
       extra={
-        <div className="flex items-center gap-2">
-          <Button disabled={saving} onClick={close}>
+        <Space>
+          <Button disabled={saving} onClick={onClose}>
             取消
           </Button>
           <Button
             type="primary"
             loading={saving}
-            disabled={loading || !target}
+            disabled={loading || !role}
             onClick={() => void save()}
           >
             保存
           </Button>
-        </div>
+        </Space>
       }
     >
-      {target && (
+      {role && (
         <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
           <div className="text-xs text-slate-500">当前角色</div>
           <div className="mt-1 font-medium text-slate-900">
-            {target.roleName}
+            {role.roleName}
           </div>
           <div className="mt-0.5 text-xs text-slate-400">
-            {target.roleCode || `ID ${target.id}`}
+            {role.roleCode || `ID ${role.id}`}
           </div>
         </div>
       )}
@@ -919,7 +839,7 @@ const RoleUserAssignmentDrawer = forwardRef<
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {visibleAssignments.map((item) => {
               const userId = Number(item.id);
-              const checked = selectedUserIds.includes(userId);
+              const checked = selectedIds.includes(userId);
 
               return (
                 <Checkbox
@@ -934,7 +854,7 @@ const RoleUserAssignmentDrawer = forwardRef<
                       : 'border-slate-200 bg-white hover:border-slate-300',
                   ].join(' ')}
                   onChange={(event) => {
-                    setSelectedUserIds((current) =>
+                    setSelectedIds((current) =>
                       event.target.checked
                         ? Array.from(new Set([...current, userId]))
                         : current.filter((id) => id !== userId),
@@ -950,10 +870,7 @@ const RoleUserAssignmentDrawer = forwardRef<
       </Spin>
     </Drawer>
   );
-});
-
-RoleUserAssignmentDrawer.displayName =
-  'RoleUserAssignmentDrawer';
+}
 
 interface RoleRowActionsProps {
   role: SystemRole;
@@ -996,7 +913,6 @@ function RoleRowActions({
       >
         详情
       </Button>
-
       <Button
         type="link"
         size="small"
@@ -1006,20 +922,14 @@ function RoleRowActions({
       >
         编辑
       </Button>
-
       <Dropdown
         trigger={['click']}
         placement="bottomRight"
         menu={{
           items,
           onClick: ({ key }) => {
-            if (key === 'assignUsers') {
-              onAssignUsers(role);
-            }
-
-            if (key === 'delete') {
-              onDelete(role);
-            }
+            if (key === 'assignUsers') onAssignUsers(role);
+            if (key === 'delete') onDelete(role);
           },
         }}
       >
@@ -1037,12 +947,7 @@ function RoleRowActions({
 }
 
 export default function RolesPage() {
-  const editorRef = useRef<RoleEditorDrawerRef>(null);
-  const detailRef = useRef<RoleDetailDrawerRef>(null);
-  const userAssignmentRef =
-    useRef<RoleUserAssignmentDrawerRef>(null);
   const requestSequenceRef = useRef(0);
-
   const [roles, setRoles] = useState<SystemRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] =
@@ -1050,8 +955,16 @@ export default function RolesPage() {
   const [pagination, setPagination] =
     useState<RolePaginationState>(DEFAULT_PAGINATION);
 
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<SystemRole>();
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailRole, setDetailRole] = useState<SystemRole>();
+  const [assignmentOpen, setAssignmentOpen] = useState(false);
+  const [assignmentRole, setAssignmentRole] =
+    useState<SystemRole>();
+
   const loadRoles = useCallback(async () => {
-    const requestSequence = ++requestSequenceRef.current;
+    const sequence = ++requestSequenceRef.current;
     setLoading(true);
 
     try {
@@ -1061,9 +974,7 @@ export default function RolesPage() {
         ...filters,
       });
 
-      if (requestSequence !== requestSequenceRef.current) {
-        return;
-      }
+      if (sequence !== requestSequenceRef.current) return;
 
       setRoles(result.records ?? []);
       setPagination((current) => ({
@@ -1071,17 +982,11 @@ export default function RolesPage() {
         total: result.total ?? 0,
       }));
     } catch {
-      if (requestSequence !== requestSequenceRef.current) {
-        return;
-      }
-
+      if (sequence !== requestSequenceRef.current) return;
       setRoles([]);
-      setPagination((current) => ({
-        ...current,
-        total: 0,
-      }));
+      setPagination((current) => ({ ...current, total: 0 }));
     } finally {
-      if (requestSequence === requestSequenceRef.current) {
+      if (sequence === requestSequenceRef.current) {
         setLoading(false);
       }
     }
@@ -1097,24 +1002,17 @@ export default function RolesPage() {
 
   const handleSearch = useCallback((values: RoleFilterValues) => {
     setFilters(values);
-    setPagination((current) => ({
-      ...current,
-      current: 1,
-    }));
+    setPagination((current) => ({ ...current, current: 1 }));
   }, []);
 
   const handlePageChange = useCallback(
-    (nextCurrent: number, nextPageSize: number) => {
-      setPagination((current) => {
-        const pageSizeChanged =
-          current.pageSize !== nextPageSize;
-
-        return {
-          ...current,
-          current: pageSizeChanged ? 1 : nextCurrent,
-          pageSize: nextPageSize,
-        };
-      });
+    (current: number, pageSize: number) => {
+      setPagination((previous) => ({
+        ...previous,
+        current:
+          previous.pageSize === pageSize ? current : 1,
+        pageSize,
+      }));
     },
     [],
   );
@@ -1143,7 +1041,6 @@ export default function RolesPage() {
                 </span>
                 吗？
               </div>
-
               {users.length > 0 && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                   当前角色已关联 {users.length} 个用户，删除后会同步解除关联：
@@ -1191,7 +1088,6 @@ export default function RolesPage() {
               icon={<SafetyCertificateOutlined />}
               className="shrink-0 !bg-slate-600"
             />
-
             <div className="min-w-0">
               <Typography.Text
                 strong
@@ -1200,7 +1096,6 @@ export default function RolesPage() {
               >
                 {role.roleName}
               </Typography.Text>
-
               <div className="mt-1 truncate text-xs text-slate-500">
                 {role.roleCode || '暂无编码'}
                 <span className="mx-1 text-slate-300">·</span>
@@ -1226,15 +1121,14 @@ export default function RolesPage() {
       },
       {
         title: '授权用户',
-        dataIndex: 'authedUsers',
         key: 'authedUsers',
         width: 260,
         render: (_, role) => {
           const users = Array.isArray(role.authedUsers)
             ? role.authedUsers
             : [];
-          const visibleUsers = users.slice(0, 2);
-          const remaining = users.length - visibleUsers.length;
+          const visible = users.slice(0, 2);
+          const remaining = users.length - visible.length;
 
           return (
             <div>
@@ -1242,13 +1136,13 @@ export default function RolesPage() {
                 {role.authedUserCnt ?? users.length} 人
               </div>
               <div className="mt-1 min-h-5">
-                {visibleUsers.length === 0 ? (
+                {visible.length === 0 ? (
                   <span className="text-xs text-slate-400">
                     暂无授权用户
                   </span>
                 ) : (
                   <Space size={[4, 4]} wrap>
-                    {visibleUsers.map((userName) => (
+                    {visible.map((userName) => (
                       <Tag
                         key={userName}
                         className="!m-0 !border-slate-200 !bg-slate-50 !text-slate-600"
@@ -1270,7 +1164,6 @@ export default function RolesPage() {
       },
       {
         title: '最近更新',
-        dataIndex: 'updateTime',
         key: 'updateTime',
         width: 220,
         render: (_, role) => (
@@ -1295,18 +1188,19 @@ export default function RolesPage() {
         render: (_, role) => (
           <RoleRowActions
             role={role}
-            onDetail={(row) => {
-              void detailRef.current?.open(row);
+            onDetail={(value) => {
+              setDetailRole(value);
+              setDetailOpen(true);
             }}
-            onEdit={(row) => {
-              void editorRef.current?.openEdit(row);
+            onEdit={(value) => {
+              setEditingRole(value);
+              setEditorOpen(true);
             }}
-            onAssignUsers={(row) => {
-              void userAssignmentRef.current?.open(row);
+            onAssignUsers={(value) => {
+              setAssignmentRole(value);
+              setAssignmentOpen(true);
             }}
-            onDelete={(row) => {
-              void confirmDelete(row);
-            }}
+            onDelete={(value) => void confirmDelete(value)}
           />
         ),
       },
@@ -1335,7 +1229,8 @@ export default function RolesPage() {
           onSearch={handleSearch}
           onRefresh={reload}
           onCreate={() => {
-            void editorRef.current?.openCreate();
+            setEditingRole(undefined);
+            setEditorOpen(true);
           }}
         />
 
@@ -1361,12 +1256,29 @@ export default function RolesPage() {
       />
 
       <RoleEditorDrawer
-        ref={editorRef}
+        open={editorOpen}
+        role={editingRole}
+        onClose={() => {
+          setEditorOpen(false);
+          setEditingRole(undefined);
+        }}
         onSuccess={reload}
       />
-      <RoleDetailDrawer ref={detailRef} />
+      <RoleDetailDrawer
+        open={detailOpen}
+        role={detailRole}
+        onClose={() => {
+          setDetailOpen(false);
+          setDetailRole(undefined);
+        }}
+      />
       <RoleUserAssignmentDrawer
-        ref={userAssignmentRef}
+        open={assignmentOpen}
+        role={assignmentRole}
+        onClose={() => {
+          setAssignmentOpen(false);
+          setAssignmentRole(undefined);
+        }}
         onSuccess={reload}
       />
     </section>
