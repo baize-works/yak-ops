@@ -77,9 +77,11 @@ export const filterDepartmentTree = (
       nextPath,
     );
 
-    return matchesScope(node, scope) &&
-      matchesKeyword(node, keyword) ||
-      children.length > 0
+    const matched =
+      matchesScope(node, scope) &&
+      matchesKeyword(node, keyword);
+
+    return matched || children.length > 0
       ? [{ ...node, childList: children }]
       : [];
   });
