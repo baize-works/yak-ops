@@ -6,7 +6,22 @@ import {
 
 const PERMISSION_API = '/api/v1/permission';
 
+/** Shared identifier type used by permission and department trees. */
 export type TreeId = string | number;
+
+/**
+ * Compatibility report used by legacy file-import pages such as department
+ * management. Permission import itself now submits a JSON tree and returns void.
+ */
+export interface ImportReport {
+  successCount: number;
+  failureCount: number;
+  failures?: Array<{
+    row?: number;
+    code?: string;
+    message: string;
+  }>;
+}
 
 /**
  * Permission tree node returned by Yak Security.
