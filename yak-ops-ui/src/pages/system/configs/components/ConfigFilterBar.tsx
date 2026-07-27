@@ -235,7 +235,7 @@ export default function ConfigFilterBar({
         >
           <Button
             type="primary"
-            icon={<PlusOutlined />}
+            danger
             onClick={onCreate}
           >
             新增配置

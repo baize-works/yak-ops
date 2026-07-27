@@ -476,7 +476,7 @@ export default function DepartmentsPage() {
           >
             <Button
               type="primary"
-              icon={<PlusOutlined />}
+              danger
               onClick={() => openCreate(0)}
             >
               新增部门

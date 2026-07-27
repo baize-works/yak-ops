@@ -320,7 +320,7 @@ function RoleFilterBar({
         >
           <Button
             type="primary"
-            icon={<PlusOutlined />}
+            danger
             onClick={onCreate}
           >
             新增角色

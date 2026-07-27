@@ -251,13 +251,7 @@ const OperationLogDetailDrawer = forwardRef<
               )}
             </div>
 
-            {detailIsJson && (
-              <Alert
-                showIcon
-                type="info"
-                message="详情内容已按 JSON 格式化展示"
-              />
-            )}
+           
           </div>
         ) : null}
       </Spin>

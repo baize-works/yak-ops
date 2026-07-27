@@ -348,7 +348,7 @@ export default function PermissionsPage() {
           >
             <Button
               type="primary"
-              icon={<ImportOutlined />}
+              danger
               onClick={() => setImportOpen(true)}
             >
               导入权限
