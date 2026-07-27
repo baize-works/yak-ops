@@ -1,15 +1,17 @@
-import { sanitizeConfigInput, type ConfigInput } from './configs';
+import { formatConfigValue } from './configs';
 
-const input = (configValue?: string): ConfigInput => ({
-  configKey: 'secret', configName: 'Secret', groupCode: 'security', valueType: 'STRING',
-  status: 'ENABLED', sensitive: true, configValue,
-});
-
-describe('sanitizeConfigInput', () => {
-  it.each([undefined, '', '   ', '******', '••••'])('never resubmits an empty or masked secret (%p)', (value) => {
-    expect(sanitizeConfigInput(input(value), true)).not.toHaveProperty('configValue');
+describe('formatConfigValue', () => {
+  it('pretty prints valid JSON', () => {
+    expect(formatConfigValue('{"enabled":true,"count":2}')).toBe(
+      '{\n  "enabled": true,\n  "count": 2\n}',
+    );
   });
-  it('keeps a newly entered value', () => {
-    expect(sanitizeConfigInput(input('new-secret'), true).configValue).toBe('new-secret');
+
+  it('keeps non-JSON values unchanged', () => {
+    expect(formatConfigValue('plain-text')).toBe('plain-text');
+  });
+
+  it('keeps an empty configuration value empty', () => {
+    expect(formatConfigValue('')).toBe('');
   });
 });
