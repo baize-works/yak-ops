@@ -44,6 +44,19 @@ export const securityPostData = async <T>(
     })
   ).data;
 
+export const securityPutData = async <T>(
+  path: string,
+  data?: unknown,
+  options?: SecurityRequestOptions,
+): Promise<T> =>
+  (
+    await securityRequest<T>(path, {
+      ...options,
+      method: 'PUT',
+      data,
+    })
+  ).data;
+
 export const securityDeleteData = async <T>(
   path: string,
   options?: SecurityRequestOptions,
