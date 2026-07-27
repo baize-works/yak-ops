@@ -132,6 +132,10 @@ service、开发代理和 nginx 集成配置。仓库不包含 `yak-security` �
 `GET /yak-security/api/v1/account/current`）。由于 upstream `main` 无法访问，本阶段不能诚实地
 宣称完成 Controller/DTO/权限/SQL 全量合同；该项是明确的外部补审门禁，而不是可猜测的实现空白。
 
+业务权限扩展的 11 类页面、当前 `/api/v1/**` 调用和占位状态已单独登记在
+[`business-security-contract-matrix.md`](./business-security-contract-matrix.md)。该矩阵明确区分前端事实、
+占位页面与后端依赖；在 Controller 注解和权限 SQL 可审计前，不从现有导航候选字符串继续生成按钮权限。
+
 ## 9. 用户/角色管理阶段门禁复核
 
 2026-07-27 在开始用户与角色管理页面前再次执行了源码发现：工作区没有 yak-security 源码、
