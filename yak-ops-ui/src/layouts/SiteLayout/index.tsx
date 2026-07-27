@@ -1031,7 +1031,7 @@ function SiteLayoutContent() {
         <div
           className="
             h-full w-full overflow-auto
-            px-4 pb-4 pt-4
+            px-4  pt-4
           "
         >
           <div

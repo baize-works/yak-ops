@@ -212,7 +212,8 @@ return (
   <section
     className="box-border flex flex-col bg-slate-50/50 p-6"
     style={{
-      minHeight: 'calc(100vh - 56px)',
+      minHeight: 'calc(100vh - 64px)',
+      overflow: "hidden"
     }}
   >
     {/* 上方内容 */}

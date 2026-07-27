@@ -5,10 +5,7 @@ interface SecurityPaginationProps {
   pageSize: number;
   total: number;
   disabled?: boolean;
-  onChange: (
-    current: number,
-    pageSize: number,
-  ) => void;
+  onChange: (current: number, pageSize: number) => void;
 }
 
 export default function SecurityPagination({
@@ -19,7 +16,21 @@ export default function SecurityPagination({
   onChange,
 }: SecurityPaginationProps) {
   return (
-    <div className="flex h-[80px] w-full shrink-0 items-center justify-end rounded-md bg-white px-6">
+    <div
+      className="
+        flex
+        h-16
+        w-full
+        shrink-0
+        items-center
+        justify-end
+        rounded-lg
+        border
+        border-slate-200/70
+        bg-white
+        px-6
+      "
+    >
       {total > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-4">
           <span className="text-sm text-slate-500">
