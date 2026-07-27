@@ -35,6 +35,7 @@ import {
   PanelLeftOpen,
   Plug,
   Server,
+  Settings,
   SquarePlus,
   Workflow,
 } from "lucide-react";
@@ -141,6 +142,12 @@ const navigationIcons: Record<NavigationIconKey, ReactNode> = {
   ),
   insight: (
     <ChartPie
+      size={NAVIGATION_ICON_SIZE}
+      strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
+    />
+  ),
+  system: (
+    <Settings
       size={NAVIGATION_ICON_SIZE}
       strokeWidth={NAVIGATION_ICON_STROKE_WIDTH}
     />
