@@ -1,6 +1,6 @@
 # Yak Security 接口合同矩阵与集成审计
 
-> 审计日期：2026-07-26；yak-ops 基线：`a901268`（当前 `work` 分支）。
+> 审计日期：2026-07-27；yak-ops 基线：`0e52fd7`（当前 `work` 分支）。
 >
 > **合同规则**：只有 yak-ops 当前源码与 `yak-framework/yak-security` 当前 `main`
 > 的 Controller、DTO/VO、权限注解、OpenAPI 和 SQL 互相印证的内容才能标为“已确认”。
@@ -131,3 +131,24 @@ service、开发代理和 nginx 集成配置。仓库不包含 `yak-security` �
 `GET /api/v1/account/current`（经 yak-ops ingress 为
 `GET /yak-security/api/v1/account/current`）。由于 upstream `main` 无法访问，本阶段不能诚实地
 宣称完成 Controller/DTO/权限/SQL 全量合同；该项是明确的外部补审门禁，而不是可猜测的实现空白。
+
+## 9. 用户/角色管理阶段门禁复核
+
+2026-07-27 在开始用户与角色管理页面前再次执行了源码发现：工作区没有 yak-security 源码、
+OpenAPI 或固定版本依赖；尝试从 `https://github.com/yak-framework/yak-security.git` 获取
+`main`，仍被当前环境的 HTTPS CONNECT 以 403 拒绝。因此第 4 节中 User 与 Role 的合同状态
+没有发生变化。
+
+本阶段不能在产品代码中新增 `services/security/users.ts`、`roles.ts`，也不能把用户/角色页面的
+空状态替换为可提交表单。否则必须猜测下列安全敏感合同，并会违反本矩阵的“源码与注解双重确认”
+规则：
+
+* 用户分页、详情、创建、修改、管理员重置密码、角色分配、删除及唯一性校验的 HTTP 方法、路径、
+  DTO/VO、分页结构、项目 Header 和权限编码；
+* 角色分页、详情、创建、修改、权限树回显/保存、用户分配、删除检查/删除的同一组合同；
+* 唯一冲突、关联冲突、最后一个管理员保护和无权限访问的 HTTP/业务错误映射；
+* 权限树父子关系、半选保存语义，以及角色基本信息与权限保存的事务边界。
+
+解除门禁所需的最小交付物是一个可审计的 yak-security commit SHA，以及该 SHA 对应的 User/Role
+Controller、请求与响应 DTO/VO、统一异常处理、权限注解、权限初始化 SQL 和数据库约束/迁移。
+取得这些材料后，应先回填第 3 至 5 节，再实现 service 和页面；不得用页面需求文字反向生成接口。
