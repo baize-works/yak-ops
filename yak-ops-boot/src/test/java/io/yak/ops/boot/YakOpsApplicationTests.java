@@ -8,10 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest(classes = YakOpsApplication.class)
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class YakOpsApplicationTests {
 
   @Autowired
@@ -24,5 +26,12 @@ class YakOpsApplicationTests {
         .andExpect(jsonPath("$.data.application").value("yak-ops"))
         .andExpect(jsonPath("$.data.status").value("UP"))
         .andExpect(jsonPath("$.data.framework").value("yak-framework"));
+  }
+
+  @Test
+  void yakOpsOpenApiGroupShouldContainTestEndpoint() throws Exception {
+    mockMvc.perform(get("/v3/api-docs/yak-ops"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.paths['/api/test/ping']").exists());
   }
 }
