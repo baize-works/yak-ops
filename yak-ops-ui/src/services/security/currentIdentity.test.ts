@@ -2,7 +2,9 @@ import { toCurrentUser } from './currentIdentity';
 
 describe('current identity normalization', () => {
   it('fails closed when optional authorization context is absent', () => {
-    expect(toCurrentUser({ id: 7, userName: 'yak' })).toMatchObject({
+    const user = toCurrentUser({ id: 7, userName: 'yak' });
+
+    expect(user).toMatchObject({
       id: 7,
       userName: 'yak',
       name: 'yak',
@@ -10,9 +12,9 @@ describe('current identity normalization', () => {
       deptId: null,
       roleList: [],
       permissionCodes: [],
-      menuCodes: [],
       projectList: [],
     });
+    expect(user.menuCodes).toBeUndefined();
   });
 
   it('uses only values supplied by the current-account response', () => {
