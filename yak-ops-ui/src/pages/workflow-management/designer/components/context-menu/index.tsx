@@ -27,7 +27,7 @@ interface WorkflowContextMenuProps {
 const menuButtonClass = [
   'flex h-[31px] w-full items-center gap-2 rounded-md border-0 bg-transparent px-2',
   'text-left text-[10px] text-[#475467] hover:bg-[#f2f4f7]',
-  'disabled:cursor-not-allowed disabled:opacity-35',
+  'disabled:cursor-not-allowed disabled:opacity-[0.35]',
 ].join(' ');
 
 const WorkflowContextMenu = ({
