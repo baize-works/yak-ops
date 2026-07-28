@@ -39,6 +39,7 @@
         <module>yak-ops-core</module>
         <module>yak-ops-business</module>
         <module>yak-ops-plugins/yak-ops-plugin-database</module>
+        <module>yak-ops-plugins/yak-ops-plugin-task</module>
         <module>yak-ops-boot</module>
         <module>yak-ops-ui</module>
         <module>yak-ops-dist</module>
@@ -121,6 +122,26 @@
             <dependency>
                 <groupId>io.yak.ops</groupId>
                 <artifactId>yak-ops-plugin-database-doris</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-task-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-task-http</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-task-shell</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-task-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
