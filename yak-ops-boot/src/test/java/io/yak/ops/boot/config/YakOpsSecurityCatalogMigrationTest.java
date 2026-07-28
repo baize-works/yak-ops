@@ -9,7 +9,7 @@ import org.springframework.core.io.ClassPathResource;
 class YakOpsSecurityCatalogMigrationTest {
 
   @Test
-  void migrationOwnsPermissionsMenusAndCompatibilityBackfills()
+  void migrationOwnsOnlyBusinessPermissionsMenusAndBackfills()
       throws Exception {
 
     ClassPathResource resource = new ClassPathResource(
@@ -19,7 +19,6 @@ class YakOpsSecurityCatalogMigrationTest {
     assertThat(sql)
         .contains("INSERT INTO yak_security_permission")
         .contains("INSERT INTO yak_security_menu")
-        .contains("'security:root'")
         .contains("'task:batch:read'")
         .contains("'workflow:definition:update'")
         .contains("'workflow:definition:publish'")
@@ -29,8 +28,11 @@ class YakOpsSecurityCatalogMigrationTest {
         .contains("'resource:data-source:read'")
         .contains("'quality:report:read'")
         .contains("'knowledge-management'")
-        .contains("INSERT IGNORE INTO yak_security_role_permission")
         .contains("INSERT IGNORE INTO yak_security_role_menu")
-        .contains("declared=VALUES(declared)");
+        .contains("declared=VALUES(declared)")
+        .doesNotContain("('security','系统管理'")
+        .doesNotContain("SELECT 'security' parent_code")
+        .doesNotContain("'system-users'")
+        .doesNotContain("INSERT IGNORE INTO yak_security_role_permission");
   }
 }
