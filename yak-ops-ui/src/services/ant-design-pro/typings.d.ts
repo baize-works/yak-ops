@@ -25,6 +25,8 @@ declare namespace API {
     roleList?: RoleBrief[] | null;
     /** Optional until AccountController/current explicitly guarantees it. */
     permissionCodes?: string[] | null;
+    /** Menu codes granted through the user's roles. */
+    menuCodes?: string[] | null;
     /** Security projects authorized for this identity, not an admin list. */
     projectList?: ProjectBrief[] | null;
   };
@@ -36,6 +38,7 @@ declare namespace API {
     deptId?: number | null;
     roleList?: RoleBrief[];
     permissionCodes?: string[];
+    menuCodes?: string[];
     projectList?: ProjectBrief[];
     name?: string;
     avatar?: string;
