@@ -118,6 +118,26 @@ const buildTreeData = (
   };
 };
 
+const buildTreeForest = (
+  tree?: PermissionTreeNode,
+): CapabilityDataNode[] => {
+  if (!tree) return [];
+
+  const virtualRoot =
+    tree.nodeType === 'ROOT' ||
+    (Number(tree.id) === 0 &&
+      !tree.permissionName &&
+      !tree.permissionCode);
+
+  if (virtualRoot) {
+    return (tree.childList ?? []).map((child, index) =>
+      buildTreeData(child, [index]),
+    );
+  }
+
+  return [buildTreeData(tree, [0])];
+};
+
 const buildIndex = (tree?: PermissionTreeNode): CapabilityIndex => {
   const nodes = new Map<number, PermissionTreeNode>();
   const parents = new Map<number, number>();
@@ -190,10 +210,7 @@ export default function RoleCapabilityTree({
   onChange,
 }: RoleCapabilityTreeProps) {
   const index = useMemo(() => buildIndex(tree), [tree]);
-  const treeData = useMemo(
-    () => (tree ? [buildTreeData(tree, [0])] : []),
-    [tree],
-  );
+  const treeData = useMemo(() => buildTreeForest(tree), [tree]);
   const normalizedCheckedKeys = useMemo(
     () => normalizeKeys(checkedKeys, index),
     [checkedKeys, index],
