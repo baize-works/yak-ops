@@ -1,13 +1,13 @@
 package io.yak.ops.business.datasource.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.yak.framework.common.PagingData;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
+import io.yak.ops.business.datasource.config.DataSourceProperties;
 import io.yak.ops.business.datasource.dao.DataSourceDao;
 import io.yak.ops.business.datasource.exception.DataSourceException;
+import io.yak.ops.business.datasource.plugin.DataSourcePluginRegistry;
 import io.yak.ops.business.datasource.service.DataSourceService;
-import io.yak.ops.business.datasource.service.JdbcConnectionTester;
 import io.yak.ops.common.bean.dto.datasource.DataSourceConnectTestDTO;
 import io.yak.ops.common.bean.dto.datasource.DataSourceDTO;
 import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
@@ -18,6 +18,9 @@ import io.yak.ops.common.enums.datasource.DataSourceConnStatus;
 import io.yak.ops.common.enums.datasource.DataSourceDbType;
 import io.yak.ops.common.enums.datasource.DataSourceEnvironment;
 import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
+import io.yak.ops.spi.datasource.DataSourceConnection;
+import io.yak.ops.spi.datasource.DataSourcePlugin;
+import io.yak.ops.spi.datasource.DataSourcePluginException;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -25,14 +28,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-/** 数据源管理服务实现。 */
+/** 数据源管理服务实现。业务层只负责编排，连接能力由插件提供。 */
 @Service
 @ConditionalOnDataSourceEnabled
 @RequiredArgsConstructor
 public class DataSourceServiceImpl implements DataSourceService {
 
   private final DataSourceDao dataSourceDao;
-  private final JdbcConnectionTester connectionTester;
+  private final DataSourcePluginRegistry pluginRegistry;
+  private final DataSourceProperties properties;
 
   @Override
   @Transactional(
@@ -112,23 +116,33 @@ public class DataSourceServiceImpl implements DataSourceService {
   @Override
   public boolean testConnection(Long id) {
     DataSourcePO dataSourcePO = getDataSourceOrThrow(id);
-    JsonNode params = connectionTester.parseConnectionParams(dataSourcePO.getConnectionParams());
+    DataSourcePlugin plugin = pluginRegistry.get(dataSourcePO.getDbType());
+    DataSourceConnection connection = parseConnection(plugin, dataSourcePO.getConnectionParams());
 
     try {
-      boolean connected = connectionTester.test(dataSourcePO.getDbType(), params);
+      plugin.testConnection(connection, connectionTimeoutSeconds());
       dataSourceDao.updateConnectionStatus(id, DataSourceConnStatus.CONNECTED);
-      return connected;
+      return true;
     } catch (RuntimeException exception) {
       dataSourceDao.updateConnectionStatus(id, DataSourceConnStatus.DISCONNECTED);
-      throw exception;
+      throw connectException(exception);
     }
   }
 
   @Override
   public boolean testConnection(DataSourceConnectTestDTO connectTestDTO) {
-    JsonNode params = connectionTester.parseConnectionParams(connectTestDTO.getConnJson());
-    DataSourceDbType dbType = connectionTester.resolveDbType(params, null);
-    return connectionTester.test(dbType, params);
+    DataSourceDbType dbType =
+        StringUtils.hasText(connectTestDTO.getDbType())
+            ? parseDbType(connectTestDTO.getDbType())
+            : pluginRegistry.resolveConnectionType(connectTestDTO.getConnJson());
+    DataSourcePlugin plugin = pluginRegistry.get(dbType);
+    DataSourceConnection connection = parseConnection(plugin, connectTestDTO.getConnJson());
+    try {
+      plugin.testConnection(connection, connectionTimeoutSeconds());
+      return true;
+    } catch (RuntimeException exception) {
+      throw connectException(exception);
+    }
   }
 
   @Override
@@ -148,18 +162,47 @@ public class DataSourceServiceImpl implements DataSourceService {
   private DataSourcePO buildDataSource(DataSourceDTO dataSourceDTO) {
     DataSourceDbType dbType = parseDbType(dataSourceDTO.getDbType());
     DataSourceEnvironment environment = parseEnvironment(dataSourceDTO.getEnvironment());
-    JsonNode params =
-        connectionTester.parseConnectionParams(dataSourceDTO.getConnectionParams());
-    String normalizedJson = connectionTester.normalize(params);
+    DataSourcePlugin plugin = pluginRegistry.get(dbType);
+    DataSourceConnection connection = parseConnection(plugin, dataSourceDTO.getConnectionParams());
 
     DataSourcePO dataSourcePO = new DataSourcePO();
     dataSourcePO.setDbType(dbType);
-    dataSourcePO.setJdbcUrl(connectionTester.resolveJdbcUrl(dbType, params));
+    dataSourcePO.setJdbcUrl(connection.jdbcUrl());
     dataSourcePO.setEnvironment(environment);
     dataSourcePO.setRemark(normalizeNullable(dataSourceDTO.getRemark()));
-    dataSourcePO.setConnectionParams(normalizedJson);
-    dataSourcePO.setOriginalJson(normalizedJson);
+    dataSourcePO.setConnectionParams(connection.normalizedJson());
+    dataSourcePO.setOriginalJson(connection.normalizedJson());
     return dataSourcePO;
+  }
+
+  private DataSourceConnection parseConnection(DataSourcePlugin plugin, String connectionJson) {
+    try {
+      return plugin.parseConnection(connectionJson);
+    } catch (DataSourcePluginException exception) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+          exception.getMessage(),
+          exception);
+    } catch (RuntimeException exception) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+          exception.getMessage(),
+          exception);
+    }
+  }
+
+  private DataSourceException connectException(RuntimeException exception) {
+    if (exception instanceof DataSourceException dataSourceException) {
+      return dataSourceException;
+    }
+    return new DataSourceException(
+        DataSourceErrorCode.CONNECT_FAILED,
+        exception.getMessage(),
+        exception);
+  }
+
+  private int connectionTimeoutSeconds() {
+    return Math.max(1, properties.getConnectionTest().getTimeoutSeconds());
   }
 
   private DataSourcePO getDataSourceOrThrow(Long id) {
