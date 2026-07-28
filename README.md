@@ -42,37 +42,40 @@
 
 ---
 
-## Overview
+## Architecture
 
-```
+```text
 yak-ops
-├── 核心业务
-│   ├── yak-ops-domain
-│   └── yak-ops-application
-│
-├── 接口接入
-│   ├── yak-ops-web
-│   └── yak-ops-web-contract
-│
-├── 基础设施
-│   ├── yak-ops-infrastructure
-│   ├── yak-ops-dao
-│   └── yak-ops-common
-│
-├── 插件体系
-│   ├── yak-ops-plugin-spi
-│   ├── yak-ops-datasource-plugins
-│   ├── yak-ops-engine-*
-│   ├── yak-ops-alarm-plugins
-│   └── yak-ops-persistence-plugins
-│
-├── 应用装配
-│   ├── yak-ops-boot
-│   └── yak-ops-dist
-│
-├── 前端
-│   └── yak-ops-ui
-│
-└── 依赖管理
-    └── yak-ops-bom
+├── yak-ops-bom
+├── yak-ops-common
+├── yak-ops-spi
+├── yak-ops-core
+├── yak-ops-business
+│   └── io.yak.ops.business
+│       ├── datasource
+│       ├── job
+│       ├── workflow
+│       ├── quality
+│       └── resource
+├── yak-ops-plugins
+│   └── yak-ops-plugin-database
+├── yak-ops-boot
+├── yak-ops-ui
+└── yak-ops-dist
 ```
+
+### Dependency direction
+
+```text
+business -> core -> spi -> common
+plugin-database -> spi -> common
+boot -> business + plugin-database
+dist -> boot
+```
+
+`yak-framework` is consumed as a second-party dependency through dependency management.
+It provides shared security, scheduling, file storage and cross-project common contracts.
+
+Business capabilities start as vertical packages in `yak-ops-business`. A domain should only be
+promoted to an independent Maven module after it develops an independent model, lifecycle,
+dependency set or release boundary.
