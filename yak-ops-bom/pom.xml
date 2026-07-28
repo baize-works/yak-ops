@@ -3,13 +3,16 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>io.yak.ops</groupId>
         <artifactId>yak-ops</artifactId>
         <version>1.0.0</version>
     </parent>
+
     <artifactId>yak-ops-bom</artifactId>
     <packaging>pom</packaging>
+
     <name>Yak Ops BOM</name>
     <description>Yak Ops and Yak Framework dependency alignment</description>
 
@@ -22,16 +25,81 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency><groupId>io.yak.framework</groupId><artifactId>yak-common</artifactId><version>${yak-framework.version}</version></dependency>
-            <dependency><groupId>io.yak.framework</groupId><artifactId>yak-security-spring-boot-starter</artifactId><version>${yak-framework.version}</version></dependency>
-            <dependency><groupId>io.yak.framework</groupId><artifactId>yak-schedule-spring-boot-starter</artifactId><version>${yak-framework.version}</version></dependency>
-            <dependency><groupId>io.yak.framework</groupId><artifactId>yak-file</artifactId><version>${yak-framework.version}</version></dependency>
-            <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-common</artifactId><version>${project.version}</version></dependency>
-            <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-spi</artifactId><version>${project.version}</version></dependency>
-            <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-core</artifactId><version>${project.version}</version></dependency>
-            <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-business</artifactId><version>${project.version}</version></dependency>
-            <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-plugin-database</artifactId><version>${project.version}</version></dependency>
-            <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-boot</artifactId><version>${project.version}</version></dependency>
+            <dependency>
+                <groupId>io.yak.framework</groupId>
+                <artifactId>yak-common</artifactId>
+                <version>${yak-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.framework</groupId>
+                <artifactId>yak-security-spring-boot-starter</artifactId>
+                <version>${yak-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.framework</groupId>
+                <artifactId>yak-schedule-spring-boot-starter</artifactId>
+                <version>${yak-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.framework</groupId>
+                <artifactId>yak-file</artifactId>
+                <version>${yak-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-spi</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-business-datasource</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-business-job</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-business-workflow</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-business-quality</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-business-resource</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-database-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-database-doris</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-boot</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
