@@ -12,13 +12,12 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import org.springframework.stereotype.Component;
 
 /** 在 Yak Ops 所在主机执行管理员配置的本地 Shell 任务。 */
-@Component
 public final class ShellWorkflowTaskExecutor implements WorkflowTaskExecutor {
 
   private final Map<Long, Process> runningProcesses = new ConcurrentHashMap<>();
@@ -103,7 +102,7 @@ public final class ShellWorkflowTaskExecutor implements WorkflowTaskExecutor {
 
     String command = TaskConfiguration.requiredString(configuration, "command");
     boolean windows = System.getProperty("os.name", "")
-        .toLowerCase()
+        .toLowerCase(Locale.ROOT)
         .contains("win");
     return windows
         ? List.of("cmd.exe", "/c", command)
