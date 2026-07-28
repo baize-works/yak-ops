@@ -44,22 +44,86 @@
 
 ## Quick start
 
-Install `yak-framework:1.0.0-SNAPSHOT` into the same Maven local repository first, then run:
+Install `yak-framework:1.0.0-SNAPSHOT` into the same Maven local repository first.
+
+Create the Yak Security database before starting the application:
+
+```sql
+CREATE DATABASE yak_security
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+```
+
+The same statement is available in `scripts/database/create-yak-security-database.sql`.
+
+The default local connection is:
+
+```text
+URL:      jdbc:mariadb://127.0.0.1:3306/yak_security
+Username: root
+Password: 123456
+```
+
+Override any value with environment variables when needed:
+
+```text
+YAK_SECURITY_DATASOURCE_URL
+YAK_SECURITY_DATASOURCE_USERNAME
+YAK_SECURITY_DATASOURCE_PASSWORD
+YAK_SECURITY_APPLICATION_NAME
+YAK_SECURITY_BOOTSTRAP_USERNAME
+YAK_SECURITY_BOOTSTRAP_PASSWORD
+YAK_SECURITY_BOOTSTRAP_REAL_NAME
+```
+
+Build and start:
 
 ```bash
 mvn clean package -DskipTests
 java -jar yak-ops-boot/target/yak-ops-boot-1.0.0.jar
 ```
 
-The runnable baseline does not require an external database. Verify the application and the
-Yak Framework unified response contract with:
+Yak Security runs its own Flyway migration against the dedicated security DataSource. On an empty
+database it also creates the initial administrator configured in `application.yml`:
+
+```text
+Username: root
+Password: Root@123456
+```
+
+Change the bootstrap password through `YAK_SECURITY_BOOTSTRAP_PASSWORD` outside local development.
+
+Verify the application:
 
 ```bash
 curl http://localhost:8080/api/test/ping
 ```
 
-The endpoint returns a successful `io.yak.framework.common.Result` response. Database-backed
-security and scheduling are disabled in `application.yml` until their infrastructure is configured.
+Swagger UI is available at:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+Use the API group selector to switch between:
+
+- `yak-ops`: `/v3/api-docs/yak-ops`
+- `yak-security`: `/v3/api-docs/yak-security`
+
+The login endpoint is public:
+
+```http
+POST /yak-security/api/v1/account/login
+Content-Type: application/json
+
+{
+  "userName": "root",
+  "pw": "Root@123456"
+}
+```
+
+After login, the same-origin Swagger UI keeps the HTTP session cookie and can invoke protected
+Security APIs directly.
 
 ## Architecture
 

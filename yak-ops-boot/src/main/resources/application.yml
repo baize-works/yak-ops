@@ -5,11 +5,14 @@ server:
 spring:
   application:
     name: yak-ops
+  # Yak Security owns its dedicated DataSource and transaction manager.
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  # Yak Security creates and runs its own Flyway instance against its dedicated DataSource.
+  flyway:
+    enabled: false
   lifecycle:
     timeout-per-shutdown-phase: 20s
   jackson:
@@ -18,19 +21,60 @@ spring:
   quartz:
     auto-startup: false
 
-# Runnable baseline: load Yak Framework while keeping external infrastructure optional.
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    display-request-duration: true
+    groups-order: ASC
+    operations-sorter: alpha
+    tags-sorter: alpha
+
 yak:
   security:
     enabled: true
-    application-name: ${spring.application.name}
-    database-enabled: false
-    web-enabled: false
-    authentication-enabled: false
-    audit-enabled: false
+    database-enabled: true
+    web-enabled: true
+    authentication-enabled: true
+    audit-enabled: true
+    application-name: ${YAK_SECURITY_APPLICATION_NAME:${spring.application.name}}
+
+    # Keep startup verification and API documentation public. Other endpoints require login.
+    public-paths:
+      - /api/test/ping
+      - /yak-security/api/v1/account/login
+      - /yak-security/api/v1/common/heart
+      - /v3/api-docs/**
+      - /swagger-ui/**
+      - /swagger-ui.html
+
     permission-registration:
-      enabled: false
+      enabled: true
+
     bootstrap:
-      enabled: false
+      enabled: true
+      username: ${YAK_SECURITY_BOOTSTRAP_USERNAME:root}
+      password: ${YAK_SECURITY_BOOTSTRAP_PASSWORD:Root@123456}
+      real-name: ${YAK_SECURITY_BOOTSTRAP_REAL_NAME:系统管理员}
+
+    datasource:
+      enabled: true
+      url: ${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}
+      username: ${YAK_SECURITY_DATASOURCE_USERNAME:root}
+      password: ${YAK_SECURITY_DATASOURCE_PASSWORD:123456}
+      driver-class-name: org.mariadb.jdbc.Driver
+      initial-size: 1
+      min-idle: 1
+      max-active: 8
+      max-wait: 60000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+
   schedule:
     enabled: false
     web-enabled: false
@@ -38,4 +82,6 @@ yak:
 logging:
   level:
     root: INFO
-    io.yak: INFO
+    io.yak.ops: INFO
+    io.yak.framework.security: DEBUG
+    org.flywaydb: INFO
