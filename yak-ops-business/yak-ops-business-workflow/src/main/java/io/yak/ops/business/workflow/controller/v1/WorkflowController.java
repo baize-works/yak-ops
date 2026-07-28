@@ -1,16 +1,16 @@
 package io.yak.ops.business.workflow.controller.v1;
 
 import io.yak.framework.common.Result;
-import io.yak.ops.business.workflow.common.constant.WorkflowConstant;
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowDTO;
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowScheduleDTO;
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowTriggerDTO;
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowUpdateDTO;
-import io.yak.ops.business.workflow.common.enums.TriggerType;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowDefinitionVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowScheduleVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowVersionVO;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowScheduleDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowTriggerDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
+import io.yak.ops.common.enums.workflow.TriggerType;
+import io.yak.ops.common.bean.vo.workflow.WorkflowDefinitionVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowScheduleVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowVersionVO;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.service.WorkflowDefinitionService;
 import io.yak.ops.business.workflow.service.WorkflowExecutionService;

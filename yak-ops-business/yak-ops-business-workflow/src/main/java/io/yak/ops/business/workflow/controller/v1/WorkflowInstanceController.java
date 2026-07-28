@@ -1,9 +1,9 @@
 package io.yak.ops.business.workflow.controller.v1;
 
 import io.yak.framework.common.Result;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceDetailVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskAttemptVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskInstanceVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceDetailVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowTaskAttemptVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowTaskInstanceVO;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.service.WorkflowExecutionService;
 import java.util.List;

@@ -2,8 +2,8 @@ package io.yak.ops.business.workflow.dao.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowSchedule;
-import io.yak.ops.business.workflow.common.po.WorkflowSchedulePO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowSchedule;
+import io.yak.ops.common.bean.po.workflow.WorkflowSchedulePO;
 import io.yak.ops.business.workflow.dao.WorkflowScheduleDao;
 import io.yak.ops.business.workflow.dao.mapper.WorkflowScheduleMapper;
 import io.yak.ops.business.workflow.util.WorkflowConvertUtils;

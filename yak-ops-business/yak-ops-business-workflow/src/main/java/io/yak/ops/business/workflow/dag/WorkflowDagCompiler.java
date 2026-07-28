@@ -1,8 +1,8 @@
 package io.yak.ops.business.workflow.dag;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDag;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowEdge;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowNode;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDag;
+import io.yak.ops.common.bean.entity.workflow.WorkflowEdge;
+import io.yak.ops.common.bean.entity.workflow.WorkflowNode;
 import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
 import java.util.ArrayDeque;
 import java.util.ArrayList;

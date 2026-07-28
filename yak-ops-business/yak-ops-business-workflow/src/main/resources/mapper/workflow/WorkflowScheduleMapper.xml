@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.yak.ops.business.workflow.dao.mapper.WorkflowScheduleMapper">
-  <insert id="upsert" parameterType="io.yak.ops.business.workflow.common.po.WorkflowSchedulePO">
+  <insert id="upsert" parameterType="io.yak.ops.common.bean.po.workflow.WorkflowSchedulePO">
     INSERT INTO yak_wf_schedule
       (workflow_id, cron_expression, timezone, enabled, misfire_policy,
        concurrency_policy, updated_at)

@@ -2,10 +2,10 @@ package io.yak.ops.business.workflow.dao.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDefinition;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowVersion;
-import io.yak.ops.business.workflow.common.po.WorkflowDefinitionPO;
-import io.yak.ops.business.workflow.common.po.WorkflowVersionPO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
+import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
+import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
+import io.yak.ops.common.bean.po.workflow.WorkflowVersionPO;
 import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
 import io.yak.ops.business.workflow.dao.mapper.WorkflowDefinitionMapper;
 import io.yak.ops.business.workflow.dao.mapper.WorkflowVersionMapper;

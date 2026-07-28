@@ -1,15 +1,15 @@
 package io.yak.ops.business.workflow.dao;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowInstance;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowInstanceDetail;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowTaskAttempt;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowTaskInstance;
-import io.yak.ops.business.workflow.common.enums.AttemptState;
-import io.yak.ops.business.workflow.common.enums.WorkflowState;
-import io.yak.ops.business.workflow.common.po.WorkflowInstancePO;
-import io.yak.ops.business.workflow.common.po.WorkflowTaskAttemptPO;
-import io.yak.ops.business.workflow.common.po.WorkflowTaskInstancePO;
-import io.yak.ops.business.workflow.common.po.WorkflowTaskLogPO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowInstance;
+import io.yak.ops.common.bean.entity.workflow.WorkflowInstanceDetail;
+import io.yak.ops.common.bean.entity.workflow.WorkflowTaskAttempt;
+import io.yak.ops.common.bean.entity.workflow.WorkflowTaskInstance;
+import io.yak.ops.common.enums.workflow.AttemptState;
+import io.yak.ops.common.enums.workflow.WorkflowState;
+import io.yak.ops.common.bean.po.workflow.WorkflowInstancePO;
+import io.yak.ops.common.bean.po.workflow.WorkflowTaskAttemptPO;
+import io.yak.ops.common.bean.po.workflow.WorkflowTaskInstancePO;
+import io.yak.ops.common.bean.po.workflow.WorkflowTaskLogPO;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;

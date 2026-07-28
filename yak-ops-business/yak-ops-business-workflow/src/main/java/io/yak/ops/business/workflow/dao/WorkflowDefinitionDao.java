@@ -1,9 +1,9 @@
 package io.yak.ops.business.workflow.dao;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDefinition;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowVersion;
-import io.yak.ops.business.workflow.common.po.WorkflowDefinitionPO;
-import io.yak.ops.business.workflow.common.po.WorkflowVersionPO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
+import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
+import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
+import io.yak.ops.common.bean.po.workflow.WorkflowVersionPO;
 import java.util.List;
 
 /** 工作流定义数据访问接口。 */

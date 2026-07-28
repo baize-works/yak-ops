@@ -1,20 +1,20 @@
 package io.yak.ops.business.workflow.service.impl;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDefinition;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowInstanceDetail;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowNode;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowTaskInstance;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowVersion;
-import io.yak.ops.business.workflow.common.enums.DefinitionState;
-import io.yak.ops.business.workflow.common.enums.TaskState;
-import io.yak.ops.business.workflow.common.enums.TriggerType;
-import io.yak.ops.business.workflow.common.enums.WorkflowState;
-import io.yak.ops.business.workflow.common.po.WorkflowInstancePO;
-import io.yak.ops.business.workflow.common.po.WorkflowTaskInstancePO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceDetailVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskAttemptVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskInstanceVO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
+import io.yak.ops.common.bean.entity.workflow.WorkflowInstanceDetail;
+import io.yak.ops.common.bean.entity.workflow.WorkflowNode;
+import io.yak.ops.common.bean.entity.workflow.WorkflowTaskInstance;
+import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
+import io.yak.ops.common.enums.workflow.DefinitionState;
+import io.yak.ops.common.enums.workflow.TaskState;
+import io.yak.ops.common.enums.workflow.TriggerType;
+import io.yak.ops.common.enums.workflow.WorkflowState;
+import io.yak.ops.common.bean.po.workflow.WorkflowInstancePO;
+import io.yak.ops.common.bean.po.workflow.WorkflowTaskInstancePO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceDetailVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowTaskAttemptVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowTaskInstanceVO;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
 import io.yak.ops.business.workflow.dao.WorkflowExecutionDao;
@@ -142,7 +142,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public WorkflowInstanceDetailVO getWorkflowInstance(Long workflowInstanceId) {
-    WorkflowInstanceDetail detail = executionDao.selectInstanceDetailById(workflowInstanceId);
+    WorkflowInstanceDetail detail =
+        executionDao.selectInstanceDetailById(workflowInstanceId);
     if (detail == null) {
       throw new IllegalArgumentException("工作流实例不存在：" + workflowInstanceId);
     }

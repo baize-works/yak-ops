@@ -3,7 +3,7 @@
 <mapper namespace="io.yak.ops.business.workflow.dao.mapper.WorkflowInstanceMapper">
 
   <resultMap id="instanceDetailMap"
-             type="io.yak.ops.business.workflow.common.po.WorkflowInstanceDetailPO">
+             type="io.yak.ops.common.bean.po.workflow.WorkflowInstanceDetailPO">
     <id property="id" column="id"/>
     <result property="workflowId" column="workflow_id"/>
     <result property="workflowCode" column="workflow_code"/>
@@ -47,7 +47,7 @@
   </select>
 
   <select id="selectListByWorkflowId"
-          resultType="io.yak.ops.business.workflow.common.po.WorkflowInstancePO">
+          resultType="io.yak.ops.common.bean.po.workflow.WorkflowInstancePO">
     SELECT id, workflow_id, workflow_version, trigger_type, state, global_params_json,
            failure_strategy, max_parallelism, stop_requested, start_time, end_time,
            created_by, created_at, lock_version
