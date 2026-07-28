@@ -10,6 +10,7 @@ describe('current identity normalization', () => {
       deptId: null,
       roleList: [],
       permissionCodes: [],
+      menuCodes: [],
       projectList: [],
     });
   });
@@ -22,6 +23,7 @@ describe('current identity normalization', () => {
       deptId: 12,
       roleList: [{ id: 2, roleName: 'operator' }],
       permissionCodes: ['task:read'],
+      menuCodes: ['integration', 'batch-link-up'],
       projectList: [{ id: 3, projectCode: 'SEC', projectName: 'Security' }],
     });
 
@@ -29,6 +31,7 @@ describe('current identity normalization', () => {
       name: 'Yak Operator',
       deptId: 12,
       permissionCodes: ['task:read'],
+      menuCodes: ['integration', 'batch-link-up'],
       projectList: [{ id: 3, projectCode: 'SEC' }],
     });
   });
