@@ -3,18 +3,25 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>io.yak.ops</groupId>
         <artifactId>yak-ops</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
+
     <artifactId>yak-ops-business</artifactId>
+    <packaging>pom</packaging>
+
     <name>Yak Ops Business</name>
-    <description>Vertical business capabilities for datasource, job, workflow, quality and resource management</description>
-    <dependencies>
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-core</artifactId></dependency>
-        <dependency><groupId>io.yak.framework</groupId><artifactId>yak-security-spring-boot-starter</artifactId></dependency>
-        <dependency><groupId>io.yak.framework</groupId><artifactId>yak-schedule-spring-boot-starter</artifactId></dependency>
-        <dependency><groupId>io.yak.framework</groupId><artifactId>yak-file</artifactId></dependency>
-    </dependencies>
+    <description>Yak Ops business-domain module aggregation</description>
+
+    <modules>
+        <module>yak-ops-business-datasource</module>
+        <module>yak-ops-business-job</module>
+        <module>yak-ops-business-workflow</module>
+        <module>yak-ops-business-quality</module>
+        <module>yak-ops-business-resource</module>
+    </modules>
 </project>
