@@ -1,20 +1,20 @@
 package io.yak.ops.business.workflow.controller.v1;
 
 import io.yak.framework.common.Result;
-import io.yak.ops.common.constant.workflow.WorkflowConstant;
-import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
-import io.yak.ops.common.bean.dto.workflow.WorkflowScheduleDTO;
-import io.yak.ops.common.bean.dto.workflow.WorkflowTriggerDTO;
-import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
-import io.yak.ops.common.enums.workflow.TriggerType;
-import io.yak.ops.common.bean.vo.workflow.WorkflowDefinitionVO;
-import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceVO;
-import io.yak.ops.common.bean.vo.workflow.WorkflowScheduleVO;
-import io.yak.ops.common.bean.vo.workflow.WorkflowVersionVO;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.service.WorkflowDefinitionService;
 import io.yak.ops.business.workflow.service.WorkflowExecutionService;
 import io.yak.ops.business.workflow.service.WorkflowScheduleService;
+import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowScheduleDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowTriggerDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowDefinitionVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowScheduleVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowVersionVO;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.common.enums.workflow.TriggerType;
 import jakarta.validation.Valid;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,11 +52,17 @@ public class WorkflowController {
     return Result.success(Map.of("workflowId", workflowId));
   }
 
-  @PutMapping("/{workflowId}/draft")
+  @PutMapping({"/{workflowId}", "/{workflowId}/draft"})
   public Result<Boolean> editWorkflow(
       @PathVariable Long workflowId,
       @Valid @RequestBody WorkflowUpdateDTO workflowDTO) {
     definitionService.editWorkflow(workflowId, workflowDTO);
+    return Result.success(true);
+  }
+
+  @DeleteMapping("/{workflowId}")
+  public Result<Boolean> deleteWorkflow(@PathVariable Long workflowId) {
+    definitionService.deleteWorkflow(workflowId);
     return Result.success(true);
   }
 
