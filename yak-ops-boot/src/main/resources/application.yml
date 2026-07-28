@@ -1,0 +1,36 @@
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+
+spring:
+  application:
+    name: yak-ops
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Shanghai
+  quartz:
+    auto-startup: false
+
+# Runnable baseline: load Yak Framework while keeping external infrastructure optional.
+yak:
+  security:
+    enabled: true
+    application-name: ${spring.application.name}
+    database-enabled: false
+    web-enabled: false
+    authentication-enabled: false
+    audit-enabled: false
+    permission-registration:
+      enabled: false
+    bootstrap:
+      enabled: false
+  schedule:
+    enabled: false
+    web-enabled: false
+
+logging:
+  level:
+    root: INFO
+    io.yak: INFO
