@@ -6,20 +6,20 @@
 
     <parent>
         <groupId>io.yak.ops</groupId>
-        <artifactId>yak-ops-plugin-database</artifactId>
+        <artifactId>yak-ops-plugin-datasource</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>yak-ops-plugin-database-jdbc</artifactId>
+    <artifactId>yak-ops-plugin-datasource-jdbc</artifactId>
 
-    <name>Yak Ops JDBC Database Plugin</name>
-    <description>Shared JDBC database plugin implementations behind the Yak Ops SPI</description>
+    <name>Yak Ops JDBC Datasource Plugin</name>
+    <description>Shared JDBC datasource plugin implementations behind the Yak Ops datasource API</description>
 
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
-            <artifactId>yak-ops-spi</artifactId>
+            <artifactId>yak-ops-plugin-datasource-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

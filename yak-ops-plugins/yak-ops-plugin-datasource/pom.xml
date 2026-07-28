@@ -11,14 +11,16 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>yak-ops-plugin-database</artifactId>
+    <artifactId>yak-ops-plugin-datasource</artifactId>
     <packaging>pom</packaging>
 
-    <name>Yak Ops Database Plugins</name>
-    <description>Yak Ops database-plugin module aggregation</description>
+    <name>Yak Ops Datasource Plugins</name>
+    <description>Yak Ops datasource-plugin module aggregation</description>
 
     <modules>
-        <module>yak-ops-plugin-database-jdbc</module>
-        <module>yak-ops-plugin-database-doris</module>
+        <module>yak-ops-plugin-datasource-api</module>
+        <module>yak-ops-plugin-datasource-jdbc</module>
+        <module>yak-ops-plugin-datasource-doris</module>
+        <module>yak-ops-plugin-datasource-all</module>
     </modules>
 </project>

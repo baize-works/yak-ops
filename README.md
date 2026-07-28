@@ -140,13 +140,16 @@ yak-ops
 │   ├── yak-ops-business-quality
 │   └── yak-ops-business-resource
 ├── yak-ops-plugins
-│   ├── yak-ops-plugin-database
-│   │   ├── yak-ops-plugin-database-jdbc
+│   ├── yak-ops-plugin-datasource
+│   │   ├── yak-ops-plugin-datasource-api
+│   │   ├── yak-ops-plugin-datasource-jdbc
 │   │   │   ├── mysql
 │   │   │   ├── postgresql
 │   │   │   ├── oracle
-│   │   │   └── sqlserver
-│   │   └── yak-ops-plugin-database-doris
+│   │   │   ├── kingbase
+│   │   │   └── dameng
+│   │   ├── yak-ops-plugin-datasource-doris
+│   │   └── yak-ops-plugin-datasource-all
 │   └── yak-ops-plugin-task
 │       ├── yak-ops-plugin-task-api
 │       ├── yak-ops-plugin-task-http
@@ -160,12 +163,14 @@ yak-ops
 ### Dependency direction
 
 ```text
-business-* -> core -> spi -> common
-plugin-database-jdbc -> spi -> common
-plugin-database-doris -> plugin-database-jdbc -> spi -> common
+business-datasource -> plugin-datasource-api -> common
+business-job/workflow/quality/resource -> core -> spi -> common
+plugin-datasource-jdbc -> plugin-datasource-api -> common
+plugin-datasource-doris -> plugin-datasource-jdbc -> plugin-datasource-api
+plugin-datasource-all -> plugin-datasource-jdbc + plugin-datasource-doris
 plugin-task-http/shell -> plugin-task-api -> spi -> common
 plugin-task-all -> plugin-task-http + plugin-task-shell
-boot -> business-* + database plugins + plugin-task-all
+boot -> business-* + plugin-datasource-all + plugin-task-all
 dist -> boot
 ```
 
@@ -176,9 +181,16 @@ Business domains are independent Maven modules so they can evolve with separate 
 clear compile-time boundaries. `yak-ops-business` is only their reactor aggregator and must not contain
 business source code.
 
-Database implementations follow the same rule. `yak-ops-plugin-database` is an aggregator,
-`yak-ops-plugin-database-jdbc` contains reusable JDBC support and relational database implementations,
-and `yak-ops-plugin-database-doris` contains Doris-specific behavior built on top of the JDBC module.
+### Datasource plugin model
+
+Datasource plugins follow the API / concrete implementation / all-plugins separation used by
+DolphinScheduler. `yak-ops-plugin-datasource-api` owns the stable plugin, normalized connection and
+Catalog metadata contracts. Concrete implementations are isolated modules, while
+`yak-ops-plugin-datasource-all` is the only runtime aggregation artifact consumed by `yak-ops-boot`.
+
+The datasource name intentionally covers more than databases. JDBC and Doris are the first built-in
+implementations; future file, object-storage, message-queue or API datasource plugins can be added as
+independent modules without changing the business module or application assembly dependency.
 
 ### Task plugin model
 
