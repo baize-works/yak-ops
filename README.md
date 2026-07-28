@@ -107,8 +107,8 @@ http://localhost:8080/swagger-ui.html
 
 Use the API group selector to switch between:
 
-- `Yak Ops`: `/v3/api-docs/yak-ops`
-- `Yak Security`: `/v3/api-docs/yak-security`
+- `yak-ops`: `/v3/api-docs/yak-ops`
+- `yak-security`: `/v3/api-docs/yak-security`
 
 The login endpoint is public:
 
@@ -117,8 +117,8 @@ POST /yak-security/api/v1/account/login
 Content-Type: application/json
 
 {
-  "username": "root",
-  "password": "Root@123456"
+  "userName": "root",
+  "pw": "Root@123456"
 }
 ```
 
