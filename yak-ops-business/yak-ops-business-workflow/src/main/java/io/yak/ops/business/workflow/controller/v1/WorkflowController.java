@@ -12,13 +12,17 @@ import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowDefinitionVO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceVO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowScheduleVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowTaskPluginVO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowVersionVO;
 import io.yak.ops.common.constant.workflow.WorkflowConstant;
 import io.yak.ops.common.enums.workflow.TriggerType;
+import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
+import io.yak.ops.spi.workflow.WorkflowTaskPluginDescriptor;
 import jakarta.validation.Valid;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +45,7 @@ public class WorkflowController {
   private final WorkflowDefinitionService definitionService;
   private final WorkflowExecutionService executionService;
   private final WorkflowScheduleService scheduleService;
+  private final WorkflowTaskExecutorRegistry taskPluginRegistry;
 
   @PostMapping
   public Result<Map<String, Long>> addWorkflow(
@@ -78,6 +83,14 @@ public class WorkflowController {
   @GetMapping
   public Result<List<WorkflowDefinitionVO>> getWorkflowList() {
     return Result.success(definitionService.getWorkflowList());
+  }
+
+  @GetMapping("/task-plugins")
+  public Result<List<WorkflowTaskPluginVO>> getTaskPluginList() {
+    List<WorkflowTaskPluginVO> plugins = taskPluginRegistry.descriptors().stream()
+        .map(WorkflowController::toTaskPluginVO)
+        .collect(Collectors.toList());
+    return Result.success(plugins);
   }
 
   @GetMapping("/{workflowId}")
@@ -126,5 +139,17 @@ public class WorkflowController {
   public Result<Boolean> deleteSchedule(@PathVariable Long workflowId) {
     scheduleService.delete(workflowId);
     return Result.success(true);
+  }
+
+  private static WorkflowTaskPluginVO toTaskPluginVO(WorkflowTaskPluginDescriptor descriptor) {
+    return new WorkflowTaskPluginVO(
+        descriptor.getType(),
+        descriptor.getName(),
+        descriptor.getDescription(),
+        descriptor.getCategory(),
+        descriptor.getVersion(),
+        descriptor.isCancellable(),
+        descriptor.isOutputCapable(),
+        descriptor.getConfigurationSchema());
   }
 }
