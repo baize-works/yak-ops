@@ -42,6 +42,25 @@
 
 ---
 
+## Quick start
+
+Install `yak-framework:1.0.0-SNAPSHOT` into the same Maven local repository first, then run:
+
+```bash
+mvn clean package -DskipTests
+java -jar yak-ops-boot/target/yak-ops-boot-1.0.0.jar
+```
+
+The runnable baseline does not require an external database. Verify the application and the
+Yak Framework unified response contract with:
+
+```bash
+curl http://localhost:8080/api/test/ping
+```
+
+The endpoint returns a successful `io.yak.framework.common.Result` response. Database-backed
+security and scheduling are disabled in `application.yml` until their infrastructure is configured.
+
 ## Architecture
 
 ```text
