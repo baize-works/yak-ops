@@ -16,8 +16,6 @@ export const mergeTaskPluginCatalog = (plugins: WorkflowTaskPluginRecord[]) => {
     const defaults = extractDefaults(plugin.configurationSchema);
     const existing = WORKFLOW_NODE_CATALOG.find((item) => item.type === plugin.type);
     if (existing) {
-      existing.title = plugin.name || existing.title;
-      existing.description = plugin.description || existing.description;
       existing.defaults = { ...defaults, ...existing.defaults };
       continue;
     }
