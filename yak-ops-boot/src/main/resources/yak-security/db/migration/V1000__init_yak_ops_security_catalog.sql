@@ -1,11 +1,11 @@
--- Yak Ops 自有的权限、菜单及历史授权兼容数据。
+-- Yak Ops 自有的业务权限、菜单及历史授权兼容数据。
+-- Yak Security 自身的系统管理权限和菜单由 yak-framework 维护。
 -- 该脚本由 Yak Security 独立 Flyway 在安全数据源中执行。
 
--- 1. 权限分组。SQL 管理的权限 declared=0，避免声明式注册器在移除 Java Provider 后将其停用。
+-- 1. 业务权限分组。SQL 管理的权限 declared=0，避免声明式注册器在移除 Java Provider 后将其停用。
 INSERT INTO yak_security_permission
 (permission_code,permission_name,parent_id,leaf,level,description,active,declared,app_name)
 VALUES
-('security','系统管理',0,0,1,'Yak Ops 系统管理权限',1,0,'${appName}'),
 ('task','数据集成',0,0,1,'Yak Ops 数据集成权限',1,0,'${appName}'),
 ('datasource','数据源管理兼容权限',0,0,1,'Yak Ops 旧版数据源权限',1,0,'${appName}'),
 ('job','任务管理兼容权限',0,0,1,'Yak Ops 旧版任务权限',1,0,'${appName}'),
@@ -23,7 +23,7 @@ description=VALUES(description),
 active=VALUES(active),
 declared=VALUES(declared);
 
--- 2. 权限叶子节点。
+-- 2. 业务权限叶子节点。
 INSERT INTO yak_security_permission
 (permission_code,permission_name,parent_id,leaf,level,description,active,declared,app_name)
 SELECT item.permission_code,
@@ -37,17 +37,7 @@ SELECT item.permission_code,
        parent.app_name
 FROM yak_security_permission parent
 JOIN (
-    SELECT 'security' parent_code,'security:root' permission_code,'超级管理员' permission_name,'拥有 Yak Ops 全部权限' description
-    UNION ALL SELECT 'security','security:user:read','查看用户管理','查看用户管理页面及接口'
-    UNION ALL SELECT 'security','security:role:read','查看角色管理','查看角色管理页面及接口'
-    UNION ALL SELECT 'security','security:permission:read','查看权限管理','查看权限管理页面及接口'
-    UNION ALL SELECT 'security','security:department:read','查看部门管理','查看部门管理页面及接口'
-    UNION ALL SELECT 'security','security:project:read','查看授权项目','查看 Security 授权项目页面及接口'
-    UNION ALL SELECT 'security','security:resource-permission:read','查看资源授权','查看资源授权页面及接口'
-    UNION ALL SELECT 'security','security:config:read','查看系统配置','查看系统配置页面及接口'
-    UNION ALL SELECT 'security','security:operation-log:read','查看操作日志','查看操作日志页面及接口'
-
-    UNION ALL SELECT 'task','task:batch:read','查看离线同步','查看离线同步页面及接口'
+    SELECT 'task' parent_code,'task:batch:read' permission_code,'查看离线同步' permission_name,'查看离线同步页面及接口' description
     UNION ALL SELECT 'task','task:batch:create','新建离线同步','创建离线同步任务'
     UNION ALL SELECT 'task','task:realtime:read','查看实时同步','查看实时同步页面及接口'
     UNION ALL SELECT 'task','task:realtime:create','新建实时同步','创建实时同步任务'
@@ -112,7 +102,7 @@ description=VALUES(description),
 active=VALUES(active),
 declared=VALUES(declared);
 
--- 3. Yak Ops 菜单目录。
+-- 3. Yak Ops 业务菜单目录。
 INSERT INTO yak_security_menu
 (menu_code,menu_name,parent_code,route_path,icon_key,menu_type,sort_order,visible,active,required_permission_code,description,app_name)
 VALUES
@@ -133,16 +123,7 @@ VALUES
 ('operations','运维中心',NULL,NULL,'monitor',1,50,1,1,NULL,'运行运维入口','${appName}'),
 ('metrics','运行监控','operations','/metrics','monitor',2,10,1,1,'operations:metrics:read','运行指标监控','${appName}'),
 ('alarm','告警管理','operations','/alarm','alarm',2,20,1,1,'operations:alarm:read','告警管理','${appName}'),
-('knowledge-management','知识管理',NULL,'/knowledge-management','knowledge',2,55,1,1,'knowledge:read','知识管理隐藏入口','${appName}'),
-('system','系统管理',NULL,NULL,'system',1,60,1,1,NULL,'安全与系统管理入口','${appName}'),
-('system-users','用户管理','system','/system/users','system',2,10,1,1,'security:user:read','用户管理','${appName}'),
-('system-roles','角色管理','system','/system/roles','system',2,20,1,1,'security:role:read','角色及授权管理','${appName}'),
-('system-permissions','权限管理','system','/system/permissions','system',2,30,1,1,'security:permission:read','操作权限管理','${appName}'),
-('system-departments','部门管理','system','/system/departments','system',2,40,1,1,'security:department:read','部门管理','${appName}'),
-('system-security-projects','Security 授权项目','system','/system/projects','system',2,50,1,1,'security:project:read','安全项目管理','${appName}'),
-('system-resource-permissions','资源授权','system','/system/resource-permissions','system',2,60,1,1,'security:resource-permission:read','资源级授权管理','${appName}'),
-('system-configs','系统配置','system','/system/configs','system',2,70,1,1,'security:config:read','系统配置管理','${appName}'),
-('system-operation-logs','操作日志','system','/system/oplogs','system',2,80,1,1,'security:operation-log:read','操作日志查询','${appName}')
+('knowledge-management','知识管理',NULL,'/knowledge-management','knowledge',2,55,1,1,'knowledge:read','知识管理隐藏入口','${appName}')
 ON DUPLICATE KEY UPDATE
 menu_name=VALUES(menu_name),
 parent_code=VALUES(parent_code),
@@ -155,19 +136,7 @@ active=VALUES(active),
 required_permission_code=VALUES(required_permission_code),
 description=VALUES(description);
 
--- 4. 为旧数据库中的系统管理员补齐 root 权限。
-INSERT IGNORE INTO yak_security_role_permission(role_id,permission_id,app_name)
-SELECT role_row.id,permission_row.id,role_row.app_name
-FROM yak_security_role role_row
-JOIN yak_security_permission permission_row
-  ON permission_row.permission_code='security:root'
- AND permission_row.app_name=role_row.app_name
- AND permission_row.is_delete=0
-WHERE role_row.role_name='系统管理员'
-  AND role_row.app_name='${appName}'
-  AND role_row.is_delete=0;
-
--- 5. 根据已有读取权限回填角色菜单，升级后不丢失原页面入口。
+-- 4. 根据已有读取权限回填业务菜单，升级后不丢失原页面入口。
 INSERT IGNORE INTO yak_security_role_menu(role_id,menu_id,app_name)
 SELECT DISTINCT role_permission.role_id,menu_row.id,role_permission.app_name
 FROM yak_security_role_permission role_permission
@@ -182,7 +151,7 @@ JOIN yak_security_menu menu_row
 WHERE role_permission.app_name='${appName}'
   AND role_permission.is_delete=0;
 
--- 6. root 角色保留全部 Yak Ops 菜单。
+-- 5. root 角色保留全部 Yak Ops 业务菜单。
 INSERT IGNORE INTO yak_security_role_menu(role_id,menu_id,app_name)
 SELECT DISTINCT role_permission.role_id,menu_row.id,role_permission.app_name
 FROM yak_security_role_permission role_permission
