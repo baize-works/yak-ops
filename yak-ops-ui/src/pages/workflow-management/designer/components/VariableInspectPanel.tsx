@@ -36,7 +36,7 @@ const VariableInspectPanel = ({
     const envRows = environmentVariables.map((item) => ({
       key: item.id,
       name: item.name || '未命名环境变量',
-      value: `{{env.${item.name || item.id}}`,
+      value: `{{env.${item.name || item.id}}}`,
       source: 'ENV',
     }));
     const normalized = keyword.trim().toLowerCase();
