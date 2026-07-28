@@ -25,7 +25,6 @@ public class OpenApiConfiguration {
   public GroupedOpenApi yakOpsApiGroup() {
     return GroupedOpenApi.builder()
         .group("yak-ops")
-        .displayName("Yak Ops")
         .pathsToMatch("/api/**")
         .build();
   }
@@ -34,7 +33,6 @@ public class OpenApiConfiguration {
   public GroupedOpenApi yakSecurityApiGroup() {
     return GroupedOpenApi.builder()
         .group("yak-security")
-        .displayName("Yak Security")
         .pathsToMatch("/yak-security/api/**")
         .build();
   }
