@@ -41,8 +41,9 @@ const BlockSelector = ({ open, onClose, onSelect, compact = false }: BlockSelect
         if (!active || response.code !== 0 || !Array.isArray(response.data)) return;
         mergeTaskPluginCatalog(response.data);
         setPlugins(response.data);
-      } finally {
-        if (active) setCatalogLoaded(true);
+        setCatalogLoaded(true);
+      } catch {
+        // Keep the built-in visual catalog available when the backend catalog cannot be loaded.
       }
     };
     void loadPlugins();
