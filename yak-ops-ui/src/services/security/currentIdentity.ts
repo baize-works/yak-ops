@@ -17,6 +17,7 @@ export const toCurrentUser = (user: API.CurrentUserVO): API.CurrentUser => ({
   permissionCodes: Array.isArray(user.permissionCodes)
     ? user.permissionCodes
     : [],
+  menuCodes: Array.isArray(user.menuCodes) ? user.menuCodes : [],
   projectList: Array.isArray(user.projectList) ? user.projectList : [],
   // A missing/null deptId means “no current department”; it is not inferred.
   deptId: user.deptId ?? null,
