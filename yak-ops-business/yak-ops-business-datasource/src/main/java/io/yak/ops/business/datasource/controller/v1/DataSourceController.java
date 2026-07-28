@@ -1,18 +1,18 @@
-package io.yak.ops.business.datasource.controller;
+package io.yak.ops.business.datasource.controller.v1;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.yak.framework.common.PagingData;
 import io.yak.framework.common.PagingResult;
 import io.yak.framework.common.Result;
-import io.yak.ops.business.datasource.common.constant.DataSourceConstants;
-import io.yak.ops.business.datasource.common.dto.DataSourceConnectTestDTO;
-import io.yak.ops.business.datasource.common.dto.DataSourceDTO;
-import io.yak.ops.business.datasource.common.dto.DataSourceQueryDTO;
-import io.yak.ops.business.datasource.common.vo.DataSourceOptionVO;
-import io.yak.ops.business.datasource.common.vo.DataSourceVO;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.service.DataSourceService;
+import io.yak.ops.common.bean.dto.datasource.DataSourceConnectTestDTO;
+import io.yak.ops.common.bean.dto.datasource.DataSourceDTO;
+import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceOptionVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceVO;
+import io.yak.ops.common.constant.datasource.DataSourceConstants;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

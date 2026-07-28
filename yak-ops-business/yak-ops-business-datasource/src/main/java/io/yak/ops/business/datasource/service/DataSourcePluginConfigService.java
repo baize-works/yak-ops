@@ -1,6 +1,6 @@
 package io.yak.ops.business.datasource.service;
 
-import io.yak.ops.business.datasource.common.vo.DataSourcePluginConfigVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourcePluginConfigVO;
 
 /** 数据源动态表单配置服务。 */
 public interface DataSourcePluginConfigService {

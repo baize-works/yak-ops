@@ -1,22 +1,23 @@
 package io.yak.ops.business.datasource.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.yak.framework.common.PagingData;
-import io.yak.ops.business.datasource.common.dto.DataSourceConnectTestDTO;
-import io.yak.ops.business.datasource.common.dto.DataSourceDTO;
-import io.yak.ops.business.datasource.common.dto.DataSourceQueryDTO;
-import io.yak.ops.business.datasource.common.enums.DataSourceConnStatus;
-import io.yak.ops.business.datasource.common.enums.DataSourceDbType;
-import io.yak.ops.business.datasource.common.enums.DataSourceEnvironment;
-import io.yak.ops.business.datasource.common.enums.DataSourceErrorCode;
-import io.yak.ops.business.datasource.common.po.DataSourcePO;
-import io.yak.ops.business.datasource.common.vo.DataSourceOptionVO;
-import io.yak.ops.business.datasource.common.vo.DataSourceVO;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.dao.DataSourceDao;
 import io.yak.ops.business.datasource.exception.DataSourceException;
 import io.yak.ops.business.datasource.service.DataSourceService;
 import io.yak.ops.business.datasource.service.JdbcConnectionTester;
+import io.yak.ops.common.bean.dto.datasource.DataSourceConnectTestDTO;
+import io.yak.ops.common.bean.dto.datasource.DataSourceDTO;
+import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
+import io.yak.ops.common.bean.po.datasource.DataSourcePO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceOptionVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceVO;
+import io.yak.ops.common.enums.datasource.DataSourceConnStatus;
+import io.yak.ops.common.enums.datasource.DataSourceDbType;
+import io.yak.ops.common.enums.datasource.DataSourceEnvironment;
+import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +57,7 @@ public class DataSourceServiceImpl implements DataSourceService {
       transactionManager = "opsDataSourceTransactionManager",
       rollbackFor = Exception.class)
   public boolean updateDataSource(Long id, DataSourceDTO dataSourceDTO) {
-    DataSourcePO existing = getDataSourceOrThrow(id);
+    getDataSourceOrThrow(id);
     String name = normalizeName(dataSourceDTO.getName());
     ensureNameAvailable(name, id);
 
@@ -64,7 +65,6 @@ public class DataSourceServiceImpl implements DataSourceService {
     dataSourcePO.setId(id);
     dataSourcePO.setName(name);
     dataSourcePO.setConnStatus(DataSourceConnStatus.UNKNOWN);
-    dataSourcePO.setCreateTime(existing.getCreateTime());
 
     if (dataSourceDao.editDataSource(dataSourcePO) <= 0) {
       throw new DataSourceException(DataSourceErrorCode.UPDATE_FAILED);
@@ -80,12 +80,12 @@ public class DataSourceServiceImpl implements DataSourceService {
   @Override
   public PagingData<DataSourceVO> getDataSourcePage(DataSourceQueryDTO queryDTO) {
     normalizeQuery(queryDTO);
-    long total = dataSourceDao.count(queryDTO);
+    IPage<DataSourcePO> page = dataSourceDao.selectPage(queryDTO);
     List<DataSourceVO> records =
-        dataSourceDao.selectPage(queryDTO).stream()
+        page.getRecords().stream()
             .map(dataSourcePO -> toVO(dataSourcePO, true))
             .collect(Collectors.toList());
-    return pagingData(records, total, queryDTO.getPageNo(), queryDTO.getPageSize());
+    return new PagingData<>(records, page);
   }
 
   @Override
@@ -116,10 +116,10 @@ public class DataSourceServiceImpl implements DataSourceService {
 
     try {
       boolean connected = connectionTester.test(dataSourcePO.getDbType(), params);
-      dataSourceDao.updateConnectionStatus(id, DataSourceConnStatus.CONNECTED.name());
+      dataSourceDao.updateConnectionStatus(id, DataSourceConnStatus.CONNECTED);
       return connected;
     } catch (RuntimeException exception) {
-      dataSourceDao.updateConnectionStatus(id, DataSourceConnStatus.DISCONNECTED.name());
+      dataSourceDao.updateConnectionStatus(id, DataSourceConnStatus.DISCONNECTED);
       throw exception;
     }
   }
@@ -133,8 +133,8 @@ public class DataSourceServiceImpl implements DataSourceService {
 
   @Override
   public List<DataSourceOptionVO> getOptions(String dbType) {
-    String normalizedType =
-        StringUtils.hasText(dbType) ? DataSourceDbType.parse(dbType).name() : null;
+    DataSourceDbType normalizedType =
+        StringUtils.hasText(dbType) ? parseDbType(dbType) : null;
     return dataSourceDao.selectAll(normalizedType).stream()
         .map(
             dataSourcePO ->
@@ -146,9 +146,8 @@ public class DataSourceServiceImpl implements DataSourceService {
   }
 
   private DataSourcePO buildDataSource(DataSourceDTO dataSourceDTO) {
-    DataSourceDbType dbType = DataSourceDbType.parse(dataSourceDTO.getDbType());
-    DataSourceEnvironment environment =
-        DataSourceEnvironment.parse(dataSourceDTO.getEnvironment());
+    DataSourceDbType dbType = parseDbType(dataSourceDTO.getDbType());
+    DataSourceEnvironment environment = parseEnvironment(dataSourceDTO.getEnvironment());
     JsonNode params =
         connectionTester.parseConnectionParams(dataSourceDTO.getConnectionParams());
     String normalizedJson = connectionTester.normalize(params);
@@ -198,11 +197,32 @@ public class DataSourceServiceImpl implements DataSourceService {
       queryDTO.setName(queryDTO.getName().trim());
     }
     if (StringUtils.hasText(queryDTO.getDbType())) {
-      queryDTO.setDbType(DataSourceDbType.parse(queryDTO.getDbType()).name());
+      queryDTO.setDbType(parseDbType(queryDTO.getDbType()).name());
     }
     if (StringUtils.hasText(queryDTO.getEnvironment())) {
-      queryDTO.setEnvironment(
-          DataSourceEnvironment.parse(queryDTO.getEnvironment()).name());
+      queryDTO.setEnvironment(parseEnvironment(queryDTO.getEnvironment()).name());
+    }
+  }
+
+  private DataSourceDbType parseDbType(String value) {
+    try {
+      return DataSourceDbType.parse(value);
+    } catch (IllegalArgumentException exception) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_DB_TYPE,
+          exception.getMessage(),
+          exception);
+    }
+  }
+
+  private DataSourceEnvironment parseEnvironment(String value) {
+    try {
+      return DataSourceEnvironment.parse(value);
+    } catch (IllegalArgumentException exception) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_ENVIRONMENT,
+          exception.getMessage(),
+          exception);
     }
   }
 

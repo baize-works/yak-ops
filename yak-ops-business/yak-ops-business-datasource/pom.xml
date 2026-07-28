@@ -19,11 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
-            <artifactId>yak-ops-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.yak.framework</groupId>
-            <artifactId>yak-common</artifactId>
+            <artifactId>yak-ops-common</artifactId>
         </dependency>
 
         <dependency>
@@ -37,6 +33,14 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

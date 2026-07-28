@@ -1,4 +1,4 @@
-package io.yak.ops.business.datasource.common.constant;
+package io.yak.ops.common.constant.datasource;
 
 /** 数据源管理常量。 */
 public final class DataSourceConstants {

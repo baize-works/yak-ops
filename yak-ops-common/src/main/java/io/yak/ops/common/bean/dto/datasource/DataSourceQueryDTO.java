@@ -1,6 +1,6 @@
-package io.yak.ops.business.datasource.common.dto;
+package io.yak.ops.common.bean.dto.datasource;
 
-import io.yak.ops.business.datasource.common.constant.DataSourceConstants;
+import io.yak.ops.common.constant.datasource.DataSourceConstants;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;

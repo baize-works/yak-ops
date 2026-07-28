@@ -1,17 +1,22 @@
-package io.yak.ops.business.datasource.common.po;
+package io.yak.ops.common.bean.po.datasource;
 
-import io.yak.ops.business.datasource.common.enums.DataSourceConnStatus;
-import io.yak.ops.business.datasource.common.enums.DataSourceDbType;
-import io.yak.ops.business.datasource.common.enums.DataSourceEnvironment;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import io.yak.ops.common.enums.datasource.DataSourceConnStatus;
+import io.yak.ops.common.enums.datasource.DataSourceDbType;
+import io.yak.ops.common.enums.datasource.DataSourceEnvironment;
 import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.ToString;
 
 /** 数据源持久化对象。 */
 @Data
+@TableName("yak_ops_data_source")
 public class DataSourcePO {
 
   /** 主键。 */
+  @TableId(type = IdType.AUTO)
   private Long id;
 
   /** 数据源名称。 */

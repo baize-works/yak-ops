@@ -1,14 +1,23 @@
 package io.yak.ops.business.datasource.config;
 
+import com.baomidou.mybatisplus.annotation.DbType;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.type.JdbcType;
 import org.flywaydb.core.Flyway;
+import org.mybatis.spring.SqlSessionTemplate;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -16,6 +25,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnDataSourceEnabled
 @EnableConfigurationProperties(DataSourceProperties.class)
+@MapperScan(
+    basePackages = "io.yak.ops.business.datasource.dao.mapper",
+    sqlSessionFactoryRef = "opsDataSourceSqlSessionFactory")
 public class DataSourceConfiguration {
 
   @Bean(name = "opsDataSource", destroyMethod = "close")
@@ -39,6 +51,34 @@ public class DataSourceConfiguration {
     return new DataSourceTransactionManager(dataSource);
   }
 
+  @Bean(name = "opsDataSourceSqlSessionFactory")
+  public SqlSessionFactory opsDataSourceSqlSessionFactory(
+      @Qualifier("opsDataSource") DataSource dataSource) throws Exception {
+    MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
+    factory.setDataSource(dataSource);
+    factory.setTypeAliasesPackage("io.yak.ops.common.bean.po.datasource");
+    factory.setMapperLocations(
+        new PathMatchingResourcePatternResolver()
+            .getResources("classpath*:mapper/datasource/*.xml"));
+
+    MybatisConfiguration configuration = new MybatisConfiguration();
+    configuration.setMapUnderscoreToCamelCase(true);
+    configuration.setJdbcTypeForNull(JdbcType.NULL);
+    configuration.setCacheEnabled(false);
+    factory.setConfiguration(configuration);
+
+    MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+    interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+    factory.setPlugins(interceptor);
+    return factory.getObject();
+  }
+
+  @Bean(name = "opsDataSourceSqlSessionTemplate")
+  public SqlSessionTemplate opsDataSourceSqlSessionTemplate(
+      @Qualifier("opsDataSourceSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+    return new SqlSessionTemplate(sqlSessionFactory);
+  }
+
   @Bean(initMethod = "migrate")
   public Flyway opsDataSourceFlyway(@Qualifier("opsDataSource") DataSource dataSource) {
     return Flyway.configure()
@@ -47,11 +87,5 @@ public class DataSourceConfiguration {
         .table("yak_ds_schema_history")
         .baselineOnMigrate(true)
         .load();
-  }
-
-  @Bean(name = "opsDataSourceJdbcTemplate")
-  public NamedParameterJdbcTemplate opsDataSourceJdbcTemplate(
-      @Qualifier("opsDataSource") DataSource dataSource) {
-    return new NamedParameterJdbcTemplate(dataSource);
   }
 }

@@ -1,11 +1,11 @@
 package io.yak.ops.business.datasource.service;
 
 import io.yak.framework.common.PagingData;
-import io.yak.ops.business.datasource.common.dto.DataSourceConnectTestDTO;
-import io.yak.ops.business.datasource.common.dto.DataSourceDTO;
-import io.yak.ops.business.datasource.common.dto.DataSourceQueryDTO;
-import io.yak.ops.business.datasource.common.vo.DataSourceOptionVO;
-import io.yak.ops.business.datasource.common.vo.DataSourceVO;
+import io.yak.ops.common.bean.dto.datasource.DataSourceConnectTestDTO;
+import io.yak.ops.common.bean.dto.datasource.DataSourceDTO;
+import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceOptionVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceVO;
 import java.util.List;
 
 /** 数据源管理服务。 */
