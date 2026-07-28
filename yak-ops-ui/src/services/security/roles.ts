@@ -8,6 +8,13 @@ import {
 const ROLE_API = '/api/v1/role';
 const PERMISSION_API = '/api/v1/permission';
 
+export type PermissionNodeType =
+  | 'ROOT'
+  | 'MENU_GROUP'
+  | 'MENU'
+  | 'PERMISSION_GROUP'
+  | 'ACTION';
+
 export interface PermissionTreeNode {
   id?: number;
   has?: boolean;
@@ -18,6 +25,8 @@ export interface PermissionTreeNode {
   description?: string;
   active?: boolean;
   declared?: boolean;
+  menuCode?: string;
+  nodeType?: PermissionNodeType;
   childList?: PermissionTreeNode[];
 }
 
