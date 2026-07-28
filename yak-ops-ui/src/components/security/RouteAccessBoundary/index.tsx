@@ -11,6 +11,7 @@ import {
   type NavigationRoute,
 } from '@/config/navigation';
 import ForbiddenPage from '@/pages/403';
+import { hasRouteMenuAccess } from '@/utils/security/menu';
 
 export interface RouteAccessBoundaryProps {
   /**
@@ -27,6 +28,11 @@ export interface RouteAccessBoundaryProps {
    * 主要用于独立组件和单元测试。
    */
   permissionCodes?: readonly string[];
+
+  /**
+   * 数据库返回的角色菜单编码，主要用于独立组件和单元测试。
+   */
+  menuCodes?: readonly string[];
 }
 
 const defaultFallback = <ForbiddenPage />;
@@ -43,6 +49,7 @@ export default function RouteAccessBoundary({
   fallback = defaultFallback,
   route,
   permissionCodes,
+  menuCodes,
 }: RouteAccessBoundaryProps) {
   const location = useLocation();
   const { initialState } = useModel('@@initialState');
@@ -53,6 +60,8 @@ export default function RouteAccessBoundary({
   const granted =
     permissionCodes ??
     initialState?.currentUser?.permissionCodes;
+  const grantedMenus =
+    menuCodes ?? initialState?.currentUser?.menuCodes;
 
   /*
    * 当前用户信息加载失败不等于无权限，
@@ -65,9 +74,16 @@ export default function RouteAccessBoundary({
   const allowed =
     identityPending ||
     !metadata ||
-    canAccessNavigationRoute(
-      metadata,
-      granted,
+    (
+      canAccessNavigationRoute(
+        metadata,
+        granted,
+      ) &&
+      hasRouteMenuAccess(
+        grantedMenus,
+        metadata,
+        granted,
+      )
     );
 
   if (!allowed) {
