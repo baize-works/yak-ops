@@ -59,6 +59,7 @@ JOIN (
     UNION ALL SELECT 'workflow','workflow:definition:read','查看工作流定义','查看工作流定义页面及接口'
     UNION ALL SELECT 'workflow','workflow:definition:create','新建工作流定义','创建工作流定义'
     UNION ALL SELECT 'workflow','workflow:definition:update','编辑工作流定义','编辑工作流定义'
+    UNION ALL SELECT 'workflow','workflow:definition:delete','删除工作流定义','删除尚未产生运行实例的工作流定义'
     UNION ALL SELECT 'workflow','workflow:definition:publish','发布工作流定义','发布工作流定义'
     UNION ALL SELECT 'workflow','workflow:instance:read','查看工作流实例','查看工作流实例页面及接口'
     UNION ALL SELECT 'workflow','workflow:instance:execute','执行工作流实例','执行工作流实例'
