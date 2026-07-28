@@ -1,0 +1,5 @@
+io.yak.ops.plugin.database.jdbc.mysql.MySqlDataSourcePlugin
+io.yak.ops.plugin.database.jdbc.postgresql.PostgreSqlDataSourcePlugin
+io.yak.ops.plugin.database.jdbc.oracle.OracleDataSourcePlugin
+io.yak.ops.plugin.database.jdbc.kingbase.KingbaseDataSourcePlugin
+io.yak.ops.plugin.database.jdbc.dameng.DamengDataSourcePlugin

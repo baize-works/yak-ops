@@ -16,11 +16,9 @@ class DataSourceDbTypeTest {
   }
 
   @Test
-  void shouldExposeDefaultDriverAndPort() {
-    assertThat(DataSourceDbType.MYSQL.getDefaultDriverClassName())
-        .isEqualTo("org.mariadb.jdbc.Driver");
-    assertThat(DataSourceDbType.DORIS.getDefaultPort())
-        .isEqualTo(9030);
+  void shouldKeepInfrastructureDefaultsOutsideEnum() {
+    assertThat(DataSourceDbType.MYSQL.getDisplayName()).isEqualTo("MySQL");
+    assertThat(DataSourceDbType.DORIS.getDisplayName()).isEqualTo("Doris");
   }
 
   @Test

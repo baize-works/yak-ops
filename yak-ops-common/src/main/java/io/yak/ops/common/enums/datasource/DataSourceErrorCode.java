@@ -18,7 +18,9 @@ public enum DataSourceErrorCode implements ErrorCode {
   CREATE_FAILED(41007, "创建数据源失败"),
   UPDATE_FAILED(41008, "更新数据源失败"),
   DELETE_FAILED(41009, "删除数据源失败"),
-  QUERY_FAILED(41010, "查询数据源失败");
+  QUERY_FAILED(41010, "查询数据源失败"),
+  PLUGIN_NOT_FOUND(41011, "数据源插件未安装"),
+  CATALOG_FAILED(41012, "读取数据源元数据失败");
 
   private final Integer code;
   private final String message;
