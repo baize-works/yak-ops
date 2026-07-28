@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.yak.ops.business.workflow.dao.mapper.WorkflowInstanceMapper">
+
+  <resultMap id="instanceDetailMap"
+             type="io.yak.ops.business.workflow.common.po.WorkflowInstanceDetailPO">
+    <id property="id" column="id"/>
+    <result property="workflowId" column="workflow_id"/>
+    <result property="workflowCode" column="workflow_code"/>
+    <result property="workflowName" column="workflow_name"/>
+    <result property="workflowVersion" column="workflow_version"/>
+    <result property="triggerType" column="trigger_type"/>
+    <result property="state" column="state"/>
+    <result property="globalParamsJson" column="global_params_json"/>
+    <result property="failureStrategy" column="failure_strategy"/>
+    <result property="maxParallelism" column="max_parallelism"/>
+    <result property="stopRequested" column="stop_requested"/>
+    <result property="startTime" column="start_time"/>
+    <result property="endTime" column="end_time"/>
+    <result property="createdBy" column="created_by"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="lockVersion" column="lock_version"/>
+  </resultMap>
+
+  <!-- 工作流实例详情需要关联定义表，联表 SQL 统一维护在 XML。 -->
+  <select id="selectDetailById" resultMap="instanceDetailMap">
+    SELECT
+      i.id,
+      i.workflow_id,
+      d.code AS workflow_code,
+      d.name AS workflow_name,
+      i.workflow_version,
+      i.trigger_type,
+      i.state,
+      i.global_params_json,
+      i.failure_strategy,
+      i.max_parallelism,
+      i.stop_requested,
+      i.start_time,
+      i.end_time,
+      i.created_by,
+      i.created_at,
+      i.lock_version
+    FROM yak_wf_instance i
+    INNER JOIN yak_wf_definition d ON d.id = i.workflow_id
+    WHERE i.id = #{instanceId}
+  </select>
+
+  <select id="selectListByWorkflowId"
+          resultType="io.yak.ops.business.workflow.common.po.WorkflowInstancePO">
+    SELECT id, workflow_id, workflow_version, trigger_type, state, global_params_json,
+           failure_strategy, max_parallelism, stop_requested, start_time, end_time,
+           created_by, created_at, lock_version
+    FROM yak_wf_instance
+    WHERE workflow_id = #{workflowId}
+    ORDER BY id DESC
+    LIMIT #{limit}
+  </select>
+
+  <select id="selectRecoverableInstanceIds" resultType="java.lang.Long">
+    SELECT id
+    FROM yak_wf_instance
+    WHERE state IN
+    <foreach collection="states" item="state" open="(" separator="," close=")">
+      #{state}
+    </foreach>
+    ORDER BY id
+    LIMIT #{limit}
+  </select>
+
+  <select id="countRunningByWorkflowId" resultType="int">
+    SELECT COUNT(1)
+    FROM yak_wf_instance
+    WHERE workflow_id = #{workflowId}
+      AND state IN
+      <foreach collection="states" item="state" open="(" separator="," close=")">
+        #{state}
+      </foreach>
+  </select>
+
+  <update id="markRunning">
+    UPDATE yak_wf_instance
+    SET state = #{runningState},
+        start_time = COALESCE(start_time, #{startTime}),
+        lock_version = lock_version + 1
+    WHERE id = #{instanceId}
+      AND state = #{pendingState}
+  </update>
+
+  <update id="requestStop">
+    UPDATE yak_wf_instance
+    SET stop_requested = 1,
+        state = CASE
+          WHEN state IN
+          <foreach collection="activeStates" item="state" open="(" separator="," close=")">
+            #{state}
+          </foreach>
+          THEN #{stoppingState}
+          ELSE state
+        END,
+        lock_version = lock_version + 1
+    WHERE id = #{instanceId}
+      AND state NOT IN
+      <foreach collection="terminalStates" item="state" open="(" separator="," close=")">
+        #{state}
+      </foreach>
+  </update>
+
+  <update id="finishInstance">
+    UPDATE yak_wf_instance
+    SET state = #{state},
+        end_time = #{endTime},
+        lock_version = lock_version + 1
+    WHERE id = #{instanceId}
+      AND state NOT IN
+      <foreach collection="terminalStates" item="terminalState" open="(" separator="," close=")">
+        #{terminalState}
+      </foreach>
+  </update>
+</mapper>

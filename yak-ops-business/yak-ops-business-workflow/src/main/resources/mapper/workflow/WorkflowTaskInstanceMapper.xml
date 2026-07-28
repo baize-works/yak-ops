@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.yak.ops.business.workflow.dao.mapper.WorkflowTaskInstanceMapper">
+
+  <insert id="batchInsert">
+    INSERT INTO yak_wf_task_instance
+      (workflow_instance_id, node_key, node_name, task_type, state, config_json,
+       max_retry_times, retry_count, retry_interval_seconds, timeout_seconds,
+       idempotent, retry_on_restart, next_retry_time, start_time, end_time,
+       result_json, error_message, lock_version)
+    VALUES
+    <foreach collection="items" item="item" separator=",">
+      (#{item.workflowInstanceId}, #{item.nodeKey}, #{item.nodeName}, #{item.taskType},
+       #{item.state}, #{item.configJson}, #{item.maxRetryTimes}, #{item.retryCount},
+       #{item.retryIntervalSeconds}, #{item.timeoutSeconds}, #{item.idempotent},
+       #{item.retryOnRestart}, #{item.nextRetryTime}, #{item.startTime}, #{item.endTime},
+       #{item.resultJson}, #{item.errorMessage}, #{item.lockVersion})
+    </foreach>
+  </insert>
+
+  <update id="claimTask">
+    UPDATE yak_wf_task_instance
+    SET state = #{runningState},
+        start_time = COALESCE(start_time, #{now}),
+        next_retry_time = NULL,
+        lock_version = lock_version + 1
+    WHERE id = #{taskInstanceId}
+      AND state IN
+      <foreach collection="claimableStates" item="state" open="(" separator="," close=")">
+        #{state}
+      </foreach>
+      AND (next_retry_time IS NULL OR next_retry_time &lt;= #{now})
+  </update>
+
+  <update id="markSuccess">
+    UPDATE yak_wf_task_instance
+    SET state = #{successState}, result_json = #{resultJson}, error_message = NULL,
+        end_time = #{endTime}, lock_version = lock_version + 1
+    WHERE id = #{taskInstanceId} AND state = #{runningState}
+  </update>
+
+  <update id="markRetryWaiting">
+    UPDATE yak_wf_task_instance
+    SET state = #{retryWaitingState}, retry_count = #{retryCount},
+        next_retry_time = #{nextRetryTime}, error_message = #{errorMessage},
+        lock_version = lock_version + 1
+    WHERE id = #{taskInstanceId} AND state = #{runningState}
+  </update>
+
+  <update id="markFailed">
+    UPDATE yak_wf_task_instance
+    SET state = #{failedState}, retry_count = #{retryCount},
+        error_message = #{errorMessage}, end_time = #{endTime},
+        lock_version = lock_version + 1
+    WHERE id = #{taskInstanceId}
+      AND state IN
+      <foreach collection="activeStates" item="state" open="(" separator="," close=")">
+        #{state}
+      </foreach>
+  </update>
+
+  <update id="markStopped">
+    UPDATE yak_wf_task_instance
+    SET state = #{stoppedState}, error_message = #{message}, end_time = #{endTime},
+        lock_version = lock_version + 1
+    WHERE id = #{taskInstanceId}
+      AND state NOT IN
+      <foreach collection="terminalStates" item="state" open="(" separator="," close=")">
+        #{state}
+      </foreach>
+  </update>
+
+  <update id="markSkipped">
+    UPDATE yak_wf_task_instance
+    SET state = #{skippedState}, error_message = #{reason}, end_time = #{endTime},
+        lock_version = lock_version + 1
+    WHERE workflow_instance_id = #{workflowInstanceId}
+      AND node_key IN
+      <foreach collection="nodeKeys" item="nodeKey" open="(" separator="," close=")">
+        #{nodeKey}
+      </foreach>
+      AND state NOT IN
+      <foreach collection="terminalStates" item="state" open="(" separator="," close=")">
+        #{state}
+      </foreach>
+  </update>
+
+  <update id="markAllPendingSkipped">
+    UPDATE yak_wf_task_instance
+    SET state = #{skippedState}, error_message = #{reason}, end_time = #{endTime},
+        lock_version = lock_version + 1
+    WHERE workflow_instance_id = #{workflowInstanceId}
+      AND state IN
+      <foreach collection="pendingStates" item="state" open="(" separator="," close=")">
+        #{state}
+      </foreach>
+  </update>
+
+  <update id="recoverForRetry">
+    UPDATE yak_wf_task_instance
+    SET state = #{retryWaitingState}, retry_count = retry_count + 1,
+        next_retry_time = #{nextRetryTime}, error_message = #{message},
+        lock_version = lock_version + 1
+    WHERE id = #{taskInstanceId} AND state = #{runningState}
+  </update>
+</mapper>
