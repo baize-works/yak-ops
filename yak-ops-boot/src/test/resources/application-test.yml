@@ -6,6 +6,8 @@ spring:
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
   flyway:
     enabled: false
+  quartz:
+    auto-startup: false
 
 yak:
   security:
@@ -21,3 +23,5 @@ yak:
   schedule:
     enabled: false
     web-enabled: false
+  workflow:
+    enabled: false
