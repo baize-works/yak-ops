@@ -38,7 +38,7 @@ const operatorGroupClass = [
 const iconButtonClass = [
   'flex h-[27px] min-w-[27px] items-center justify-center rounded-md border-0 bg-transparent px-2',
   'text-[9px] text-[#667085] hover:bg-[#f2f4f7] hover:text-[#344054]',
-  'disabled:cursor-not-allowed disabled:opacity-35',
+  'disabled:cursor-not-allowed disabled:opacity-[0.35]',
 ].join(' ');
 
 const CanvasOperator = ({
