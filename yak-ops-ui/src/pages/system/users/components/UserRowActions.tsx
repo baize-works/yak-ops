@@ -15,6 +15,8 @@ import {
   type MenuProps,
 } from 'antd';
 
+import { SECURITY_PERMISSIONS } from '@/constants/securityPermissions';
+import { usePermissionAccess } from '@/hooks/usePermissionAccess';
 import {
   deleteUser as deleteSystemUser,
   type SystemUser,
@@ -43,9 +45,19 @@ export default function UserRowActions({
   onResetPassword,
   onDeleted,
 }: UserRowActionsProps) {
+  const { can } = usePermissionAccess();
   const isCurrentUser = user.userName === currentUserName;
 
+  const canEdit = can(SECURITY_PERMISSIONS.user.update);
+  const canAssignRole = can(SECURITY_PERMISSIONS.role.assign);
+  const canResetPassword = can(
+    SECURITY_PERMISSIONS.user.resetPassword,
+  );
+  const canDelete = can(SECURITY_PERMISSIONS.user.delete);
+
   const remove = async () => {
+    if (!canDelete) return;
+
     try {
       await deleteSystemUser(user.id);
       message.success('用户已删除');
@@ -57,6 +69,8 @@ export default function UserRowActions({
   };
 
   const confirmDelete = () => {
+    if (!canDelete || isCurrentUser) return;
+
     Modal.confirm({
       title: '删除用户',
       content: (
@@ -78,36 +92,45 @@ export default function UserRowActions({
     });
   };
 
-  const menuItems: MenuProps['items'] = [
-    {
+  const menuItems: NonNullable<MenuProps['items']> = [];
+
+  if (canAssignRole) {
+    menuItems.push({
       key: 'assignRole',
       icon: <SafetyCertificateOutlined />,
       label: '分配角色',
-    },
-    {
+    });
+  }
+
+  if (canResetPassword) {
+    menuItems.push({
       key: 'resetPassword',
       icon: <KeyOutlined />,
       label: '重置密码',
-    },
-    {
-      type: 'divider',
-    },
-    {
+    });
+  }
+
+  if (canDelete) {
+    if (menuItems.length > 0) {
+      menuItems.push({ type: 'divider' });
+    }
+
+    menuItems.push({
       key: 'delete',
       icon: <DeleteOutlined />,
       label: '删除用户',
       danger: true,
       disabled: isCurrentUser,
-    },
-  ];
+    });
+  }
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     switch (key as ActionKey) {
       case 'assignRole':
-        onAssignRole(user);
+        if (canAssignRole) onAssignRole(user);
         break;
       case 'resetPassword':
-        onResetPassword(user);
+        if (canResetPassword) onResetPassword(user);
         break;
       case 'delete':
         confirmDelete();
@@ -129,33 +152,37 @@ export default function UserRowActions({
         详情
       </Button>
 
-      <Button
-        type="link"
-        size="small"
-        icon={<EditOutlined />}
-        className="!px-1.5 !text-slate-600 hover:!text-slate-900"
-        onClick={() => onEdit(user)}
-      >
-        编辑
-      </Button>
-
-      <Dropdown
-        trigger={['click']}
-        placement="bottomRight"
-        menu={{
-          items: menuItems,
-          onClick: handleMenuClick,
-        }}
-      >
+      {canEdit && (
         <Button
           type="link"
           size="small"
+          icon={<EditOutlined />}
           className="!px-1.5 !text-slate-600 hover:!text-slate-900"
+          onClick={() => onEdit(user)}
         >
-          更多
-          <DownOutlined className="ml-1 text-[10px]" />
+          编辑
         </Button>
-      </Dropdown>
+      )}
+
+      {menuItems.length > 0 && (
+        <Dropdown
+          trigger={['click']}
+          placement="bottomRight"
+          menu={{
+            items: menuItems,
+            onClick: handleMenuClick,
+          }}
+        >
+          <Button
+            type="link"
+            size="small"
+            className="!px-1.5 !text-slate-600 hover:!text-slate-900"
+          >
+            更多
+            <DownOutlined className="ml-1 text-[10px]" />
+          </Button>
+        </Dropdown>
+      )}
     </Space>
   );
 }

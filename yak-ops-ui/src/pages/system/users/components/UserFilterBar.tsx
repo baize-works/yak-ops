@@ -7,6 +7,7 @@ import { Button, Input, Select, Tooltip } from "antd";
 import { useState } from "react";
 
 import { PermissionGuard } from "@/components/security";
+import { SECURITY_PERMISSIONS } from "@/constants/securityPermissions";
 
 import type { RoleOption } from "../shared";
 
@@ -49,9 +50,6 @@ const SEARCH_PLACEHOLDERS: Record<UserSearchField, string> = {
   realName: "请输入真实姓名",
   id: "请输入用户 ID",
 };
-
-const userPermission = (action: string): string =>
-  `security:user:${action}`;
 
 const clean = (value?: string): string | undefined => {
   const normalized = value?.trim();
@@ -226,7 +224,7 @@ export default function UserFilterBar({
 
         <PermissionGuard
           mode="one"
-          permission={userPermission("create")}
+          permission={SECURITY_PERMISSIONS.user.create}
         >
           <Button
             type="primary"
