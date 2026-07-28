@@ -1,10 +1,8 @@
-package io.yak.ops.business.datasource.common.enums;
+package io.yak.ops.common.enums.datasource;
 
-import io.yak.ops.business.datasource.exception.DataSourceException;
 import java.util.Locale;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.util.StringUtils;
 
 /** Yak Ops 当前支持的数据源类型。 */
 @Getter
@@ -24,8 +22,8 @@ public enum DataSourceDbType {
   private final String jdbcPrefix;
 
   public static DataSourceDbType parse(String value) {
-    if (!StringUtils.hasText(value)) {
-      throw new DataSourceException(DataSourceErrorCode.INVALID_DB_TYPE);
+    if (value == null || value.trim().isEmpty()) {
+      throw new IllegalArgumentException("数据源类型不能为空");
     }
 
     String normalized = value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
@@ -36,10 +34,7 @@ public enum DataSourceDbType {
     try {
       return valueOf(normalized);
     } catch (IllegalArgumentException exception) {
-      throw new DataSourceException(
-          DataSourceErrorCode.INVALID_DB_TYPE,
-          "不支持的数据源类型：" + value,
-          exception);
+      throw new IllegalArgumentException("不支持的数据源类型：" + value, exception);
     }
   }
 }

@@ -1,6 +1,7 @@
-package io.yak.ops.business.datasource.common.enums;
+package io.yak.ops.common.enums.datasource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,5 +21,12 @@ class DataSourceDbTypeTest {
         .isEqualTo("org.mariadb.jdbc.Driver");
     assertThat(DataSourceDbType.DORIS.getDefaultPort())
         .isEqualTo(9030);
+  }
+
+  @Test
+  void shouldRejectUnsupportedTypeWithoutBusinessDependency() {
+    assertThatThrownBy(() -> DataSourceDbType.parse("unknown"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("不支持的数据源类型");
   }
 }

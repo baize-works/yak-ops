@@ -1,4 +1,4 @@
-package io.yak.ops.business.datasource.common.dto;
+package io.yak.ops.common.bean.dto.datasource;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

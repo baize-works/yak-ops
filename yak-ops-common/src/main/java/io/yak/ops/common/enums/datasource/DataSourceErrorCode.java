@@ -1,4 +1,4 @@
-package io.yak.ops.business.datasource.common.enums;
+package io.yak.ops.common.enums.datasource;
 
 import io.yak.framework.common.ErrorCode;
 import lombok.Getter;

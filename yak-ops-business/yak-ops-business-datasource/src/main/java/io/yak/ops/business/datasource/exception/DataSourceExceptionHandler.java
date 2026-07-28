@@ -1,9 +1,9 @@
 package io.yak.ops.business.datasource.exception;
 
 import io.yak.framework.common.Result;
-import io.yak.ops.business.datasource.common.enums.DataSourceErrorCode;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
-import io.yak.ops.business.datasource.controller.DataSourceController;
+import io.yak.ops.business.datasource.controller.v1.DataSourceController;
+import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;

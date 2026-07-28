@@ -2,11 +2,11 @@ package io.yak.ops.business.datasource.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.yak.ops.business.datasource.common.enums.DataSourceDbType;
-import io.yak.ops.business.datasource.common.enums.DataSourceErrorCode;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.config.DataSourceProperties;
 import io.yak.ops.business.datasource.exception.DataSourceException;
+import io.yak.ops.common.enums.datasource.DataSourceDbType;
+import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Iterator;
@@ -61,7 +61,14 @@ public class JdbcConnectionTester {
 
   public DataSourceDbType resolveDbType(JsonNode node, String fallback) {
     String value = firstText(node, "dbType", "type", "pluginType");
-    return DataSourceDbType.parse(StringUtils.hasText(value) ? value : fallback);
+    try {
+      return DataSourceDbType.parse(StringUtils.hasText(value) ? value : fallback);
+    } catch (IllegalArgumentException exception) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_DB_TYPE,
+          exception.getMessage(),
+          exception);
+    }
   }
 
   public String resolveJdbcUrl(DataSourceDbType dbType, JsonNode node) {

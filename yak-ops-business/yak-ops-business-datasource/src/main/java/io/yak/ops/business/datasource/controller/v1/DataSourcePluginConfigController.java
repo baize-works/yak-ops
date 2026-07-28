@@ -1,12 +1,12 @@
-package io.yak.ops.business.datasource.controller;
+package io.yak.ops.business.datasource.controller.v1;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.yak.framework.common.Result;
-import io.yak.ops.business.datasource.common.constant.DataSourceConstants;
-import io.yak.ops.business.datasource.common.vo.DataSourcePluginConfigVO;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.service.DataSourcePluginConfigService;
+import io.yak.ops.common.bean.vo.datasource.DataSourcePluginConfigVO;
+import io.yak.ops.common.constant.datasource.DataSourceConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

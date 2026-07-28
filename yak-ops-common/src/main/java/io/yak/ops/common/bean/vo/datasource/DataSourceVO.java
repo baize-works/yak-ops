@@ -1,4 +1,4 @@
-package io.yak.ops.business.datasource.common.vo;
+package io.yak.ops.common.bean.vo.datasource;
 
 import java.time.LocalDateTime;
 import lombok.Data;

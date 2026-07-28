@@ -1,10 +1,8 @@
-package io.yak.ops.business.datasource.common.enums;
+package io.yak.ops.common.enums.datasource;
 
-import io.yak.ops.business.datasource.exception.DataSourceException;
 import java.util.Locale;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.util.StringUtils;
 
 /** 数据源所属环境。 */
 @Getter
@@ -18,7 +16,7 @@ public enum DataSourceEnvironment {
   private final String displayName;
 
   public static DataSourceEnvironment parse(String value) {
-    if (!StringUtils.hasText(value)) {
+    if (value == null || value.trim().isEmpty()) {
       return DEVELOP;
     }
 
@@ -33,10 +31,7 @@ public enum DataSourceEnvironment {
     try {
       return valueOf(normalized);
     } catch (IllegalArgumentException exception) {
-      throw new DataSourceException(
-          DataSourceErrorCode.INVALID_ENVIRONMENT,
-          "不支持的运行环境：" + value,
-          exception);
+      throw new IllegalArgumentException("不支持的运行环境：" + value, exception);
     }
   }
 }

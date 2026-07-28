@@ -1,11 +1,13 @@
 package io.yak.ops.business.datasource.service.impl;
 
-import io.yak.ops.business.datasource.common.enums.DataSourceDbType;
-import io.yak.ops.business.datasource.common.vo.DataSourcePluginConfigVO;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
-import io.yak.ops.business.datasource.common.vo.DataSourcePluginConfigVO.FormFieldVO;
-import io.yak.ops.business.datasource.common.vo.DataSourcePluginConfigVO.RuleVO;
+import io.yak.ops.business.datasource.exception.DataSourceException;
 import io.yak.ops.business.datasource.service.DataSourcePluginConfigService;
+import io.yak.ops.common.bean.vo.datasource.DataSourcePluginConfigVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourcePluginConfigVO.FormFieldVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourcePluginConfigVO.RuleVO;
+import io.yak.ops.common.enums.datasource.DataSourceDbType;
+import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +20,7 @@ public class DataSourcePluginConfigServiceImpl implements DataSourcePluginConfig
 
   @Override
   public DataSourcePluginConfigVO getPluginConfig(String pluginType) {
-    DataSourceDbType dbType = DataSourceDbType.parse(pluginType);
+    DataSourceDbType dbType = parseDbType(pluginType);
     return DataSourcePluginConfigVO.builder()
         .pluginType(dbType.name())
         .formFields(buildFields(dbType))
@@ -28,8 +30,19 @@ public class DataSourcePluginConfigServiceImpl implements DataSourcePluginConfig
 
   @Override
   public boolean installPlugin(String pluginType) {
-    DataSourceDbType.parse(pluginType);
+    parseDbType(pluginType);
     return true;
+  }
+
+  private DataSourceDbType parseDbType(String value) {
+    try {
+      return DataSourceDbType.parse(value);
+    } catch (IllegalArgumentException exception) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_DB_TYPE,
+          exception.getMessage(),
+          exception);
+    }
   }
 
   private List<FormFieldVO> buildFields(DataSourceDbType dbType) {
