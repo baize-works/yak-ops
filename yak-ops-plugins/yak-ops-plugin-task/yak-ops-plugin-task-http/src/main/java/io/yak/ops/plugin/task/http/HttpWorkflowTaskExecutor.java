@@ -85,7 +85,7 @@ public final class HttpWorkflowTaskExecutor implements WorkflowTaskExecutor {
   public WorkflowTaskResult execute(WorkflowTaskContext context) throws Exception {
     Map<String, Object> configuration = TaskParameterResolver.resolveConfiguration(
         context.configuration(),
-        context.globalParameters());
+        context.parameters());
     validate(configuration);
 
     HttpRequest request = buildRequest(configuration);
