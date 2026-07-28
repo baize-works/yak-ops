@@ -17,7 +17,8 @@ export const toCurrentUser = (user: API.CurrentUserVO): API.CurrentUser => ({
   permissionCodes: Array.isArray(user.permissionCodes)
     ? user.permissionCodes
     : [],
-  menuCodes: Array.isArray(user.menuCodes) ? user.menuCodes : [],
+  // Undefined means an older backend has not exposed menu authorization yet.
+  menuCodes: Array.isArray(user.menuCodes) ? user.menuCodes : undefined,
   projectList: Array.isArray(user.projectList) ? user.projectList : [],
   // A missing/null deptId means “no current department”; it is not inferred.
   deptId: user.deptId ?? null,
