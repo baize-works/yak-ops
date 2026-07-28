@@ -3,9 +3,9 @@ package io.yak.ops.business.workflow.dag;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDag;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowEdge;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowNode;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDag;
+import io.yak.ops.common.bean.entity.workflow.WorkflowEdge;
+import io.yak.ops.common.bean.entity.workflow.WorkflowNode;
 import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
 import io.yak.ops.spi.workflow.WorkflowTaskContext;
 import io.yak.ops.spi.workflow.WorkflowTaskExecutor;

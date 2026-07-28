@@ -1,7 +1,7 @@
 package io.yak.ops.business.workflow.service;
 
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowScheduleDTO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowScheduleVO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowScheduleDTO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowScheduleVO;
 
 /** 工作流调度服务接口。 */
 public interface WorkflowScheduleService {

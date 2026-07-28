@@ -1,12 +1,12 @@
 package io.yak.ops.business.workflow.service.impl;
 
-import io.yak.ops.business.workflow.common.constant.WorkflowConstant;
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowScheduleDTO;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowSchedule;
-import io.yak.ops.business.workflow.common.enums.MisfirePolicy;
-import io.yak.ops.business.workflow.common.enums.ScheduleConcurrencyPolicy;
-import io.yak.ops.business.workflow.common.po.WorkflowSchedulePO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowScheduleVO;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.common.bean.dto.workflow.WorkflowScheduleDTO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowSchedule;
+import io.yak.ops.common.enums.workflow.MisfirePolicy;
+import io.yak.ops.common.enums.workflow.ScheduleConcurrencyPolicy;
+import io.yak.ops.common.bean.po.workflow.WorkflowSchedulePO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowScheduleVO;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
 import io.yak.ops.business.workflow.dao.WorkflowScheduleDao;
@@ -56,12 +56,14 @@ public class WorkflowScheduleServiceImpl implements WorkflowScheduleService {
     schedulePO.setCronExpression(scheduleDTO.getCronExpression());
     schedulePO.setTimezone(scheduleDTO.getTimezone());
     schedulePO.setEnabled(scheduleDTO.isEnabled());
-    MisfirePolicy misfirePolicy = scheduleDTO.getMisfirePolicy() == null
-        ? MisfirePolicy.DO_NOTHING
-        : scheduleDTO.getMisfirePolicy();
-    ScheduleConcurrencyPolicy concurrencyPolicy = scheduleDTO.getConcurrencyPolicy() == null
-        ? ScheduleConcurrencyPolicy.SKIP_IF_RUNNING
-        : scheduleDTO.getConcurrencyPolicy();
+    MisfirePolicy misfirePolicy =
+        scheduleDTO.getMisfirePolicy() == null
+            ? MisfirePolicy.DO_NOTHING
+            : scheduleDTO.getMisfirePolicy();
+    ScheduleConcurrencyPolicy concurrencyPolicy =
+        scheduleDTO.getConcurrencyPolicy() == null
+            ? ScheduleConcurrencyPolicy.SKIP_IF_RUNNING
+            : scheduleDTO.getConcurrencyPolicy();
     schedulePO.setMisfirePolicy(misfirePolicy.name());
     schedulePO.setConcurrencyPolicy(concurrencyPolicy.name());
     schedulePO.setUpdatedAt(new Date());
@@ -115,7 +117,8 @@ public class WorkflowScheduleServiceImpl implements WorkflowScheduleService {
       CronScheduleBuilder cron = CronScheduleBuilder
           .cronSchedule(schedule.getCronExpression())
           .inTimeZone(TimeZone.getTimeZone(ZoneId.of(schedule.getTimezone())));
-      cron = schedule.getMisfirePolicy() == MisfirePolicy.FIRE_NOW
+      cron = schedule.getMisfirePolicy()
+              == MisfirePolicy.FIRE_NOW
           ? cron.withMisfireHandlingInstructionFireAndProceed()
           : cron.withMisfireHandlingInstructionDoNothing();
       CronTrigger trigger = TriggerBuilder.newTrigger()

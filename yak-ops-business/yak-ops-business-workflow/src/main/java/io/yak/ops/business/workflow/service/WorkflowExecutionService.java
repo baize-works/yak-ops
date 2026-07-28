@@ -1,10 +1,10 @@
 package io.yak.ops.business.workflow.service;
 
-import io.yak.ops.business.workflow.common.enums.TriggerType;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceDetailVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskAttemptVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskInstanceVO;
+import io.yak.ops.common.enums.workflow.TriggerType;
+import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceDetailVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowTaskAttemptVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowTaskInstanceVO;
 import java.util.List;
 import java.util.Map;
 

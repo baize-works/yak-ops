@@ -3,7 +3,7 @@ package io.yak.ops.business.workflow.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDag;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDag;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

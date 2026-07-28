@@ -1,9 +1,9 @@
 package io.yak.ops.business.workflow.schedule;
 
-import io.yak.ops.business.workflow.common.constant.WorkflowConstant;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowSchedule;
-import io.yak.ops.business.workflow.common.enums.ScheduleConcurrencyPolicy;
-import io.yak.ops.business.workflow.common.enums.TriggerType;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.common.bean.entity.workflow.WorkflowSchedule;
+import io.yak.ops.common.enums.workflow.ScheduleConcurrencyPolicy;
+import io.yak.ops.common.enums.workflow.TriggerType;
 import io.yak.ops.business.workflow.dao.WorkflowExecutionDao;
 import io.yak.ops.business.workflow.dao.WorkflowScheduleDao;
 import io.yak.ops.business.workflow.service.WorkflowExecutionService;

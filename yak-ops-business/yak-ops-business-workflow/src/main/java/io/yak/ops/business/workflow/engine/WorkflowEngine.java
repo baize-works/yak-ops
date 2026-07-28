@@ -1,14 +1,14 @@
 package io.yak.ops.business.workflow.engine;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowInstance;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowTaskInstance;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowVersion;
-import io.yak.ops.business.workflow.common.enums.AttemptState;
-import io.yak.ops.business.workflow.common.enums.FailureStrategy;
-import io.yak.ops.business.workflow.common.enums.TaskState;
-import io.yak.ops.business.workflow.common.enums.WorkflowState;
-import io.yak.ops.business.workflow.common.po.WorkflowTaskAttemptPO;
-import io.yak.ops.business.workflow.common.po.WorkflowTaskLogPO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowInstance;
+import io.yak.ops.common.bean.entity.workflow.WorkflowTaskInstance;
+import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
+import io.yak.ops.common.enums.workflow.AttemptState;
+import io.yak.ops.common.enums.workflow.FailureStrategy;
+import io.yak.ops.common.enums.workflow.TaskState;
+import io.yak.ops.common.enums.workflow.WorkflowState;
+import io.yak.ops.common.bean.po.workflow.WorkflowTaskAttemptPO;
+import io.yak.ops.common.bean.po.workflow.WorkflowTaskLogPO;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.dag.CompiledWorkflowDag;
 import io.yak.ops.business.workflow.dag.WorkflowDagCompiler;

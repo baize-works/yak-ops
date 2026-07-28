@@ -1,16 +1,16 @@
 package io.yak.ops.business.workflow.service.impl;
 
-import io.yak.ops.business.workflow.common.constant.WorkflowConstant;
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowDTO;
-import io.yak.ops.business.workflow.common.dto.workflow.WorkflowUpdateDTO;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDefinition;
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowVersion;
-import io.yak.ops.business.workflow.common.enums.DefinitionState;
-import io.yak.ops.business.workflow.common.enums.FailureStrategy;
-import io.yak.ops.business.workflow.common.po.WorkflowDefinitionPO;
-import io.yak.ops.business.workflow.common.po.WorkflowVersionPO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowDefinitionVO;
-import io.yak.ops.business.workflow.common.vo.workflow.WorkflowVersionVO;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
+import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
+import io.yak.ops.common.enums.workflow.DefinitionState;
+import io.yak.ops.common.enums.workflow.FailureStrategy;
+import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
+import io.yak.ops.common.bean.po.workflow.WorkflowVersionPO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowDefinitionVO;
+import io.yak.ops.common.bean.vo.workflow.WorkflowVersionVO;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.dag.WorkflowDagCompiler;
 import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;

@@ -1,6 +1,6 @@
 package io.yak.ops.business.workflow.dag;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowNode;
+import io.yak.ops.common.bean.entity.workflow.WorkflowNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

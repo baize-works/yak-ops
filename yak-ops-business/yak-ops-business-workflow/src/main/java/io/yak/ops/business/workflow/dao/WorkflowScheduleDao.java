@@ -1,7 +1,7 @@
 package io.yak.ops.business.workflow.dao;
 
-import io.yak.ops.business.workflow.common.entity.workflow.WorkflowSchedule;
-import io.yak.ops.business.workflow.common.po.WorkflowSchedulePO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowSchedule;
+import io.yak.ops.common.bean.po.workflow.WorkflowSchedulePO;
 import java.util.List;
 
 /** 工作流调度数据访问接口。 */

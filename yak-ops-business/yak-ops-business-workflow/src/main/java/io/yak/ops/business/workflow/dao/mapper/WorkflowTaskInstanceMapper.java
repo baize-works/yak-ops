@@ -1,7 +1,7 @@
 package io.yak.ops.business.workflow.dao.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import io.yak.ops.business.workflow.common.po.WorkflowTaskInstancePO;
+import io.yak.ops.common.bean.po.workflow.WorkflowTaskInstancePO;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;

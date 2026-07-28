@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.yak.ops.business.workflow.common.constant.WorkflowConstant;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
 import io.yak.ops.business.workflow.dag.WorkflowDagCompiler;
 import io.yak.ops.core.workflow.LocalWorkflowTaskDispatcher;
 import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
@@ -62,7 +62,7 @@ public class WorkflowConfiguration {
       @Qualifier("workflowDataSource") DataSource dataSource) throws Exception {
     MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
     factory.setDataSource(dataSource);
-    factory.setTypeAliasesPackage("io.yak.ops.business.workflow.common.po");
+    factory.setTypeAliasesPackage("io.yak.ops.common.bean.po.workflow");
     factory.setMapperLocations(new PathMatchingResourcePatternResolver()
         .getResources("classpath*:mapper/workflow/*.xml"));
 
