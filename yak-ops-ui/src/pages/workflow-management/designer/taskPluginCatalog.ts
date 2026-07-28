@@ -14,9 +14,7 @@ const categoryColor: Record<string, string> = {
 export const mergeTaskPluginCatalog = (plugins: WorkflowTaskPluginRecord[]) => {
   for (const plugin of plugins) {
     const defaults = extractDefaults(plugin.configurationSchema);
-    const existing = WORKFLOW_NODE_CATALOG.find(
-      (item) => item.backendType === plugin.type || item.type === plugin.type,
-    );
+    const existing = WORKFLOW_NODE_CATALOG.find((item) => item.type === plugin.type);
     if (existing) {
       existing.title = plugin.name || existing.title;
       existing.description = plugin.description || existing.description;
