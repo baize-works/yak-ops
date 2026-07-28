@@ -1,15 +1,16 @@
 import { render, screen } from '@testing-library/react';
+import { useModel } from '@umijs/max';
 
 import { SECURITY_PERMISSIONS } from '@/constants/securityPermissions';
 import type { SystemUser } from '@/services/security/users';
 
 import UserRowActions from './UserRowActions';
 
-const mockUseModel = jest.fn();
-
 jest.mock('@umijs/max', () => ({
-  useModel: (...args: unknown[]) => mockUseModel(...args),
+  useModel: jest.fn(),
 }));
+
+const mockedUseModel = useModel as unknown as jest.Mock;
 
 const user: SystemUser = {
   id: 2,
@@ -32,11 +33,11 @@ const renderActions = () =>
 
 describe('UserRowActions permissions', () => {
   beforeEach(() => {
-    mockUseModel.mockReset();
+    mockedUseModel.mockReset();
   });
 
   it('keeps read-only users from seeing write actions', () => {
-    mockUseModel.mockReturnValue({
+    mockedUseModel.mockReturnValue({
       initialState: {
         currentUser: {
           permissionCodes: [SECURITY_PERMISSIONS.user.read],
@@ -46,13 +47,13 @@ describe('UserRowActions permissions', () => {
 
     renderActions();
 
-    expect(screen.getByText('详情')).toBeInTheDocument();
-    expect(screen.queryByText('编辑')).not.toBeInTheDocument();
-    expect(screen.queryByText('更多')).not.toBeInTheDocument();
+    expect(screen.getByText('详情')).toBeTruthy();
+    expect(screen.queryByText('编辑')).toBeNull();
+    expect(screen.queryByText('更多')).toBeNull();
   });
 
   it('shows only actions granted to the current user', () => {
-    mockUseModel.mockReturnValue({
+    mockedUseModel.mockReturnValue({
       initialState: {
         currentUser: {
           permissionCodes: [
@@ -66,12 +67,12 @@ describe('UserRowActions permissions', () => {
 
     renderActions();
 
-    expect(screen.getByText('编辑')).toBeInTheDocument();
-    expect(screen.getByText('更多')).toBeInTheDocument();
+    expect(screen.getByText('编辑')).toBeTruthy();
+    expect(screen.getByText('更多')).toBeTruthy();
   });
 
   it('lets the security root identity see every action entry', () => {
-    mockUseModel.mockReturnValue({
+    mockedUseModel.mockReturnValue({
       initialState: {
         currentUser: {
           permissionCodes: ['security:root'],
@@ -81,7 +82,7 @@ describe('UserRowActions permissions', () => {
 
     renderActions();
 
-    expect(screen.getByText('编辑')).toBeInTheDocument();
-    expect(screen.getByText('更多')).toBeInTheDocument();
+    expect(screen.getByText('编辑')).toBeTruthy();
+    expect(screen.getByText('更多')).toBeTruthy();
   });
 });
