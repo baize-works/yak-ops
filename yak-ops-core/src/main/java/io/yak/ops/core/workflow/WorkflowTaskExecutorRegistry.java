@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /** Immutable task executor registry used by the workflow compiler and runtime. */
@@ -14,18 +15,17 @@ public final class WorkflowTaskExecutorRegistry {
 
   private final Map<String, WorkflowTaskExecutor> executors;
 
-  public WorkflowTaskExecutorRegistry(Collection<WorkflowTaskExecutor> taskExecutors) {
+  public WorkflowTaskExecutorRegistry(Collection<WorkflowTaskExecutor> builtInExecutors) {
     Map<String, WorkflowTaskExecutor> registered = new LinkedHashMap<>();
-    if (taskExecutors != null) {
-      for (WorkflowTaskExecutor executor : taskExecutors) {
-        Objects.requireNonNull(executor, "taskExecutor");
-        String type = normalize(executor.type());
-        WorkflowTaskExecutor previous = registered.putIfAbsent(type, executor);
-        if (previous != null) {
-          throw new IllegalStateException("Duplicate workflow task executor type: " + type);
-        }
-      }
-    }
+    registerAll(registered, builtInExecutors);
+
+    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+    ClassLoader pluginClassLoader = contextClassLoader == null
+        ? WorkflowTaskExecutor.class.getClassLoader()
+        : contextClassLoader;
+    ServiceLoader.load(WorkflowTaskExecutor.class, pluginClassLoader)
+        .forEach(executor -> register(registered, executor));
+
     this.executors = Collections.unmodifiableMap(registered);
   }
 
@@ -45,6 +45,28 @@ public final class WorkflowTaskExecutorRegistry {
 
   public Set<String> types() {
     return executors.keySet();
+  }
+
+  private static void registerAll(
+      Map<String, WorkflowTaskExecutor> registered,
+      Collection<WorkflowTaskExecutor> executors) {
+    if (executors == null) {
+      return;
+    }
+    for (WorkflowTaskExecutor executor : executors) {
+      register(registered, executor);
+    }
+  }
+
+  private static void register(
+      Map<String, WorkflowTaskExecutor> registered,
+      WorkflowTaskExecutor executor) {
+    Objects.requireNonNull(executor, "taskExecutor");
+    String type = normalize(executor.type());
+    WorkflowTaskExecutor previous = registered.putIfAbsent(type, executor);
+    if (previous != null) {
+      throw new IllegalStateException("Duplicate workflow task executor type: " + type);
+    }
   }
 
   private static String normalize(String taskType) {
