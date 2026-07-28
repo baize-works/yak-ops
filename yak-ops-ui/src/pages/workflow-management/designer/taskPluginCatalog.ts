@@ -47,5 +47,5 @@ const extractDefaults = (schema: Record<string, unknown>) => {
   return defaults;
 };
 
-const isObject = (value: unknown): value is Record<string, any> =>
+const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
