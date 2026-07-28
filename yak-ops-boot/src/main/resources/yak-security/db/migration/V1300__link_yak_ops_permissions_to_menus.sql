@@ -20,7 +20,8 @@ UPDATE yak_security_permission
 SET menu_code='workflow-management'
 WHERE app_name='${appName}' AND is_delete=0
   AND (permission_code LIKE 'workflow:definition:%'
-       OR permission_code='workflow:schedule:manage');
+       OR permission_code='workflow:schedule:manage'
+       OR permission_code IN ('workflow:view','workflow:create','workflow:update','workflow:delete','workflow:execute'));
 
 UPDATE yak_security_permission
 SET menu_code='workflow-instance'
