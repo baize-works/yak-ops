@@ -45,6 +45,10 @@
             <artifactId>yak-ops-plugin-database-doris</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-plugin-task-all</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.yak.framework</groupId>
             <artifactId>yak-security-spring-boot-starter</artifactId>
         </dependency>
