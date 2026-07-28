@@ -21,8 +21,8 @@ public final class DorisJdbcCatalog extends GenericJdbcCatalog {
   @Override
   public List<String> listDatabases() {
     try (Connection connection = openConnection();
-         Statement statement = connection.createStatement();
-         ResultSet resultSet = statement.executeQuery("SHOW DATABASES")) {
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery("SHOW DATABASES")) {
       List<String> databases = new ArrayList<>();
       while (resultSet.next()) {
         String database = resultSet.getString(1);
@@ -54,15 +54,21 @@ public final class DorisJdbcCatalog extends GenericJdbcCatalog {
     String keyword = query == null ? null : query.getKeyword();
     String sql = "SHOW FULL TABLES FROM " + quoteIdentifier(database);
     try (Connection connection = openConnection();
-         Statement statement = connection.createStatement();
-         ResultSet resultSet = statement.executeQuery(sql)) {
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(sql)) {
       List<DataSourceTable> tables = new ArrayList<>();
       while (resultSet.next()) {
         String table = resultSet.getString(1);
         if (!matchesKeyword(table, keyword)) {
           continue;
         }
-        tables.add(new DataSourceTable(database, null, table, resultSet.getString(2), null));
+        tables.add(
+            new DataSourceTable(
+                database,
+                null,
+                table,
+                resultSet.getString(2),
+                null));
       }
       return tables;
     } catch (Exception exception) {
@@ -80,7 +86,8 @@ public final class DorisJdbcCatalog extends GenericJdbcCatalog {
         && !"__internal_schema".equalsIgnoreCase(database);
   }
 
-  private String quoteIdentifier(String identifier) {
+  @Override
+  protected String quoteIdentifier(String identifier) {
     return "`" + identifier.replace("`", "``") + "`";
   }
 }

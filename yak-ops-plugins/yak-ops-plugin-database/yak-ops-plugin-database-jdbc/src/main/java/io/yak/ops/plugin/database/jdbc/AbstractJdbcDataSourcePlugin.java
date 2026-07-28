@@ -30,15 +30,78 @@ public abstract class AbstractJdbcDataSourcePlugin implements DataSourcePlugin {
   @Override
   public DataSourcePluginConfigVO pluginConfig() {
     List<FormFieldVO> fields = new ArrayList<>();
-    fields.add(field("host", "主机地址", "INPUT", "请输入数据库主机地址", "127.0.0.1", required("请输入主机地址")));
-    fields.add(field("port", "端口", "NUMBER", "请输入数据库端口", defaultPort(), rangeRule(1, 65535, "端口必须在 1 到 65535 之间")));
-    fields.add(field("database", databaseLabel(), "INPUT", "请输入数据库名称", null, required("请输入数据库名称")));
-    fields.add(field("schema", "Schema", "INPUT", "可选；不填写时使用数据库默认 Schema", null, Collections.emptyList()));
-    fields.add(field("username", "用户名", "INPUT", "请输入数据库用户名", null, required("请输入数据库用户名")));
-    fields.add(field("password", "密码", "PASSWORD", "请输入数据库密码", null, Collections.emptyList()));
-    fields.add(field("jdbcUrl", "JDBC 地址", "INPUT", "可选；留空时由插件根据主机、端口和数据库生成", null, Collections.emptyList()));
-    fields.add(field("driverClassName", "驱动类", "INPUT", "请输入 JDBC Driver Class", defaultDriverClassName(), required("请输入 JDBC 驱动类")));
-    fields.add(field("properties", "扩展属性", "TEXTAREA", "可选；请输入 JSON 对象，例如 {\"useSSL\":\"false\"}", null, Collections.emptyList()));
+    fields.add(
+        field(
+            "host",
+            "主机地址",
+            "INPUT",
+            "请输入数据库主机地址",
+            "127.0.0.1",
+            required("请输入主机地址")));
+    fields.add(
+        field(
+            "port",
+            "端口",
+            "NUMBER",
+            "请输入数据库端口",
+            defaultPort(),
+            rangeRule(1, 65535, "端口必须在 1 到 65535 之间")));
+    fields.add(
+        field(
+            "database",
+            databaseLabel(),
+            "INPUT",
+            "请输入数据库名称",
+            null,
+            required("请输入数据库名称")));
+    fields.add(
+        field(
+            "schema",
+            "Schema",
+            "INPUT",
+            "可选；不填写时使用数据库默认 Schema",
+            null,
+            Collections.emptyList()));
+    fields.add(
+        field(
+            "username",
+            "用户名",
+            "INPUT",
+            "请输入数据库用户名",
+            null,
+            required("请输入数据库用户名")));
+    fields.add(
+        field(
+            "password",
+            "密码",
+            "PASSWORD",
+            "请输入数据库密码",
+            null,
+            Collections.emptyList()));
+    fields.add(
+        field(
+            "jdbcUrl",
+            "JDBC 地址",
+            "INPUT",
+            "可选；留空时由插件根据主机、端口和数据库生成",
+            null,
+            Collections.emptyList()));
+    fields.add(
+        field(
+            "driverClassName",
+            "驱动类",
+            "INPUT",
+            "请输入 JDBC Driver Class",
+            defaultDriverClassName(),
+            required("请输入 JDBC 驱动类")));
+    fields.add(
+        field(
+            "properties",
+            "扩展属性",
+            "TEXTAREA",
+            "可选；请输入 JSON 对象，例如 {\"useSSL\":\"false\"}",
+            null,
+            Collections.emptyList()));
     appendFormFields(fields);
     return DataSourcePluginConfigVO.builder()
         .pluginType(dbType().name())
@@ -63,7 +126,10 @@ public abstract class AbstractJdbcDataSourcePlugin implements DataSourcePlugin {
       String schema = firstText(root, "schema", "schemaName");
       String username = firstText(root, "username", "user");
       String password = firstText(root, "password");
-      String driver = defaultIfBlank(firstText(root, "driverClassName", "driver"), defaultDriverClassName());
+      String driver =
+          defaultIfBlank(
+              firstText(root, "driverClassName", "driver"),
+              defaultDriverClassName());
 
       if (isBlank(username)) {
         throw parameterError("username 不能为空", null);
@@ -80,6 +146,9 @@ public abstract class AbstractJdbcDataSourcePlugin implements DataSourcePlugin {
         jdbcUrl = buildJdbcUrl(host.trim(), port, database.trim(), root);
       } else {
         jdbcUrl = jdbcUrl.trim();
+        if (!acceptsUrl(jdbcUrl)) {
+          throw parameterError("JDBC 地址与插件类型不匹配：" + jdbcUrl, null);
+        }
       }
 
       if (isBlank(database)) {
@@ -126,8 +195,11 @@ public abstract class AbstractJdbcDataSourcePlugin implements DataSourcePlugin {
     try {
       Class.forName(jdbcConnection.driverClassName());
       DriverManager.setLoginTimeout(Math.max(1, timeoutSeconds));
-      try (Connection opened = DriverManager.getConnection(jdbcConnection.jdbcUrl(), connectionProperties(jdbcConnection))) {
-        if (opened == null || opened.isClosed() || !opened.isValid(Math.max(1, timeoutSeconds))) {
+      try (Connection opened =
+          DriverManager.getConnection(
+              jdbcConnection.jdbcUrl(),
+              connectionProperties(jdbcConnection))) {
+        if (opened == null || opened.isClosed()) {
           throw new DataSourcePluginException(Operation.CONNECTIVITY, "数据库连接不可用");
         }
       }
@@ -217,8 +289,36 @@ public abstract class AbstractJdbcDataSourcePlugin implements DataSourcePlugin {
     if (isBlank(message)) {
       return throwable == null ? "未知错误" : throwable.getClass().getSimpleName();
     }
-    String sanitized = message.replaceAll("(?i)(password|pwd)=([^;&\\s]+)", "$1=******");
+    String sanitized =
+        message.replaceAll("(?i)(password|pwd)=([^;&\\s]+)", "$1=******");
     return sanitized.length() > 300 ? sanitized.substring(0, 300) : sanitized;
+  }
+
+  protected FormFieldVO field(
+      String key,
+      String label,
+      String type,
+      String placeholder,
+      Object defaultValue,
+      List<RuleVO> rules) {
+    return FormFieldVO.builder()
+        .key(key)
+        .label(label)
+        .type(type)
+        .placeholder(placeholder)
+        .defaultValue(defaultValue)
+        .rules(rules)
+        .build();
+  }
+
+  protected List<RuleVO> required(String message) {
+    return Collections.singletonList(
+        RuleVO.builder().required(true).message(message).build());
+  }
+
+  protected List<RuleVO> rangeRule(int min, int max, String message) {
+    return Collections.singletonList(
+        RuleVO.builder().required(true).min(min).max(max).message(message).build());
   }
 
   private void validateDeclaredType(JsonNode root) {
@@ -307,32 +407,5 @@ public abstract class AbstractJdbcDataSourcePlugin implements DataSourcePlugin {
     return cause == null
         ? new DataSourcePluginException(Operation.PARAMETER, message)
         : new DataSourcePluginException(Operation.PARAMETER, message, cause);
-  }
-
-  private FormFieldVO field(
-      String key,
-      String label,
-      String type,
-      String placeholder,
-      Object defaultValue,
-      List<RuleVO> rules) {
-    return FormFieldVO.builder()
-        .key(key)
-        .label(label)
-        .type(type)
-        .placeholder(placeholder)
-        .defaultValue(defaultValue)
-        .rules(rules)
-        .build();
-  }
-
-  private List<RuleVO> required(String message) {
-    return Collections.singletonList(
-        RuleVO.builder().required(true).message(message).build());
-  }
-
-  private List<RuleVO> rangeRule(int min, int max, String message) {
-    return Collections.singletonList(
-        RuleVO.builder().required(true).min(min).max(max).message(message).build());
   }
 }
