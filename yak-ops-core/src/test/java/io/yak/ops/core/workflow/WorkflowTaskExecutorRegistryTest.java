@@ -27,7 +27,18 @@ class WorkflowTaskExecutorRegistryTest {
         .hasMessageContaining("SHELL");
   }
 
-  private record Stub(String type) implements WorkflowTaskExecutor {
+  private static final class Stub implements WorkflowTaskExecutor {
+
+    private final String type;
+
+    private Stub(String type) {
+      this.type = type;
+    }
+
+    @Override
+    public String type() {
+      return type;
+    }
 
     @Override
     public WorkflowTaskResult execute(WorkflowTaskContext context) {

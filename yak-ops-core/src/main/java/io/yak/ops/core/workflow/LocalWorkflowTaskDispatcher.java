@@ -79,11 +79,30 @@ public final class LocalWorkflowTaskDispatcher implements AutoCloseable {
     executor.shutdownNow();
   }
 
-  public record DispatchHandle<T>(CompletableFuture<T> completion, Future<?> submittedTask) {
+  public static final class DispatchHandle<T> {
 
-    public DispatchHandle {
-      Objects.requireNonNull(completion, "completion");
-      Objects.requireNonNull(submittedTask, "submittedTask");
+    private final CompletableFuture<T> completion;
+    private final Future<?> submittedTask;
+
+    public DispatchHandle(CompletableFuture<T> completion, Future<?> submittedTask) {
+      this.completion = Objects.requireNonNull(completion, "completion");
+      this.submittedTask = Objects.requireNonNull(submittedTask, "submittedTask");
+    }
+
+    public CompletableFuture<T> completion() {
+      return completion;
+    }
+
+    public CompletableFuture<T> getCompletion() {
+      return completion;
+    }
+
+    public Future<?> submittedTask() {
+      return submittedTask;
+    }
+
+    public Future<?> getSubmittedTask() {
+      return submittedTask;
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {

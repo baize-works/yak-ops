@@ -1,17 +1,15 @@
 package io.yak.ops.business.workflow.web;
 
-import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.framework.common.Result;
+import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.model.WorkflowDag;
 import io.yak.ops.business.workflow.model.WorkflowEnums.FailureStrategy;
 import io.yak.ops.business.workflow.model.WorkflowEnums.MisfirePolicy;
 import io.yak.ops.business.workflow.model.WorkflowEnums.ScheduleConcurrencyPolicy;
 import io.yak.ops.business.workflow.model.WorkflowEnums.TriggerType;
-import io.yak.ops.business.workflow.model.WorkflowRecords.Attempt;
 import io.yak.ops.business.workflow.model.WorkflowRecords.Definition;
 import io.yak.ops.business.workflow.model.WorkflowRecords.Instance;
 import io.yak.ops.business.workflow.model.WorkflowRecords.Schedule;
-import io.yak.ops.business.workflow.model.WorkflowRecords.TaskInstance;
 import io.yak.ops.business.workflow.model.WorkflowRecords.Version;
 import io.yak.ops.business.workflow.schedule.WorkflowScheduleService;
 import io.yak.ops.business.workflow.service.WorkflowDefinitionService;
@@ -142,31 +140,171 @@ public class WorkflowController {
     return Result.success(true);
   }
 
-  public record CreateWorkflowRequest(
-      @NotBlank String code,
-      @NotBlank String name,
-      String description,
-      FailureStrategy failureStrategy,
-      @Min(1) @Max(256) int maxParallelism,
-      @Valid WorkflowDag dag) {
+  public static class CreateWorkflowRequest {
+
+    @NotBlank
+    private String code;
+    @NotBlank
+    private String name;
+    private String description;
+    private FailureStrategy failureStrategy;
+    @Min(1)
+    @Max(256)
+    private int maxParallelism;
+    @Valid
+    private WorkflowDag dag;
+
+    public CreateWorkflowRequest() {
+    }
+
+    public CreateWorkflowRequest(
+        String code,
+        String name,
+        String description,
+        FailureStrategy failureStrategy,
+        int maxParallelism,
+        WorkflowDag dag) {
+      this.code = code;
+      this.name = name;
+      this.description = description;
+      this.failureStrategy = failureStrategy;
+      this.maxParallelism = maxParallelism;
+      this.dag = dag;
+    }
+
+    public String code() { return code; }
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+    public String name() { return name; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String description() { return description; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public FailureStrategy failureStrategy() { return failureStrategy; }
+    public FailureStrategy getFailureStrategy() { return failureStrategy; }
+    public void setFailureStrategy(FailureStrategy failureStrategy) {
+      this.failureStrategy = failureStrategy;
+    }
+    public int maxParallelism() { return maxParallelism; }
+    public int getMaxParallelism() { return maxParallelism; }
+    public void setMaxParallelism(int maxParallelism) { this.maxParallelism = maxParallelism; }
+    public WorkflowDag dag() { return dag; }
+    public WorkflowDag getDag() { return dag; }
+    public void setDag(WorkflowDag dag) { this.dag = dag; }
   }
 
-  public record UpdateWorkflowRequest(
-      @NotBlank String name,
-      String description,
-      FailureStrategy failureStrategy,
-      @Min(1) @Max(256) int maxParallelism,
-      @Valid WorkflowDag dag) {
+  public static class UpdateWorkflowRequest {
+
+    @NotBlank
+    private String name;
+    private String description;
+    private FailureStrategy failureStrategy;
+    @Min(1)
+    @Max(256)
+    private int maxParallelism;
+    @Valid
+    private WorkflowDag dag;
+
+    public UpdateWorkflowRequest() {
+    }
+
+    public UpdateWorkflowRequest(
+        String name,
+        String description,
+        FailureStrategy failureStrategy,
+        int maxParallelism,
+        WorkflowDag dag) {
+      this.name = name;
+      this.description = description;
+      this.failureStrategy = failureStrategy;
+      this.maxParallelism = maxParallelism;
+      this.dag = dag;
+    }
+
+    public String name() { return name; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String description() { return description; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public FailureStrategy failureStrategy() { return failureStrategy; }
+    public FailureStrategy getFailureStrategy() { return failureStrategy; }
+    public void setFailureStrategy(FailureStrategy failureStrategy) {
+      this.failureStrategy = failureStrategy;
+    }
+    public int maxParallelism() { return maxParallelism; }
+    public int getMaxParallelism() { return maxParallelism; }
+    public void setMaxParallelism(int maxParallelism) { this.maxParallelism = maxParallelism; }
+    public WorkflowDag dag() { return dag; }
+    public WorkflowDag getDag() { return dag; }
+    public void setDag(WorkflowDag dag) { this.dag = dag; }
   }
 
-  public record TriggerWorkflowRequest(Map<String, Object> globalParameters) {
+  public static class TriggerWorkflowRequest {
+
+    private Map<String, Object> globalParameters;
+
+    public TriggerWorkflowRequest() {
+    }
+
+    public TriggerWorkflowRequest(Map<String, Object> globalParameters) {
+      this.globalParameters = globalParameters;
+    }
+
+    public Map<String, Object> globalParameters() { return globalParameters; }
+    public Map<String, Object> getGlobalParameters() { return globalParameters; }
+    public void setGlobalParameters(Map<String, Object> globalParameters) {
+      this.globalParameters = globalParameters;
+    }
   }
 
-  public record ScheduleWorkflowRequest(
-      @NotBlank String cronExpression,
-      @NotBlank String timezone,
-      boolean enabled,
-      MisfirePolicy misfirePolicy,
-      ScheduleConcurrencyPolicy concurrencyPolicy) {
+  public static class ScheduleWorkflowRequest {
+
+    @NotBlank
+    private String cronExpression;
+    @NotBlank
+    private String timezone;
+    private boolean enabled;
+    private MisfirePolicy misfirePolicy;
+    private ScheduleConcurrencyPolicy concurrencyPolicy;
+
+    public ScheduleWorkflowRequest() {
+    }
+
+    public ScheduleWorkflowRequest(
+        String cronExpression,
+        String timezone,
+        boolean enabled,
+        MisfirePolicy misfirePolicy,
+        ScheduleConcurrencyPolicy concurrencyPolicy) {
+      this.cronExpression = cronExpression;
+      this.timezone = timezone;
+      this.enabled = enabled;
+      this.misfirePolicy = misfirePolicy;
+      this.concurrencyPolicy = concurrencyPolicy;
+    }
+
+    public String cronExpression() { return cronExpression; }
+    public String getCronExpression() { return cronExpression; }
+    public void setCronExpression(String cronExpression) {
+      this.cronExpression = cronExpression;
+    }
+    public String timezone() { return timezone; }
+    public String getTimezone() { return timezone; }
+    public void setTimezone(String timezone) { this.timezone = timezone; }
+    public boolean enabled() { return enabled; }
+    public boolean isEnabled() { return enabled; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public MisfirePolicy misfirePolicy() { return misfirePolicy; }
+    public MisfirePolicy getMisfirePolicy() { return misfirePolicy; }
+    public void setMisfirePolicy(MisfirePolicy misfirePolicy) {
+      this.misfirePolicy = misfirePolicy;
+    }
+    public ScheduleConcurrencyPolicy concurrencyPolicy() { return concurrencyPolicy; }
+    public ScheduleConcurrencyPolicy getConcurrencyPolicy() { return concurrencyPolicy; }
+    public void setConcurrencyPolicy(ScheduleConcurrencyPolicy concurrencyPolicy) {
+      this.concurrencyPolicy = concurrencyPolicy;
+    }
   }
 }
