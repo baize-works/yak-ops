@@ -30,6 +30,7 @@ const CreateWorkflowModal = ({
 
   useEffect(() => {
     if (open) {
+      form.resetFields();
       form.setFieldsValue({
         failureStrategy: 'FAIL_FAST',
         maxParallelism: 4,
