@@ -10,6 +10,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -53,13 +54,14 @@ public class DataSourceExceptionHandler {
   }
 
   private String resolveValidationMessage(Exception exception) {
-    if (exception instanceof MethodArgumentNotValidException validationException
-        && validationException.getBindingResult().getFieldError() != null) {
-      return validationException.getBindingResult().getFieldError().getDefaultMessage();
+    BindingResult bindingResult = null;
+    if (exception instanceof MethodArgumentNotValidException) {
+      bindingResult = ((MethodArgumentNotValidException) exception).getBindingResult();
+    } else if (exception instanceof BindException) {
+      bindingResult = ((BindException) exception).getBindingResult();
     }
-    if (exception instanceof BindException bindException
-        && bindException.getBindingResult().getFieldError() != null) {
-      return bindException.getBindingResult().getFieldError().getDefaultMessage();
+    if (bindingResult != null && bindingResult.getFieldError() != null) {
+      return bindingResult.getFieldError().getDefaultMessage();
     }
     return "请求参数格式不正确";
   }
