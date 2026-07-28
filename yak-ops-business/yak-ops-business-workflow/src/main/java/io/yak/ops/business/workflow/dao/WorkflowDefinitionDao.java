@@ -13,6 +13,10 @@ public interface WorkflowDefinitionDao {
 
   int editDefinition(WorkflowDefinitionPO definitionPO);
 
+  int deleteDefinition(Long workflowId);
+
+  boolean existsDefinitionByCode(String code);
+
   WorkflowDefinition selectDefinitionById(Long workflowId);
 
   List<WorkflowDefinition> selectAllDefinition();

@@ -2,15 +2,15 @@ package io.yak.ops.business.workflow.dao.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
-import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
-import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
-import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
-import io.yak.ops.common.bean.po.workflow.WorkflowVersionPO;
 import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
 import io.yak.ops.business.workflow.dao.mapper.WorkflowDefinitionMapper;
 import io.yak.ops.business.workflow.dao.mapper.WorkflowVersionMapper;
 import io.yak.ops.business.workflow.util.WorkflowConvertUtils;
 import io.yak.ops.business.workflow.util.WorkflowJsonCodec;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
+import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
+import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
+import io.yak.ops.common.bean.po.workflow.WorkflowVersionPO;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +34,21 @@ public class WorkflowDefinitionDaoImpl implements WorkflowDefinitionDao {
   @Override
   public int editDefinition(WorkflowDefinitionPO definitionPO) {
     return definitionMapper.updateById(definitionPO);
+  }
+
+  @Override
+  public int deleteDefinition(Long workflowId) {
+    versionMapper.delete(
+        Wrappers.<WorkflowVersionPO>lambdaQuery()
+            .eq(WorkflowVersionPO::getWorkflowId, workflowId));
+    return definitionMapper.deleteById(workflowId);
+  }
+
+  @Override
+  public boolean existsDefinitionByCode(String code) {
+    return definitionMapper.selectCount(
+        Wrappers.<WorkflowDefinitionPO>lambdaQuery()
+            .eq(WorkflowDefinitionPO::getCode, code)) > 0;
   }
 
   @Override

@@ -1,22 +1,24 @@
 package io.yak.ops.business.workflow.service.impl;
 
-import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
+import io.yak.ops.business.workflow.dag.WorkflowDagCompiler;
+import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
+import io.yak.ops.business.workflow.dao.WorkflowExecutionDao;
+import io.yak.ops.business.workflow.service.WorkflowDefinitionService;
+import io.yak.ops.business.workflow.service.WorkflowScheduleService;
+import io.yak.ops.business.workflow.util.WorkflowConvertUtils;
+import io.yak.ops.business.workflow.util.WorkflowJsonCodec;
 import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
 import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
 import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
 import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
-import io.yak.ops.common.enums.workflow.DefinitionState;
-import io.yak.ops.common.enums.workflow.FailureStrategy;
 import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
 import io.yak.ops.common.bean.po.workflow.WorkflowVersionPO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowDefinitionVO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowVersionVO;
-import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
-import io.yak.ops.business.workflow.dag.WorkflowDagCompiler;
-import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
-import io.yak.ops.business.workflow.service.WorkflowDefinitionService;
-import io.yak.ops.business.workflow.util.WorkflowConvertUtils;
-import io.yak.ops.business.workflow.util.WorkflowJsonCodec;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.common.enums.workflow.DefinitionState;
+import io.yak.ops.common.enums.workflow.FailureStrategy;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService {
 
   private final WorkflowDefinitionDao definitionDao;
+  private final WorkflowExecutionDao executionDao;
+  private final WorkflowScheduleService scheduleService;
   private final WorkflowDagCompiler dagCompiler;
   private final WorkflowJsonCodec jsonCodec;
 
@@ -38,9 +42,14 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
   @Transactional(transactionManager = "workflowTransactionManager")
   public Long addWorkflow(WorkflowDTO workflowDTO, String operator) {
     validate(workflowDTO);
+    String code = workflowDTO.getCode().trim();
+    if (definitionDao.existsDefinitionByCode(code)) {
+      throw new IllegalArgumentException("工作流编码已存在：" + code);
+    }
+
     Date now = new Date();
     WorkflowDefinitionPO definitionPO = new WorkflowDefinitionPO();
-    definitionPO.setCode(workflowDTO.getCode().trim());
+    definitionPO.setCode(code);
     definitionPO.setName(workflowDTO.getName().trim());
     definitionPO.setDescription(workflowDTO.getDescription());
     definitionPO.setState(DefinitionState.DRAFT.name());
@@ -68,6 +77,19 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
     definitionPO.setDraftJson(jsonCodec.write(workflowDTO.getDag()));
     definitionPO.setUpdatedAt(new Date());
     if (definitionDao.editDefinition(definitionPO) != 1) {
+      throw new IllegalArgumentException("工作流定义不存在：" + workflowId);
+    }
+  }
+
+  @Override
+  @Transactional(transactionManager = "workflowTransactionManager")
+  public void deleteWorkflow(Long workflowId) {
+    requireWorkflow(workflowId);
+    if (!executionDao.selectInstanceListByWorkflowId(workflowId, 1).isEmpty()) {
+      throw new IllegalStateException("工作流已经产生运行实例，暂不允许删除：" + workflowId);
+    }
+    scheduleService.delete(workflowId);
+    if (definitionDao.deleteDefinition(workflowId) != 1) {
       throw new IllegalArgumentException("工作流定义不存在：" + workflowId);
     }
   }

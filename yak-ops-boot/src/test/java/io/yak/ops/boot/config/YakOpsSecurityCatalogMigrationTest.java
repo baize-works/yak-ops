@@ -21,6 +21,7 @@ class YakOpsSecurityCatalogMigrationTest {
         .contains("INSERT INTO yak_security_menu")
         .contains("'task:batch:read'")
         .contains("'workflow:definition:update'")
+        .contains("'workflow:definition:delete'")
         .contains("'workflow:definition:publish'")
         .contains("'workflow:instance:execute'")
         .contains("'workflow:instance:stop'")

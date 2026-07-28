@@ -13,6 +13,8 @@ public interface WorkflowDefinitionService {
 
   void editWorkflow(Long workflowId, WorkflowUpdateDTO workflowDTO);
 
+  void deleteWorkflow(Long workflowId);
+
   WorkflowVersionVO publishWorkflow(Long workflowId, String operator);
 
   WorkflowDefinitionVO getWorkflow(Long workflowId);
