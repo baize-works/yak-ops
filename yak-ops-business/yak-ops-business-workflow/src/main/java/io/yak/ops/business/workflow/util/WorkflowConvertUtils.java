@@ -1,0 +1,313 @@
+package io.yak.ops.business.workflow.util;
+
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDefinition;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowInstance;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowInstanceDetail;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowSchedule;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowTaskAttempt;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowTaskInstance;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowVersion;
+import io.yak.ops.business.workflow.common.enums.AttemptState;
+import io.yak.ops.business.workflow.common.enums.DefinitionState;
+import io.yak.ops.business.workflow.common.enums.FailureStrategy;
+import io.yak.ops.business.workflow.common.enums.MisfirePolicy;
+import io.yak.ops.business.workflow.common.enums.ScheduleConcurrencyPolicy;
+import io.yak.ops.business.workflow.common.enums.TaskState;
+import io.yak.ops.business.workflow.common.enums.TriggerType;
+import io.yak.ops.business.workflow.common.enums.WorkflowState;
+import io.yak.ops.business.workflow.common.po.WorkflowDefinitionPO;
+import io.yak.ops.business.workflow.common.po.WorkflowInstanceDetailPO;
+import io.yak.ops.business.workflow.common.po.WorkflowInstancePO;
+import io.yak.ops.business.workflow.common.po.WorkflowSchedulePO;
+import io.yak.ops.business.workflow.common.po.WorkflowTaskAttemptPO;
+import io.yak.ops.business.workflow.common.po.WorkflowTaskInstancePO;
+import io.yak.ops.business.workflow.common.po.WorkflowVersionPO;
+import io.yak.ops.business.workflow.common.vo.workflow.WorkflowDefinitionVO;
+import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceDetailVO;
+import io.yak.ops.business.workflow.common.vo.workflow.WorkflowInstanceVO;
+import io.yak.ops.business.workflow.common.vo.workflow.WorkflowScheduleVO;
+import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskAttemptVO;
+import io.yak.ops.business.workflow.common.vo.workflow.WorkflowTaskInstanceVO;
+import io.yak.ops.business.workflow.common.vo.workflow.WorkflowVersionVO;
+import java.util.LinkedHashMap;
+
+/** 工作流 PO、领域对象与 VO 转换工具。 */
+public final class WorkflowConvertUtils {
+
+  private WorkflowConvertUtils() {
+  }
+
+  public static WorkflowDefinition toDefinition(WorkflowDefinitionPO source, WorkflowJsonCodec codec) {
+    if (source == null) {
+      return null;
+    }
+    WorkflowDefinition target = new WorkflowDefinition();
+    target.setId(source.getId());
+    target.setCode(source.getCode());
+    target.setName(source.getName());
+    target.setDescription(source.getDescription());
+    target.setState(DefinitionState.valueOf(source.getState()));
+    target.setCurrentVersion(source.getCurrentVersion());
+    target.setFailureStrategy(FailureStrategy.valueOf(source.getFailureStrategy()));
+    target.setMaxParallelism(value(source.getMaxParallelism()));
+    target.setDraft(codec.readDag(source.getDraftJson()));
+    target.setCreatedBy(source.getCreatedBy());
+    target.setCreatedAt(source.getCreatedAt());
+    target.setUpdatedAt(source.getUpdatedAt());
+    return target;
+  }
+
+  public static WorkflowVersion toVersion(WorkflowVersionPO source, WorkflowJsonCodec codec) {
+    if (source == null) {
+      return null;
+    }
+    WorkflowVersion target = new WorkflowVersion();
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setVersion(value(source.getVersion()));
+    target.setDag(codec.readDag(source.getDagJson()));
+    target.setContentHash(source.getContentHash());
+    target.setPublishedBy(source.getPublishedBy());
+    target.setPublishedAt(source.getPublishedAt());
+    return target;
+  }
+
+  public static WorkflowInstance toInstance(WorkflowInstancePO source, WorkflowJsonCodec codec) {
+    if (source == null) {
+      return null;
+    }
+    WorkflowInstance target = new WorkflowInstance();
+    fillInstance(target, source, codec);
+    return target;
+  }
+
+  public static WorkflowInstanceDetail toInstanceDetail(
+      WorkflowInstanceDetailPO source,
+      WorkflowJsonCodec codec) {
+    if (source == null) {
+      return null;
+    }
+    WorkflowInstanceDetail target = new WorkflowInstanceDetail();
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setWorkflowCode(source.getWorkflowCode());
+    target.setWorkflowName(source.getWorkflowName());
+    target.setWorkflowVersion(value(source.getWorkflowVersion()));
+    target.setTriggerType(TriggerType.valueOf(source.getTriggerType()));
+    target.setState(WorkflowState.valueOf(source.getState()));
+    target.setGlobalParameters(codec.readMap(source.getGlobalParamsJson()));
+    target.setFailureStrategy(FailureStrategy.valueOf(source.getFailureStrategy()));
+    target.setMaxParallelism(value(source.getMaxParallelism()));
+    target.setStopRequested(Boolean.TRUE.equals(source.getStopRequested()));
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setCreatedBy(source.getCreatedBy());
+    target.setCreatedAt(source.getCreatedAt());
+    return target;
+  }
+
+  private static void fillInstance(
+      WorkflowInstance target,
+      WorkflowInstancePO source,
+      WorkflowJsonCodec codec) {
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setWorkflowVersion(value(source.getWorkflowVersion()));
+    target.setTriggerType(TriggerType.valueOf(source.getTriggerType()));
+    target.setState(WorkflowState.valueOf(source.getState()));
+    target.setGlobalParameters(codec.readMap(source.getGlobalParamsJson()));
+    target.setFailureStrategy(FailureStrategy.valueOf(source.getFailureStrategy()));
+    target.setMaxParallelism(value(source.getMaxParallelism()));
+    target.setStopRequested(Boolean.TRUE.equals(source.getStopRequested()));
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setCreatedBy(source.getCreatedBy());
+    target.setCreatedAt(source.getCreatedAt());
+  }
+
+  public static WorkflowTaskInstance toTaskInstance(
+      WorkflowTaskInstancePO source,
+      WorkflowJsonCodec codec) {
+    if (source == null) {
+      return null;
+    }
+    WorkflowTaskInstance target = new WorkflowTaskInstance();
+    target.setId(source.getId());
+    target.setWorkflowInstanceId(source.getWorkflowInstanceId());
+    target.setNodeKey(source.getNodeKey());
+    target.setNodeName(source.getNodeName());
+    target.setTaskType(source.getTaskType());
+    target.setState(TaskState.valueOf(source.getState()));
+    target.setConfiguration(codec.readMap(source.getConfigJson()));
+    target.setMaxRetryTimes(value(source.getMaxRetryTimes()));
+    target.setRetryCount(value(source.getRetryCount()));
+    target.setRetryIntervalSeconds(value(source.getRetryIntervalSeconds()));
+    target.setTimeoutSeconds(value(source.getTimeoutSeconds()));
+    target.setIdempotent(Boolean.TRUE.equals(source.getIdempotent()));
+    target.setRetryOnRestart(Boolean.TRUE.equals(source.getRetryOnRestart()));
+    target.setNextRetryTime(source.getNextRetryTime());
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setResultData(codec.readMap(source.getResultJson()));
+    target.setErrorMessage(source.getErrorMessage());
+    return target;
+  }
+
+  public static WorkflowTaskAttempt toAttempt(WorkflowTaskAttemptPO source) {
+    if (source == null) {
+      return null;
+    }
+    WorkflowTaskAttempt target = new WorkflowTaskAttempt();
+    target.setId(source.getId());
+    target.setTaskInstanceId(source.getTaskInstanceId());
+    target.setAttemptNo(value(source.getAttemptNo()));
+    target.setState(AttemptState.valueOf(source.getState()));
+    target.setExecutorType(source.getExecutorType());
+    target.setExternalId(source.getExternalId());
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setErrorMessage(source.getErrorMessage());
+    return target;
+  }
+
+  public static WorkflowSchedule toSchedule(WorkflowSchedulePO source) {
+    if (source == null) {
+      return null;
+    }
+    WorkflowSchedule target = new WorkflowSchedule();
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setCronExpression(source.getCronExpression());
+    target.setTimezone(source.getTimezone());
+    target.setEnabled(Boolean.TRUE.equals(source.getEnabled()));
+    target.setMisfirePolicy(MisfirePolicy.valueOf(source.getMisfirePolicy()));
+    target.setConcurrencyPolicy(ScheduleConcurrencyPolicy.valueOf(source.getConcurrencyPolicy()));
+    target.setUpdatedAt(source.getUpdatedAt());
+    return target;
+  }
+
+  public static WorkflowDefinitionVO toVO(WorkflowDefinition source) {
+    WorkflowDefinitionVO target = new WorkflowDefinitionVO();
+    target.setId(source.getId());
+    target.setCode(source.getCode());
+    target.setName(source.getName());
+    target.setDescription(source.getDescription());
+    target.setState(source.getState());
+    target.setCurrentVersion(source.getCurrentVersion());
+    target.setFailureStrategy(source.getFailureStrategy());
+    target.setMaxParallelism(source.getMaxParallelism());
+    target.setDraft(source.getDraft());
+    target.setCreatedBy(source.getCreatedBy());
+    target.setCreatedAt(source.getCreatedAt());
+    target.setUpdatedAt(source.getUpdatedAt());
+    return target;
+  }
+
+  public static WorkflowVersionVO toVO(WorkflowVersion source) {
+    WorkflowVersionVO target = new WorkflowVersionVO();
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setVersion(source.getVersion());
+    target.setDag(source.getDag());
+    target.setContentHash(source.getContentHash());
+    target.setPublishedBy(source.getPublishedBy());
+    target.setPublishedAt(source.getPublishedAt());
+    return target;
+  }
+
+  public static WorkflowInstanceVO toVO(WorkflowInstance source) {
+    WorkflowInstanceVO target = new WorkflowInstanceVO();
+    fillInstanceVO(target, source);
+    return target;
+  }
+
+  public static WorkflowInstanceDetailVO toVO(WorkflowInstanceDetail source) {
+    WorkflowInstanceDetailVO target = new WorkflowInstanceDetailVO();
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setWorkflowCode(source.getWorkflowCode());
+    target.setWorkflowName(source.getWorkflowName());
+    target.setWorkflowVersion(source.getWorkflowVersion());
+    target.setTriggerType(source.getTriggerType());
+    target.setState(source.getState());
+    target.setGlobalParameters(new LinkedHashMap<>(source.getGlobalParameters()));
+    target.setFailureStrategy(source.getFailureStrategy());
+    target.setMaxParallelism(source.getMaxParallelism());
+    target.setStopRequested(source.isStopRequested());
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setCreatedBy(source.getCreatedBy());
+    target.setCreatedAt(source.getCreatedAt());
+    return target;
+  }
+
+  private static void fillInstanceVO(WorkflowInstanceVO target, WorkflowInstance source) {
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setWorkflowVersion(source.getWorkflowVersion());
+    target.setTriggerType(source.getTriggerType());
+    target.setState(source.getState());
+    target.setGlobalParameters(new LinkedHashMap<>(source.getGlobalParameters()));
+    target.setFailureStrategy(source.getFailureStrategy());
+    target.setMaxParallelism(source.getMaxParallelism());
+    target.setStopRequested(source.isStopRequested());
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setCreatedBy(source.getCreatedBy());
+    target.setCreatedAt(source.getCreatedAt());
+  }
+
+  public static WorkflowTaskInstanceVO toVO(WorkflowTaskInstance source) {
+    WorkflowTaskInstanceVO target = new WorkflowTaskInstanceVO();
+    target.setId(source.getId());
+    target.setWorkflowInstanceId(source.getWorkflowInstanceId());
+    target.setNodeKey(source.getNodeKey());
+    target.setNodeName(source.getNodeName());
+    target.setTaskType(source.getTaskType());
+    target.setState(source.getState());
+    target.setConfiguration(new LinkedHashMap<>(source.getConfiguration()));
+    target.setMaxRetryTimes(source.getMaxRetryTimes());
+    target.setRetryCount(source.getRetryCount());
+    target.setRetryIntervalSeconds(source.getRetryIntervalSeconds());
+    target.setTimeoutSeconds(source.getTimeoutSeconds());
+    target.setIdempotent(source.isIdempotent());
+    target.setRetryOnRestart(source.isRetryOnRestart());
+    target.setNextRetryTime(source.getNextRetryTime());
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setResultData(new LinkedHashMap<>(source.getResultData()));
+    target.setErrorMessage(source.getErrorMessage());
+    return target;
+  }
+
+  public static WorkflowTaskAttemptVO toVO(WorkflowTaskAttempt source) {
+    WorkflowTaskAttemptVO target = new WorkflowTaskAttemptVO();
+    target.setId(source.getId());
+    target.setTaskInstanceId(source.getTaskInstanceId());
+    target.setAttemptNo(source.getAttemptNo());
+    target.setState(source.getState());
+    target.setExecutorType(source.getExecutorType());
+    target.setExternalId(source.getExternalId());
+    target.setStartTime(source.getStartTime());
+    target.setEndTime(source.getEndTime());
+    target.setErrorMessage(source.getErrorMessage());
+    return target;
+  }
+
+  public static WorkflowScheduleVO toVO(WorkflowSchedule source) {
+    WorkflowScheduleVO target = new WorkflowScheduleVO();
+    target.setId(source.getId());
+    target.setWorkflowId(source.getWorkflowId());
+    target.setCronExpression(source.getCronExpression());
+    target.setTimezone(source.getTimezone());
+    target.setEnabled(source.isEnabled());
+    target.setMisfirePolicy(source.getMisfirePolicy());
+    target.setConcurrencyPolicy(source.getConcurrencyPolicy());
+    target.setUpdatedAt(source.getUpdatedAt());
+    return target;
+  }
+
+  private static int value(Integer value) {
+    return value == null ? 0 : value;
+  }
+}

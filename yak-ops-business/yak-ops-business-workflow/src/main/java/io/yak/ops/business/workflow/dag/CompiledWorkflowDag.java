@@ -1,65 +1,36 @@
 package io.yak.ops.business.workflow.dag;
 
-import io.yak.ops.business.workflow.model.WorkflowDag;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowNode;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.Getter;
 
-/** Immutable, validated execution graph derived from a published DAG snapshot. */
-public final class CompiledWorkflowDag {
+/** 已校验的工作流执行图。 */
+@Getter
+public class CompiledWorkflowDag {
 
-  private final Map<String, WorkflowDag.Node> nodes;
+  private final Map<String, WorkflowNode> nodes;
   private final Map<String, Set<String>> predecessors;
   private final Map<String, Set<String>> successors;
   private final List<String> topologicalOrder;
 
   public CompiledWorkflowDag(
-      Map<String, WorkflowDag.Node> nodes,
+      Map<String, WorkflowNode> nodes,
       Map<String, Set<String>> predecessors,
       Map<String, Set<String>> successors,
       List<String> topologicalOrder) {
-    this.nodes = Objects.requireNonNull(nodes, "nodes");
-    this.predecessors = Objects.requireNonNull(predecessors, "predecessors");
-    this.successors = Objects.requireNonNull(successors, "successors");
-    this.topologicalOrder = Objects.requireNonNull(topologicalOrder, "topologicalOrder");
-  }
-
-  public Map<String, WorkflowDag.Node> nodes() {
-    return nodes;
-  }
-
-  public Map<String, WorkflowDag.Node> getNodes() {
-    return nodes;
-  }
-
-  public Map<String, Set<String>> predecessors() {
-    return predecessors;
-  }
-
-  public Map<String, Set<String>> getPredecessors() {
-    return predecessors;
-  }
-
-  public Map<String, Set<String>> successors() {
-    return successors;
-  }
-
-  public Map<String, Set<String>> getSuccessors() {
-    return successors;
-  }
-
-  public List<String> topologicalOrder() {
-    return topologicalOrder;
-  }
-
-  public List<String> getTopologicalOrder() {
-    return topologicalOrder;
+    this.nodes = Collections.unmodifiableMap(nodes);
+    this.predecessors = Collections.unmodifiableMap(predecessors);
+    this.successors = Collections.unmodifiableMap(successors);
+    this.topologicalOrder = List.copyOf(topologicalOrder);
   }
 
   public List<String> startNodes() {
     return topologicalOrder.stream()
         .filter(nodeKey -> predecessors.getOrDefault(nodeKey, Set.of()).isEmpty())
-        .toList();
+        .collect(Collectors.toList());
   }
 }

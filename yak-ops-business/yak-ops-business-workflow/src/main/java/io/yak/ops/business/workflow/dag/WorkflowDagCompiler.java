@@ -1,6 +1,8 @@
 package io.yak.ops.business.workflow.dag;
 
-import io.yak.ops.business.workflow.model.WorkflowDag;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowDag;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowEdge;
+import io.yak.ops.business.workflow.common.entity.workflow.WorkflowNode;
 import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -13,9 +15,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-/** Validates a workflow snapshot and compiles it into adjacency maps and topological order. */
-public final class WorkflowDagCompiler {
+/** 校验 DAG 并生成前驱、后继及拓扑顺序。 */
+public class WorkflowDagCompiler {
 
   private static final Pattern NODE_KEY = Pattern.compile("[A-Za-z][A-Za-z0-9_-]{0,63}");
 
@@ -26,36 +29,36 @@ public final class WorkflowDagCompiler {
   }
 
   public CompiledWorkflowDag compile(WorkflowDag dag) {
-    if (dag == null || dag.nodes().isEmpty()) {
-      throw new IllegalArgumentException("Workflow DAG must contain at least one node");
+    if (dag == null || dag.getNodes() == null || dag.getNodes().isEmpty()) {
+      throw new IllegalArgumentException("工作流 DAG 至少需要一个节点");
     }
 
-    Map<String, WorkflowDag.Node> nodes = new LinkedHashMap<>();
+    Map<String, WorkflowNode> nodes = new LinkedHashMap<>();
     Map<String, Set<String>> predecessors = new LinkedHashMap<>();
     Map<String, Set<String>> successors = new LinkedHashMap<>();
 
-    for (WorkflowDag.Node source : dag.nodes()) {
-      WorkflowDag.Node node = normalize(source);
+    for (WorkflowNode source : dag.getNodes()) {
+      WorkflowNode node = normalize(source);
       validateNode(node);
-      if (nodes.putIfAbsent(node.key(), node) != null) {
-        throw new IllegalArgumentException("Duplicate workflow node key: " + node.key());
+      if (nodes.putIfAbsent(node.getKey(), node) != null) {
+        throw new IllegalArgumentException("工作流节点编码重复：" + node.getKey());
       }
-      predecessors.put(node.key(), new LinkedHashSet<>());
-      successors.put(node.key(), new LinkedHashSet<>());
+      predecessors.put(node.getKey(), new LinkedHashSet<>());
+      successors.put(node.getKey(), new LinkedHashSet<>());
     }
 
     Set<String> uniqueEdges = new LinkedHashSet<>();
-    for (WorkflowDag.Edge edge : dag.edges()) {
-      if (edge == null || edge.from() == null || edge.to() == null) {
-        throw new IllegalArgumentException("Workflow edge endpoints must not be null");
+    for (WorkflowEdge edge : dag.getEdges()) {
+      if (edge == null || edge.getFrom() == null || edge.getTo() == null) {
+        throw new IllegalArgumentException("工作流边的起止节点不能为空");
       }
-      String from = edge.from().trim();
-      String to = edge.to().trim();
+      String from = edge.getFrom().trim();
+      String to = edge.getTo().trim();
       if (!nodes.containsKey(from) || !nodes.containsKey(to)) {
-        throw new IllegalArgumentException("Workflow edge references an unknown node: " + from + " -> " + to);
+        throw new IllegalArgumentException("工作流边引用了不存在的节点：" + from + " -> " + to);
       }
       if (from.equals(to)) {
-        throw new IllegalArgumentException("Workflow node cannot depend on itself: " + from);
+        throw new IllegalArgumentException("工作流节点不能依赖自身：" + from);
       }
       String edgeKey = from + "\u0000" + to;
       if (uniqueEdges.add(edgeKey)) {
@@ -66,50 +69,51 @@ public final class WorkflowDagCompiler {
 
     List<String> order = topologicalSort(predecessors, successors);
     return new CompiledWorkflowDag(
-        Collections.unmodifiableMap(nodes),
+        nodes,
         immutableSetMap(predecessors),
         immutableSetMap(successors),
-        List.copyOf(order));
+        order);
   }
 
-  private WorkflowDag.Node normalize(WorkflowDag.Node source) {
+  private WorkflowNode normalize(WorkflowNode source) {
     if (source == null) {
-      throw new IllegalArgumentException("Workflow node must not be null");
+      throw new IllegalArgumentException("工作流节点不能为空");
     }
-    String key = source.key() == null ? null : source.key().trim();
-    String name = source.name() == null ? null : source.name().trim();
-    String type = source.type() == null ? null : source.type().trim().toUpperCase(Locale.ROOT);
-    return new WorkflowDag.Node(
-        key,
-        name,
-        type,
-        source.config(),
-        source.retryTimes(),
-        source.retryIntervalSeconds(),
-        source.timeoutSeconds(),
-        source.enabled(),
-        source.idempotent(),
-        source.retryOnRestart());
+    WorkflowNode target = new WorkflowNode();
+    target.setKey(source.getKey() == null ? null : source.getKey().trim());
+    target.setName(source.getName() == null ? null : source.getName().trim());
+    target.setType(source.getType() == null
+        ? null
+        : source.getType().trim().toUpperCase(Locale.ROOT));
+    target.setConfig(source.getConfig());
+    target.setRetryTimes(source.getRetryTimes());
+    target.setRetryIntervalSeconds(source.getRetryIntervalSeconds());
+    target.setTimeoutSeconds(source.getTimeoutSeconds());
+    target.setEnabled(source.isEnabled());
+    target.setIdempotent(source.isIdempotent());
+    target.setRetryOnRestart(source.isRetryOnRestart());
+    return target;
   }
 
-  private void validateNode(WorkflowDag.Node node) {
-    if (node.key() == null || !NODE_KEY.matcher(node.key()).matches()) {
+  private void validateNode(WorkflowNode node) {
+    if (node.getKey() == null || !NODE_KEY.matcher(node.getKey()).matches()) {
       throw new IllegalArgumentException(
-          "Workflow node key must match " + NODE_KEY.pattern() + ": " + node.key());
+          "工作流节点编码必须匹配 " + NODE_KEY.pattern() + "：" + node.getKey());
     }
-    if (node.name() == null || node.name().isBlank()) {
-      throw new IllegalArgumentException("Workflow node name must not be blank: " + node.key());
+    if (node.getName() == null || node.getName().isBlank()) {
+      throw new IllegalArgumentException("工作流节点名称不能为空：" + node.getKey());
     }
-    if (node.type() == null || node.type().isBlank()) {
-      throw new IllegalArgumentException("Workflow task type must not be blank: " + node.key());
+    if (node.getType() == null || node.getType().isBlank()) {
+      throw new IllegalArgumentException("工作流任务类型不能为空：" + node.getKey());
     }
-    if (node.retryTimes() < 0 || node.retryIntervalSeconds() < 0 || node.timeoutSeconds() < 0) {
-      throw new IllegalArgumentException("Retry and timeout values must not be negative: " + node.key());
+    if (node.getRetryTimes() < 0
+        || node.getRetryIntervalSeconds() < 0
+        || node.getTimeoutSeconds() < 0) {
+      throw new IllegalArgumentException("重试和超时时间不能为负数：" + node.getKey());
     }
-    if (!node.enabled()) {
-      return;
+    if (node.isEnabled()) {
+      executorRegistry.require(node.getType()).validate(node.getConfig());
     }
-    executorRegistry.require(node.type()).validate(node.config());
   }
 
   private static List<String> topologicalSort(
@@ -139,15 +143,16 @@ public final class WorkflowDagCompiler {
       List<String> cyclicNodes = indegrees.entrySet().stream()
           .filter(entry -> entry.getValue() > 0)
           .map(Map.Entry::getKey)
-          .toList();
-      throw new IllegalArgumentException("Workflow DAG contains a cycle: " + cyclicNodes);
+          .collect(Collectors.toList());
+      throw new IllegalArgumentException("工作流 DAG 存在环：" + cyclicNodes);
     }
     return result;
   }
 
   private static Map<String, Set<String>> immutableSetMap(Map<String, Set<String>> source) {
     Map<String, Set<String>> copy = new LinkedHashMap<>();
-    source.forEach((key, value) -> copy.put(key, Collections.unmodifiableSet(new LinkedHashSet<>(value))));
+    source.forEach((key, value) ->
+        copy.put(key, Collections.unmodifiableSet(new LinkedHashSet<>(value))));
     return Collections.unmodifiableMap(copy);
   }
 }
