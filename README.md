@@ -51,14 +51,19 @@ yak-ops
 ├── yak-ops-spi
 ├── yak-ops-core
 ├── yak-ops-business
-│   └── io.yak.ops.business
-│       ├── datasource
-│       ├── job
-│       ├── workflow
-│       ├── quality
-│       └── resource
+│   ├── yak-ops-business-datasource
+│   ├── yak-ops-business-job
+│   ├── yak-ops-business-workflow
+│   ├── yak-ops-business-quality
+│   └── yak-ops-business-resource
 ├── yak-ops-plugins
 │   └── yak-ops-plugin-database
+│       ├── yak-ops-plugin-database-jdbc
+│       │   ├── mysql
+│       │   ├── postgresql
+│       │   ├── oracle
+│       │   └── sqlserver
+│       └── yak-ops-plugin-database-doris
 ├── yak-ops-boot
 ├── yak-ops-ui
 └── yak-ops-dist
@@ -67,15 +72,20 @@ yak-ops
 ### Dependency direction
 
 ```text
-business -> core -> spi -> common
-plugin-database -> spi -> common
-boot -> business + plugin-database
+business-* -> core -> spi -> common
+plugin-database-jdbc -> spi -> common
+plugin-database-doris -> plugin-database-jdbc -> spi -> common
+boot -> business-* + plugin-database-jdbc + plugin-database-doris
 dist -> boot
 ```
 
 `yak-framework` is consumed as a second-party dependency through dependency management.
 It provides shared security, scheduling, file storage and cross-project common contracts.
 
-Business capabilities start as vertical packages in `yak-ops-business`. A domain should only be
-promoted to an independent Maven module after it develops an independent model, lifecycle,
-dependency set or release boundary.
+Business domains are independent Maven modules so they can evolve with separate dependency sets and
+clear compile-time boundaries. `yak-ops-business` is only their reactor aggregator and must not contain
+business source code.
+
+Database implementations follow the same rule. `yak-ops-plugin-database` is an aggregator,
+`yak-ops-plugin-database-jdbc` contains reusable JDBC support and relational database implementations,
+and `yak-ops-plugin-database-doris` contains Doris-specific behavior built on top of the JDBC module.
