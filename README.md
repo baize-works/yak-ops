@@ -48,7 +48,7 @@ Install `yak-framework:1.0.0-SNAPSHOT` into the same Maven local repository firs
 
 ```bash
 mvn clean package -DskipTests
-mvn -pl yak-ops-boot -am spring-boot:run
+java -jar yak-ops-boot/target/yak-ops-boot-1.0.0.jar
 ```
 
 The runnable baseline does not require an external database. Verify the application and the
