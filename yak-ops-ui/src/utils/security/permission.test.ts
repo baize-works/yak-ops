@@ -18,6 +18,14 @@ describe('permission helpers', () => {
     expect(satisfiesPermissionRequirement(granted, { mode: 'all', permissions: ['task:read', 'task:create'] })).toBe(true);
   });
 
+  it('grants every permission requirement to the security root identity', () => {
+    const root = ['security:root'];
+
+    expect(hasPermission(root, 'task:batch:read')).toBe(true);
+    expect(hasAnyPermission(root, ['quality:rule:read', 'operations:metrics:read'])).toBe(true);
+    expect(hasAllPermissions(root, ['security:user:read', 'security:role:read'])).toBe(true);
+  });
+
   it('uses fail-closed empty-set semantics while public remains public', () => {
     expect(hasAnyPermission(granted, [])).toBe(false);
     expect(hasAllPermissions(granted, [])).toBe(true);
