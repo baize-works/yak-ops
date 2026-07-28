@@ -1,129 +1,136 @@
 import { history, useParams } from '@umijs/max';
-import {
-  Drawer,
-  Form,
-  Input,
-  InputNumber,
-  message,
-  Select,
-  Spin,
-} from 'antd';
-import {
-  ArrowLeft,
-  Check,
-  CircleDot,
-  Save,
-  Settings2,
-} from 'lucide-react';
+import { message, Modal, Spin } from 'antd';
+import { Plus, Sparkles } from 'lucide-react';
 import {
   addEdge,
   Background,
   BackgroundVariant,
-  Controls,
   MarkerType,
-  MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   useEdgesState,
   useNodesState,
   useReactFlow,
   type Connection,
   type EdgeChange,
   type NodeChange,
+  type OnMoveEnd,
 } from 'reactflow';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import 'reactflow/dist/style.css';
-import NodePanel from './components/NodePanel';
-import NodeSelector from './components/NodeSelector';
-import WorkflowNode from './components/WorkflowNode';
-import './index.less';
 import { fetchWorkflowDetail, updateWorkflow } from '../service';
 import type {
+  WorkflowContextMenuState,
   WorkflowDefinitionRecord,
-  WorkflowFailureStrategy,
+  WorkflowDesignerState,
   WorkflowFlowEdge,
   WorkflowFlowNode,
   WorkflowNodeData,
   WorkflowNodeType,
+  WorkflowPanelType,
+  WorkflowSnapshot,
+  WorkflowVariable,
 } from '../types';
+import BlockSelector from './components/BlockSelector';
+import CanvasOperator from './components/CanvasOperator';
+import HistoryPanel from './components/HistoryPanel';
+import NodePanel from './components/NodePanel';
+import RunPanel from './components/RunPanel';
+import VariableInspectPanel from './components/VariableInspectPanel';
+import VariablePanel from './components/VariablePanel';
+import WorkflowContextMenu from './components/WorkflowContextMenu';
+import WorkflowCreateGuide from './components/WorkflowCreateGuide';
+import WorkflowHeader from './components/WorkflowHeader';
+import WorkflowNode from './components/WorkflowNode';
+import WorkflowSettingsPanel from './components/WorkflowSettingsPanel';
+import {
+  createNodeData,
+  resolveVisualNodeType,
+} from './constants';
+import { useWorkflowHistory } from './hooks/useWorkflowHistory';
+import './index.less';
 
-const nodeTypes = {
-  workflowNode: WorkflowNode,
-};
+const nodeTypes = { workflowNode: WorkflowNode };
 
-const defaultNodeData = (
-  type: WorkflowNodeType,
-  index: number,
-): WorkflowNodeData => {
-  const defaults = {
-    NOOP: {
-      name: `基础节点 ${index}`,
-      description: '用于开始、结束或流程占位。',
-      config: {},
-    },
-    HTTP: {
-      name: `HTTP 请求 ${index}`,
-      description: '调用外部 REST API。',
-      config: {
-        method: 'GET',
-        url: '',
-        body: '',
-        requestTimeoutSeconds: 60,
-      },
-    },
-    SHELL: {
-      name: `Shell 脚本 ${index}`,
-      description: '在工作流执行主机上运行命令。',
-      config: {
-        command: '',
-        workDirectory: '',
-      },
-    },
-  }[type];
-
-  return {
-    ...defaults,
-    taskType: type,
-    retryTimes: 0,
-    retryIntervalSeconds: 0,
-    timeoutSeconds: 0,
-    enabled: true,
-    idempotent: type === 'NOOP',
-    retryOnRestart: type === 'NOOP',
-  };
-};
-
-interface WorkflowSettingsValues {
-  name: string;
-  description?: string;
-  failureStrategy: WorkflowFailureStrategy;
-  maxParallelism: number;
+interface ClipboardState {
+  nodes: WorkflowFlowNode[];
+  edges: WorkflowFlowEdge[];
 }
+
+const cloneNodes = (nodes: WorkflowFlowNode[]) =>
+  nodes.map((node) => ({
+    ...node,
+    position: { ...node.position },
+    data: {
+      ...node.data,
+      config: JSON.parse(JSON.stringify(node.data.config || {})),
+    },
+  }));
+
+const buildStorageKey = (workflowId: string, suffix: string) =>
+  `yak-ops:workflow:${workflowId}:${suffix}`;
+
+const readStorage = <T,>(key: string, fallback: T): T => {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? (JSON.parse(value) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const uniqueNodeId = (prefix = 'node') =>
+  `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
 const WorkflowDesignerContent = () => {
   const params = useParams<{ id: string }>();
-  const workflowId = params.id;
-  const reactFlow = useReactFlow();
-  const [settingsForm] = Form.useForm<WorkflowSettingsValues>();
-  const [loading, setLoading] = useState(true);
+  const workflowId = params.id || '';
+  const createMode = workflowId === 'create';
+  const reactFlow = useReactFlow<WorkflowNodeData>();
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const clipboardRef = useRef<ClipboardState | undefined>(undefined);
+  const [loading, setLoading] = useState(!createMode);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [workflow, setWorkflow] = useState<WorkflowDefinitionRecord>();
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
-  const [nodes, setNodes, onNodesChangeBase] =
-    useNodesState<WorkflowNodeData>([]);
+  const [activePanel, setActivePanel] = useState<WorkflowPanelType>(null);
+  const [blockSelectorOpen, setBlockSelectorOpen] = useState(false);
+  const [quickAddSourceId, setQuickAddSourceId] = useState<string>();
+  const [contextMenu, setContextMenu] = useState<WorkflowContextMenuState>();
+  const [showMiniMap, setShowMiniMap] = useState(true);
+  const [variableInspectOpen, setVariableInspectOpen] = useState(false);
+  const [variables, setVariables] = useState<WorkflowVariable[]>([]);
+  const [environmentVariables, setEnvironmentVariables] = useState<WorkflowVariable[]>([]);
+  const [snapshots, setSnapshots] = useState<WorkflowSnapshot[]>([]);
+  const [nodes, setNodes, onNodesChangeBase] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChangeBase] = useEdgesState([]);
+  const workflowHistory = useWorkflowHistory();
 
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId),
     [nodes, selectedNodeId],
   );
 
+  const persistWorkspace = useCallback(
+    (nextVariables = variables, nextEnvironment = environmentVariables, nextSnapshots = snapshots) => {
+      if (!workflowId || createMode) return;
+      localStorage.setItem(buildStorageKey(workflowId, 'variables'), JSON.stringify(nextVariables));
+      localStorage.setItem(buildStorageKey(workflowId, 'environment'), JSON.stringify(nextEnvironment));
+      localStorage.setItem(buildStorageKey(workflowId, 'snapshots'), JSON.stringify(nextSnapshots));
+    },
+    [createMode, environmentVariables, snapshots, variables, workflowId],
+  );
+
   const loadWorkflow = useCallback(async () => {
-    if (!workflowId) {
-      return;
-    }
+    if (!workflowId || createMode) return;
     try {
       setLoading(true);
       const response = await fetchWorkflowDetail(workflowId);
@@ -131,181 +138,85 @@ const WorkflowDesignerContent = () => {
         message.error(response.message || '加载工作流失败');
         return;
       }
-
       const detail = response.data;
-      const flowNodes: WorkflowFlowNode[] = (detail.draft?.nodes || []).map(
-        (node, index) => ({
+      const flowNodes: WorkflowFlowNode[] = (detail.draft?.nodes || []).map((node, index) => {
+        const nodeType = resolveVisualNodeType(node.type, node.config);
+        return {
           id: node.key,
           type: 'workflowNode',
           position: {
-            x: node.positionX ?? 120 + index * 280,
-            y: node.positionY ?? 180,
+            x: node.positionX ?? 100 + index * 300,
+            y: node.positionY ?? 220,
           },
           data: {
-            name: node.name,
+            title: node.name,
             description: node.description,
+            nodeType,
             taskType: node.type,
-            config: node.config || {},
+            config: { ...(node.config || {}), __uiType: nodeType },
             retryTimes: node.retryTimes || 0,
             retryIntervalSeconds: node.retryIntervalSeconds || 0,
             timeoutSeconds: node.timeoutSeconds || 0,
             enabled: node.enabled !== false,
             idempotent: Boolean(node.idempotent),
             retryOnRestart: Boolean(node.retryOnRestart),
+            runningStatus: 'idle',
           },
-        }),
-      );
-      const flowEdges: WorkflowFlowEdge[] = (detail.draft?.edges || []).map(
-        (edge, index) => ({
-          id: `edge_${edge.from}_${edge.to}_${index}`,
-          source: edge.from,
-          target: edge.to,
-          type: 'smoothstep',
-          markerEnd: { type: MarkerType.ArrowClosed },
-        }),
-      );
+        };
+      });
+      const flowEdges: WorkflowFlowEdge[] = (detail.draft?.edges || []).map((edge, index) => ({
+        id: `edge_${edge.from}_${edge.to}_${index}`,
+        source: edge.from,
+        target: edge.to,
+        type: 'smoothstep',
+        animated: false,
+        markerEnd: { type: MarkerType.ArrowClosed },
+      }));
 
       setWorkflow(detail);
       setNodes(flowNodes);
       setEdges(flowEdges);
+      setVariables(readStorage(buildStorageKey(workflowId, 'variables'), []));
+      setEnvironmentVariables(readStorage(buildStorageKey(workflowId, 'environment'), []));
+      setSnapshots(readStorage(buildStorageKey(workflowId, 'snapshots'), []));
       setSelectedNodeId(undefined);
+      setActivePanel(null);
       setDirty(false);
+      workflowHistory.reset();
 
       const viewport = detail.draft?.viewport;
       requestAnimationFrame(() => {
-        if (viewport) {
-          reactFlow.setViewport(viewport, { duration: 0 });
-        } else if (flowNodes.length) {
-          reactFlow.fitView({ padding: 0.25, duration: 0 });
-        }
+        if (viewport) reactFlow.setViewport(viewport, { duration: 0 });
+        else if (flowNodes.length) reactFlow.fitView({ padding: 0.25, duration: 0 });
       });
     } finally {
       setLoading(false);
     }
-  }, [reactFlow, setEdges, setNodes, workflowId]);
+  }, [
+    createMode,
+    reactFlow,
+    setEdges,
+    setNodes,
+    workflowHistory,
+    workflowId,
+  ]);
 
   useEffect(() => {
-    loadWorkflow();
+    void loadWorkflow();
   }, [loadWorkflow]);
 
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (!dirty) {
-        return;
-      }
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [dirty]);
+  const markDirty = useCallback(() => setDirty(true), []);
 
-  const onNodesChange = (changes: NodeChange[]) => {
-    onNodesChangeBase(changes);
-    if (changes.some((change) => change.type !== 'select')) {
-      setDirty(true);
-    }
-  };
+  const recordHistory = useCallback(() => {
+    workflowHistory.record(nodes, edges);
+  }, [edges, nodes, workflowHistory]);
 
-  const onEdgesChange = (changes: EdgeChange[]) => {
-    onEdgesChangeBase(changes);
-    setDirty(true);
-  };
-
-  const onConnect = (connection: Connection) => {
-    if (!connection.source || !connection.target) {
-      return;
-    }
-    if (connection.source === connection.target) {
-      message.warning('节点不能连接到自身');
-      return;
-    }
-    setEdges((currentEdges) =>
-      addEdge(
-        {
-          ...connection,
-          type: 'smoothstep',
-          markerEnd: { type: MarkerType.ArrowClosed },
-        },
-        currentEdges,
-      ),
-    );
-    setDirty(true);
-  };
-
-  const addNode = (type: WorkflowNodeType) => {
-    const id = `node_${Date.now().toString(36)}`;
-    const position = reactFlow.screenToFlowPosition({
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
-    });
-    const node: WorkflowFlowNode = {
-      id,
-      type: 'workflowNode',
-      position,
-      data: defaultNodeData(type, nodes.length + 1),
-    };
-    setNodes((currentNodes) => [...currentNodes, node]);
-    setSelectedNodeId(id);
-    setDirty(true);
-  };
-
-  const updateSelectedNode = (data: WorkflowNodeData) => {
-    if (!selectedNodeId) {
-      return;
-    }
-    setNodes((currentNodes) =>
-      currentNodes.map((node) =>
-        node.id === selectedNodeId ? { ...node, data } : node,
-      ),
-    );
-    setDirty(true);
-  };
-
-  const deleteSelectedNode = () => {
-    if (!selectedNodeId) {
-      return;
-    }
-    setNodes((currentNodes) =>
-      currentNodes.filter((node) => node.id !== selectedNodeId),
-    );
-    setEdges((currentEdges) =>
-      currentEdges.filter(
-        (edge) =>
-          edge.source !== selectedNodeId && edge.target !== selectedNodeId,
-      ),
-    );
-    setSelectedNodeId(undefined);
-    setDirty(true);
-  };
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const editing =
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.isContentEditable;
-      if (!editing && selectedNodeId && ['Delete', 'Backspace'].includes(event.key)) {
-        event.preventDefault();
-        deleteSelectedNode();
-      }
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-        event.preventDefault();
-        void saveWorkflow();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  });
-
-  const saveWorkflow = async () => {
-    if (!workflow || !workflowId) {
-      return;
-    }
-    const unnamedNode = nodes.find((node) => !node.data.name.trim());
-    if (unnamedNode) {
-      setSelectedNodeId(unnamedNode.id);
+  const saveWorkflow = useCallback(async () => {
+    if (!workflow || !workflowId || createMode) return;
+    const invalidNode = nodes.find((node) => !node.data.title.trim());
+    if (invalidNode) {
+      setSelectedNodeId(invalidNode.id);
+      setActivePanel('node');
       message.warning('节点名称不能为空');
       return;
     }
@@ -321,23 +232,20 @@ const WorkflowDesignerContent = () => {
         dag: {
           nodes: nodes.map((node) => ({
             key: node.id,
-            name: node.data.name.trim(),
+            name: node.data.title.trim(),
             type: node.data.taskType,
             description: node.data.description,
             positionX: node.position.x,
             positionY: node.position.y,
-            config: node.data.config || {},
+            config: { ...node.data.config, __uiType: node.data.nodeType },
             retryTimes: node.data.retryTimes,
             retryIntervalSeconds: node.data.retryIntervalSeconds,
             timeoutSeconds: node.data.timeoutSeconds,
-            enabled: node.data.enabled,
+            enabled: node.data.nodeType === 'NOTE' ? false : node.data.enabled,
             idempotent: node.data.idempotent,
             retryOnRestart: node.data.retryOnRestart,
           })),
-          edges: edges.map((edge) => ({
-            from: edge.source,
-            to: edge.target,
-          })),
+          edges: edges.map((edge) => ({ from: edge.source, to: edge.target })),
           viewport,
         },
       });
@@ -345,170 +253,674 @@ const WorkflowDesignerContent = () => {
         message.error(response.message || '保存工作流失败');
         return;
       }
+      const snapshot: WorkflowSnapshot = {
+        id: `snapshot_${Date.now()}`,
+        name: `草稿快照 ${snapshots.length + 1}`,
+        createdAt: new Date().toISOString(),
+        nodes: cloneNodes(nodes),
+        edges: edges.map((edge) => ({ ...edge })),
+        viewport,
+      };
+      const nextSnapshots = [snapshot, ...snapshots].slice(0, 30);
+      setSnapshots(nextSnapshots);
+      persistWorkspace(variables, environmentVariables, nextSnapshots);
       setDirty(false);
       message.success('工作流草稿已保存');
     } finally {
       setSaving(false);
     }
-  };
+  }, [
+    createMode,
+    edges,
+    environmentVariables,
+    nodes,
+    persistWorkspace,
+    reactFlow,
+    snapshots,
+    variables,
+    workflow,
+    workflowId,
+  ]);
 
-  const openSettings = () => {
-    if (!workflow) {
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    onNodesChangeBase(changes);
+    if (changes.some((change) => change.type !== 'select')) markDirty();
+  }, [markDirty, onNodesChangeBase]);
+
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    if (changes.some((change) => change.type === 'remove')) recordHistory();
+    onEdgesChangeBase(changes);
+    if (changes.some((change) => change.type !== 'select')) markDirty();
+  }, [markDirty, onEdgesChangeBase, recordHistory]);
+
+  const onConnect = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return;
+    if (connection.source === connection.target) {
+      message.warning('节点不能连接到自身');
       return;
     }
-    settingsForm.setFieldsValue({
-      name: workflow.name,
-      description: workflow.description,
-      failureStrategy: workflow.failureStrategy,
-      maxParallelism: workflow.maxParallelism,
+    const duplicated = edges.some(
+      (edge) => edge.source === connection.source && edge.target === connection.target,
+    );
+    if (duplicated) return;
+    recordHistory();
+    setEdges((current) => addEdge({
+      ...connection,
+      id: `edge_${connection.source}_${connection.target}_${Date.now()}`,
+      type: 'smoothstep',
+      markerEnd: { type: MarkerType.ArrowClosed },
+    }, current));
+    markDirty();
+  }, [edges, markDirty, recordHistory, setEdges]);
+
+  const addNode = useCallback((type: WorkflowNodeType, requestedPosition?: { x: number; y: number }) => {
+    recordHistory();
+    const sourceNode = quickAddSourceId
+      ? nodes.find((node) => node.id === quickAddSourceId)
+      : undefined;
+    const position = requestedPosition || (sourceNode
+      ? { x: sourceNode.position.x + 330, y: sourceNode.position.y }
+      : reactFlow.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }));
+    const id = uniqueNodeId(type.toLowerCase());
+    const node: WorkflowFlowNode = {
+      id,
+      type: 'workflowNode',
+      position,
+      data: createNodeData(type, nodes.length + 1),
+    };
+    setNodes((current) => [...current, node]);
+    if (sourceNode && type !== 'NOTE') {
+      setEdges((current) => addEdge({
+        id: `edge_${sourceNode.id}_${id}_${Date.now()}`,
+        source: sourceNode.id,
+        target: id,
+        type: 'smoothstep',
+        markerEnd: { type: MarkerType.ArrowClosed },
+      }, current));
+    }
+    setSelectedNodeId(id);
+    setActivePanel('node');
+    setQuickAddSourceId(undefined);
+    markDirty();
+  }, [
+    markDirty,
+    nodes,
+    quickAddSourceId,
+    reactFlow,
+    recordHistory,
+    setEdges,
+    setNodes,
+  ]);
+
+  const updateSelectedNode = useCallback((data: WorkflowNodeData) => {
+    if (!selectedNodeId) return;
+    setNodes((current) => current.map((node) =>
+      node.id === selectedNodeId ? { ...node, data } : node,
+    ));
+    markDirty();
+  }, [markDirty, selectedNodeId, setNodes]);
+
+  const deleteNode = useCallback((nodeId: string) => {
+    recordHistory();
+    setNodes((current) => current.filter((node) => node.id !== nodeId));
+    setEdges((current) => current.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+    if (selectedNodeId === nodeId) {
+      setSelectedNodeId(undefined);
+      setActivePanel(null);
+    }
+    markDirty();
+  }, [markDirty, recordHistory, selectedNodeId, setEdges, setNodes]);
+
+  const duplicateNode = useCallback((nodeId: string) => {
+    const source = nodes.find((node) => node.id === nodeId);
+    if (!source) return;
+    recordHistory();
+    const id = uniqueNodeId(source.data.nodeType.toLowerCase());
+    const duplicate: WorkflowFlowNode = {
+      ...source,
+      id,
+      selected: true,
+      position: { x: source.position.x + 42, y: source.position.y + 42 },
+      data: {
+        ...source.data,
+        title: `${source.data.title} 副本`,
+        config: JSON.parse(JSON.stringify(source.data.config || {})),
+        runningStatus: 'idle',
+      },
+    };
+    setNodes((current) => [
+      ...current.map((node) => ({ ...node, selected: false })),
+      duplicate,
+    ]);
+    setSelectedNodeId(id);
+    setActivePanel('node');
+    markDirty();
+  }, [markDirty, nodes, recordHistory, setNodes]);
+
+  const toggleNode = useCallback((nodeId: string) => {
+    recordHistory();
+    setNodes((current) => current.map((node) =>
+      node.id === nodeId
+        ? { ...node, data: { ...node.data, enabled: !node.data.enabled } }
+        : node,
+    ));
+    markDirty();
+  }, [markDirty, recordHistory, setNodes]);
+
+  const copySelection = useCallback(() => {
+    const selected = nodes.filter((node) => node.selected || node.id === selectedNodeId);
+    if (!selected.length) return;
+    const selectedIds = new Set(selected.map((node) => node.id));
+    clipboardRef.current = {
+      nodes: cloneNodes(selected),
+      edges: edges.filter((edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target)),
+    };
+    message.success(`已复制 ${selected.length} 个节点`);
+  }, [edges, nodes, selectedNodeId]);
+
+  const pasteSelection = useCallback((flowPosition?: { x: number; y: number }) => {
+    const clipboard = clipboardRef.current;
+    if (!clipboard?.nodes.length) return;
+    recordHistory();
+    const idMap = new Map<string, string>();
+    const minX = Math.min(...clipboard.nodes.map((node) => node.position.x));
+    const minY = Math.min(...clipboard.nodes.map((node) => node.position.y));
+    const pastedNodes = clipboard.nodes.map((node) => {
+      const id = uniqueNodeId(node.data.nodeType.toLowerCase());
+      idMap.set(node.id, id);
+      return {
+        ...node,
+        id,
+        selected: true,
+        position: flowPosition
+          ? {
+              x: flowPosition.x + (node.position.x - minX),
+              y: flowPosition.y + (node.position.y - minY),
+            }
+          : { x: node.position.x + 48, y: node.position.y + 48 },
+        data: {
+          ...node.data,
+          title: clipboard.nodes.length === 1 ? `${node.data.title} 副本` : node.data.title,
+          config: JSON.parse(JSON.stringify(node.data.config || {})),
+          runningStatus: 'idle' as const,
+        },
+      };
     });
-    setSettingsOpen(true);
-  };
+    const pastedEdges = clipboard.edges.map((edge) => ({
+      ...edge,
+      id: `edge_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      source: idMap.get(edge.source)!,
+      target: idMap.get(edge.target)!,
+      selected: false,
+    }));
+    setNodes((current) => [
+      ...current.map((node) => ({ ...node, selected: false })),
+      ...pastedNodes,
+    ]);
+    setEdges((current) => [...current, ...pastedEdges]);
+    setSelectedNodeId(pastedNodes[0]?.id);
+    setActivePanel(pastedNodes.length === 1 ? 'node' : null);
+    markDirty();
+  }, [markDirty, recordHistory, setEdges, setNodes]);
 
-  const applySettings = async () => {
-    if (!workflow) {
-      return;
+  const selectAll = useCallback(() => {
+    setNodes((current) => current.map((node) => ({ ...node, selected: true })));
+    setEdges((current) => current.map((edge) => ({ ...edge, selected: true })));
+    setSelectedNodeId(undefined);
+    setActivePanel(null);
+  }, [setEdges, setNodes]);
+
+  const handleUndo = useCallback(() => {
+    const frame = workflowHistory.undo(nodes, edges);
+    if (!frame) return;
+    setNodes(frame.nodes);
+    setEdges(frame.edges);
+    setSelectedNodeId(undefined);
+    setActivePanel(null);
+    markDirty();
+  }, [edges, markDirty, nodes, setEdges, setNodes, workflowHistory]);
+
+  const handleRedo = useCallback(() => {
+    const frame = workflowHistory.redo(nodes, edges);
+    if (!frame) return;
+    setNodes(frame.nodes);
+    setEdges(frame.edges);
+    setSelectedNodeId(undefined);
+    setActivePanel(null);
+    markDirty();
+  }, [edges, markDirty, nodes, setEdges, setNodes, workflowHistory]);
+
+  const autoLayout = useCallback(() => {
+    if (!nodes.length) return;
+    recordHistory();
+    const incoming = new Map<string, number>();
+    const successors = new Map<string, string[]>();
+    nodes.forEach((node) => {
+      incoming.set(node.id, 0);
+      successors.set(node.id, []);
+    });
+    edges.forEach((edge) => {
+      if (incoming.has(edge.target)) incoming.set(edge.target, (incoming.get(edge.target) || 0) + 1);
+      successors.get(edge.source)?.push(edge.target);
+    });
+    const queue = nodes.filter((node) => (incoming.get(node.id) || 0) === 0).map((node) => node.id);
+    const levels = new Map<string, number>();
+    queue.forEach((id) => levels.set(id, 0));
+    while (queue.length) {
+      const id = queue.shift()!;
+      for (const successor of successors.get(id) || []) {
+        levels.set(successor, Math.max(levels.get(successor) || 0, (levels.get(id) || 0) + 1));
+        incoming.set(successor, (incoming.get(successor) || 1) - 1);
+        if (incoming.get(successor) === 0) queue.push(successor);
+      }
     }
-    const values = await settingsForm.validateFields();
-    setWorkflow({ ...workflow, ...values });
-    setSettingsOpen(false);
-    setDirty(true);
-  };
+    const groups = new Map<number, WorkflowFlowNode[]>();
+    nodes.forEach((node) => {
+      if (node.data.nodeType === 'NOTE') return;
+      const level = levels.get(node.id) || 0;
+      groups.set(level, [...(groups.get(level) || []), node]);
+    });
+    setNodes((current) => current.map((node) => {
+      if (node.data.nodeType === 'NOTE') return node;
+      const level = levels.get(node.id) || 0;
+      const siblings = groups.get(level) || [];
+      const index = siblings.findIndex((item) => item.id === node.id);
+      return { ...node, position: { x: 100 + level * 330, y: 100 + index * 210 } };
+    }));
+    markDirty();
+    requestAnimationFrame(() => reactFlow.fitView({ padding: 0.2, duration: 260 }));
+  }, [edges, markDirty, nodes, reactFlow, recordHistory, setNodes]);
+
+  const exportWorkflow = useCallback(() => {
+    const data: WorkflowDesignerState = {
+      nodes: cloneNodes(nodes),
+      edges: edges.map((edge) => ({ ...edge })),
+      viewport: reactFlow.getViewport(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${workflow?.code || 'workflow'}-draft.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, [edges, nodes, reactFlow, workflow?.code]);
+
+  const importWorkflow = useCallback(async (file: File) => {
+    try {
+      const parsed = JSON.parse(await file.text()) as Partial<WorkflowDesignerState>;
+      if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
+        message.error('工作流 JSON 格式不正确');
+        return;
+      }
+      recordHistory();
+      setNodes(parsed.nodes as WorkflowFlowNode[]);
+      setEdges(parsed.edges as WorkflowFlowEdge[]);
+      if (parsed.viewport) reactFlow.setViewport(parsed.viewport, { duration: 180 });
+      setSelectedNodeId(undefined);
+      setActivePanel(null);
+      markDirty();
+      message.success('工作流草稿已导入');
+    } catch {
+      message.error('无法解析工作流 JSON');
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = '';
+    }
+  }, [markDirty, reactFlow, recordHistory, setEdges, setNodes]);
+
+  const restoreSnapshot = useCallback((snapshot: WorkflowSnapshot) => {
+    Modal.confirm({
+      title: '恢复历史快照',
+      content: '当前未保存修改会被覆盖，确定继续吗？',
+      okText: '恢复',
+      cancelText: '取消',
+      centered: true,
+      onOk: () => {
+        recordHistory();
+        setNodes(cloneNodes(snapshot.nodes));
+        setEdges(snapshot.edges.map((edge) => ({ ...edge })));
+        reactFlow.setViewport(snapshot.viewport, { duration: 220 });
+        setActivePanel(null);
+        setSelectedNodeId(undefined);
+        markDirty();
+      },
+    });
+  }, [markDirty, reactFlow, recordHistory, setEdges, setNodes]);
+
+  const changeVariables = useCallback((next: WorkflowVariable[]) => {
+    setVariables(next);
+    persistWorkspace(next, environmentVariables, snapshots);
+  }, [environmentVariables, persistWorkspace, snapshots]);
+
+  const changeEnvironment = useCallback((next: WorkflowVariable[]) => {
+    setEnvironmentVariables(next);
+    persistWorkspace(variables, next, snapshots);
+  }, [persistWorkspace, snapshots, variables]);
+
+  const openPanel = useCallback((panel: Exclude<WorkflowPanelType, 'node' | null>) => {
+    setSelectedNodeId(undefined);
+    setActivePanel((current) => (current === panel ? null : panel));
+    setBlockSelectorOpen(false);
+  }, []);
+
+  const onMoveEnd = useCallback<OnMoveEnd>(() => {
+    markDirty();
+  }, [markDirty]);
+
+  useEffect(() => {
+    const quickAdd = (event: Event) => {
+      const customEvent = event as CustomEvent<{ nodeId: string }>;
+      setQuickAddSourceId(customEvent.detail.nodeId);
+      setBlockSelectorOpen(true);
+      setActivePanel(null);
+    };
+    window.addEventListener('yak-workflow-quick-add', quickAdd);
+    return () => window.removeEventListener('yak-workflow-quick-add', quickAdd);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const editing =
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable;
+      if (editing) return;
+      const modifier = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+      if (modifier && key === 's') {
+        event.preventDefault();
+        void saveWorkflow();
+      } else if (modifier && key === 'z' && event.shiftKey) {
+        event.preventDefault();
+        handleRedo();
+      } else if (modifier && key === 'z') {
+        event.preventDefault();
+        handleUndo();
+      } else if (modifier && key === 'y') {
+        event.preventDefault();
+        handleRedo();
+      } else if (modifier && key === 'c') {
+        event.preventDefault();
+        copySelection();
+      } else if (modifier && key === 'v') {
+        event.preventDefault();
+        pasteSelection();
+      } else if (modifier && key === 'd' && selectedNodeId) {
+        event.preventDefault();
+        duplicateNode(selectedNodeId);
+      } else if (modifier && key === 'a') {
+        event.preventDefault();
+        selectAll();
+      } else if (['delete', 'backspace'].includes(key) && selectedNodeId) {
+        event.preventDefault();
+        deleteNode(selectedNodeId);
+      } else if (event.key === 'Escape') {
+        setContextMenu(undefined);
+        setBlockSelectorOpen(false);
+        setActivePanel(null);
+        setSelectedNodeId(undefined);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    copySelection,
+    deleteNode,
+    duplicateNode,
+    handleRedo,
+    handleUndo,
+    pasteSelection,
+    saveWorkflow,
+    selectAll,
+    selectedNodeId,
+  ]);
+
+  if (createMode) return <WorkflowCreateGuide />;
 
   return (
-    <div className="workflow-designer-page">
-      <header className="workflow-designer-header">
-        <div className="workflow-designer-header__left">
-          <button
-            type="button"
-            className="workflow-designer-icon-button"
-            onClick={() => history.push('/workflow-management')}
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <div className="workflow-designer-header__title-row">
-              <h1>{workflow?.name || '工作流设计器'}</h1>
-              <span className={`workflow-designer-save-state ${dirty ? 'is-dirty' : ''}`}>
-                {dirty ? <CircleDot size={13} /> : <Check size={13} />}
-                {dirty ? '有未保存修改' : '已保存'}
-              </span>
-            </div>
-            <span>{workflow?.code || '-'}</span>
-          </div>
-        </div>
+    <div className="dify-workflow-designer" onMouseDown={() => setContextMenu(undefined)}>
+      <WorkflowHeader
+        workflow={workflow}
+        dirty={dirty}
+        saving={saving}
+        activePanel={activePanel}
+        onBack={() => history.push('/workflow-management')}
+        onRename={(name) => {
+          if (!workflow) return;
+          setWorkflow({ ...workflow, name });
+          markDirty();
+        }}
+        onSave={() => void saveWorkflow()}
+        onOpenPanel={openPanel}
+      />
 
-        <div className="workflow-designer-header__actions">
-          <button
-            type="button"
-            className="workflow-designer-secondary-button"
-            onClick={openSettings}
+      <Spin spinning={loading} wrapperClassName="dify-workflow-loading">
+        <div className="dify-workflow-canvas">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeDragStart={recordHistory}
+            onMoveEnd={onMoveEnd}
+            onNodeClick={(_, node) => {
+              setSelectedNodeId(node.id);
+              setActivePanel('node');
+              setBlockSelectorOpen(false);
+            }}
+            onPaneClick={() => {
+              setSelectedNodeId(undefined);
+              if (activePanel === 'node') setActivePanel(null);
+              setBlockSelectorOpen(false);
+            }}
+            onPaneContextMenu={(event) => {
+              event.preventDefault();
+              setContextMenu({
+                kind: 'pane',
+                x: event.clientX,
+                y: event.clientY,
+                flowPosition: reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY }),
+              });
+            }}
+            onNodeContextMenu={(event, node) => {
+              event.preventDefault();
+              setSelectedNodeId(node.id);
+              setContextMenu({ kind: 'node', x: event.clientX, y: event.clientY, nodeId: node.id });
+            }}
+            onEdgeContextMenu={(event, edge) => {
+              event.preventDefault();
+              setContextMenu({ kind: 'edge', x: event.clientX, y: event.clientY, edgeId: edge.id });
+            }}
+            minZoom={0.25}
+            maxZoom={2}
+            snapToGrid
+            snapGrid={[16, 16]}
+            selectionOnDrag
+            selectionMode={SelectionMode.Partial}
+            multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
+            deleteKeyCode={null}
+            panOnDrag={[1, 2]}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              markerEnd: { type: MarkerType.ArrowClosed },
+            }}
+            connectionLineStyle={{ stroke: '#6b7cff', strokeWidth: 2 }}
+            proOptions={{ hideAttribution: true }}
           >
-            <Settings2 size={16} />
-            工作流设置
-          </button>
-          <button
-            type="button"
-            className="workflow-designer-save-button"
-            onClick={() => void saveWorkflow()}
-            disabled={saving || loading}
-          >
-            <Save size={16} />
-            {saving ? '保存中...' : '保存草稿'}
-          </button>
-        </div>
-      </header>
+            <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#d9dee8" />
+          </ReactFlow>
 
-      <main className="workflow-designer-main">
-        <Spin spinning={loading} wrapperClassName="workflow-designer-spin">
-          <div className="workflow-designer-canvas">
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              nodeTypes={nodeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-              onPaneClick={() => setSelectedNodeId(undefined)}
-              minZoom={0.25}
-              maxZoom={2}
-              fitView
-              defaultEdgeOptions={{
-                type: 'smoothstep',
-                markerEnd: { type: MarkerType.ArrowClosed },
+          <button
+            type="button"
+            className="dify-add-block-trigger"
+            onClick={(event) => {
+              event.stopPropagation();
+              setQuickAddSourceId(undefined);
+              setBlockSelectorOpen((value) => !value);
+              setActivePanel(null);
+            }}
+          >
+            <Plus size={16} />
+            添加节点
+          </button>
+
+          <BlockSelector
+            open={blockSelectorOpen}
+            onClose={() => {
+              setBlockSelectorOpen(false);
+              setQuickAddSourceId(undefined);
+            }}
+            onSelect={(type) => addNode(type, contextMenu?.flowPosition)}
+          />
+
+          {activePanel === 'node' && selectedNode && (
+            <NodePanel
+              node={selectedNode}
+              onChange={updateSelectedNode}
+              onDuplicate={() => duplicateNode(selectedNode.id)}
+              onDelete={() => deleteNode(selectedNode.id)}
+              onClose={() => {
+                setSelectedNodeId(undefined);
+                setActivePanel(null);
               }}
-              proOptions={{ hideAttribution: true }}
-            >
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={18}
-                size={1.2}
-              />
-              <Controls position="bottom-left" showInteractive={false} />
-              <MiniMap
-                position="bottom-right"
-                pannable
-                zoomable
-                nodeStrokeWidth={2}
-              />
-            </ReactFlow>
-            <NodeSelector onAdd={addNode} />
-            {selectedNode && (
-              <NodePanel
-                node={selectedNode}
-                onChange={updateSelectedNode}
-                onDelete={deleteSelectedNode}
-                onClose={() => setSelectedNodeId(undefined)}
-              />
-            )}
-          </div>
-        </Spin>
-      </main>
-
-      <Drawer
-        title="工作流设置"
-        open={settingsOpen}
-        width={420}
-        onClose={() => setSettingsOpen(false)}
-        extra={
-          <button
-            type="button"
-            className="workflow-designer-save-button is-compact"
-            onClick={() => void applySettings()}
-          >
-            应用
-          </button>
-        }
-      >
-        <Form form={settingsForm} layout="vertical" requiredMark={false}>
-          <Form.Item
-            label="工作流名称"
-            name="name"
-            rules={[{ required: true, message: '请输入工作流名称' }]}
-          >
-            <Input maxLength={255} />
-          </Form.Item>
-          <Form.Item label="描述" name="description">
-            <Input.TextArea rows={4} maxLength={1000} showCount />
-          </Form.Item>
-          <Form.Item label="失败策略" name="failureStrategy">
-            <Select
-              options={[
-                { label: '失败即停止', value: 'FAIL_FAST' },
-                { label: '继续后续分支', value: 'CONTINUE' },
-              ]}
             />
-          </Form.Item>
-          <Form.Item
-            label="最大并行度"
-            name="maxParallelism"
-            rules={[{ required: true, message: '请输入最大并行度' }]}
-          >
-            <InputNumber min={1} max={256} className="w-full" />
-          </Form.Item>
-        </Form>
-      </Drawer>
+          )}
+          {activePanel === 'variables' && (
+            <VariablePanel
+              title="全局变量"
+              description="可在所有节点中引用的工作流变量"
+              variables={variables}
+              onChange={changeVariables}
+              onClose={() => setActivePanel(null)}
+            />
+          )}
+          {activePanel === 'environment' && (
+            <VariablePanel
+              title="环境变量"
+              description="配置密钥与环境相关参数"
+              variables={environmentVariables}
+              environment
+              onChange={changeEnvironment}
+              onClose={() => setActivePanel(null)}
+            />
+          )}
+          {activePanel === 'history' && (
+            <HistoryPanel
+              snapshots={snapshots}
+              onRestore={restoreSnapshot}
+              onClose={() => setActivePanel(null)}
+            />
+          )}
+          {activePanel === 'workflow-settings' && workflow && (
+            <WorkflowSettingsPanel
+              workflow={workflow}
+              onApply={(values) => {
+                setWorkflow({ ...workflow, ...values });
+                setActivePanel(null);
+                markDirty();
+              }}
+              onClose={() => setActivePanel(null)}
+            />
+          )}
+          {activePanel === 'run' && (
+            <RunPanel
+              nodes={nodes}
+              onStatusChange={(nodeId, status) => setNodes((current) => current.map((node) =>
+                node.id === nodeId ? { ...node, data: { ...node.data, runningStatus: status } } : node,
+              ))}
+              onClose={() => {
+                setNodes((current) => current.map((node) => ({
+                  ...node,
+                  data: { ...node.data, runningStatus: 'idle' },
+                })));
+                setActivePanel(null);
+              }}
+            />
+          )}
+
+          <CanvasOperator
+            canUndo={workflowHistory.canUndo}
+            canRedo={workflowHistory.canRedo}
+            showMiniMap={showMiniMap}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onToggleMiniMap={() => setShowMiniMap((value) => !value)}
+            onAutoLayout={autoLayout}
+            onExport={exportWorkflow}
+            onImport={() => importInputRef.current?.click()}
+            onToggleVariableInspect={() => setVariableInspectOpen((value) => !value)}
+            variableInspectOpen={variableInspectOpen}
+          />
+
+          <VariableInspectPanel
+            open={variableInspectOpen}
+            nodes={nodes}
+            variables={variables}
+            environmentVariables={environmentVariables}
+            onClose={() => setVariableInspectOpen(false)}
+          />
+
+          {contextMenu && (
+            <WorkflowContextMenu
+              menu={contextMenu}
+              canPaste={Boolean(clipboardRef.current?.nodes.length)}
+              onClose={() => setContextMenu(undefined)}
+              onAddNode={() => {
+                setQuickAddSourceId(undefined);
+                setBlockSelectorOpen(true);
+              }}
+              onPaste={() => pasteSelection(contextMenu.flowPosition)}
+              onSelectAll={selectAll}
+              onFitView={() => reactFlow.fitView({ padding: 0.24, duration: 220 })}
+              onDuplicateNode={() => contextMenu.nodeId && duplicateNode(contextMenu.nodeId)}
+              onToggleNode={() => contextMenu.nodeId && toggleNode(contextMenu.nodeId)}
+              onDeleteNode={() => contextMenu.nodeId && deleteNode(contextMenu.nodeId)}
+              onDeleteEdge={() => {
+                if (!contextMenu.edgeId) return;
+                recordHistory();
+                setEdges((current) => current.filter((edge) => edge.id !== contextMenu.edgeId));
+                markDirty();
+              }}
+            />
+          )}
+
+          {!nodes.length && !loading && (
+            <button
+              type="button"
+              className="dify-empty-canvas"
+              onClick={() => setBlockSelectorOpen(true)}
+            >
+              <Sparkles size={24} />
+              <strong>开始构建工作流</strong>
+              <span>添加第一个节点，或从右键菜单粘贴已有流程。</span>
+            </button>
+          )}
+
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void importWorkflow(file);
+            }}
+          />
+        </div>
+      </Spin>
     </div>
   );
 };
