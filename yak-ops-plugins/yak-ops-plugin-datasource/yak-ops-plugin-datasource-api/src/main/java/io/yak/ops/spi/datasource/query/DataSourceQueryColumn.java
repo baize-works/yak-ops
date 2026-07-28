@@ -1,4 +1,4 @@
-package io.yak.ops.spi.datasource;
+package io.yak.ops.spi.datasource.query;
 
 /** 预览数据的前端列定义。 */
 public final class DataSourceQueryColumn {

@@ -1,4 +1,4 @@
-package io.yak.ops.spi.datasource;
+package io.yak.ops.spi.datasource.catalog;
 
 /** Catalog 中表的完整定位信息。 */
 public final class DataSourceTablePath {
