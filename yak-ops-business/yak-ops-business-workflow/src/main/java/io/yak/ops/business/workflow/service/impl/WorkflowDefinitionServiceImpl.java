@@ -5,6 +5,7 @@ import io.yak.ops.business.workflow.dag.WorkflowDagCompiler;
 import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
 import io.yak.ops.business.workflow.dao.WorkflowExecutionDao;
 import io.yak.ops.business.workflow.service.WorkflowDefinitionService;
+import io.yak.ops.business.workflow.service.WorkflowScheduleService;
 import io.yak.ops.business.workflow.util.WorkflowConvertUtils;
 import io.yak.ops.business.workflow.util.WorkflowJsonCodec;
 import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
@@ -33,6 +34,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
 
   private final WorkflowDefinitionDao definitionDao;
   private final WorkflowExecutionDao executionDao;
+  private final WorkflowScheduleService scheduleService;
   private final WorkflowDagCompiler dagCompiler;
   private final WorkflowJsonCodec jsonCodec;
 
@@ -86,6 +88,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
     if (!executionDao.selectInstanceListByWorkflowId(workflowId, 1).isEmpty()) {
       throw new IllegalStateException("工作流已经产生运行实例，暂不允许删除：" + workflowId);
     }
+    scheduleService.delete(workflowId);
     if (definitionDao.deleteDefinition(workflowId) != 1) {
       throw new IllegalArgumentException("工作流定义不存在：" + workflowId);
     }
