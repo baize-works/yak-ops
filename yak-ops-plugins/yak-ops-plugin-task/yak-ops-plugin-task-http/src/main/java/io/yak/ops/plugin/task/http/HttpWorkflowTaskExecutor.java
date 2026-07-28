@@ -13,6 +13,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -20,10 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.springframework.stereotype.Component;
 
 /** 使用 JDK HttpClient 执行 HTTP 工作流任务。 */
-@Component
 public final class HttpWorkflowTaskExecutor implements WorkflowTaskExecutor {
 
   private static final Set<String> METHODS = Set.of(
@@ -62,7 +61,7 @@ public final class HttpWorkflowTaskExecutor implements WorkflowTaskExecutor {
 
     String method = TaskConfiguration.string(configuration, "method", "GET")
         .trim()
-        .toUpperCase();
+        .toUpperCase(Locale.ROOT);
     if (!METHODS.contains(method)) {
       throw new IllegalArgumentException("不支持的 HTTP 请求方法：" + method);
     }
@@ -151,7 +150,7 @@ public final class HttpWorkflowTaskExecutor implements WorkflowTaskExecutor {
     String url = TaskConfiguration.requiredString(configuration, "url");
     String method = TaskConfiguration.string(configuration, "method", "GET")
         .trim()
-        .toUpperCase();
+        .toUpperCase(Locale.ROOT);
     String body = TaskConfiguration.string(configuration, "body", "");
     int requestTimeoutSeconds = TaskConfiguration.positiveInteger(
         configuration,
