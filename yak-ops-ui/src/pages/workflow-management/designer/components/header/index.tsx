@@ -173,7 +173,7 @@ const WorkflowHeader = ({
           className={[
             'pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5',
             'border-0 bg-[#5d5fef] text-xs font-semibold text-white',
-            'shadow-[0_7px_16px_rgba(93,95,239,0.24)] disabled:cursor-not-allowed disabled:opacity-55',
+            'shadow-[0_7px_16px_rgba(93,95,239,0.24)] disabled:cursor-not-allowed disabled:opacity-[0.55]',
           ].join(' ')}
           disabled={saving}
           onClick={onSave}
