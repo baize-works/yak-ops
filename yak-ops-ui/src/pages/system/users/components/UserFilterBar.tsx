@@ -1,6 +1,12 @@
-import { SearchOutlined } from "@ant-design/icons";
-import { Input, Select } from "antd";
+import {
+  PlusOutlined,
+  ReloadOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import { Button, Input, Select, Tooltip } from "antd";
 import { useState } from "react";
+
+import { PermissionGuard } from "@/components/security";
 
 import type { RoleOption } from "../shared";
 
@@ -43,6 +49,9 @@ const SEARCH_PLACEHOLDERS: Record<UserSearchField, string> = {
   realName: "请输入真实姓名",
   id: "请输入用户 ID",
 };
+
+const userPermission = (action: string): string =>
+  `security:user:${action}`;
 
 const clean = (value?: string): string | undefined => {
   const normalized = value?.trim();
@@ -208,25 +217,25 @@ export default function UserFilterBar({
           />
         </div>
 
-        {/* <Tooltip title="刷新列表">
-    <Button
-      icon={<ReloadOutlined />}
-      onClick={onRefresh}
-    />
-  </Tooltip>
+        <Tooltip title="刷新列表">
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={onRefresh}
+          />
+        </Tooltip>
 
-  <PermissionGuard
-    mode="one"
-    permission={userPermission("create")}
-  >
-    <Button
-      type="primary"
-      icon={<PlusOutlined />}
-      onClick={onCreate}
-    >
-      新增用户
-    </Button>
-  </PermissionGuard> */}
+        <PermissionGuard
+          mode="one"
+          permission={userPermission("create")}
+        >
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={onCreate}
+          >
+            新增用户
+          </Button>
+        </PermissionGuard>
       </div>
     </div>
   );

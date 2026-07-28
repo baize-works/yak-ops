@@ -5,10 +5,22 @@ import {
   EyeOutlined,
   KeyOutlined,
   SafetyCertificateOutlined,
-} from "@ant-design/icons";
-import { Button, Dropdown, Modal, Space, type MenuProps } from "antd";
+} from '@ant-design/icons';
+import {
+  Button,
+  Dropdown,
+  Modal,
+  Space,
+  message,
+  type MenuProps,
+} from 'antd';
 
-import type { SystemUser } from "@/services/security/users";
+import {
+  deleteUser as deleteSystemUser,
+  type SystemUser,
+} from '@/services/security/users';
+
+import { errorText } from '../shared';
 
 interface UserRowActionsProps {
   user: SystemUser;
@@ -20,7 +32,7 @@ interface UserRowActionsProps {
   onDeleted: () => void;
 }
 
-type ActionKey = "assignRole" | "resetPassword" | "delete";
+type ActionKey = 'assignRole' | 'resetPassword' | 'delete';
 
 export default function UserRowActions({
   user,
@@ -33,23 +45,20 @@ export default function UserRowActions({
 }: UserRowActionsProps) {
   const isCurrentUser = user.userName === currentUserName;
 
-  /**
-   * 这里调用你原来 UserRowActions 中的删除接口。
-   * 删除成功后执行 onDeleted() 刷新列表。
-   */
-  const deleteUser = async () => {
-    // 保留你现有的删除请求，例如：
-    //
-    // await removeUser(user.id);
-    // message.success('删除成功');
-    // onDeleted();
-
-    onDeleted();
+  const remove = async () => {
+    try {
+      await deleteSystemUser(user.id);
+      message.success('用户已删除');
+      onDeleted();
+    } catch (error) {
+      message.error(errorText(error, '用户删除失败'));
+      throw error;
+    }
   };
 
   const confirmDelete = () => {
     Modal.confirm({
-      title: "删除用户",
+      title: '删除用户',
       content: (
         <div>
           确定删除用户
@@ -59,53 +68,50 @@ export default function UserRowActions({
           吗？
         </div>
       ),
-      okText: "删除",
-      cancelText: "取消",
+      okText: '删除',
+      cancelText: '取消',
       okButtonProps: {
         danger: true,
       },
       centered: true,
-      onOk: deleteUser,
+      onOk: remove,
     });
   };
 
-  const menuItems: MenuProps["items"] = [
+  const menuItems: MenuProps['items'] = [
     {
-      key: "assignRole",
+      key: 'assignRole',
       icon: <SafetyCertificateOutlined />,
-      label: "分配角色",
+      label: '分配角色',
     },
     {
-      key: "resetPassword",
+      key: 'resetPassword',
       icon: <KeyOutlined />,
-      label: "重置密码",
+      label: '重置密码',
     },
     {
-      type: "divider",
+      type: 'divider',
     },
     {
-      key: "delete",
+      key: 'delete',
       icon: <DeleteOutlined />,
-      label: "删除用户",
+      label: '删除用户',
       danger: true,
       disabled: isCurrentUser,
     },
   ];
 
-  const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
+  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     switch (key as ActionKey) {
-      case "assignRole":
+      case 'assignRole':
         onAssignRole(user);
         break;
-
-      case "resetPassword":
+      case 'resetPassword':
         onResetPassword(user);
         break;
-
-      case "delete":
+      case 'delete':
         confirmDelete();
         break;
-
       default:
         break;
     }
@@ -134,7 +140,7 @@ export default function UserRowActions({
       </Button>
 
       <Dropdown
-        trigger={["click"]}
+        trigger={['click']}
         placement="bottomRight"
         menu={{
           items: menuItems,

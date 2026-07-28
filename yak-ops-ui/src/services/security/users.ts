@@ -221,30 +221,15 @@ export const assignRolesToUser = (
 /**
  * 管理员重置密码。
  *
- * 当前后端没有独立重置密码接口，因此先读取完整用户详情，
- * 再复用编辑接口，仅替换 pw，其他信息和角色保持不变。
+ * 只提交目标用户和新密码，不再读取并整体覆盖用户资料与角色。
  */
-export const resetUserPassword = async (
+export const resetUserPassword = (
   userId: number,
   password: string,
-): Promise<void> => {
-  const detail =
-    await getUserDetail(userId);
-
-  await updateUser({
-    userName: detail.userName,
-    realName: detail.realName,
-    phone: detail.phone,
-    email: detail.email,
-    pw: password,
-    roleIds: Array.isArray(
-      detail.roleList,
-    )
-      ? detail.roleList
-          .map((role) =>
-            Number(role.id),
-          )
-          .filter(Number.isFinite)
-      : [],
-  });
-};
+): Promise<void> =>
+  securityPutData<void>(
+    `${USER_API}/${encodeURIComponent(
+      String(userId),
+    )}/password`,
+    { password },
+  );

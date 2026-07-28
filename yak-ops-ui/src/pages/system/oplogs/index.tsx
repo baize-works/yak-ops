@@ -3,6 +3,7 @@ import {
   FileSearchOutlined,
 } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
+import { history } from '@umijs/max';
 import { Button, Space, Tag, Typography, message } from 'antd';
 import dayjs from 'dayjs';
 import {
@@ -93,6 +94,19 @@ export default function OperationLogsPage() {
   useEffect(() => {
     void loadOptions();
   }, [loadOptions]);
+
+  useEffect(() => {
+    const value = new URLSearchParams(
+      history.location.search,
+    ).get('messageLogId');
+
+    if (!value) return;
+
+    const logId = Number(value);
+    if (Number.isSafeInteger(logId) && logId > 0) {
+      void detailRef.current?.open(logId);
+    }
+  }, []);
 
   const loadLogs = useCallback(async () => {
     const sequence = ++requestSequenceRef.current;

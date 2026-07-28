@@ -23,7 +23,7 @@ export default function MessageList({ compact = false }: { compact?: boolean }) 
   const { initialState } = useModel('@@initialState');
   const canReadLogs = satisfiesPermissionRequirement(initialState?.currentUser?.permissionCodes, {
     mode: 'one',
-    permission: 'system:operation-log:read',
+    permission: 'security:operation-log:read',
   });
   const [selected, setSelected] = useState<Array<number | string>>([]);
   const [detail, setDetail] = useState<MessageDetail>();
