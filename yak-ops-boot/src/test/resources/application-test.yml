@@ -20,6 +20,8 @@ yak:
       enabled: false
     bootstrap:
       enabled: false
+  datasource:
+    enabled: false
   schedule:
     enabled: false
     web-enabled: false

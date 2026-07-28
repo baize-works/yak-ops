@@ -5,12 +5,12 @@ server:
 spring:
   application:
     name: yak-ops
-  # Yak Security and Yak Workflow own dedicated DataSources and transaction managers.
+  # Yak Security、Yak Datasource 和 Yak Workflow 分别维护自己的数据源与事务管理器。
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-  # Domain modules create and run their own Flyway instances.
+  # 各业务模块自行创建并执行 Flyway。
   flyway:
     enabled: false
   lifecycle:
@@ -75,6 +75,18 @@ yak:
       test-while-idle: true
       test-on-borrow: false
       test-on-return: false
+
+  datasource:
+    enabled: true
+    database:
+      url: ${YAK_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+      username: ${YAK_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
+      password: ${YAK_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
+      driver-class-name: ${YAK_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+      minimum-idle: 1
+      maximum-pool-size: 8
+    connection-test:
+      timeout-seconds: ${YAK_DATASOURCE_CONNECT_TIMEOUT_SECONDS:5}
 
   schedule:
     enabled: true
