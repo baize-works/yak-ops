@@ -5,12 +5,12 @@ server:
 spring:
   application:
     name: yak-ops
-  # Yak Security owns its dedicated DataSource and transaction manager.
+  # Yak Security and Yak Workflow own dedicated DataSources and transaction managers.
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-  # Yak Security creates and runs its own Flyway instance against its dedicated DataSource.
+  # Domain modules create and run their own Flyway instances.
   flyway:
     enabled: false
   lifecycle:
@@ -19,7 +19,8 @@ spring:
     default-property-inclusion: non_null
     time-zone: Asia/Shanghai
   quartz:
-    auto-startup: false
+    auto-startup: true
+    job-store-type: memory
 
 springdoc:
   api-docs:
@@ -76,8 +77,28 @@ yak:
       test-on-return: false
 
   schedule:
-    enabled: false
+    enabled: true
     web-enabled: false
+
+  workflow:
+    enabled: true
+    datasource:
+      url: ${YAK_WORKFLOW_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+      username: ${YAK_WORKFLOW_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
+      password: ${YAK_WORKFLOW_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
+      driver-class-name: ${YAK_WORKFLOW_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+      minimum-idle: 1
+      maximum-pool-size: 8
+    executor:
+      core-pool-size: ${YAK_WORKFLOW_CORE_POOL_SIZE:8}
+      maximum-pool-size: ${YAK_WORKFLOW_MAX_POOL_SIZE:32}
+      queue-capacity: ${YAK_WORKFLOW_QUEUE_CAPACITY:500}
+      default-workflow-parallelism: 4
+      thread-name-prefix: yak-workflow-
+    recovery:
+      enabled: true
+      initial-delay-millis: 5000
+      fixed-delay-millis: 10000
 
 logging:
   level:

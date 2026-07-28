@@ -1,10 +1,10 @@
 package io.yak.ops.boot.config;
 
+import io.yak.framework.security.dao.PermissionDao;
 import io.yak.framework.security.permission.PermissionDefinition;
 import io.yak.framework.security.permission.PermissionDefinitionProvider;
 import io.yak.framework.security.service.RolePermissionService;
 import io.yak.framework.security.service.RoleService;
-import io.yak.framework.security.dao.PermissionDao;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -108,7 +108,12 @@ public class YakOpsPermissionConfiguration {
         item("workflow:project:read", "查看工作流项目"),
         item("workflow:definition:read", "查看工作流定义"),
         item("workflow:definition:create", "新建工作流定义"),
+        item("workflow:definition:update", "编辑工作流定义"),
+        item("workflow:definition:publish", "发布工作流定义"),
         item("workflow:instance:read", "查看工作流实例"),
+        item("workflow:instance:execute", "执行工作流实例"),
+        item("workflow:instance:stop", "停止工作流实例"),
+        item("workflow:schedule:manage", "管理工作流调度"),
         item("workflow:view", "查看工作流（兼容）"),
         item("workflow:create", "新增工作流（兼容）"),
         item("workflow:update", "编辑工作流（兼容）"),
