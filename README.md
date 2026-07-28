@@ -140,13 +140,18 @@ yak-ops
 │   ├── yak-ops-business-quality
 │   └── yak-ops-business-resource
 ├── yak-ops-plugins
-│   └── yak-ops-plugin-database
-│       ├── yak-ops-plugin-database-jdbc
-│       │   ├── mysql
-│       │   ├── postgresql
-│       │   ├── oracle
-│       │   └── sqlserver
-│       └── yak-ops-plugin-database-doris
+│   ├── yak-ops-plugin-database
+│   │   ├── yak-ops-plugin-database-jdbc
+│   │   │   ├── mysql
+│   │   │   ├── postgresql
+│   │   │   ├── oracle
+│   │   │   └── sqlserver
+│   │   └── yak-ops-plugin-database-doris
+│   └── yak-ops-plugin-task
+│       ├── yak-ops-plugin-task-api
+│       ├── yak-ops-plugin-task-http
+│       ├── yak-ops-plugin-task-shell
+│       └── yak-ops-plugin-task-all
 ├── yak-ops-boot
 ├── yak-ops-ui
 └── yak-ops-dist
@@ -158,7 +163,9 @@ yak-ops
 business-* -> core -> spi -> common
 plugin-database-jdbc -> spi -> common
 plugin-database-doris -> plugin-database-jdbc -> spi -> common
-boot -> business-* + plugin-database-jdbc + plugin-database-doris
+plugin-task-http/shell -> plugin-task-api -> spi -> common
+plugin-task-all -> plugin-task-http + plugin-task-shell
+boot -> business-* + database plugins + plugin-task-all
 dist -> boot
 ```
 
@@ -172,3 +179,40 @@ business source code.
 Database implementations follow the same rule. `yak-ops-plugin-database` is an aggregator,
 `yak-ops-plugin-database-jdbc` contains reusable JDBC support and relational database implementations,
 and `yak-ops-plugin-database-doris` contains Doris-specific behavior built on top of the JDBC module.
+
+### Task plugin model
+
+Task plugins implement the stable `WorkflowTaskExecutor` contract from `yak-ops-spi`. The workflow
+business module owns orchestration, retries, timeouts, cancellation and durable execution state, while
+each task plugin owns only configuration validation and one physical execution attempt.
+
+`yak-ops-plugin-task-api` provides shared task type constants, configuration readers and recursive
+`${parameter}` substitution. Concrete plugins are isolated modules, and `yak-ops-plugin-task-all`
+acts as the runtime aggregation artifact consumed by `yak-ops-boot`, following the same API / concrete
+plugin / all-plugins separation used by DolphinScheduler.
+
+No task-plugin-specific database table is required. HTTP and Shell executions reuse the existing
+`yak_wf_task_instance`, task-attempt, task-log and output persistence managed by the workflow engine.
+
+The initial plugin configuration contracts are:
+
+```text
+HTTP
+  url                        required, supports ${parameter}
+  method                     optional, default GET
+  headers                    optional object
+  body                       optional string
+  requestTimeoutSeconds      optional, default 60
+  successCodes               optional integer array, default 200-299
+  maxResponseBodyCharacters  optional, default 1000000
+
+SHELL
+  command                    shell command string; command or args is required
+  args                       full process argument array; takes precedence over command
+  workDirectory              optional existing directory
+  environment                optional environment variable object
+```
+
+Shell tasks execute on the Yak Ops process host and therefore must only be configurable by trusted
+administrators. Production deployments should run Yak Ops with a dedicated low-privilege operating
+system account and restrict its filesystem and network permissions.
