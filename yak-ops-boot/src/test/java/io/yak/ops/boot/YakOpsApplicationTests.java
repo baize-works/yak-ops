@@ -5,7 +5,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.yak.framework.security.permission.PermissionDefinition;
 import io.yak.framework.security.permission.PermissionDefinitionProvider;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -41,9 +43,53 @@ class YakOpsApplicationTests {
   }
 
   @Test
-  void shouldDeclarePermissionsBeforeSecurityBootstrap() {
-    assertThat(permissionDefinitionProvider.getPermissionDefinitions())
-        .extracting("code")
-        .containsExactly("datasource", "job", "workflow", "quality", "resource");
+  void shouldDeclareFrontendNavigationPermissionContract() {
+    List<PermissionDefinition> definitions =
+        permissionDefinitionProvider.getPermissionDefinitions();
+
+    assertThat(definitions)
+        .extracting(PermissionDefinition::getCode)
+        .containsExactly(
+            "security",
+            "task",
+            "datasource",
+            "job",
+            "workflow",
+            "resource",
+            "quality",
+            "operations",
+            "knowledge");
+
+    List<String> permissionCodes = definitions.stream()
+        .flatMap(definition -> definition.getPermissions().stream())
+        .map(PermissionDefinition.Item::getCode)
+        .toList();
+
+    assertThat(permissionCodes).contains(
+        "security:root",
+        "task:batch:read",
+        "task:batch:create",
+        "task:realtime:read",
+        "task:realtime:create",
+        "workflow:project:read",
+        "workflow:definition:read",
+        "workflow:definition:create",
+        "workflow:instance:read",
+        "resource:data-source:read",
+        "resource:client:read",
+        "resource:connector:read",
+        "quality:rule:read",
+        "quality:report:read",
+        "operations:metrics:read",
+        "operations:alarm:read",
+        "knowledge:read",
+        "security:user:read",
+        "security:role:read",
+        "security:permission:read",
+        "security:department:read",
+        "security:project:read",
+        "security:resource-permission:read",
+        "security:config:read",
+        "security:operation-log:read");
   }
 }
