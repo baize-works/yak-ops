@@ -38,7 +38,7 @@
         <module>yak-ops-spi</module>
         <module>yak-ops-core</module>
         <module>yak-ops-business</module>
-        <module>yak-ops-plugins/yak-ops-plugin-database</module>
+        <module>yak-ops-plugins/yak-ops-plugin-datasource</module>
         <module>yak-ops-plugins/yak-ops-plugin-task</module>
         <module>yak-ops-boot</module>
         <module>yak-ops-ui</module>
@@ -116,12 +116,22 @@
             </dependency>
             <dependency>
                 <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-plugin-database-jdbc</artifactId>
+                <artifactId>yak-ops-plugin-datasource-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-plugin-database-doris</artifactId>
+                <artifactId>yak-ops-plugin-datasource-jdbc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-datasource-doris</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-datasource-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

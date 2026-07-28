@@ -6,20 +6,24 @@
 
     <parent>
         <groupId>io.yak.ops</groupId>
-        <artifactId>yak-ops-plugin-database</artifactId>
+        <artifactId>yak-ops-plugin-datasource</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>yak-ops-plugin-database-doris</artifactId>
+    <artifactId>yak-ops-plugin-datasource-all</artifactId>
 
-    <name>Yak Ops Doris Database Plugin</name>
-    <description>Apache Doris-specific database plugin implementation</description>
+    <name>Yak Ops All Datasource Plugins</name>
+    <description>Runtime aggregation of all built-in Yak Ops datasource plugins</description>
 
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
-            <artifactId>yak-ops-plugin-database-jdbc</artifactId>
+            <artifactId>yak-ops-plugin-datasource-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-plugin-datasource-doris</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
