@@ -40,11 +40,10 @@ import type {
   WorkflowSnapshot,
   WorkflowVariable,
 } from '../types';
-import BlockSelector from './components/BlockSelector';
-import CanvasOperator from './components/CanvasOperator';
-import type {
-  CanvasInteractionMode,
-  CanvasLibraryItem,
+import CanvasOperator, {
+  type CanvasInteractionMode,
+  type CanvasLibraryGroup,
+  type CanvasLibraryItem,
 } from './components/operator/CanvasOperator';
 import HistoryPanel from './components/HistoryPanel';
 import NodeIcon from './components/node/NodeIcon';
@@ -58,6 +57,8 @@ import WorkflowHeader from './components/WorkflowHeader';
 import WorkflowNode from './components/WorkflowNode';
 import WorkflowSettingsPanel from './components/WorkflowSettingsPanel';
 import {
+  CATEGORY_LABELS,
+  WORKFLOW_NODE_CATALOG,
   createNodeData,
   getNodeMeta,
   resolveVisualNodeType,
@@ -77,22 +78,23 @@ type CanvasPoint = {
   y: number;
 };
 
-const CANVAS_LIBRARY_NODE_TYPE: Record<string, WorkflowNodeType> = {
-  llm: 'LLM',
-  'knowledge-retrieval': 'KNOWLEDGE',
-  'direct-answer': 'END',
-  agent: 'LLM',
-  'question-classifier': 'QUESTION_CLASSIFIER',
-  condition: 'CONDITION',
-  'human-intervention': 'NOOP',
-  iteration: 'ITERATION',
-  loop: 'ITERATION',
-  code: 'CODE',
-  template: 'TEMPLATE',
-  'variable-aggregator': 'VARIABLE',
-  'variable-tool': 'VARIABLE',
-  'input-tool': 'TEMPLATE',
-};
+const CANVAS_NODE_GROUPS: CanvasLibraryGroup[] = (
+  ['control', 'action'] as const
+).map((category) => ({
+  key: category,
+  title: CATEGORY_LABELS[category],
+  items: WORKFLOW_NODE_CATALOG.filter(
+    (item) => item.category === category,
+  ).map((item) => ({
+    key: item.type,
+    nodeType: item.type,
+    label: item.title,
+    description: item.description,
+    keywords: [item.title, item.description, item.type],
+    icon: <NodeIcon type={item.type} size={14} />,
+    iconColor: getNodeMeta(item.type).color,
+  })),
+}));
 
 const cloneNodes = (nodes: WorkflowFlowNode[]) =>
   nodes.map((node) => ({
@@ -133,11 +135,10 @@ const WorkflowDesignerContent = () => {
   const [workflow, setWorkflow] = useState<WorkflowDefinitionRecord>();
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
   const [activePanel, setActivePanel] = useState<WorkflowPanelType>(null);
-  const [blockSelectorOpen, setBlockSelectorOpen] = useState(false);
   const [nodeLibraryOpen, setNodeLibraryOpen] = useState(false);
   const [interactionMode, setInteractionMode] =
     useState<CanvasInteractionMode>('select');
-  const [blockSelectorPosition, setBlockSelectorPosition] =
+  const [libraryInsertPosition, setLibraryInsertPosition] =
     useState<CanvasPoint>();
   const [quickAddSourceId, setQuickAddSourceId] = useState<string>();
   const [pendingNodeType, setPendingNodeType] =
@@ -468,7 +469,8 @@ const WorkflowDesignerContent = () => {
       setSelectedNodeId(id);
       setActivePanel('node');
       setQuickAddSourceId(undefined);
-      setBlockSelectorPosition(undefined);
+      setLibraryInsertPosition(undefined);
+      setNodeLibraryOpen(false);
       markDirty();
     },
     [
@@ -506,9 +508,8 @@ const WorkflowDesignerContent = () => {
       setPendingNodeType(type);
       setPendingNodePointer(undefined);
       setNodeLibraryOpen(false);
-      setBlockSelectorOpen(false);
       setQuickAddSourceId(undefined);
-      setBlockSelectorPosition(undefined);
+      setLibraryInsertPosition(undefined);
       setContextMenu(undefined);
       setSelectedNodeId(undefined);
       setActivePanel(null);
@@ -519,14 +520,19 @@ const WorkflowDesignerContent = () => {
 
   const selectCanvasLibraryItem = useCallback(
     (item: CanvasLibraryItem) => {
-      const nodeType = CANVAS_LIBRARY_NODE_TYPE[item.key];
-      if (!nodeType) {
-        message.warning(`节点“${item.label}”暂未接入工作流类型`);
+      if (quickAddSourceId || libraryInsertPosition) {
+        addNode(item.nodeType, libraryInsertPosition);
         return;
       }
-      beginNodePlacement(nodeType);
+
+      beginNodePlacement(item.nodeType);
     },
-    [beginNodePlacement],
+    [
+      addNode,
+      beginNodePlacement,
+      libraryInsertPosition,
+      quickAddSourceId,
+    ],
   );
 
   const updateSelectedNode = useCallback(
@@ -870,8 +876,9 @@ const WorkflowDesignerContent = () => {
     (panel: Exclude<WorkflowPanelType, 'node' | null>) => {
       setSelectedNodeId(undefined);
       setActivePanel((current) => (current === panel ? null : panel));
-      setBlockSelectorOpen(false);
       setNodeLibraryOpen(false);
+      setQuickAddSourceId(undefined);
+      setLibraryInsertPosition(undefined);
       cancelNodePlacement();
     },
     [cancelNodePlacement],
@@ -885,12 +892,13 @@ const WorkflowDesignerContent = () => {
     const quickAdd = (event: Event) => {
       const customEvent = event as CustomEvent<{ nodeId: string }>;
       cancelNodePlacement();
-      setNodeLibraryOpen(false);
       setQuickAddSourceId(customEvent.detail.nodeId);
-      setBlockSelectorPosition(undefined);
-      setBlockSelectorOpen(true);
+      setLibraryInsertPosition(undefined);
+      setNodeLibraryOpen(true);
+      setSelectedNodeId(undefined);
       setActivePanel(null);
     };
+
     window.addEventListener('yak-workflow-quick-add', quickAdd);
     return () => window.removeEventListener('yak-workflow-quick-add', quickAdd);
   }, [cancelNodePlacement]);
@@ -938,9 +946,8 @@ const WorkflowDesignerContent = () => {
         deleteNode(selectedNodeId);
       } else if (event.key === 'Escape') {
         setContextMenu(undefined);
-        setBlockSelectorOpen(false);
         setNodeLibraryOpen(false);
-        setBlockSelectorPosition(undefined);
+        setLibraryInsertPosition(undefined);
         setQuickAddSourceId(undefined);
         setActivePanel(null);
         setSelectedNodeId(undefined);
@@ -1018,15 +1025,17 @@ const WorkflowDesignerContent = () => {
               if (placePendingNode(event.clientX, event.clientY)) return;
               setSelectedNodeId(node.id);
               setActivePanel('node');
-              setBlockSelectorOpen(false);
               setNodeLibraryOpen(false);
+              setQuickAddSourceId(undefined);
+              setLibraryInsertPosition(undefined);
             }}
             onPaneClick={(event) => {
               if (placePendingNode(event.clientX, event.clientY)) return;
               setSelectedNodeId(undefined);
               if (activePanel === 'node') setActivePanel(null);
-              setBlockSelectorOpen(false);
               setNodeLibraryOpen(false);
+              setQuickAddSourceId(undefined);
+              setLibraryInsertPosition(undefined);
             }}
             onPaneContextMenu={(event) => {
               event.preventDefault();
@@ -1103,16 +1112,6 @@ const WorkflowDesignerContent = () => {
               color="#d9dee8"
             />
           </ReactFlow>
-
-          <BlockSelector
-            open={blockSelectorOpen}
-            onClose={() => {
-              setBlockSelectorOpen(false);
-              setQuickAddSourceId(undefined);
-              setBlockSelectorPosition(undefined);
-            }}
-            onSelect={(type) => addNode(type, blockSelectorPosition)}
-          />
 
           {pendingNodeType && pendingNodeData && pendingNodePointer && (
             <div
@@ -1248,7 +1247,8 @@ const WorkflowDesignerContent = () => {
             }
             onToggleNodePanel={() => {
               cancelNodePlacement();
-              setBlockSelectorOpen(false);
+              setQuickAddSourceId(undefined);
+              setLibraryInsertPosition(undefined);
               setNodeLibraryOpen((value) => !value);
               setSelectedNodeId(undefined);
               setActivePanel(null);
@@ -1259,6 +1259,7 @@ const WorkflowDesignerContent = () => {
             }}
             onSelectLibraryItem={selectCanvasLibraryItem}
             variableInspectOpen={variableInspectOpen}
+            nodeGroups={CANVAS_NODE_GROUPS}
           />
 
           <VariableInspectPanel
@@ -1276,10 +1277,12 @@ const WorkflowDesignerContent = () => {
               onClose={() => setContextMenu(undefined)}
               onAddNode={() => {
                 cancelNodePlacement();
-                setNodeLibraryOpen(false);
+                setContextMenu(undefined);
                 setQuickAddSourceId(undefined);
-                setBlockSelectorPosition(contextMenu.flowPosition);
-                setBlockSelectorOpen(true);
+                setLibraryInsertPosition(contextMenu.flowPosition);
+                setNodeLibraryOpen(true);
+                setSelectedNodeId(undefined);
+                setActivePanel(null);
               }}
               onPaste={() => pasteSelection(contextMenu.flowPosition)}
               onSelectAll={selectAll}
@@ -1312,9 +1315,8 @@ const WorkflowDesignerContent = () => {
               className="dify-empty-canvas"
               onClick={() => {
                 cancelNodePlacement();
-                setBlockSelectorOpen(false);
-                setBlockSelectorPosition(undefined);
                 setQuickAddSourceId(undefined);
+                setLibraryInsertPosition(undefined);
                 setNodeLibraryOpen(true);
               }}
             >
