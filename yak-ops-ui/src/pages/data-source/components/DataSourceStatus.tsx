@@ -7,6 +7,8 @@ import {
 import { Tag, Tooltip } from 'antd';
 import type { ReactNode } from 'react';
 
+import '../index.enhancements.less';
+
 interface DataSourceStatusProps {
   status?: string;
 }
