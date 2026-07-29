@@ -1,4 +1,6 @@
-export type ApiProtocol = 'yak-ops' | 'yak-framework' | 'security';
+export type ApiProtocol = 'yak-ops' | 'security';
+
+export const API_SUCCESS_CODE = 200;
 
 export interface ApiResponse<T = unknown> {
   code: number;
@@ -11,10 +13,12 @@ const protocolRules: Record<
   ApiProtocol,
   { success: readonly number[]; unauthenticated: readonly number[] }
 > = {
-  'yak-ops': { success: [0], unauthenticated: [1, 401] },
-  'yak-framework': { success: [200], unauthenticated: [401] },
+  'yak-ops': {
+    success: [API_SUCCESS_CODE],
+    unauthenticated: [401],
+  },
   security: {
-    success: [200],
+    success: [API_SUCCESS_CODE],
     unauthenticated: [401, 2001],
   },
 };
@@ -26,11 +30,8 @@ const unauthenticatedMessages = new Set([
   'SESSION_INVALID',
 ]);
 
-export const protocolForUrl = (url?: string): ApiProtocol => {
-  if (url?.includes('/yak-security/')) return 'security';
-  if (url?.includes('/api/v1/workflows')) return 'yak-framework';
-  return 'yak-ops';
-};
+export const protocolForUrl = (url?: string): ApiProtocol =>
+  url?.includes('/yak-security/') ? 'security' : 'yak-ops';
 
 export const isApiResponse = (value: unknown): value is ApiResponse => {
   if (!value || typeof value !== 'object') return false;

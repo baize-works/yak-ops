@@ -1,4 +1,3 @@
-import { isSuccessfulResponse } from '@/services/http/response';
 import HttpUtils, { type ApiResponse } from '@/utils/HttpUtils';
 import type {
   CommonApiResponse,
@@ -10,11 +9,11 @@ import type {
 
 const WORKFLOW_API_PREFIX = '/api/v1/workflows';
 
-/** Adapt yak-framework's 200 success envelope to the workflow UI's legacy code-0 contract. */
+/** Normalize message fields without rewriting the backend business code. */
 export const normalizeWorkflowResponse = <T>(
   response: ApiResponse<T>,
 ): CommonApiResponse<T> => ({
-  code: isSuccessfulResponse(response, 'yak-framework') ? 0 : response.code,
+  code: response.code,
   data: response.data,
   message: response.message ?? response.msg,
 });

@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { history } from '@umijs/max';
 import {
   Dropdown,
@@ -58,7 +59,7 @@ const WorkflowManagementPage = () => {
     try {
       setLoading(true);
       const response = await fetchWorkflowList();
-      if (response.code !== 0) {
+      if (response.code !== API_SUCCESS_CODE) {
         message.error(response.message || '加载工作流失败');
         return;
       }
@@ -98,7 +99,7 @@ const WorkflowManagementPage = () => {
       centered: true,
       async onOk() {
         const response = await deleteWorkflow(workflow.id);
-        if (response.code !== 0) {
+        if (response.code !== API_SUCCESS_CODE) {
           message.error(response.message || '删除工作流失败');
           return;
         }
@@ -118,7 +119,10 @@ const WorkflowManagementPage = () => {
       maxParallelism: workflow.maxParallelism,
       dag: workflow.draft,
     });
-    if (response.code !== 0 || !response.data?.workflowId) {
+    if (
+      response.code !== API_SUCCESS_CODE ||
+      !response.data?.workflowId
+    ) {
       message.error(response.message || '复制工作流失败');
       return;
     }

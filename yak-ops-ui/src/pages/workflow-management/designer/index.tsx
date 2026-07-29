@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { history, useParams } from '@umijs/max';
 import { message, Modal, Spin } from 'antd';
 import { Plus, Sparkles } from 'lucide-react';
@@ -134,7 +135,7 @@ const WorkflowDesignerContent = () => {
     try {
       setLoading(true);
       const response = await fetchWorkflowDetail(workflowId);
-      if (response.code !== 0 || !response.data) {
+      if (response.code !== API_SUCCESS_CODE || !response.data) {
         message.error(response.message || '加载工作流失败');
         return;
       }
@@ -249,7 +250,7 @@ const WorkflowDesignerContent = () => {
           viewport,
         },
       });
-      if (response.code !== 0) {
+      if (response.code !== API_SUCCESS_CODE) {
         message.error(response.message || '保存工作流失败');
         return;
       }
