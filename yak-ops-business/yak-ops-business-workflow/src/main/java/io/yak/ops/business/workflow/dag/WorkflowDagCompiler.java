@@ -112,7 +112,7 @@ public class WorkflowDagCompiler {
       throw new IllegalArgumentException("重试和超时时间不能为负数：" + node.getKey());
     }
     if (node.isEnabled()) {
-      executorRegistry.require(node.getType()).validate(node.getConfig());
+      executorRegistry.validate(node.getType(), node.getConfig());
     }
   }
 

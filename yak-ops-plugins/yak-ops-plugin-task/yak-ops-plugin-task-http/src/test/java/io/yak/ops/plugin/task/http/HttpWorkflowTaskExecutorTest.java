@@ -45,14 +45,14 @@ class HttpWorkflowTaskExecutorTest {
         1L,
         2L,
         3L,
-        1,
+        4,
         "http-node",
         "HTTP",
         Map.of(
-            "url", "http://127.0.0.1:${port}/echo",
+            "url", "http://127.0.0.1:${global.port}/echo",
             "method", "POST",
-            "headers", Map.of("X-Token", "${token}"),
-            "body", "{\"name\":\"${name}\"}"),
+            "headers", Map.of("X-Token", "${global.token}"),
+            "body", "{\"name\":\"${name}\",\"attempt\":${system.attemptNo}}"),
         Map.of(
             "port", server.getAddress().getPort(),
             "token", "task-secret",
@@ -68,7 +68,7 @@ class HttpWorkflowTaskExecutorTest {
         .containsEntry("body", "ok")
         .containsEntry("bodyTruncated", false);
     assertThat(requestToken.get()).isEqualTo("task-secret");
-    assertThat(requestBody.get()).isEqualTo("{\"name\":\"yak-ops\"}");
+    assertThat(requestBody.get()).isEqualTo("{\"name\":\"yak-ops\",\"attempt\":4}");
     assertThat(logs).anyMatch(line -> line.contains("HTTP status: 200"));
   }
 }
