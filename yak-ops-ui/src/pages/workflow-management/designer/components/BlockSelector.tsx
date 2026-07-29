@@ -9,7 +9,7 @@ import {
   type WorkflowNodeMeta,
 } from '../constants';
 import { mergeTaskPluginCatalog } from '../taskPluginCatalog';
-import NodeIcon from './NodeIcon';
+import NodeIcon from './node/NodeIcon';
 
 interface BlockSelectorProps {
   open: boolean;
