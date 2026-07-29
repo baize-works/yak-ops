@@ -16,6 +16,7 @@ public final class WorkflowTaskContext {
   private final String taskType;
   private final Map<String, Object> configuration;
   private final Map<String, Object> globalParameters;
+  private final Map<String, Object> parameters;
   private final WorkflowCancellationToken cancellationToken;
   private final WorkflowTaskLogger logger;
 
@@ -38,6 +39,7 @@ public final class WorkflowTaskContext {
     this.taskType = Objects.requireNonNull(taskType, "taskType");
     this.configuration = immutableCopy(configuration);
     this.globalParameters = immutableCopy(globalParameters);
+    this.parameters = buildParameters();
     this.cancellationToken = Objects.requireNonNull(cancellationToken, "cancellationToken");
     this.logger = Objects.requireNonNull(logger, "logger");
   }
@@ -106,6 +108,20 @@ public final class WorkflowTaskContext {
     return globalParameters;
   }
 
+  /**
+   * Returns the unified parameter namespace used by task plugins.
+   *
+   * <p>Global parameters remain available at the top level for backward compatibility. They are
+   * also exposed under {@code global.*}. Runtime identifiers are exposed under {@code system.*}.
+   */
+  public Map<String, Object> parameters() {
+    return parameters;
+  }
+
+  public Map<String, Object> getParameters() {
+    return parameters;
+  }
+
   public WorkflowCancellationToken cancellationToken() {
     return cancellationToken;
   }
@@ -120,6 +136,21 @@ public final class WorkflowTaskContext {
 
   public WorkflowTaskLogger getLogger() {
     return logger;
+  }
+
+  private Map<String, Object> buildParameters() {
+    Map<String, Object> values = new LinkedHashMap<>(globalParameters);
+    values.put("global", globalParameters);
+
+    Map<String, Object> system = new LinkedHashMap<>();
+    system.put("workflowInstanceId", workflowInstanceId);
+    system.put("taskInstanceId", taskInstanceId);
+    system.put("attemptId", attemptId);
+    system.put("attemptNo", attemptNo);
+    system.put("nodeKey", nodeKey);
+    system.put("taskType", taskType);
+    values.put("system", Collections.unmodifiableMap(system));
+    return Collections.unmodifiableMap(values);
   }
 
   private static Map<String, Object> immutableCopy(Map<String, Object> source) {

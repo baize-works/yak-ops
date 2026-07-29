@@ -44,7 +44,7 @@ public final class ShellWorkflowTaskExecutor implements WorkflowTaskExecutor {
   public WorkflowTaskResult execute(WorkflowTaskContext context) throws Exception {
     Map<String, Object> configuration = TaskParameterResolver.resolveConfiguration(
         context.configuration(),
-        context.globalParameters());
+        context.parameters());
     validate(configuration);
 
     List<String> command = resolveCommand(configuration);

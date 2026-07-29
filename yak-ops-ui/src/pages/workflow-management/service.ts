@@ -3,6 +3,7 @@ import type {
   CommonApiResponse,
   WorkflowCreatePayload,
   WorkflowDefinitionRecord,
+  WorkflowTaskPluginRecord,
   WorkflowUpdatePayload,
 } from './types';
 
@@ -18,6 +19,12 @@ export async function fetchWorkflowDetail(
   workflowId: string | number,
 ): Promise<CommonApiResponse<WorkflowDefinitionRecord>> {
   return HttpUtils.get(`${WORKFLOW_API_PREFIX}/${workflowId}`);
+}
+
+export async function fetchTaskPluginList(): Promise<
+  CommonApiResponse<WorkflowTaskPluginRecord[]>
+> {
+  return HttpUtils.get(`${WORKFLOW_API_PREFIX}/task-plugins`);
 }
 
 export async function createWorkflow(

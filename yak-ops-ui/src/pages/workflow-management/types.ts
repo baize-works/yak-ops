@@ -3,13 +3,8 @@ import type { Edge, Node, Viewport } from 'reactflow';
 export type WorkflowDefinitionState = 'DRAFT' | 'PUBLISHED' | 'OFFLINE';
 export type WorkflowFailureStrategy = 'FAIL_FAST' | 'CONTINUE';
 
-/**
- * Front-end workflow block types. Only HTTP and SHELL currently map to concrete
- * backend executors. The remaining visual blocks are persisted as NOOP nodes
- * with their visual type stored in config.__uiType, so the draft remains
- * compatible with the current backend while execution is intentionally out of scope.
- */
-export type WorkflowNodeType =
+/** Visual node types with support for dynamically discovered task-plugin types. */
+export type KnownWorkflowNodeType =
   | 'START'
   | 'END'
   | 'LLM'
@@ -25,6 +20,7 @@ export type WorkflowNodeType =
   | 'NOTE'
   | 'NOOP';
 
+export type WorkflowNodeType = KnownWorkflowNodeType | (string & {});
 export type WorkflowBackendTaskType = 'NOOP' | 'HTTP' | 'SHELL' | string;
 export type WorkflowPanelType =
   | 'node'
@@ -39,6 +35,17 @@ export interface CommonApiResponse<T> {
   code: number;
   data: T;
   message?: string;
+}
+
+export interface WorkflowTaskPluginRecord {
+  type: string;
+  name: string;
+  description: string;
+  category: string;
+  version: string;
+  cancellable: boolean;
+  outputCapable: boolean;
+  configurationSchema: Record<string, unknown>;
 }
 
 export interface WorkflowVariable {
