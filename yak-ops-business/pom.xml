@@ -23,5 +23,6 @@
         <module>yak-ops-business-workflow</module>
         <module>yak-ops-business-quality</module>
         <module>yak-ops-business-resource</module>
+        <module>yak-ops-business-sync</module>
     </modules>
 </project>
