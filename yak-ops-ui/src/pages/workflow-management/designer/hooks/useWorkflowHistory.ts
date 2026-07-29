@@ -60,15 +60,25 @@ export const useWorkflowHistory = () => {
     refresh();
   }, []);
 
-  const canUndo = pastRef.current.length > 0;
-  const canRedo = futureRef.current.length > 0;
-
-  return useMemo(() => ({
-    record,
-    undo,
-    redo,
-    reset,
-    canUndo,
-    canRedo,
-  }), [canRedo, canUndo, record, redo, reset, undo]);
+  /*
+   * Keep the history API identity stable. The designer's initial-load callback
+   * depends on this object, so returning a new object whenever canUndo/canRedo
+   * changes causes the workflow to be fetched again after a drag or edit. The
+   * getters still expose the latest stack state on every render.
+   */
+  return useMemo(
+    () => ({
+      record,
+      undo,
+      redo,
+      reset,
+      get canUndo() {
+        return pastRef.current.length > 0;
+      },
+      get canRedo() {
+        return futureRef.current.length > 0;
+      },
+    }),
+    [record, redo, reset, undo],
+  );
 };
