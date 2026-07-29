@@ -1,16 +1,28 @@
-/* React Flow renders internal DOM outside our component boundaries. All product
- * component styling lives in Tailwind classes; this file only adapts the
- * third-party canvas shell and preserves the existing stable entry markup. */
+/* React Flow renders internal DOM outside our component boundaries. Product
+ * components use Tailwind classes; this file only owns the full-screen editor
+ * frame and the third-party canvas DOM. */
 .dify-workflow-designer {
+  --workflow-sidebar-width: 220px;
+  --workflow-header-height: 52px;
+
   position: fixed;
   inset: 0;
   z-index: 120;
   overflow: hidden;
   color: #101828;
-  background: #f7f8fa;
+  background: #f4f6f8;
 }
 
-.dify-workflow-loading,
+.dify-workflow-loading {
+  position: absolute;
+  top: var(--workflow-header-height);
+  right: 0;
+  bottom: 0;
+  left: var(--workflow-sidebar-width);
+  width: auto;
+  height: auto;
+}
+
 .dify-workflow-loading > .ant-spin-container,
 .dify-workflow-canvas {
   width: 100%;
@@ -23,34 +35,50 @@
 
 .dify-workflow-canvas {
   position: relative;
-  background:
-    radial-gradient(circle at 50% 0, rgba(109, 94, 252, 0.035), transparent 35%),
-    #f8f9fb;
+  overflow: hidden;
+  background: #f7f8fa;
 }
 
-.dify-workflow-canvas .react-flow__pane { cursor: grab; }
-.dify-workflow-canvas .react-flow__pane:active { cursor: grabbing; }
+.dify-workflow-canvas .react-flow__renderer,
+.dify-workflow-canvas .react-flow__pane {
+  background: transparent;
+}
+
+.dify-workflow-canvas .react-flow__pane {
+  cursor: grab;
+}
+
+.dify-workflow-canvas .react-flow__pane:active {
+  cursor: grabbing;
+}
+
 .dify-workflow-canvas .react-flow__edge-path {
-  stroke: #98a2b3;
+  stroke: #a6afbd;
   stroke-width: 1.5;
 }
+
 .dify-workflow-canvas .react-flow__edge.selected .react-flow__edge-path,
 .dify-workflow-canvas .react-flow__edge:hover .react-flow__edge-path {
-  stroke: #6d5efc;
+  stroke: #155eef;
   stroke-width: 2;
 }
+
 .dify-workflow-canvas .react-flow__selection {
-  border: 1px solid rgba(93, 95, 239, 0.7);
-  background: rgba(93, 95, 239, 0.08);
+  border: 1px solid rgba(21, 94, 239, 0.65);
+  background: rgba(21, 94, 239, 0.08);
+}
+
+.dify-workflow-canvas .react-flow__background {
+  opacity: 0.72;
 }
 
 .dify-add-block-trigger {
   position: absolute;
-  top: 76px;
+  top: 16px;
   left: 16px;
   z-index: 20;
   display: inline-flex;
-  height: 35px;
+  height: 34px;
   align-items: center;
   gap: 6px;
   padding: 0 11px;
@@ -59,13 +87,15 @@
   color: #475467;
   font-size: 11px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 7px 20px rgba(16, 24, 40, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 5px 14px rgba(16, 24, 40, 0.08);
   backdrop-filter: blur(10px);
 }
+
 .dify-add-block-trigger:hover {
-  color: #4f46e5;
-  border-color: #a9a4fb;
+  color: #155eef;
+  border-color: #84adff;
+  background: #fff;
 }
 
 .dify-empty-canvas {
@@ -77,18 +107,27 @@
   align-items: center;
   padding: 28px 38px;
   border: 1px dashed #cfd4dc;
-  border-radius: 13px;
-  color: #7c6ff4;
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 12px;
+  color: #155eef;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
   transform: translate(-50%, -50%);
 }
+
 .dify-empty-canvas strong {
   margin-top: 10px;
-  color: #475467;
-  font-size: 12px;
+  color: #344054;
+  font-size: 13px;
 }
+
 .dify-empty-canvas span {
   margin-top: 4px;
   color: #98a2b3;
-  font-size: 9px;
+  font-size: 10px;
+}
+
+@media (max-width: 1023px) {
+  .dify-workflow-designer {
+    --workflow-sidebar-width: 0px;
+  }
 }
