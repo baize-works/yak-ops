@@ -1,15 +1,19 @@
 import { Input, Tooltip } from 'antd';
 import {
-  ArrowLeft,
+  Activity,
+  Braces,
   Check,
+  ChevronLeft,
   CircleDot,
+  CircleHelp,
   Clock3,
   History,
+  Home,
   Play,
   Save,
   Settings2,
   SlidersHorizontal,
-  Variable,
+  Workflow as WorkflowIcon,
 } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import type {
@@ -50,7 +54,7 @@ const WorkflowHeader = ({
     setEditing(false);
   };
 
-  const panelButton = (
+  const topIconButton = (
     panel: Exclude<WorkflowPanelType, 'node' | null>,
     label: string,
     icon: ReactNode,
@@ -59,78 +63,160 @@ const WorkflowHeader = ({
       <button
         type="button"
         className={[
-          'pointer-events-auto inline-flex h-[30px] items-center gap-1.5 rounded-md border-0 px-2.5',
-          'text-[11px] transition-colors',
+          'inline-flex h-8 min-w-8 items-center justify-center gap-1.5 rounded-lg border px-2.5',
+          'text-[12px] font-medium transition-colors',
           activePanel === panel
-            ? 'bg-[#f1f0ff] text-[#4f46e5]'
-            : 'bg-transparent text-[#667085] hover:bg-[#f1f0ff] hover:text-[#4f46e5]',
+            ? 'border-[#b2ccff] bg-[#eff4ff] text-[#155eef]'
+            : 'border-[#e4e7ec] bg-white text-[#475467] hover:bg-[#f9fafb] hover:text-[#344054]',
         ].join(' ')}
         onClick={() => onOpenPanel(panel)}
       >
         {icon}
-        <span>{label}</span>
+        <span className="max-xl:hidden">{label}</span>
       </button>
     </Tooltip>
   );
 
-  return (
-    <header
-      className={[
-        'pointer-events-none absolute left-3.5 right-3.5 top-3.5 z-30 grid items-center',
-        'grid-cols-[minmax(260px,1fr)_auto_minmax(260px,1fr)] max-lg:grid-cols-[1fr_auto]',
-      ].join(' ')}
-    >
-      <div className="justify-self-start flex min-w-0 items-center gap-2.5">
-        <Tooltip title="返回工作流列表">
-          <button
-            type="button"
-            className={[
-              'pointer-events-auto flex h-[38px] w-[38px] items-center justify-center rounded-[10px]',
-              'border border-[#d0d5dd]/80 bg-white/90 text-[#475467]',
-              'shadow-[0_7px_20px_rgba(16,24,40,0.07)] backdrop-blur-[10px]',
-              'hover:bg-white',
-            ].join(' ')}
-            onClick={onBack}
-          >
-            <ArrowLeft size={18} />
-          </button>
-        </Tooltip>
+  const sideNavButton = (
+    panel: Exclude<WorkflowPanelType, 'node' | null> | 'canvas',
+    label: string,
+    icon: ReactNode,
+  ) => {
+    const active =
+      panel === 'canvas'
+        ? activePanel === null || activePanel === 'node'
+        : activePanel === panel;
 
-        <div
-          className={[
-            'pointer-events-auto flex h-[42px] min-w-0 items-center gap-2.5 rounded-[10px]',
-            'border border-[#d0d5dd]/80 bg-white/90 px-2.5',
-            'shadow-[0_7px_20px_rgba(16,24,40,0.07)] backdrop-blur-[10px]',
-          ].join(' ')}
-        >
-          {editing ? (
-            <Input
-              autoFocus
-              value={name}
-              maxLength={255}
-              onChange={(event) => setName(event.target.value)}
-              onPressEnter={applyName}
-              onBlur={applyName}
-              className="h-[30px] w-[210px] px-1.5 text-xs"
-            />
-          ) : (
+    return (
+      <button
+        type="button"
+        className={[
+          'flex h-10 w-full items-center gap-3 rounded-lg border-0 px-3 text-left text-[13px]',
+          'font-medium transition-colors',
+          active
+            ? 'bg-[#eaf0ff] text-[#155eef]'
+            : 'bg-transparent text-[#475467] hover:bg-[#f2f4f7] hover:text-[#344054]',
+        ].join(' ')}
+        onClick={() => {
+          if (panel === 'canvas') {
+            if (activePanel && activePanel !== 'node') onOpenPanel(activePanel);
+            return;
+          }
+          onOpenPanel(panel);
+        }}
+      >
+        {icon}
+        <span>{label}</span>
+      </button>
+    );
+  };
+
+  return (
+    <>
+      <aside className="absolute inset-y-0 left-0 z-50 hidden w-[220px] flex-col border-r border-[#e4e7ec] bg-white lg:flex">
+        <div className="flex h-[52px] shrink-0 items-center gap-2 border-b border-[#eaecf0] px-3">
+          <Tooltip title="返回工作流列表">
             <button
               type="button"
-              onDoubleClick={() => setEditing(true)}
-              className="min-w-0 border-0 bg-transparent p-0 text-left"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-transparent text-[#667085] hover:bg-[#f2f4f7] hover:text-[#344054]"
+              onClick={onBack}
             >
-              <strong className="block max-w-[230px] overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-4 text-[#1d2939]">
-                {workflow?.name || '工作流设计器'}
-              </strong>
-              <span className="block font-mono text-[9px] leading-[13px] text-[#98a2b3]">
-                {workflow?.code || '-'}
-              </span>
+              <ChevronLeft size={17} />
             </button>
+          </Tooltip>
+          <Home size={15} className="text-[#98a2b3]" />
+          <span className="text-[#d0d5dd]">/</span>
+          <strong className="text-[13px] font-semibold text-[#344054]">工作流</strong>
+        </div>
+
+        <div className="px-3 pb-3 pt-4">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#dbe4ff] bg-[#eef3ff] text-[#155eef]">
+              <WorkflowIcon size={20} />
+            </span>
+            <div className="min-w-0 flex-1">
+              {editing ? (
+                <Input
+                  autoFocus
+                  value={name}
+                  maxLength={255}
+                  onChange={(event) => setName(event.target.value)}
+                  onPressEnter={applyName}
+                  onBlur={applyName}
+                  className="h-8 px-2 text-[13px]"
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="block w-full border-0 bg-transparent p-0 text-left"
+                  onDoubleClick={() => setEditing(true)}
+                >
+                  <strong
+                    className="block overflow-hidden text-ellipsis whitespace-nowrap text-[14px] font-semibold text-[#101828]"
+                    title={workflow?.name}
+                  >
+                    {workflow?.name || '工作流设计器'}
+                  </strong>
+                  <span className="mt-0.5 block overflow-hidden text-ellipsis whitespace-nowrap text-[10px] uppercase tracking-[0.04em] text-[#98a2b3]">
+                    {workflow?.code || 'WORKFLOW'}
+                  </span>
+                </button>
+              )}
+            </div>
+            <Tooltip title="工作流设置">
+              <button
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-[#98a2b3] hover:bg-[#f2f4f7] hover:text-[#475467]"
+                onClick={() => onOpenPanel('workflow-settings')}
+              >
+                <Settings2 size={15} />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
+        <nav className="flex flex-col gap-1 px-3">
+          {sideNavButton('canvas', '编排', <WorkflowIcon size={17} />)}
+          {sideNavButton('variables', '变量', <Braces size={17} />)}
+          {sideNavButton(
+            'environment',
+            '环境变量',
+            <SlidersHorizontal size={17} />,
           )}
+          {sideNavButton('history', '历史版本', <History size={17} />)}
+          {sideNavButton('run', '调试运行', <Activity size={17} />)}
+        </nav>
+
+        <div className="mt-auto flex h-14 items-center justify-between border-t border-[#eaecf0] px-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#155eef] text-[11px] font-semibold text-white">
+              Y
+            </span>
+            <span className="text-[12px] font-medium text-[#475467]">Yak Ops</span>
+          </div>
+          <CircleHelp size={17} className="text-[#98a2b3]" />
+        </div>
+      </aside>
+
+      <header className="absolute left-[220px] right-0 top-0 z-50 flex h-[52px] items-center justify-between border-b border-[#e4e7ec] bg-white px-3 max-lg:left-0">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="hidden items-center gap-2 max-lg:flex">
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-transparent text-[#667085] hover:bg-[#f2f4f7]"
+              onClick={onBack}
+            >
+              <ChevronLeft size={17} />
+            </button>
+            <strong className="max-w-[180px] truncate text-[13px] text-[#344054]">
+              {workflow?.name || '工作流'}
+            </strong>
+          </div>
+
+          <span className="hidden text-[12px] text-[#667085] lg:inline">草稿状态</span>
           <i
             className={[
-              'inline-flex items-center gap-1 whitespace-nowrap rounded-[10px] px-1.5 py-[3px]',
-              'text-[9px] not-italic',
+              'hidden items-center gap-1 rounded-full px-2 py-1 text-[11px] not-italic lg:inline-flex',
               dirty
                 ? 'bg-[#fffaeb] text-[#b54708]'
                 : 'bg-[#ecfdf3] text-[#027a48]',
@@ -140,49 +226,45 @@ const WorkflowHeader = ({
             {dirty ? '有未保存修改' : '草稿已保存'}
           </i>
         </div>
-      </div>
 
-      <div
-        className={[
-          'justify-self-center flex h-[38px] items-center gap-0.5 rounded-[10px] p-[3px]',
-          'border border-[#d0d5dd]/80 bg-white/90 shadow-[0_8px_24px_rgba(16,24,40,0.08)]',
-          'backdrop-blur-[12px] max-lg:hidden',
-        ].join(' ')}
-      >
-        {panelButton('variables', '变量', <Variable size={15} />)}
-        {panelButton('environment', '环境变量', <SlidersHorizontal size={15} />)}
-        {panelButton('history', '历史', <History size={15} />)}
-        {panelButton('workflow-settings', '设置', <Settings2 size={15} />)}
-      </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={[
+              'inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-[12px] font-medium',
+              activePanel === 'run'
+                ? 'border-[#b2ccff] bg-[#eff4ff] text-[#155eef]'
+                : 'border-[#e4e7ec] bg-white text-[#475467] hover:bg-[#f9fafb]',
+            ].join(' ')}
+            onClick={() => onOpenPanel('run')}
+          >
+            <Play size={15} />
+            预览
+          </button>
 
-      <div className="justify-self-end flex items-center gap-2">
-        <button
-          type="button"
-          className={[
-            'pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5',
-            'border border-[#d0d5dd] bg-white/95 text-xs font-semibold text-[#344054]',
-            'shadow-[0_4px_12px_rgba(16,24,40,0.06)] max-sm:hidden',
-          ].join(' ')}
-          onClick={() => onOpenPanel('run')}
-        >
-          <Play size={15} />
-          运行
-        </button>
-        <button
-          type="button"
-          className={[
-            'pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5',
-            'border-0 bg-[#5d5fef] text-xs font-semibold text-white',
-            'shadow-[0_7px_16px_rgba(93,95,239,0.24)] disabled:cursor-not-allowed disabled:opacity-[0.55]',
-          ].join(' ')}
-          disabled={saving}
-          onClick={onSave}
-        >
-          {saving ? <Clock3 size={15} /> : <Save size={15} />}
-          {saving ? '保存中...' : '保存'}
-        </button>
-      </div>
-    </header>
+          <div className="hidden items-center gap-2 md:flex">
+            {topIconButton('variables', '变量', <Braces size={15} />)}
+            {topIconButton(
+              'environment',
+              '环境',
+              <SlidersHorizontal size={15} />,
+            )}
+            {topIconButton('history', '历史', <History size={15} />)}
+            {topIconButton('workflow-settings', '设置', <Settings2 size={15} />)}
+          </div>
+
+          <button
+            type="button"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border-0 bg-[#155eef] px-3.5 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(21,94,239,0.22)] hover:bg-[#004eeb] disabled:cursor-not-allowed disabled:opacity-[0.55]"
+            disabled={saving}
+            onClick={onSave}
+          >
+            {saving ? <Clock3 size={15} className="animate-spin" /> : <Save size={15} />}
+            {saving ? '保存中...' : '保存'}
+          </button>
+        </div>
+      </header>
+    </>
   );
 };
 
