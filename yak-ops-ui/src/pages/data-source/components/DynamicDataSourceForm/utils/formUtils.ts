@@ -1,67 +1,74 @@
-export const transformRules = (rules: any[] | undefined): any[] => {
+import type { Rule } from 'antd/es/form';
+
+import type { DynamicFormField, DynamicFormFieldRule } from '../../../types';
+
+export const transformRules = (
+  rules: DynamicFormFieldRule[] | undefined,
+): Rule[] => {
   if (!rules) return [];
+
   return rules.map((rule) => {
-    const formRule: any = {message: rule.message};
+    const formRule: Rule = { message: rule.message };
     if (rule.required === true) formRule.required = true;
+    if (typeof rule.min === 'number') formRule.min = rule.min;
+    if (typeof rule.max === 'number') formRule.max = rule.max;
+    if (rule.pattern) {
+      try {
+        formRule.pattern = new RegExp(rule.pattern);
+      } catch {
+        // 后端插件配置错误时不让整个表单崩溃，服务端仍会再次校验。
+      }
+    }
     return formRule;
   });
 };
 
-export const getConfigInitialValues = (fields: any[]) => {
-  const initialValues: Record<string, any> = {};
-
+export const getConfigInitialValues = (fields: DynamicFormField[]) => {
+  const initialValues: Record<string, unknown> = {};
   fields.forEach((field) => {
     initialValues[field.key] = parseDefaultValueByType(field);
   });
-
   return initialValues;
 };
 
-const parseDefaultValueByType = (field: any) => {
+const parseDefaultValueByType = (field: DynamicFormField) => {
   const value = field.defaultValue;
-
-  if (value === undefined || value === null || value === "") {
-    if (field.type === "CUSTOM_SELECT") {
-      return [];
-    }
-    return value;
+  if (value === undefined || value === null || value === '') {
+    return field.type === 'CUSTOM_SELECT' ? [] : value;
   }
 
   switch (field.type) {
-    case "NUMBER":
+    case 'NUMBER':
       return Number(value);
-
-    case "SWITCH":
-      if (typeof value === "boolean") return value;
-      return value === "true" || value === true;
-
-    case "CUSTOM_SELECT":
+    case 'SWITCH':
+      return typeof value === 'boolean' ? value : value === 'true';
+    case 'CUSTOM_SELECT':
       if (Array.isArray(value)) return value;
-      if (typeof value === "string") {
+      if (typeof value === 'string') {
         try {
           const parsed = JSON.parse(value);
           return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-          console.error(`Failed to parse defaultValue for ${field.key}`, e);
+        } catch {
           return [];
         }
       }
       return [];
-
     default:
       return value;
   }
 };
 
-/** 只给“当前为空”的字段补默认值 */
+/** 只给当前为空的字段补默认值。 */
 export const patchEmptyWithDefaults = (
-  current: Record<string, any>,
-  init: Record<string, any>
+  current: Record<string, unknown>,
+  defaults: Record<string, unknown>,
 ) => {
-  const patch: Record<string, any> = {};
-  Object.keys(init).forEach((k) => {
-    const cur = current?.[k];
-    if (cur === undefined || cur === null || cur === "") patch[k] = init[k];
+  const patch: Record<string, unknown> = {};
+  Object.keys(defaults).forEach((key) => {
+    const value = current?.[key];
+    if (value === undefined || value === null || value === '') {
+      patch[key] = defaults[key];
+    }
   });
   return patch;
 };
