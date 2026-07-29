@@ -19,11 +19,11 @@ export default function LegacyConfigRedirect() {
   useEffect(() => {
     if (taskId) {
       history.replace(
-        `/batch-link-up/detail?id=${encodeURIComponent(taskId)}`,
+        `/sync/batch-link-up/${encodeURIComponent(taskId)}/detail?scene=edit`,
       );
       return;
     }
-    history.replace('/batch-link-up');
+    history.replace('/sync/batch-link-up');
   }, [taskId]);
 
   return (
