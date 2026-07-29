@@ -29,15 +29,8 @@ public final class ShellWorkflowTaskExecutor implements WorkflowTaskExecutor {
 
   @Override
   public void validate(Map<String, Object> configuration) {
-    String command = TaskConfiguration.string(configuration, "command", null);
-    List<String> args = TaskConfiguration.stringList(configuration, "args");
-    if (!TaskConfiguration.hasText(command) && args.isEmpty()) {
-      throw new IllegalArgumentException("SHELL 任务必须配置 command 或非空 args");
-    }
-    if (!args.isEmpty() && args.stream().anyMatch(value -> !TaskConfiguration.hasText(value))) {
-      throw new IllegalArgumentException("SHELL 任务 args 不能包含空参数");
-    }
-    TaskConfiguration.stringMap(configuration, "environment");
+    ShellTaskParameters parameters = ShellTaskParameters.from(configuration);
+    parameters.validate();
   }
 
   @Override
