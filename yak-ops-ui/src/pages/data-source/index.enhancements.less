@@ -1,0 +1,26 @@
+.datasource-pagination {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(22, 24, 35, 0.06);
+}
+
+.datasource-item__quick-actions button:disabled,
+.datasource-detail-button:disabled,
+.datasource-tool-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.datasource-connection-indicator.is-unknown {
+  color: #7b8493;
+}
+
+@media (max-width: 768px) {
+  .datasource-pagination {
+    justify-content: center;
+    overflow-x: auto;
+  }
+}
