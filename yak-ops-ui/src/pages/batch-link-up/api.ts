@@ -19,6 +19,9 @@ export interface LinkupJobDefinition {
 
 export const apiPrefix = '/api/v1/job/batch-definition';
 
+const normalizeLegacySuccessCode = <T extends { code: number }>(response: T): T =>
+  response?.code === 200 ? ({ ...response, code: 0 } as T) : response;
+
 export const linkupJobDefinitionApi = {
   /**
    * SCRIPT 模式保存/更新
@@ -56,8 +59,19 @@ export const linkupJobDefinitionApi = {
     return HttpUtils.get(`${apiPrefix}/${id}/edit-detail`);
   },
 
-  getUniqueId: (): Promise<{ code: number; data: LinkupJobDefinition; message?: string }> => {
-    return HttpUtils.get(`${apiPrefix}/get-unique-id`);
+  /**
+   * 列表页仍按历史约定以 code=0 判断成功。
+   * 这里兼容统一响应协议的 code=200，避免新建入口被误判为失败。
+   */
+  getUniqueId: async (): Promise<{
+    code: number;
+    data: LinkupJobDefinition;
+    message?: string;
+  }> => {
+    const response = await HttpUtils.get<LinkupJobDefinition>(
+      `${apiPrefix}/get-unique-id`,
+    );
+    return normalizeLegacySuccessCode(response);
   },
 
   delete: (id: string) => {
