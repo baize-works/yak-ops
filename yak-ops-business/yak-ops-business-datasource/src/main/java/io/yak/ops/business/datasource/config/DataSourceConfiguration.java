@@ -11,6 +11,7 @@ import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.type.JdbcType;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -85,6 +86,7 @@ public class DataSourceConfiguration {
         .dataSource(dataSource)
         .locations("classpath:db/migration/yak-datasource")
         .table("yak_ds_schema_history")
+        .baselineVersion(MigrationVersion.fromVersion("0"))
         .baselineOnMigrate(true)
         .load();
   }
