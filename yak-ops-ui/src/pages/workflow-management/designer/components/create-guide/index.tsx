@@ -7,7 +7,7 @@ import type { WorkflowFailureStrategy } from '../../../types';
 import { WORKFLOW_TEMPLATES } from '../../constants';
 import NodeIcon from '../node/NodeIcon';
 
-interface CreateValues {
+export interface CreateValues {
   name: string;
   code: string;
   description?: string;
@@ -15,11 +15,38 @@ interface CreateValues {
   maxParallelism: number;
 }
 
+const DEFAULT_CREATE_VALUES: Partial<CreateValues> = {
+  failureStrategy: 'FAIL_FAST',
+  maxParallelism: 4,
+};
+
+/**
+ * Normalize values while the Ant Design Form is still mounted.
+ * The first-step Form is removed when the template step is displayed, so its
+ * field store must not be read again during final submission.
+ */
+export const normalizeCreateValues = (
+  values: Partial<CreateValues>,
+): CreateValues | undefined => {
+  const name = values.name?.trim();
+  const code = values.code?.trim();
+  if (!name || !code) return undefined;
+
+  return {
+    name,
+    code,
+    description: values.description?.trim() || undefined,
+    failureStrategy: values.failureStrategy || 'FAIL_FAST',
+    maxParallelism: values.maxParallelism || 4,
+  };
+};
+
 const WorkflowCreateGuide = () => {
   const [form] = Form.useForm<CreateValues>();
   const [step, setStep] = useState(0);
   const [templateId, setTemplateId] = useState('blank');
   const [saving, setSaving] = useState(false);
+  const [basicValues, setBasicValues] = useState<CreateValues>();
   const selectedTemplate = useMemo(
     () =>
       WORKFLOW_TEMPLATES.find((item) => item.id === templateId) ||
@@ -28,18 +55,27 @@ const WorkflowCreateGuide = () => {
   );
 
   const goNext = async () => {
-    await form.validateFields(['name', 'code', 'description']);
+    const validatedValues = await form.validateFields();
+    const normalizedValues = normalizeCreateValues(validatedValues);
+    if (!normalizedValues) {
+      message.warning('请先完整填写工作流名称和编码');
+      return;
+    }
+    setBasicValues(normalizedValues);
     setStep(1);
   };
 
   const create = async () => {
-    const values = await form.validateFields();
+    if (!basicValues) {
+      message.warning('基本信息已失效，请返回上一步重新确认');
+      setStep(0);
+      return;
+    }
+
     try {
       setSaving(true);
       const response = await createWorkflow({
-        ...values,
-        name: values.name.trim(),
-        code: values.code.trim(),
+        ...basicValues,
         dag: {
           nodes: selectedTemplate.nodes,
           edges: selectedTemplate.edges,
@@ -127,10 +163,7 @@ const WorkflowCreateGuide = () => {
               form={form}
               layout="vertical"
               requiredMark={false}
-              initialValues={{
-                failureStrategy: 'FAIL_FAST',
-                maxParallelism: 4,
-              }}
+              initialValues={basicValues || DEFAULT_CREATE_VALUES}
               className={[
                 'mx-auto w-full max-w-[620px]',
                 '[&_.ant-form-item-label_label]:text-[11px]',
