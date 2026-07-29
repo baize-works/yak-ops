@@ -6,7 +6,9 @@ import io.yak.framework.security.common.enums.ResultCode;
 import io.yak.framework.security.exception.YakSecurityException;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.controller.v1.DataSourceController;
+import io.yak.ops.business.datasource.util.DataSourceSecretCodec;
 import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -25,7 +27,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(basePackageClasses = DataSourceController.class)
 @ConditionalOnDataSourceEnabled
+@RequiredArgsConstructor
 public class DataSourceExceptionHandler {
+
+  private final DataSourceSecretCodec secretCodec;
 
   @ExceptionHandler(YakSecurityException.class)
   public ResponseEntity<Result<Void>> handleSecurityException(
@@ -44,10 +49,11 @@ public class DataSourceExceptionHandler {
 
   @ExceptionHandler(DataSourceException.class)
   public Result<Void> handleDataSourceException(DataSourceException exception) {
+    String message = secretCodec.maskSensitiveText(exception.getUserMessage());
     if (exception.getErrorCode() == null) {
-      return Result.fail(exception.getUserMessage());
+      return Result.fail(message);
     }
-    return Result.fail(exception.getErrorCode().getCode(), exception.getUserMessage());
+    return Result.fail(exception.getErrorCode().getCode(), message);
   }
 
   @ExceptionHandler({
