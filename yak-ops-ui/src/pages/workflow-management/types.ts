@@ -56,6 +56,37 @@ export interface WorkflowVariable {
   secret?: boolean;
 }
 
+/** Common local input/output parameter shared by typed task parameter objects. */
+export interface WorkflowLocalTaskParameter {
+  prop: string;
+  direct: 'IN' | 'OUT';
+  type: string;
+  value: string;
+}
+
+export type HttpWorkflowTaskParameters = Record<string, unknown> & {
+  localParams?: WorkflowLocalTaskParameter[];
+  url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+  headers: Record<string, string>;
+  body: string;
+  requestTimeoutSeconds: number;
+  successCodes: number[];
+  maxResponseBodyCharacters: number;
+};
+
+export type ShellWorkflowTaskParameters = Record<string, unknown> & {
+  localParams?: WorkflowLocalTaskParameter[];
+  command: string;
+  args: string[];
+  workDirectory: string;
+  environment: Record<string, string>;
+};
+
+export type KnownWorkflowTaskParameters =
+  | HttpWorkflowTaskParameters
+  | ShellWorkflowTaskParameters;
+
 export interface WorkflowNodeRecord {
   key: string;
   name: string;
