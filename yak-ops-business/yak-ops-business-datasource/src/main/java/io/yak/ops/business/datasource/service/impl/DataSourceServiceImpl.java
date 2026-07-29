@@ -192,13 +192,13 @@ public class DataSourceServiceImpl implements DataSourceService {
   }
 
   private DataSourceException connectException(RuntimeException exception) {
-    if (exception instanceof DataSourceException dataSourceException) {
-      return dataSourceException;
+    if (exception instanceof DataSourceException) {
+      return (DataSourceException) exception;
     }
     return new DataSourceException(
-        DataSourceErrorCode.CONNECT_FAILED,
-        exception.getMessage(),
-        exception);
+            DataSourceErrorCode.CONNECT_FAILED,
+            exception.getMessage(),
+            exception);
   }
 
   private int connectionTimeoutSeconds() {

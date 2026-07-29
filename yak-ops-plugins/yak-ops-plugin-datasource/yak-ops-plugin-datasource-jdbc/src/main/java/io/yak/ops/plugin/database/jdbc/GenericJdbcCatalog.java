@@ -457,14 +457,20 @@ public class GenericJdbcCatalog implements DataSourceCatalog {
   }
 
   private Map<String, String> requestVariables(Map<String, Object> request) {
-    if (request == null || !(request.get("paramsList") instanceof Iterable<?> items)) {
+    if (request == null) {
       return Collections.emptyMap();
     }
+    Object paramsListObj = request.get("paramsList");
+    if (!(paramsListObj instanceof Iterable<?>)) {
+      return Collections.emptyMap();
+    }
+    Iterable<?> items = (Iterable<?>) paramsListObj;
     Map<String, String> variables = new LinkedHashMap<>();
     for (Object item : items) {
-      if (!(item instanceof Map<?, ?> value)) {
+      if (!(item instanceof Map<?, ?>)) {
         continue;
       }
+      Map<?, ?> value = (Map<?, ?>) item;
       String name = mapText(value, "paramName", "name");
       String variableValue = mapText(value, "paramValue", "value");
       if (!isBlank(name) && variableValue != null) {

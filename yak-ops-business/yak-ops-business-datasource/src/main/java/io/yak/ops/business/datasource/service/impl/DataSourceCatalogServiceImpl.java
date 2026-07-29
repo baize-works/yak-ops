@@ -22,7 +22,6 @@ import io.yak.ops.spi.datasource.catalog.DataSourceCatalogQuery;
 import io.yak.ops.spi.datasource.catalog.DataSourceTablePath;
 import io.yak.ops.spi.datasource.query.DataSourceQueryResult;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

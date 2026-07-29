@@ -1,12 +1,6 @@
 package io.yak.ops.plugin.task.api;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /** 任务插件配置读取工具，统一处理必填、类型转换和边界校验。 */
 public final class TaskConfiguration {
@@ -48,32 +42,34 @@ public final class TaskConfiguration {
   }
 
   public static Map<String, String> stringMap(
-      Map<String, Object> configuration,
-      String key) {
+          Map<String, Object> configuration,
+          String key) {
     Object value = value(configuration, key);
     if (value == null) {
-      return Map.of();
+      return Collections.emptyMap();
     }
-    if (!(value instanceof Map<?, ?> source)) {
+    if (!(value instanceof Map<?, ?>)) {
       throw new IllegalArgumentException("任务配置必须为对象：" + key);
     }
+    Map<?, ?> source = (Map<?, ?>) value;
     Map<String, String> result = new LinkedHashMap<>();
     source.forEach((entryKey, entryValue) -> result.put(
-        String.valueOf(entryKey),
-        entryValue == null ? "" : String.valueOf(entryValue)));
+            String.valueOf(entryKey),
+            entryValue == null ? "" : String.valueOf(entryValue)));
     return result;
   }
 
   public static List<String> stringList(
-      Map<String, Object> configuration,
-      String key) {
+          Map<String, Object> configuration,
+          String key) {
     Object value = value(configuration, key);
     if (value == null) {
-      return List.of();
+      return Collections.emptyList();
     }
-    if (!(value instanceof Collection<?> source)) {
+    if (!(value instanceof Collection<?>)) {
       throw new IllegalArgumentException("任务配置必须为数组：" + key);
     }
+    Collection<?> source = (Collection<?>) value;
     List<String> result = new ArrayList<>(source.size());
     for (Object item : source) {
       result.add(String.valueOf(item));
@@ -82,14 +78,18 @@ public final class TaskConfiguration {
   }
 
   public static Set<Integer> integerSet(
-      Map<String, Object> configuration,
-      String key,
-      Set<Integer> fallback) {
+          Map<String, Object> configuration,
+          String key,
+          Set<Integer> fallback) {
     Object value = value(configuration, key);
     if (value == null) {
       return fallback;
     }
-    if (!(value instanceof Collection<?> source) || source.isEmpty()) {
+    if (!(value instanceof Collection<?>)) {
+      throw new IllegalArgumentException("任务配置必须为非空整数数组：" + key);
+    }
+    Collection<?> source = (Collection<?>) value;
+    if (source.isEmpty()) {
       throw new IllegalArgumentException("任务配置必须为非空整数数组：" + key);
     }
     Set<Integer> result = new LinkedHashSet<>();

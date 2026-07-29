@@ -265,8 +265,11 @@ public abstract class AbstractJdbcDataSourcePlugin implements DataSourcePlugin {
   }
 
   protected JdbcConnectionProperties requireJdbcConnection(DataSourceConnection connection) {
-    if (!(connection instanceof JdbcConnectionProperties jdbcConnection)
-        || connection.dbType() != dbType()) {
+    if (!(connection instanceof JdbcConnectionProperties)) {
+      throw parameterError("连接参数与插件类型不匹配", null);
+    }
+    JdbcConnectionProperties jdbcConnection = (JdbcConnectionProperties) connection;
+    if (connection.dbType() != dbType()) {
       throw parameterError("连接参数与插件类型不匹配", null);
     }
     return jdbcConnection;
