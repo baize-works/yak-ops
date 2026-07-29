@@ -1,6 +1,6 @@
 import { Input } from 'antd';
 import { Plus, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 
 import type { WorkflowNodeType } from '../../../types';
 import {
@@ -69,6 +69,7 @@ const NodePicker = ({ onSelect, allowedTypes }: NodePickerProps) => {
                       'transition-colors duration-150',
                       'hover:border-[#d1e0ff] hover:bg-[#f5f8ff]',
                     ].join(' ')}
+                    style={{ '--node-color': item.color } as CSSProperties}
                     onClick={() => onSelect(item.type)}
                   >
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--node-color)_10%,white)]">
