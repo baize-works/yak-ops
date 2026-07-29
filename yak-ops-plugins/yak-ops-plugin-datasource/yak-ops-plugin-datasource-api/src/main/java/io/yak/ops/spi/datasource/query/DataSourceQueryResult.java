@@ -1,4 +1,4 @@
-package io.yak.ops.spi.datasource;
+package io.yak.ops.spi.datasource.query;
 
 import java.util.ArrayList;
 import java.util.Collections;

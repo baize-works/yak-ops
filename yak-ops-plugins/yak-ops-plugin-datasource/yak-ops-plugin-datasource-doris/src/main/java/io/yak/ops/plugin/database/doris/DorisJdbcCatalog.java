@@ -2,8 +2,8 @@ package io.yak.ops.plugin.database.doris;
 
 import io.yak.ops.plugin.database.jdbc.GenericJdbcCatalog;
 import io.yak.ops.plugin.database.jdbc.JdbcConnectionProperties;
-import io.yak.ops.spi.datasource.DataSourceCatalogQuery;
-import io.yak.ops.spi.datasource.DataSourceTable;
+import io.yak.ops.spi.datasource.catalog.DataSourceCatalogQuery;
+import io.yak.ops.spi.datasource.metadata.DataSourceTable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;

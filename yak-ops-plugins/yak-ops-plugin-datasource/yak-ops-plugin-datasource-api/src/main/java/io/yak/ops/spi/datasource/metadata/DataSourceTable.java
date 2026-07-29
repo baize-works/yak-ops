@@ -1,4 +1,4 @@
-package io.yak.ops.spi.datasource;
+package io.yak.ops.spi.datasource.metadata;
 
 /** 数据库表或视图元数据。 */
 public final class DataSourceTable {

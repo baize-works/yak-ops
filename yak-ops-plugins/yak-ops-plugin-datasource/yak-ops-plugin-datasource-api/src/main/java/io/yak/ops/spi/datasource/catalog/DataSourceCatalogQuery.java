@@ -1,4 +1,4 @@
-package io.yak.ops.spi.datasource;
+package io.yak.ops.spi.datasource.catalog;
 
 /** Catalog 表查询条件。 */
 public final class DataSourceCatalogQuery {
