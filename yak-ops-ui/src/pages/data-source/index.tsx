@@ -92,6 +92,8 @@ const DataSourcePage: React.FC = () => {
 
       setDataSourceList(response.data?.bizData || []);
       setPagination(response.data?.pagination || PAGE_DEFAULT_PAGINATION);
+    } catch {
+      // 请求层已经统一展示业务、HTTP 与网络错误。
     } finally {
       setLoading(false);
     }
@@ -215,14 +217,18 @@ const DataSourcePage: React.FC = () => {
           return;
         }
 
-        const response = await deleteDataSource(record.id);
+        try {
+          const response = await deleteDataSource(record.id);
 
-        if (response.code !== 200) {
-          return;
+          if (response.code !== 200) {
+            return;
+          }
+
+          message.success(response.message || "删除成功");
+          handleRefresh();
+        } catch {
+          // 请求层已经统一展示错误。
         }
-
-        message.success(response.message || "删除成功");
-        handleRefresh();
       },
     });
   };
@@ -239,7 +245,11 @@ const DataSourcePage: React.FC = () => {
     }
 
     try {
-      await testDataSourceConnection(record.id);
+      const response = await testDataSourceConnection(record.id);
+
+      if (response.code !== 200) {
+        return;
+      }
 
       message.success(
         intl.formatMessage({
@@ -250,7 +260,7 @@ const DataSourcePage: React.FC = () => {
 
       handleRefresh();
     } catch {
-      message.error("连接测试失败，请检查数据源配置");
+      // 请求层已经统一展示错误，页面不再重复弹出 message。
     }
   };
 
