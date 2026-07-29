@@ -9,8 +9,10 @@ import {
 describe('API response protocols', () => {
   it('keeps success codes isolated by namespace', () => {
     expect(isSuccessfulResponse({ code: 0 }, 'yak-ops')).toBe(true);
+    expect(isSuccessfulResponse({ code: 200 }, 'yak-framework')).toBe(true);
     expect(isSuccessfulResponse({ code: 200 }, 'security')).toBe(true);
     expect(isSuccessfulResponse({ code: 200 }, 'yak-ops')).toBe(false);
+    expect(isSuccessfulResponse({ code: 0 }, 'yak-framework')).toBe(false);
     expect(isSuccessfulResponse({ code: 0 }, 'security')).toBe(false);
   });
 
@@ -28,7 +30,8 @@ describe('API response protocols', () => {
   it('does not parse arbitrary JSON as an envelope', () => {
     expect(isApiResponse({ data: { code: 200 } })).toBe(false);
     expect(protocolForUrl('/yak-security/api/v1/account/current')).toBe('security');
+    expect(protocolForUrl('/api/v1/workflows')).toBe('yak-framework');
+    expect(protocolForUrl('/api/v1/workflows/1')).toBe('yak-framework');
     expect(protocolForUrl('/api/v1/jobs')).toBe('yak-ops');
   });
 });
-
