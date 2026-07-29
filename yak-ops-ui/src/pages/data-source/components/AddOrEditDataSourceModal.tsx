@@ -174,7 +174,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       if (isCreateMode) {
         const response = await createDataSource(payload);
 
-        if (response.code !== 0) {
+        if (response.code !== 200) {
           // message.error(response.message || response.msg || "创建数据源失败");
           return;
         }
@@ -188,7 +188,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
         const response = await updateDataSource(currentRecord.id, payload);
 
-        if (response.code !== 0) {
+        if (response.code !== 200) {
           return;
         }
       }

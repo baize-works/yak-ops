@@ -38,7 +38,7 @@ const BlockSelector = ({ open, onClose, onSelect, compact = false }: BlockSelect
     const loadPlugins = async () => {
       try {
         const response = await fetchTaskPluginList();
-        if (!active || response.code !== 0 || !Array.isArray(response.data)) return;
+        if (!active || response.code !== 200 || !Array.isArray(response.data)) return;
         mergeTaskPluginCatalog(response.data);
         setPlugins(response.data);
         setCatalogLoaded(true);

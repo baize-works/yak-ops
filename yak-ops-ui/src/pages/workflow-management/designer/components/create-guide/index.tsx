@@ -1,70 +1,69 @@
 import { history } from '@umijs/max';
-import { Form, Input, InputNumber, message, Select } from 'antd';
+import { Form, Input, message } from 'antd';
 import {
   ArrowLeft,
   ArrowRight,
   Bot,
-  Check,
-  GitBranch,
+  ChevronRight,
+  CirclePlay,
+  Database,
+  FileText,
   MessageSquareText,
-  Play,
-  Settings2,
-  Workflow,
+  Workflow as WorkflowIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
 import { createWorkflow } from '../../../service';
-import type { WorkflowFailureStrategy } from '../../../types';
 import { WORKFLOW_TEMPLATES } from '../../constants';
 
 export interface CreateValues {
   name: string;
-  code: string;
   description?: string;
-  failureStrategy: WorkflowFailureStrategy;
-  maxParallelism: number;
 }
 
-const DEFAULT_CREATE_VALUES: Partial<CreateValues> = {
-  failureStrategy: 'FAIL_FAST',
-  maxParallelism: 4,
-};
+const DEFAULT_WORKFLOW_TEMPLATE =
+  WORKFLOW_TEMPLATES.find((item) => item.id === 'blank') ||
+  WORKFLOW_TEMPLATES[0];
 
-export const normalizeCreateValues = (
+const normalizeCreateValues = (
   values: Partial<CreateValues>,
 ): CreateValues | undefined => {
   const name = values.name?.trim();
-  const code = values.code?.trim();
 
-  if (!name || !code) return undefined;
+  if (!name) {
+    return undefined;
+  }
 
   return {
     name,
-    code,
     description: values.description?.trim() || undefined,
-    failureStrategy: values.failureStrategy || 'FAIL_FAST',
-    maxParallelism: values.maxParallelism || 4,
   };
 };
+
+const createWorkflowCode = () =>
+  `workflow_${Date.now().toString(36)}`;
 
 const WorkflowCreateGuide = () => {
   const [form] = Form.useForm<CreateValues>();
   const [saving, setSaving] = useState(false);
 
-  const create = async () => {
-    const validatedValues = await form.validateFields();
-    const normalizedValues = normalizeCreateValues(validatedValues);
+  const name = Form.useWatch('name', form);
+  const createDisabled = !name?.trim() || saving;
+
+  const backToList = () => {
+    history.push('/workflow-management');
+  };
+
+  const create = async (values: CreateValues) => {
+    const normalizedValues = normalizeCreateValues(values);
 
     if (!normalizedValues) {
-      message.warning('请先完整填写工作流名称和编码');
+      message.warning('请先填写工作流名称');
       return;
     }
 
-    const blankTemplate =
-      WORKFLOW_TEMPLATES.find((item) => item.id === 'blank') ||
-      WORKFLOW_TEMPLATES[0];
-
-    if (!blankTemplate) {
-      message.error('未找到空白工作流配置');
+    if (!DEFAULT_WORKFLOW_TEMPLATE) {
+      message.error('未找到默认工作流模板');
       return;
     }
 
@@ -72,20 +71,24 @@ const WorkflowCreateGuide = () => {
       setSaving(true);
 
       const response = await createWorkflow({
-        ...normalizedValues,
+        name: normalizedValues.name,
+        code: createWorkflowCode(),
+        description: normalizedValues.description,
+        failureStrategy: 'FAIL_FAST',
+        maxParallelism: 4,
         dag: {
-          nodes: blankTemplate.nodes,
-          edges: blankTemplate.edges,
-          viewport: blankTemplate.viewport,
+          nodes: DEFAULT_WORKFLOW_TEMPLATE.nodes,
+          edges: DEFAULT_WORKFLOW_TEMPLATE.edges,
+          viewport: DEFAULT_WORKFLOW_TEMPLATE.viewport,
         },
       });
 
-      if (response.code !== 0 || !response.data?.workflowId) {
+      if (response.code !== 200 || !response.data?.workflowId) {
         message.error(response.message || '创建工作流失败');
         return;
       }
 
-      message.success('工作流创建成功');
+      message.success('工作流创建成功，开始编排吧');
       history.replace(
         `/workflow-management/${response.data.workflowId}/designer`,
       );
@@ -94,295 +97,331 @@ const WorkflowCreateGuide = () => {
     }
   };
 
+  useEffect(() => {
+    const handleKeyboardCreate = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+
+        if (!saving) {
+          form.submit();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboardCreate);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyboardCreate);
+    };
+  }, [form, saving]);
+
   return (
-    <div className="fixed inset-0 z-[120] overflow-y-auto bg-[#f4f6f9] text-[#101828]">
-      <header className="sticky top-0 z-20 flex h-16 items-center border-b border-[#e7eaf0] bg-white/95 px-6 backdrop-blur">
+    <div className="fixed inset-0 z-[120] overflow-hidden bg-[#fcfcfd] text-[#101828]">
+      <header className="flex h-[60px] items-center border-b border-[#e4e7ec] bg-white px-6">
         <button
           type="button"
-          onClick={() => history.push('/workflow-management')}
-          className="inline-flex items-center gap-2 border-0 bg-transparent p-0 text-sm font-medium text-[#475467] transition-colors hover:text-[#101828]"
+          className="inline-flex items-center gap-2 border-0 bg-transparent p-0 text-[13px] font-medium text-[#475467] transition-colors hover:text-[#101828]"
+          onClick={backToList}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={17} />
           返回工作流列表
         </button>
       </header>
 
-      <main className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[1360px] items-center justify-center px-6 py-8">
-        <section className="grid w-full overflow-hidden rounded-[20px] border border-[#e4e7ec] bg-white shadow-[0_20px_60px_rgba(16,24,40,0.08)] lg:grid-cols-[560px_minmax(0,1fr)]">
-          <div className="flex min-h-[680px] flex-col px-10 py-9 max-sm:px-6">
-            <div className="mb-8">
-              <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#eef2ff] text-[#4f46e5]">
-                <Workflow size={21} />
-              </span>
+      <main className="grid h-[calc(100vh-60px)] grid-cols-[680px_760px] justify-center overflow-hidden max-xl:grid-cols-1">
+        <section className="h-full overflow-y-auto bg-[#fcfcfd] max-xl:border-b max-xl:border-[#edf0f3]">
+          <div className="w-full px-[72px] pb-12 pt-[72px] max-sm:px-5 max-sm:pt-10">
+            <h1 className="m-0 text-[22px] font-semibold leading-8 text-[#101828]">
+              创建空白应用
+            </h1>
 
-              <h1 className="m-0 text-[26px] font-semibold leading-9 text-[#101828]">
-                创建空白工作流
-              </h1>
-
-              <p className="mb-0 mt-2 text-sm leading-6 text-[#667085]">
-                填写基本信息后直接进入编排画布，模板功能后续再接入。
-              </p>
+            <div className="mb-2 mt-7 text-[13px] font-semibold leading-6 text-[#475467]">
+              选择应用类型
             </div>
 
-            <div className="mb-7">
-              <div className="mb-3 text-[13px] font-semibold text-[#344054]">
-                应用类型
-              </div>
+            <div className="flex gap-2 max-sm:flex-col">
+              <button
+                type="button"
+                className={[
+                  'relative h-[102px] w-[198px] rounded-xl border border-[#c7d2fe] bg-white p-3 text-left',
+                  'shadow-[0_4px_12px_rgba(79,70,229,0.08)] outline outline-2 outline-[#6366f1]',
+                  'max-sm:w-full',
+                ].join(' ')}
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#4f46e5] text-white">
+                  <WorkflowIcon size={16} />
+                </span>
 
-              <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-                <button
-                  type="button"
-                  className="relative flex min-h-[92px] items-start gap-3 rounded-[12px] border border-[#5d5fef] bg-[#fafaff] p-4 text-left shadow-[0_0_0_2px_rgba(93,95,239,0.08)]"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#5d5fef] text-white">
-                    <Workflow size={17} />
-                  </span>
+                <strong className="mb-0.5 mt-2 block text-[14px] font-semibold text-[#344054]">
+                  工作流
+                </strong>
 
-                  <span className="min-w-0">
-                    <strong className="block text-sm font-semibold text-[#1d2939]">
-                      工作流
-                    </strong>
-                    <small className="mt-1 block text-xs leading-5 text-[#667085]">
-                      面向自动化任务的可视化编排
-                    </small>
-                  </span>
+                <span className="line-clamp-2 block text-[12px] leading-[17px] text-[#98a2b3]">
+                  面向单轮自动化任务的编排工作流
+                </span>
+              </button>
 
-                  <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#5d5fef] text-white">
-                    <Check size={12} />
-                  </span>
-                </button>
+              <button
+                type="button"
+                title="暂未开放"
+                disabled
+                className={[
+                  'relative h-[102px] w-[198px] cursor-not-allowed rounded-xl border border-[#e4e7ec]',
+                  'bg-white p-3 text-left opacity-70 shadow-[0_1px_2px_rgba(16,24,40,0.03)]',
+                  'max-sm:w-full',
+                ].join(' ')}
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#0ea5e9] text-white">
+                  <MessageSquareText size={16} />
+                </span>
 
-                <button
-                  type="button"
-                  disabled
-                  className="relative flex min-h-[92px] cursor-not-allowed items-start gap-3 rounded-[12px] border border-[#e4e7ec] bg-[#f9fafb] p-4 text-left opacity-65"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#eaf6ff] text-[#0ba5ec]">
-                    <MessageSquareText size={17} />
-                  </span>
+                <strong className="mb-0.5 mt-2 block text-[14px] font-semibold text-[#344054]">
+                  Chatflow
+                </strong>
 
-                  <span className="min-w-0">
-                    <strong className="block text-sm font-semibold text-[#1d2939]">
-                      Chatflow
-                    </strong>
-                    <small className="mt-1 block text-xs leading-5 text-[#667085]">
-                      面向多轮对话的流程编排
-                    </small>
-                  </span>
+                <span className="line-clamp-2 block text-[12px] leading-[17px] text-[#98a2b3]">
+                  支持记忆的复杂多轮对话工作流
+                </span>
 
-                  <span className="absolute right-3 top-3 rounded-full bg-[#eaecf0] px-2 py-0.5 text-[10px] text-[#667085]">
-                    即将支持
-                  </span>
-                </button>
-              </div>
+                <span className="absolute right-3 top-3 rounded-full bg-[#f2f4f7] px-2 py-0.5 text-[10px] text-[#667085]">
+                  暂未开放
+                </span>
+              </button>
             </div>
+
+            <button
+              type="button"
+              className="mt-3 inline-flex items-center gap-1 border-0 bg-transparent p-0 text-[11px] font-medium uppercase tracking-[0.04em] text-[#98a2b3]"
+            >
+              新手适用
+              <ChevronRight size={14} />
+            </button>
+
+            <div className="my-6 h-px bg-[#eaecf0]" />
 
             <Form
               form={form}
               layout="vertical"
               requiredMark={false}
-              initialValues={DEFAULT_CREATE_VALUES}
+              onFinish={(values) => void create(values)}
               className={[
-                'flex-1',
-                '[&_.ant-form-item]:mb-5',
-                '[&_.ant-form-item-label]:pb-2',
+                '[&_.ant-form-item]:mb-4',
+                '[&_.ant-form-item-label]:pb-1',
+                '[&_.ant-form-item-label_label]:h-auto',
                 '[&_.ant-form-item-label_label]:text-[13px]',
                 '[&_.ant-form-item-label_label]:font-semibold',
-                '[&_.ant-form-item-label_label]:text-[#344054]',
-                '[&_.ant-form-item-extra]:mt-1.5',
-                '[&_.ant-form-item-extra]:text-[11px]',
-                '[&_.ant-form-item-extra]:text-[#98a2b3]',
-                '[&_.ant-input]:rounded-[10px]',
-                '[&_.ant-input]:border-[#d0d5dd]',
-                '[&_.ant-input]:shadow-none',
-                '[&_.ant-input:hover]:border-[#98a2b3]',
-                '[&_.ant-input:focus]:border-[#5d5fef]',
-                '[&_.ant-input:focus]:shadow-[0_0_0_3px_rgba(93,95,239,0.08)]',
+                '[&_.ant-form-item-label_label]:text-[#475467]',
+                '[&_.ant-form-item-explain-error]:mt-1',
+                '[&_.ant-form-item-explain-error]:text-[11px]',
               ].join(' ')}
             >
-              <Form.Item
-                label="工作流名称"
-                name="name"
-                rules={[
-                  { required: true, message: '请输入工作流名称' },
-                  { max: 255, message: '名称不能超过 255 个字符' },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="例如：知识库问答工作流"
-                  maxLength={255}
-                />
-              </Form.Item>
+              <div className="flex items-end gap-3">
+                <Form.Item
+                  label="应用名称 & 图标"
+                  name="name"
+                  className="min-w-0 flex-1"
+                  rules={[
+                    {
+                      required: true,
+                      message: '请输入工作流名称',
+                    },
+                    {
+                      max: 255,
+                      message: '名称不能超过 255 个字符',
+                    },
+                  ]}
+                >
+                  <Input
+                    placeholder="给你的应用起个名字"
+                    maxLength={255}
+                    className={[
+                      'h-10 rounded-lg border border-transparent bg-[#f2f4f7] px-3 text-[13px]',
+                      'shadow-none hover:border-[#d0d5dd] hover:bg-white',
+                      'focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]',
+                    ].join(' ')}
+                  />
+                </Form.Item>
 
-              <Form.Item
-                label="工作流编码"
-                name="code"
-                extra="创建后不可修改，建议使用英文、数字、下划线或短横线。"
-                rules={[
-                  { required: true, message: '请输入工作流编码' },
-                  {
-                    pattern: /^[a-zA-Z][a-zA-Z0-9_-]{1,127}$/,
-                    message:
-                      '编码需以字母开头，只能包含字母、数字、下划线和短横线',
-                  },
-                ]}
-              >
-                <Input
-                  size="large"
-                  placeholder="knowledge-answer"
-                  maxLength={128}
-                />
-              </Form.Item>
-
-              <Form.Item label="描述" name="description">
-                <Input.TextArea
-                  rows={4}
-                  maxLength={1000}
-                  showCount
-                  placeholder="简单描述这个工作流负责解决什么问题"
-                />
-              </Form.Item>
-
-              <div className="mb-5 flex items-center gap-2 text-[13px] font-semibold text-[#344054]">
-                <Settings2 size={15} />
-                运行设置
+                <button
+                  type="button"
+                  title="应用图标"
+                  className="mb-4 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#dbe4ff] bg-[#eef2ff] text-[#4f46e5]"
+                >
+                  <WorkflowIcon size={25} />
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3.5 max-sm:grid-cols-1">
-                <Form.Item label="失败策略" name="failureStrategy">
-                  <Select
-                    size="large"
-                    options={[
-                      { label: '失败即停止', value: 'FAIL_FAST' },
-                      { label: '继续后续分支', value: 'CONTINUE' },
-                    ]}
-                  />
-                </Form.Item>
+              <Form.Item
+                label={
+                  <span>
+                    描述
+                    <span className="ml-1 font-normal text-[#98a2b3]">
+                      （可选）
+                    </span>
+                  </span>
+                }
+                name="description"
+              >
+                <Input.TextArea
+                  rows={3}
+                  maxLength={1000}
+                  placeholder="输入应用的描述"
+                  className={[
+                    'min-h-[86px] resize-none rounded-lg border border-transparent bg-[#f2f4f7]',
+                    'px-3 py-2 text-[13px] shadow-none hover:border-[#d0d5dd] hover:bg-white',
+                    'focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]',
+                  ].join(' ')}
+                />
+              </Form.Item>
 
-                <Form.Item label="最大并行度" name="maxParallelism">
-                  <InputNumber
-                    size="large"
-                    min={1}
-                    max={256}
-                    className="w-full"
-                  />
-                </Form.Item>
+              <div className="flex items-center justify-end gap-2 pb-2 pt-2">
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center justify-center rounded-lg border border-[#d0d5dd] bg-white px-4 text-[13px] font-medium text-[#475467] shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:bg-[#f9fafb]"
+                  onClick={backToList}
+                >
+                  取消
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={createDisabled}
+                  className={[
+                    'inline-flex h-9 items-center justify-center gap-1 rounded-lg border-0 px-4',
+                    'text-[13px] font-medium text-white transition-colors',
+                    createDisabled
+                      ? 'cursor-not-allowed bg-[#d6d9ff] shadow-none'
+                      : 'bg-[#4f46e5] shadow-[0_5px_12px_rgba(79,70,229,0.22)] hover:bg-[#4338ca]',
+                  ].join(' ')}
+                >
+                  {saving ? '创建中...' : '创建'}
+
+                  <span className="ml-1 inline-flex items-center gap-0.5">
+                    <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded bg-white/20 px-1 text-[9px] font-normal text-white">
+                      Ctrl
+                    </kbd>
+                    <kbd className="inline-flex h-4 min-w-4 items-center justify-center rounded bg-white/20 px-1 text-[9px] font-normal text-white">
+                      ↵
+                    </kbd>
+                  </span>
+                </button>
               </div>
             </Form>
-
-            <footer className="mt-3 flex items-center justify-end gap-3 border-t border-[#eaecf0] pt-5">
-              <button
-                type="button"
-                className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#d0d5dd] bg-white px-4 text-sm font-medium text-[#475467] transition-colors hover:bg-[#f9fafb] hover:text-[#344054]"
-                onClick={() => history.push('/workflow-management')}
-              >
-                取消
-              </button>
-
-              <button
-                type="button"
-                disabled={saving}
-                className="inline-flex h-10 items-center gap-2 rounded-[10px] border-0 bg-[#5d5fef] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(93,95,239,0.20)] transition-all hover:bg-[#5153dc] disabled:cursor-not-allowed disabled:opacity-55"
-                onClick={() => void create()}
-              >
-                {saving ? '创建中...' : '创建工作流'}
-                <ArrowRight size={16} />
-              </button>
-            </footer>
           </div>
+        </section>
 
-          <aside className="relative hidden min-h-[680px] overflow-hidden border-l border-[#edf0f3] bg-[#fbfcfe] lg:flex lg:flex-col">
-            <div className="border-b border-[#edf0f3] px-8 py-7">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#eef2ff] text-[#4f46e5]">
-                  <Workflow size={19} />
-                </span>
+        <section className="relative h-full overflow-hidden border-l border-[#edf0f3] bg-[#fcfcfd] max-xl:hidden">
+          <div className="h-full w-[760px] border-r border-[#edf0f3]">
+            <div className="h-[72px] border-b border-[#edf0f3]" />
 
-                <div>
-                  <strong className="block text-sm font-semibold text-[#1d2939]">
-                    WORKFLOW
-                  </strong>
-                  <span className="mt-1 block text-xs text-[#667085]">
-                    使用节点连接业务逻辑、AI 能力和外部服务
-                  </span>
+            <div className="px-8 py-5">
+              <h2 className="m-0 text-[13px] font-semibold uppercase tracking-[0.03em] text-[#475467]">
+                工作流
+              </h2>
+
+              <p className="mb-0 mt-1 max-w-[430px] text-[12px] leading-[18px] text-[#98a2b3]">
+                基于工作流编排，适用于自动化、批处理等单轮生成类任务的场景。
+              </p>
+            </div>
+
+            <div className="border-y border-[#edf0f3] bg-[repeating-linear-gradient(135deg,transparent,transparent_2px,rgba(16,24,40,0.035)_4px,transparent_3px,transparent_7px)] p-7">
+              <div className="relative h-[448px] w-full overflow-hidden border border-[#dfe5ec] bg-white shadow-[0_12px_28px_rgba(16,24,40,0.10)]">
+                <div className="flex h-11 items-center justify-between border-b border-[#edf0f3] px-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#4f46e5] text-white">
+                      <WorkflowIcon size={13} />
+                    </span>
+
+                    <span className="text-[11px] font-medium text-[#475467]">
+                      新建工作流
+                    </span>
+
+                    <span className="rounded bg-[#f2f4f7] px-1.5 py-0.5 text-[9px] text-[#98a2b3]">
+                      草稿
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md border border-[#e4e7ec] px-2 py-1 text-[9px] text-[#667085]">
+                      预览
+                    </span>
+
+                    <span className="rounded-md bg-[#4f46e5] px-2 py-1 text-[9px] text-white">
+                      发布
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex h-[calc(100%-44px)]">
+                  <aside className="flex w-11 flex-col items-center gap-3 border-r border-[#edf0f3] py-3 text-[#98a2b3]">
+                    <CirclePlay size={15} />
+                    <Database size={15} />
+                    <Bot size={15} />
+                    <FileText size={15} />
+                  </aside>
+
+                  <div className="relative flex-1 overflow-hidden bg-[radial-gradient(#d9dee7_1px,transparent_1px)] [background-size:16px_16px]">
+                    <div className="absolute left-[8%] top-[44%] flex items-center gap-8">
+                      <div className="w-[128px] rounded-lg border border-[#c7d2fe] bg-white p-3 shadow-[0_7px_18px_rgba(16,24,40,0.08)]">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#4f46e5] text-white">
+                            <CirclePlay size={11} />
+                          </span>
+
+                          <strong className="text-[10px] text-[#344054]">
+                            开始
+                          </strong>
+                        </div>
+
+                        <div className="mt-3 h-1.5 rounded bg-[#f2f4f7]" />
+                        <div className="mt-1.5 h-1.5 w-4/5 rounded bg-[#f2f4f7]" />
+                      </div>
+
+                      <ArrowRight size={20} className="text-[#98a2b3]" />
+
+                      <div className="w-[138px] rounded-lg border border-[#dbe4ff] bg-white p-3 shadow-[0_7px_18px_rgba(16,24,40,0.08)]">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#7c3aed] text-white">
+                            <Bot size={11} />
+                          </span>
+
+                          <strong className="text-[10px] text-[#344054]">
+                            大模型
+                          </strong>
+                        </div>
+
+                        <div className="mt-3 h-1.5 rounded bg-[#f2f4f7]" />
+                        <div className="mt-1.5 h-1.5 w-3/5 rounded bg-[#f2f4f7]" />
+                      </div>
+
+                      <ArrowRight size={20} className="text-[#98a2b3]" />
+
+                      <div className="w-[118px] rounded-lg border border-[#fed7aa] bg-white p-3 shadow-[0_7px_18px_rgba(16,24,40,0.08)]">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#f59e0b] text-white">
+                            <FileText size={11} />
+                          </span>
+
+                          <strong className="text-[10px] text-[#344054]">
+                            输出
+                          </strong>
+                        </div>
+
+                        <div className="mt-3 h-1.5 rounded bg-[#f2f4f7]" />
+                        <div className="mt-1.5 h-1.5 w-2/3 rounded bg-[#f2f4f7]" />
+                      </div>
+                    </div>
+
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-md border border-[#e4e7ec] bg-white px-2 py-1 text-[9px] text-[#667085] shadow-sm">
+                      100%
+                      <span className="h-3 w-px bg-[#e4e7ec]" />
+                      自动布局
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div className="relative flex flex-1 items-center justify-center overflow-hidden p-10">
-              <div className="absolute inset-0 bg-[radial-gradient(#d9dee8_1px,transparent_1px)] [background-size:20px_20px]" />
-              <div className="absolute left-[12%] top-[12%] h-52 w-52 rounded-full bg-[#e8e9ff] blur-[90px]" />
-              <div className="absolute bottom-[8%] right-[10%] h-48 w-48 rounded-full bg-[#e6f4ff] blur-[90px]" />
-
-              <div className="relative w-full max-w-[620px] rounded-[18px] border border-[#e4e7ec] bg-white/95 p-7 shadow-[0_18px_50px_rgba(16,24,40,0.10)] backdrop-blur">
-                <div className="mb-7 flex items-center justify-between">
-                  <div>
-                    <strong className="block text-sm font-semibold text-[#1d2939]">
-                      工作流画布预览
-                    </strong>
-                    <span className="mt-1 block text-xs text-[#98a2b3]">
-                      创建后将直接进入可视化编排器
-                    </span>
-                  </div>
-
-                  <span className="rounded-full border border-[#d0d5dd] bg-white px-2.5 py-1 text-[10px] text-[#667085]">
-                    未发布
-                  </span>
-                </div>
-
-                <div className="relative grid grid-cols-[1fr_64px_1fr_64px_1fr] items-center">
-                  <div className="rounded-[14px] border border-[#dfe5ee] bg-white p-4 shadow-[0_8px_20px_rgba(16,24,40,0.06)]">
-                    <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-[9px] bg-[#ecfdf3] text-[#039855]">
-                      <Play size={15} />
-                    </span>
-                    <strong className="block text-xs text-[#344054]">
-                      开始
-                    </strong>
-                    <small className="mt-1 block text-[10px] leading-4 text-[#98a2b3]">
-                      接收工作流输入参数
-                    </small>
-                  </div>
-
-                  <div className="relative h-px bg-[#cfd6e2]">
-                    <span className="absolute -right-0.5 -top-[3px] h-2 w-2 rotate-45 border-r border-t border-[#98a2b3]" />
-                  </div>
-
-                  <div className="rounded-[14px] border border-[#dfe5ee] bg-white p-4 shadow-[0_8px_20px_rgba(16,24,40,0.06)]">
-                    <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-[9px] bg-[#f4f3ff] text-[#7f56d9]">
-                      <Bot size={15} />
-                    </span>
-                    <strong className="block text-xs text-[#344054]">
-                      处理节点
-                    </strong>
-                    <small className="mt-1 block text-[10px] leading-4 text-[#98a2b3]">
-                      编排 AI 或业务能力
-                    </small>
-                  </div>
-
-                  <div className="relative h-px bg-[#cfd6e2]">
-                    <span className="absolute -right-0.5 -top-[3px] h-2 w-2 rotate-45 border-r border-t border-[#98a2b3]" />
-                  </div>
-
-                  <div className="rounded-[14px] border border-[#dfe5ee] bg-white p-4 shadow-[0_8px_20px_rgba(16,24,40,0.06)]">
-                    <span className="mb-3 flex h-8 w-8 items-center justify-center rounded-[9px] bg-[#eff8ff] text-[#1570ef]">
-                      <GitBranch size={15} />
-                    </span>
-                    <strong className="block text-xs text-[#344054]">
-                      输出
-                    </strong>
-                    <small className="mt-1 block text-[10px] leading-4 text-[#98a2b3]">
-                      返回最终执行结果
-                    </small>
-                  </div>
-                </div>
-
-                <div className="mt-7 rounded-[12px] bg-[#f8fafc] px-4 py-3 text-xs leading-5 text-[#667085]">
-                  工作流创建后，你可以继续添加条件判断、模型调用、数据转换和外部服务节点。
-                </div>
-              </div>
-            </div>
-          </aside>
+          </div>
         </section>
       </main>
     </div>

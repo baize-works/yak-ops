@@ -86,7 +86,7 @@ const DataSourcePage: React.FC = () => {
 
       const response = await fetchDataSourcePage(requestParams);
 
-      if (response.code !== 0) {
+      if (response.code !== 200) {
         return;
       }
 
@@ -217,7 +217,7 @@ const DataSourcePage: React.FC = () => {
 
         const response = await deleteDataSource(record.id);
 
-        if (response.code !== 0) {
+        if (response.code !== 200) {
           return;
         }
 
