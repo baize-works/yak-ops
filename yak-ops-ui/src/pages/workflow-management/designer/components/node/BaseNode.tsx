@@ -2,13 +2,14 @@ import {
   CheckCircle2,
   CircleAlert,
   MoreHorizontal,
-  Plus,
   RotateCw,
 } from 'lucide-react';
 import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { WorkflowNodeData } from '../../../types';
 import type { WorkflowNodeMeta } from '../../constants';
+import QuickAddButton from '../quick-add/QuickAddButton';
+import { openWorkflowQuickAdd } from '../quick-add/events';
 import NodeIcon from './NodeIcon';
 import {
   nodeStatusBorderClass,
@@ -25,8 +26,8 @@ interface BaseNodeProps {
 }
 
 const handleClass = [
-  '!top-4 !h-4 !w-4 !translate-y-0 !rounded-none !border-0 !bg-transparent',
-  '!outline-none transition-transform hover:scale-125',
+  '!top-[3px] !h-7 !w-7 !translate-y-0 !rounded-full',
+  '!border-0 !bg-transparent !outline-none',
 ].join(' ');
 
 const StatusIcon = ({
@@ -46,11 +47,10 @@ const BaseNode = ({ id, data, meta, selected, children }: BaseNodeProps) => {
     !data.enabled || data.retryTimes > 0 || data.timeoutSeconds > 0 || status !== 'idle';
 
   const openQuickAdd = () => {
-    window.dispatchEvent(
-      new CustomEvent('yak-workflow-quick-add', {
-        detail: { nodeId: id },
-      }),
-    );
+    openWorkflowQuickAdd({
+      mode: 'append',
+      sourceNodeId: id,
+    });
   };
 
   return (
@@ -103,9 +103,9 @@ const BaseNode = ({ id, data, meta, selected, children }: BaseNodeProps) => {
             id="target"
             type="target"
             position={Position.Left}
-            className={`${handleClass} !-left-[9px]`}
+            className={`${handleClass} !-left-[15px]`}
           >
-            <span className="absolute left-[7px] top-1 h-2 w-0.5 rounded-full bg-[#98a2b3]" />
+            <span className="absolute left-[13px] top-[9px] h-2.5 w-0.5 rounded-full bg-[#98a2b3] transition-colors group-hover:bg-[#667085]" />
           </Handle>
         )}
 
@@ -115,31 +115,20 @@ const BaseNode = ({ id, data, meta, selected, children }: BaseNodeProps) => {
               id="source"
               type="source"
               position={Position.Right}
-              className={`${handleClass} !-right-[9px]`}
+              className={`${handleClass} !-right-[15px]`}
             >
-              <span className="absolute right-[7px] top-1 h-2 w-0.5 rounded-full bg-[#98a2b3]" />
+              <span className="absolute right-[13px] top-[9px] h-2.5 w-0.5 rounded-full bg-[#98a2b3] transition-opacity group-hover:opacity-0" />
             </Handle>
-            <button
-              type="button"
+
+            <QuickAddButton
+              label="添加后续节点"
               className={[
-                'nodrag nopan absolute right-[-28px] top-[5px] z-10 flex h-[22px] w-[22px]',
-                'items-center justify-center rounded-full border border-[#d0d5dd] bg-white text-[#667085]',
-                'opacity-0 shadow-[0_3px_8px_rgba(16,24,40,0.10)] transition-all duration-150',
-                'hover:border-[#84adff] hover:bg-[#f5f8ff] hover:text-[#155eef]',
+                'absolute -right-[35px] top-[1px] z-20',
                 'group-hover:opacity-100',
-                selected ? 'opacity-100' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              aria-label="添加后续节点"
-              onMouseDown={(event: MouseEvent<HTMLButtonElement>) => event.stopPropagation()}
-              onClick={(event: MouseEvent<HTMLButtonElement>) => {
-                event.stopPropagation();
-                openQuickAdd();
-              }}
-            >
-              <Plus size={12} strokeWidth={2.2} />
-            </button>
+              ].join(' ')}
+              alwaysVisible={selected}
+              onClick={openQuickAdd}
+            />
           </>
         )}
 
