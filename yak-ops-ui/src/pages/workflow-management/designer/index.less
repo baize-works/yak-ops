@@ -2,8 +2,8 @@
  * components use Tailwind classes; this file only owns the full-screen editor
  * frame and the third-party canvas DOM. */
 .dify-workflow-designer {
-  --workflow-sidebar-width: 220px;
-  --workflow-header-height: 52px;
+  --workflow-sidebar-width: 248px;
+  --workflow-header-height: 48px;
 
   position: fixed;
   inset: 0;
@@ -11,6 +11,17 @@
   overflow: hidden;
   color: #101828;
   background: #f4f6f8;
+}
+
+/*
+ * The sidebar owns its collapsed state. Derive the canvas offset from the
+ * collapse button that is rendered only in the compact navigation state, so
+ * the sidebar, top toolbar and React Flow canvas move as one layout unit.
+ */
+.dify-workflow-designer:has(
+    > aside button[aria-label='展开侧边栏']
+  ) {
+  --workflow-sidebar-width: 64px;
 }
 
 .dify-workflow-loading {
@@ -21,6 +32,8 @@
   left: var(--workflow-sidebar-width);
   width: auto;
   height: auto;
+  transition: left 200ms ease-in-out;
+  will-change: left;
 }
 
 .dify-workflow-loading > .ant-spin-container,
@@ -127,7 +140,10 @@
 }
 
 @media (max-width: 1023px) {
-  .dify-workflow-designer {
+  .dify-workflow-designer,
+  .dify-workflow-designer:has(
+      > aside button[aria-label='展开侧边栏']
+    ) {
     --workflow-sidebar-width: 0px;
   }
 }
