@@ -3,6 +3,7 @@ package io.yak.ops.business.datasource.dao;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
 import io.yak.ops.common.bean.po.datasource.DataSourcePO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceSummaryVO;
 import io.yak.ops.common.enums.datasource.DataSourceConnStatus;
 import io.yak.ops.common.enums.datasource.DataSourceDbType;
 import java.util.List;
@@ -17,6 +18,8 @@ public interface DataSourceDao {
   DataSourcePO selectById(Long id);
 
   IPage<DataSourcePO> selectPage(DataSourceQueryDTO queryDTO);
+
+  DataSourceSummaryVO selectSummary();
 
   List<DataSourcePO> selectAll(DataSourceDbType dbType);
 
