@@ -42,6 +42,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
   @Transactional(transactionManager = "workflowTransactionManager")
   public Long addWorkflow(WorkflowDTO workflowDTO, String operator) {
     validate(workflowDTO);
+    dagCompiler.compile(workflowDTO.getDag());
     String code = workflowDTO.getCode().trim();
     if (definitionDao.existsDefinitionByCode(code)) {
       throw new IllegalArgumentException("工作流编码已存在：" + code);
@@ -67,6 +68,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
   @Transactional(transactionManager = "workflowTransactionManager")
   public void editWorkflow(Long workflowId, WorkflowUpdateDTO workflowDTO) {
     validate(workflowDTO);
+    dagCompiler.compile(workflowDTO.getDag());
     requireWorkflow(workflowId);
     WorkflowDefinitionPO definitionPO = new WorkflowDefinitionPO();
     definitionPO.setId(workflowId);
