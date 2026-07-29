@@ -43,7 +43,7 @@ describe('API response protocols', () => {
       'security',
     );
     expect(protocolForUrl('/api/v1/workflows')).toBe('yak-ops');
-    expect(protocolForUrl('/api/v1/data-sources')).toBe('yak-ops');
+    expect(protocolForUrl('/api/v1/data-source/page')).toBe('yak-ops');
     expect(protocolForUrl('/api/v1/jobs')).toBe('yak-ops');
   });
 });
