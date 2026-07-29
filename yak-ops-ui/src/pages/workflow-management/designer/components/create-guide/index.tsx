@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { history } from '@umijs/max';
 import { Form, Input, InputNumber, message, Select } from 'antd';
 import { ArrowLeft, ArrowRight, Check, Sparkles } from 'lucide-react';
@@ -82,7 +83,10 @@ const WorkflowCreateGuide = () => {
           viewport: selectedTemplate.viewport,
         },
       });
-      if (response.code !== 0 || !response.data?.workflowId) {
+      if (
+        response.code !== API_SUCCESS_CODE ||
+        !response.data?.workflowId
+      ) {
         message.error(response.message || '创建工作流失败');
         return;
       }
