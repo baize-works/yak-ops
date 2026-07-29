@@ -10,7 +10,9 @@ export async function fetchPluginConfig(
   pluginType: string,
 ): Promise<CommonApiResponse<DynamicFormSchemaResponse>> {
   const query = new URLSearchParams({ pluginType }).toString();
-  return HttpUtils.get(`/api/v1/data-source/plugin/config?${query}`);
+  return HttpUtils.get<DynamicFormSchemaResponse>(
+    `/api/v1/data-source/plugin/config?${query}`,
+  );
 }
 
 export async function uploadDriverJar(pluginType: string, file: File) {
@@ -18,7 +20,7 @@ export async function uploadDriverJar(pluginType: string, file: File) {
   formData.append('file', file);
   formData.append('pluginType', pluginType);
 
-  const response = await HttpUtils.postForm<CommonApiResponse<unknown>>(
+  const response = await HttpUtils.postForm<unknown>(
     '/api/v1/data-source/plugin/driver/upload',
     formData,
   );
