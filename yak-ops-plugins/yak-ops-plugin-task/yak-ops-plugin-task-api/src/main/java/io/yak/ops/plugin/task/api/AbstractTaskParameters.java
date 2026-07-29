@@ -26,15 +26,19 @@ public abstract class AbstractTaskParameters {
   }
 
   protected void validateCommonParameters() {
-    localParams.forEach(TaskLocalParameter::validate);
+    for (TaskLocalParameter param : localParams) {
+      param.validate();
+    }
   }
 
   protected Map<String, Object> newConfiguration() {
     Map<String, Object> configuration = new LinkedHashMap<>();
-    if (!localParams.isEmpty()) {
-      configuration.put(
-          "localParams",
-          localParams.stream().map(TaskLocalParameter::toMap).toList());
+    if (localParams.size() > 0) {
+      List<Map<String, Object>> paramMaps = new ArrayList<>(localParams.size());
+      for (TaskLocalParameter param : localParams) {
+        paramMaps.add(param.toMap());
+      }
+      configuration.put("localParams", paramMaps);
     }
     return configuration;
   }
@@ -44,20 +48,22 @@ public abstract class AbstractTaskParameters {
   public abstract Map<String, Object> toConfiguration();
 
   private static List<TaskLocalParameter> readLocalParams(
-      Map<String, Object> configuration) {
+          Map<String, Object> configuration) {
     Object value = configuration == null ? null : configuration.get("localParams");
     if (value == null) {
       return new ArrayList<>();
     }
-    if (!(value instanceof Collection<?> values)) {
+    if (!(value instanceof Collection)) {
       throw new IllegalArgumentException("任务配置必须为数组：localParams");
     }
 
+    Collection<?> values = (Collection<?>) value;
     List<TaskLocalParameter> result = new ArrayList<>(values.size());
     for (Object item : values) {
-      if (!(item instanceof Map<?, ?> map)) {
+      if (!(item instanceof Map)) {
         throw new IllegalArgumentException("任务局部参数必须为对象");
       }
+      Map<?, ?> map = (Map<?, ?>) item;
       result.add(TaskLocalParameter.fromMap(map));
     }
     return result;

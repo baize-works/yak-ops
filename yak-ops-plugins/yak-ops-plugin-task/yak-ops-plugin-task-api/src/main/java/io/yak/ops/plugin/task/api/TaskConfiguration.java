@@ -24,17 +24,17 @@ public final class TaskConfiguration {
   }
 
   public static String string(
-      Map<String, Object> configuration,
-      String key,
-      String fallback) {
+          Map<String, Object> configuration,
+          String key,
+          String fallback) {
     Object value = value(configuration, key);
     return value == null ? fallback : String.valueOf(value);
   }
 
   public static int positiveInteger(
-      Map<String, Object> configuration,
-      String key,
-      int fallback) {
+          Map<String, Object> configuration,
+          String key,
+          int fallback) {
     Object value = value(configuration, key);
     int parsed;
     try {
@@ -49,32 +49,36 @@ public final class TaskConfiguration {
   }
 
   public static Map<String, String> stringMap(
-      Map<String, Object> configuration,
-      String key) {
+          Map<String, Object> configuration,
+          String key) {
     Object value = value(configuration, key);
     if (value == null) {
       return Collections.emptyMap();
     }
-    if (!(value instanceof Map<?, ?> source)) {
+    if (!(value instanceof Map)) {
       throw new IllegalArgumentException("任务配置必须为对象：" + key);
     }
+    Map<?, ?> source = (Map<?, ?>) value;
     Map<String, String> result = new LinkedHashMap<>();
-    source.forEach((entryKey, entryValue) -> result.put(
-        String.valueOf(entryKey),
-        entryValue == null ? "" : String.valueOf(entryValue)));
+    for (Map.Entry<?, ?> entry : source.entrySet()) {
+      result.put(
+              String.valueOf(entry.getKey()),
+              entry.getValue() == null ? "" : String.valueOf(entry.getValue()));
+    }
     return result;
   }
 
   public static List<String> stringList(
-      Map<String, Object> configuration,
-      String key) {
+          Map<String, Object> configuration,
+          String key) {
     Object value = value(configuration, key);
     if (value == null) {
       return Collections.emptyList();
     }
-    if (!(value instanceof Collection<?> source)) {
+    if (!(value instanceof Collection)) {
       throw new IllegalArgumentException("任务配置必须为数组：" + key);
     }
+    Collection<?> source = (Collection<?>) value;
     List<String> result = new ArrayList<>(source.size());
     for (Object item : source) {
       result.add(String.valueOf(item));
@@ -83,15 +87,16 @@ public final class TaskConfiguration {
   }
 
   public static List<Integer> integerList(
-      Map<String, Object> configuration,
-      String key) {
+          Map<String, Object> configuration,
+          String key) {
     Object value = value(configuration, key);
     if (value == null) {
       return Collections.emptyList();
     }
-    if (!(value instanceof Collection<?> source)) {
+    if (!(value instanceof Collection)) {
       throw new IllegalArgumentException("任务配置必须为整数数组：" + key);
     }
+    Collection<?> source = (Collection<?>) value;
     List<Integer> result = new ArrayList<>(source.size());
     try {
       for (Object item : source) {
@@ -104,15 +109,23 @@ public final class TaskConfiguration {
   }
 
   public static Set<Integer> integerSet(
-      Map<String, Object> configuration,
-      String key,
-      Set<Integer> fallback) {
+          Map<String, Object> configuration,
+          String key,
+          Set<Integer> fallback) {
     List<Integer> values = integerList(configuration, key);
     return values.isEmpty() ? fallback : new LinkedHashSet<>(values);
   }
 
   public static boolean hasText(String value) {
-    return value != null && !value.isBlank();
+    if (value == null) {
+      return false;
+    }
+    for (int i = 0; i < value.length(); i++) {
+      if (!Character.isWhitespace(value.charAt(i))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static Object value(Map<String, Object> configuration, String key) {
