@@ -1,112 +1,105 @@
-import {useIntl} from "@umijs/max";
-import {Button, Form, message, Modal} from "antd";
-import React, {forwardRef, useImperativeHandle, useRef, useState,} from "react";
-import DynamicDataSourceForm from "./DynamicDataSourceForm";
-import DatabaseIcons from "../icon/DatabaseIcons";
-import {dataSourceGroupList} from "../constants";
-import {createDataSource, testDataSourceConnectionWithParams, updateDataSource,} from "../service";
-import {buildSubmitPayload, parseOriginalJson} from "../utils";
-import DataSourceTypeSelector from "./DataSourceTypeSelector";
+import { API_SUCCESS_CODE } from '@/services/http/response';
+import { useIntl } from '@umijs/max';
+import { Button, Form, message, Modal } from 'antd';
+import {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
+
+import { dataSourceGroupList } from '../constants';
+import DatabaseIcons from '../icon/DatabaseIcons';
+import {
+  createDataSource,
+  testDataSourceConnectionWithParams,
+  updateDataSource,
+} from '../service';
 import type {
   DataSourceFormValues,
   DataSourceModalOpenPayload,
   DataSourceModalRef,
-  DataSourceOperateType,
   DataSourceRecord,
-} from "../types";
+} from '../types';
+import { DataSourceOperateType } from '../types';
+import { buildSubmitPayload, parseOriginalJson } from '../utils';
+import DataSourceTypeSelector from './DataSourceTypeSelector';
+import DynamicDataSourceForm from './DynamicDataSourceForm';
 
 const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const intl = useIntl();
-
   const [basicForm] = Form.useForm<DataSourceFormValues>();
   const [configForm] = Form.useForm();
-
   const [open, setOpen] = useState(false);
-  const [operateType, setOperateType] = useState<DataSourceOperateType>(
-    "CREATE" as DataSourceOperateType
-  );
+  const [operateType, setOperateType] = useState(DataSourceOperateType.Create);
   const [currentRecord, setCurrentRecord] = useState<DataSourceRecord>();
-  const [selectedDbType, setSelectedDbType] = useState("");
+  const [selectedDbType, setSelectedDbType] = useState('');
   const [showFormStep, setShowFormStep] = useState(false);
   const [hideBackButton, setHideBackButton] = useState(false);
-
+  const [testing, setTesting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const successCallbackRef = useRef<(() => void) | undefined>();
 
-  const isCreateMode = operateType === ("CREATE" as DataSourceOperateType);
-  const isEditMode = operateType === ("EDIT" as DataSourceOperateType);
+  const isCreateMode = operateType === DataSourceOperateType.Create;
+  const isEditMode = operateType === DataSourceOperateType.Edit;
+  const busy = testing || submitting;
 
   const resetModalState = () => {
     setCurrentRecord(undefined);
-    setSelectedDbType("");
+    setSelectedDbType('');
     setShowFormStep(false);
     setHideBackButton(false);
+    setTesting(false);
+    setSubmitting(false);
+    successCallbackRef.current = undefined;
     basicForm.resetFields();
     configForm.resetFields();
   };
 
   const handleClose = () => {
+    if (busy) return;
     setOpen(false);
     resetModalState();
   };
 
   const initializeEditForm = (record: DataSourceRecord) => {
     basicForm.setFieldsValue({
-      name: record.name || "",
-      environment: record.environment || "",
-      remark: record.remark || "",
+      name: record.name || '',
+      environment: record.environment || '',
+      remark: record.remark || '',
     });
-
-    // 注意：不再在这里设置 configForm，而是将数据传递给 DynamicDataSourceForm
-    // 由 DynamicDataSourceForm 在加载完表单配置后再设置值
   };
 
   useImperativeHandle(ref, () => ({
     open: ({
-             operateType: nextOperateType,
-             currentRecord: nextRecord,
-             onSuccess,
-             dbType,
-             hideBack,
-           }: DataSourceModalOpenPayload) => {
-      /**
-       * 每次打开前，先清理上一次弹窗状态。
-       * 这里非常关键，避免 MySQL / PostgreSQL 动态表单互相污染。
-       */
+      operateType: nextOperateType,
+      currentRecord: nextRecord,
+      onSuccess,
+      dbType,
+      hideBack,
+    }: DataSourceModalOpenPayload) => {
       resetModalState();
-
+      successCallbackRef.current = onSuccess;
       setOpen(true);
       setOperateType(nextOperateType);
       setCurrentRecord(nextRecord);
-      successCallbackRef.current = onSuccess;
 
-      /**
-       * 编辑模式：保持原来的逻辑。
-       * 编辑时直接进入表单页，不显示“上一步”。
-       */
-      if (nextOperateType === ("EDIT" as DataSourceOperateType) && nextRecord) {
-        setSelectedDbType(nextRecord.dbType || "");
+      if (nextOperateType === DataSourceOperateType.Edit && nextRecord) {
+        setSelectedDbType(nextRecord.dbType || '');
         setShowFormStep(true);
         setHideBackButton(true);
         initializeEditForm(nextRecord);
         return;
       }
 
-      /**
-       * 创建模式 + 外部传入 dbType：
-       * 直接进入动态表单页，不走类型选择页。
-       */
-      if (nextOperateType === ("CREATE" as DataSourceOperateType) && dbType) {
+      if (nextOperateType === DataSourceOperateType.Create && dbType) {
         setSelectedDbType(dbType);
         setShowFormStep(true);
         setHideBackButton(Boolean(hideBack));
         return;
       }
 
-      /**
-       * 普通创建模式：
-       * 先进入数据源类型选择页。
-       */
-      setSelectedDbType("");
+      setSelectedDbType('');
       setShowFormStep(false);
       setHideBackButton(false);
     },
@@ -116,98 +109,96 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const handleSelectDbType = (dbType: string) => {
     basicForm.resetFields();
     configForm.resetFields();
-
     setSelectedDbType(dbType);
     setShowFormStep(true);
     setHideBackButton(false);
   };
 
   const handleBackToTypeSelection = () => {
+    if (busy) return;
     setShowFormStep(false);
-    setSelectedDbType("");
+    setSelectedDbType('');
     setHideBackButton(false);
     basicForm.resetFields();
     configForm.resetFields();
   };
 
   const handleTestConnection = async () => {
+    if (testing || submitting) return;
     try {
+      setTesting(true);
       const connectionValues = await configForm.validateFields();
-
       const response = await testDataSourceConnectionWithParams({
+        dataSourceId: isEditMode ? currentRecord?.id : undefined,
+        dbType: selectedDbType,
         connJson: JSON.stringify({
           ...connectionValues,
-          type: selectedDbType,
+          dbType: selectedDbType,
         }),
       });
 
-      if (response.code === 200 && response.data === true) {
-        message.success(
-          intl.formatMessage({
-            id: "pages.datasource.modal.message.success",
-            defaultMessage: "Success",
-          })
-        );
+      if (response.code === API_SUCCESS_CODE && response.data === true) {
+        message.success('连接测试成功');
       }
-    } catch (error: any) {
-      if (error?.errorFields) return;
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'errorFields' in error
+      ) {
+        return;
+      }
+    } finally {
+      setTesting(false);
     }
   };
 
   const handleSubmit = async () => {
+    if (submitting || testing) return;
     try {
+      setSubmitting(true);
       const basicValues = await basicForm.validateFields();
       const connectionValues = await configForm.validateFields();
-
       const payload = buildSubmitPayload(
         selectedDbType,
         basicValues,
-        connectionValues
+        connectionValues,
       );
 
-      if (isCreateMode) {
-        const response = await createDataSource(payload);
+      const response = isCreateMode
+        ? await createDataSource(payload)
+        : currentRecord?.id
+          ? await updateDataSource(currentRecord.id, payload)
+          : undefined;
+      if (!response || response.code !== API_SUCCESS_CODE) return;
 
-        if (response.code !== 200) {
-          return;
-        }
+      const successCallback = successCallbackRef.current;
+      message.success(isCreateMode ? '数据源创建成功' : '数据源更新成功');
+      setSubmitting(false);
+      setOpen(false);
+      resetModalState();
+      successCallback?.();
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'errorFields' in error
+      ) {
+        return;
       }
-
-      if (isEditMode) {
-        if (!currentRecord?.id) {
-          return;
-        }
-
-        const response = await updateDataSource(currentRecord.id, payload);
-
-        if (response.code !== 200) {
-          return;
-        }
-      }
-
-      message.success(
-        intl.formatMessage({
-          id: "pages.datasource.modal.message.success",
-          defaultMessage: "Success",
-        })
-      );
-
-      handleClose();
-      successCallbackRef.current?.();
-    } catch (error: any) {
-      if (error?.errorFields) return;
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const modalActionText =
-    operateType === ("EDIT" as DataSourceOperateType)
-      ? intl.formatMessage({
-        id: "pages.datasource.modal.title.edit",
-        defaultMessage: "Edit",
+  const modalActionText = isEditMode
+    ? intl.formatMessage({
+        id: 'pages.datasource.modal.title.edit',
+        defaultMessage: 'Edit',
       })
-      : intl.formatMessage({
-        id: "pages.datasource.modal.title.add",
-        defaultMessage: "Add",
+    : intl.formatMessage({
+        id: 'pages.datasource.modal.title.add',
+        defaultMessage: 'Add',
       });
 
   return (
@@ -216,167 +207,118 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       open={open}
       centered
       maskClosable={false}
+      closable={!busy}
+      keyboard={!busy}
       onCancel={handleClose}
       destroyOnClose
       styles={{
         header: {
-          padding: "20px 24px 16px",
-          borderBottom: "1px solid #EEF2F6",
+          padding: '20px 24px 16px',
+          borderBottom: '1px solid #EEF2F6',
           marginBottom: 0,
         },
         body: {
-          padding: "20px 24px 16px",
-          background: "#F8FAFC",
-          maxHeight: "69vh",
-          overflowY: "auto",
-          minHeight: "65vh",
+          padding: '20px 24px 16px',
+          background: '#F8FAFC',
+          maxHeight: '69vh',
+          overflowY: 'auto',
+          minHeight: '65vh',
         },
         footer: {
-          padding: "14px 24px 18px",
-          borderTop: "1px solid #EEF2F6",
-          background: "#FFFFFF",
+          padding: '14px 24px 18px',
+          borderTop: '1px solid #EEF2F6',
+          background: '#FFFFFF',
           marginTop: 0,
         },
         content: {
           borderRadius: 20,
-          overflow: "hidden",
+          overflow: 'hidden',
         },
       }}
       title={
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            paddingRight: 24,
-          }}
-        >
-          <div style={{minWidth: 0}}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  background: "#EEF4FF",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <DatabaseIcons dbType={selectedDbType} width="18" height="18"/>
+        <div className="flex items-center justify-between gap-3 pr-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#EEF4FF]">
+              <DatabaseIcons dbType={selectedDbType} width="18" height="18" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[18px] font-semibold leading-7 text-[#101828]">
+                {modalActionText}
+                {intl.formatMessage({
+                  id: 'pages.datasource.common.title',
+                  defaultMessage: ' Data Source',
+                })}
               </div>
-
-              <div style={{minWidth: 0}}>
-                <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 600,
-                    color: "#101828",
-                    lineHeight: "28px",
-                  }}
-                >
-                  {modalActionText}
-                  {intl.formatMessage({
-                    id: "pages.datasource.common.title",
-                    defaultMessage: " Data Source",
-                  })}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 2,
-                    fontSize: 13,
-                    color: "#667085",
-                    lineHeight: "20px",
-                  }}
-                >
-                  {selectedDbType
-                    ? `当前类型：${selectedDbType}`
-                    : "请选择数据源类型"}
-                </div>
+              <div className="mt-0.5 text-[13px] leading-5 text-[#667085]">
+                {selectedDbType
+                  ? `当前类型：${selectedDbType}`
+                  : '请选择数据源类型'}
               </div>
             </div>
           </div>
         </div>
       }
       footer={
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
+        <div className="flex items-center justify-between gap-3">
           <div>
-            {showFormStep ? (
-              isCreateMode && !hideBackButton ? (
-                <Button
-                  onClick={handleBackToTypeSelection}
-                  style={{height: 32, borderRadius: 16}}
-                >
-                  上一步
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleClose}
-                  style={{height: 32, borderRadius: 16}}
-                >
-                  取消
-                </Button>
-              )
+            {showFormStep && isCreateMode && !hideBackButton ? (
+              <Button
+                disabled={busy}
+                onClick={handleBackToTypeSelection}
+                style={{ height: 32, borderRadius: 16 }}
+              >
+                上一步
+              </Button>
             ) : (
               <Button
+                disabled={busy}
                 onClick={handleClose}
-                style={{height: 32, borderRadius: 16}}
+                style={{ height: 32, borderRadius: 16 }}
               >
                 取消
               </Button>
             )}
           </div>
 
-          {showFormStep ? (
-            <div style={{display: "flex", gap: 10}}>
+          {showFormStep && (
+            <div className="flex gap-2.5">
               <Button
-                onClick={handleTestConnection}
-                style={{height: 32, borderRadius: 16}}
+                loading={testing}
+                disabled={submitting}
+                onClick={() => void handleTestConnection()}
+                style={{ height: 32, borderRadius: 16 }}
               >
                 连接测试
               </Button>
-
               <Button
                 type="primary"
-                onClick={handleSubmit}
-                style={{height: 32, borderRadius: 16, paddingInline: 18}}
+                loading={submitting}
+                disabled={testing}
+                onClick={() => void handleSubmit()}
+                style={{ height: 32, borderRadius: 16, paddingInline: 18 }}
               >
                 完成
               </Button>
             </div>
-          ) : null}
+          )}
         </div>
       }
     >
       {showFormStep ? (
         <DynamicDataSourceForm
-          key={`${operateType}-${selectedDbType}-${currentRecord?.id || "create"}`}
+          key={`${operateType}-${selectedDbType}-${currentRecord?.id || 'create'}`}
           dbType={selectedDbType}
           form={basicForm}
           configForm={configForm}
           operateType={operateType}
-          initialConfig={isEditMode ? parseOriginalJson(currentRecord?.originalJson) : undefined}
+          initialConfig={
+            isEditMode
+              ? parseOriginalJson(currentRecord?.originalJson)
+              : undefined
+          }
         />
       ) : (
-        <div style={{padding: "4px 0 8px"}}>
+        <div className="py-1 pb-2">
           <DataSourceTypeSelector
             dataSourceGroups={dataSourceGroupList}
             onSelect={handleSelectDbType}
@@ -386,5 +328,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
     </Modal>
   );
 });
+
+AddOrEditDataSourceModal.displayName = 'AddOrEditDataSourceModal';
 
 export default AddOrEditDataSourceModal;
