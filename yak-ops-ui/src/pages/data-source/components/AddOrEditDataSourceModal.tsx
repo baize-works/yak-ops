@@ -141,20 +141,14 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         }),
       });
 
-      if (response.code === 0) {
-        if (response.data === true) {
-          message.success(
-            intl.formatMessage({
-              id: "pages.datasource.modal.message.success",
-              defaultMessage: "Success",
-            })
-          );
-          return;
-        }
-
-        return;
+      if (response.code === 200 && response.data === true) {
+        message.success(
+          intl.formatMessage({
+            id: "pages.datasource.modal.message.success",
+            defaultMessage: "Success",
+          })
+        );
       }
-
     } catch (error: any) {
       if (error?.errorFields) return;
     }
@@ -175,14 +169,12 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         const response = await createDataSource(payload);
 
         if (response.code !== 200) {
-          // message.error(response.message || response.msg || "创建数据源失败");
           return;
         }
       }
 
       if (isEditMode) {
         if (!currentRecord?.id) {
-
           return;
         }
 
