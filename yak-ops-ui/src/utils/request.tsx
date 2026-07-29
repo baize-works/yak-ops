@@ -14,6 +14,8 @@ import {
 
 export type { ApiProtocol, ApiResponse } from "@/services/http/response";
 
+export type BusinessErrorMode = "reject" | "resolve";
+
 const codeMessage: Record<number, string> = {
   10000: "系统未知错误，请反馈给管理员",
   200: "服务器成功返回请求的数据。",
@@ -97,7 +99,23 @@ export const handleAuthenticationFailure = () => {
     meta: "即将跳转登录页",
   });
   goLogin();
+};
 
+/** 业务异常的唯一展示出口。 */
+const handleBusinessError = (error: BizError) => {
+  if (isUnauthenticatedResponse(error.response, error.protocol)) {
+    handleAuthenticationFailure();
+    return;
+  }
+
+  if (error.skipErrorHandler) return;
+
+  notifyOnce(`business:${error.protocol}:${error.code}:${error.message}`, {
+    type: "error",
+    title: "操作失败",
+    description: error.message || "未知错误",
+    meta: "请稍后重试",
+  });
 };
 
 /** 唯一错误出口 */
@@ -106,17 +124,7 @@ const errorHandler = (error: any): Response | undefined => {
 
   // 业务异常
   if (error instanceof BizError) {
-    if (isUnauthenticatedResponse(error.response, error.protocol)) {
-      handleAuthenticationFailure();
-    } else if (!error.skipErrorHandler) {
-      notifyOnce(`business:${error.protocol}:${error.code}:${error.message}`, {
-        type: "error",
-        title: "操作失败",
-        description: error.message || "未知错误",
-        meta: "请稍后重试",
-      });
-    }
-
+    handleBusinessError(error);
     throw error;
   }
 
@@ -192,7 +200,7 @@ request.interceptors.request.use((url: string, options: any) => {
   };
 });
 
-/** 这里只识别业务异常，不做提示 */
+/** 识别统一响应中的业务状态，并按调用方需要选择返回响应或拒绝 Promise。 */
 request.interceptors.response.use(async (response: Response, options: any) => {
   if (response.status === 204 || options?.responseType === "blob") return response;
   const contentType = response.headers.get("content-type") || "";
@@ -208,7 +216,6 @@ request.interceptors.response.use(async (response: Response, options: any) => {
   const protocol: ApiProtocol = options?.protocol || protocolForUrl(response.url);
 
   if (isUnauthenticatedResponse(res, protocol)) {
-    handleAuthenticationFailure();
     throw new BizError(
       extractErrorMessage(res, "登录状态失效"),
       res.code,
@@ -222,13 +229,20 @@ request.interceptors.response.use(async (response: Response, options: any) => {
     typeof res?.code !== "undefined" &&
     !isSuccessfulResponse(res, protocol)
   ) {
-    throw new BizError(
+    const businessError = new BizError(
       extractErrorMessage(res),
       res.code,
       res,
       options?.skipErrorHandler,
       protocol
     );
+
+    if (options?.businessErrorMode === "resolve") {
+      handleBusinessError(businessError);
+      return response;
+    }
+
+    throw businessError;
   }
 
   return response;
