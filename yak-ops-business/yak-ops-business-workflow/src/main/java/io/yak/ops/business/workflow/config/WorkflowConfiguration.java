@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.type.JdbcType;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -86,6 +87,7 @@ public class WorkflowConfiguration {
         .dataSource(dataSource)
         .locations("classpath:db/migration/yak-workflow")
         .table("yak_wf_schema_history")
+        .baselineVersion(MigrationVersion.fromVersion("0"))
         .baselineOnMigrate(true)
         .load();
   }
