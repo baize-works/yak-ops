@@ -6,6 +6,7 @@ import { useEdges, useNodes, useReactFlow } from 'reactflow';
 import type { WorkflowNodeData } from '../../types';
 import { validateWorkflow } from '../validation';
 import WorkflowHeader from './header';
+import WorkflowQuickAddLayer from './quick-add/WorkflowQuickAddLayer';
 
 type WorkflowHeaderWithValidationProps = ComponentProps<typeof WorkflowHeader>;
 
@@ -53,6 +54,7 @@ const WorkflowHeaderWithValidation = (
   return (
     <>
       <WorkflowHeader {...props} onSave={handleSave} />
+      <WorkflowQuickAddLayer />
 
       <div className="absolute right-3 top-[56px] z-50 flex flex-col items-end gap-2">
         <button

@@ -76,15 +76,17 @@
   cursor: crosshair;
 }
 
-.dify-workflow-canvas .react-flow__edge-path {
-  stroke: #a6afbd;
-  stroke-width: 1.5;
-}
-
+/* The visible edge is rendered by WorkflowQuickAddLayer. Keep React Flow's
+ * interaction path so selection and context menus still work. */
+.dify-workflow-canvas .react-flow__edge-path,
 .dify-workflow-canvas .react-flow__edge.selected .react-flow__edge-path,
 .dify-workflow-canvas .react-flow__edge:hover .react-flow__edge-path {
-  stroke: #155eef;
-  stroke-width: 2;
+  stroke: transparent !important;
+  marker-end: none !important;
+}
+
+.dify-workflow-canvas .react-flow__edge-interaction {
+  stroke-width: 24;
 }
 
 .dify-workflow-canvas .react-flow__selection {
