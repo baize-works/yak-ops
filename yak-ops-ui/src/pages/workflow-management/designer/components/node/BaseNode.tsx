@@ -5,7 +5,7 @@ import {
   Plus,
   RotateCw,
 } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { WorkflowNodeData } from '../../../types';
 import type { WorkflowNodeMeta } from '../../constants';
@@ -90,8 +90,8 @@ const BaseNode = ({ id, data, meta, selected, children }: BaseNodeProps) => {
               aria-label="节点操作"
               title="节点操作"
               className="flex h-5 w-5 items-center justify-center rounded-md border-0 bg-transparent hover:bg-[#f2f4f7] hover:text-[#344054]"
-              onMouseDown={(event) => event.stopPropagation()}
-              onClick={(event) => event.stopPropagation()}
+              onMouseDown={(event: MouseEvent<HTMLButtonElement>) => event.stopPropagation()}
+              onClick={(event: MouseEvent<HTMLButtonElement>) => event.stopPropagation()}
             >
               <MoreHorizontal size={13} />
             </button>
@@ -132,8 +132,8 @@ const BaseNode = ({ id, data, meta, selected, children }: BaseNodeProps) => {
                 .filter(Boolean)
                 .join(' ')}
               aria-label="添加后续节点"
-              onMouseDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
+              onMouseDown={(event: MouseEvent<HTMLButtonElement>) => event.stopPropagation()}
+              onClick={(event: MouseEvent<HTMLButtonElement>) => {
                 event.stopPropagation();
                 openQuickAdd();
               }}
