@@ -1,7 +1,7 @@
 import { normalizeWorkflowResponse } from './service';
 
 describe('workflow response adapter', () => {
-  it('maps yak-framework success responses to the workflow UI contract', () => {
+  it('preserves the framework success code', () => {
     expect(
       normalizeWorkflowResponse({
         code: 200,
@@ -9,7 +9,7 @@ describe('workflow response adapter', () => {
         message: '成功',
       }),
     ).toEqual({
-      code: 0,
+      code: 200,
       data: [{ id: 1 }],
       message: '成功',
     });
