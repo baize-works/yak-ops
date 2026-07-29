@@ -39,6 +39,8 @@ import org.springframework.stereotype.Service;
 public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
 
   private static final int PREVIEW_LIMIT = 20;
+  private static final int MAX_MATCH_KEYWORD_LENGTH = 256;
+  private static final Pattern READ_ONLY_SELECT = Pattern.compile("(?is)^SELECT\\b.*");
 
   private final DataSourceDao dataSourceDao;
   private final DataSourcePluginRegistry pluginRegistry;
@@ -127,6 +129,11 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
     if (isBlank(keyword)) {
       return options;
     }
+    if (keyword.length() > MAX_MATCH_KEYWORD_LENGTH) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+          "表名匹配条件不能超过 " + MAX_MATCH_KEYWORD_LENGTH + " 个字符");
+    }
 
     if ("2".equals(matchMode)) {
       try {
@@ -160,10 +167,12 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
   public List<DataSourceCatalogColumnOptionVO> listColumn(
       Long dataSourceId,
       Map<String, Object> requestBody) {
+    Map<String, Object> request = requireRequest(requestBody);
+    validateReadOnlyRequest(request);
     return execute(
         dataSourceId,
         catalog ->
-            catalog.describe(requireRequest(requestBody)).stream()
+            catalog.describe(request).stream()
                 .map(
                     column ->
                         new DataSourceCatalogColumnOptionVO(
@@ -181,14 +190,18 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
   public DataSourceQueryResultVO preview(
       Long dataSourceId,
       Map<String, Object> requestBody) {
+    Map<String, Object> request = requireRequest(requestBody);
+    validateReadOnlyRequest(request);
     return execute(
         dataSourceId,
-        catalog -> toPreviewVO(catalog.preview(requireRequest(requestBody), PREVIEW_LIMIT)));
+        catalog -> toPreviewVO(catalog.preview(request, PREVIEW_LIMIT)));
   }
 
   @Override
   public Long count(Long dataSourceId, Map<String, Object> requestBody) {
-    return execute(dataSourceId, catalog -> catalog.count(requireRequest(requestBody)));
+    Map<String, Object> request = requireRequest(requestBody);
+    validateReadOnlyRequest(request);
+    return execute(dataSourceId, catalog -> catalog.count(request));
   }
 
   @Override
@@ -263,16 +276,50 @@ public class DataSourceCatalogServiceImpl implements DataSourceCatalogService {
     return requestBody;
   }
 
+  private void validateReadOnlyRequest(Map<String, Object> request) {
+    String readMode = optionalText(request, "read_mode", "readMode");
+    String tablePath = optionalText(request, "table_path", "tablePath", "table");
+    String query = optionalText(request, "query", "sql");
+    boolean sqlMode =
+        "sql".equalsIgnoreCase(readMode) || (!isBlank(query) && isBlank(tablePath));
+    if (!sqlMode) {
+      return;
+    }
+    if (isBlank(query)) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+          "SQL 模式下 query 不能为空");
+    }
+
+    String normalized = query.trim();
+    if (normalized.endsWith(";")) {
+      normalized = normalized.substring(0, normalized.length() - 1).trim();
+    }
+    if (normalized.indexOf(';') >= 0 || !READ_ONLY_SELECT.matcher(normalized).matches()) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+          "数据预览仅允许执行单条 SELECT 查询");
+    }
+  }
+
   private String requiredText(Map<String, Object> request, String... keys) {
+    String value = optionalText(request, keys);
+    if (!isBlank(value)) {
+      return value;
+    }
+    throw new DataSourceException(
+        DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+        keys[0] + " 不能为空");
+  }
+
+  private String optionalText(Map<String, Object> request, String... keys) {
     for (String key : keys) {
       Object value = request.get(key);
       if (value != null && !String.valueOf(value).trim().isEmpty()) {
         return String.valueOf(value).trim();
       }
     }
-    throw new DataSourceException(
-        DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
-        keys[0] + " 不能为空");
+    return null;
   }
 
   private boolean isBlank(String value) {
