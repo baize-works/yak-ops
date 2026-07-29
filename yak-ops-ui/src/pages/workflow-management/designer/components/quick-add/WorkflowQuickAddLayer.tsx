@@ -137,12 +137,12 @@ const WorkflowQuickAddLayer = () => {
     : ['HTTP', 'SHELL', 'END'];
 
   const openNodePanel = (nodeId: string) => {
-    requestAnimationFrame(() => {
+    window.setTimeout(() => {
       const nodeElement = canvas?.querySelector<HTMLElement>(
         `.react-flow__node[data-id="${nodeId}"]`,
       );
       nodeElement?.click();
-    });
+    }, 0);
   };
 
   const addNode = (type: WorkflowNodeType) => {
@@ -213,7 +213,7 @@ const WorkflowQuickAddLayer = () => {
 
   if (!canvas) return null;
 
-  return createPortal(
+  const edgeLayer = (
     <div className="pointer-events-none absolute inset-0 z-[12]">
       <svg className="absolute inset-0 h-full w-full overflow-visible">
         <defs>
@@ -283,44 +283,50 @@ const WorkflowQuickAddLayer = () => {
           />
         </div>
       ))}
+    </div>
+  );
 
-      {context && (
-        <aside
-          className={[
-            'pointer-events-auto absolute bottom-0 right-0 top-0 z-50',
-            'flex w-[400px] max-w-full flex-col overflow-hidden',
-            'border-l border-[#e4e7ec] bg-white',
-            'shadow-[-12px_0_32px_rgba(16,24,40,0.10)]',
-          ].join(' ')}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
+  const pickerPanel = context ? (
+    <aside
+      className={[
+        'pointer-events-auto absolute bottom-0 right-0 top-0 z-[70]',
+        'flex w-[400px] max-w-full flex-col overflow-hidden',
+        'border-l border-[#e4e7ec] bg-white',
+        'shadow-[-12px_0_32px_rgba(16,24,40,0.10)]',
+      ].join(' ')}
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <header className="flex min-h-[64px] shrink-0 items-center justify-between border-b border-[#eaecf0] px-4">
+        <div>
+          <h3 className="m-0 text-[15px] font-semibold text-[#101828]">
+            {context.mode === 'insert' ? '在连线中添加节点' : '添加下一个节点'}
+          </h3>
+          <p className="mb-0 mt-1 text-[11px] text-[#98a2b3]">
+            {context.mode === 'insert'
+              ? '选择后会自动拆分当前连线，并把节点放在中间。'
+              : '选择后会自动连接到当前节点。'}
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-label="关闭节点列表"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-transparent text-[#667085] hover:bg-[#f2f4f7]"
+          onClick={() => setContext(undefined)}
         >
-          <header className="flex min-h-[64px] shrink-0 items-center justify-between border-b border-[#eaecf0] px-4">
-            <div>
-              <h3 className="m-0 text-[15px] font-semibold text-[#101828]">
-                {context.mode === 'insert' ? '在连线中添加节点' : '添加下一个节点'}
-              </h3>
-              <p className="mb-0 mt-1 text-[11px] text-[#98a2b3]">
-                {context.mode === 'insert'
-                  ? '选择后会自动拆分当前连线，并把节点放在中间。'
-                  : '选择后会自动连接到当前节点。'}
-              </p>
-            </div>
-            <button
-              type="button"
-              aria-label="关闭节点列表"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border-0 bg-transparent text-[#667085] hover:bg-[#f2f4f7]"
-              onClick={() => setContext(undefined)}
-            >
-              <X size={17} />
-            </button>
-          </header>
+          <X size={17} />
+        </button>
+      </header>
 
-          <NodePicker allowedTypes={allowedTypes} onSelect={addNode} />
-        </aside>
-      )}
-    </div>,
-    canvas,
+      <NodePicker allowedTypes={allowedTypes} onSelect={addNode} />
+    </aside>
+  ) : null;
+
+  return (
+    <>
+      {createPortal(edgeLayer, canvas)}
+      {pickerPanel && createPortal(pickerPanel, canvas)}
+    </>
   );
 };
 
