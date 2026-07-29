@@ -1,6 +1,7 @@
 package io.yak.ops.plugin.task.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.sun.net.httpserver.HttpServer;
 import io.yak.ops.spi.workflow.WorkflowTaskContext;
@@ -23,6 +24,37 @@ class HttpWorkflowTaskExecutorTest {
     if (server != null) {
       server.stop(0);
     }
+  }
+
+  @Test
+  void shouldNormalizeTypedTaskParameters() {
+    Map<String, Object> normalized = new HttpWorkflowTaskPluginFactory().normalize(Map.of(
+        "url", "https://example.com/orders/${orderId}",
+        "method", "post",
+        "successCodes", List.of(),
+        "localParams", List.of(Map.of(
+            "prop", "orderId",
+            "direct", "IN",
+            "type", "VARCHAR",
+            "value", ""))));
+
+    assertThat(normalized)
+        .containsEntry("method", "POST")
+        .containsEntry("requestTimeoutSeconds", 60)
+        .containsEntry("maxResponseBodyCharacters", 1_000_000);
+    assertThat(normalized.get("successCodes")).isEqualTo(List.of());
+    assertThat(normalized.get("localParams")).isEqualTo(List.of(Map.of(
+        "prop", "orderId",
+        "direct", "IN",
+        "type", "VARCHAR",
+        "value", "")));
+  }
+
+  @Test
+  void shouldRejectMissingUrlWhenNormalizingParameters() {
+    assertThatThrownBy(() -> new HttpWorkflowTaskPluginFactory().normalize(Map.of()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("请求地址不能为空");
   }
 
   @Test
