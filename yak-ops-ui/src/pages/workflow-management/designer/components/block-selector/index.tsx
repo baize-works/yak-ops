@@ -1,11 +1,11 @@
 import { Input } from 'antd';
 import { ChevronLeft, Plus, Search, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import type { WorkflowNodeType } from '../../../types';
 import {
   CATEGORY_LABELS,
   WORKFLOW_NODE_CATALOG,
-  type WorkflowNodeMeta,
+  type WorkflowNodeCategory,
 } from '../../constants';
 import NodeIcon from '../node/NodeIcon';
 
@@ -16,40 +16,33 @@ interface BlockSelectorProps {
   compact?: boolean;
 }
 
-const categoryOrder: WorkflowNodeMeta['category'][] = [
-  'trigger',
-  'ai',
-  'integration',
-  'transform',
-  'logic',
-  'annotation',
-];
+const categoryOrder: WorkflowNodeCategory[] = ['control', 'action'];
 
 const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
   const [keyword, setKeyword] = useState('');
-  const [category, setCategory] =
-    useState<WorkflowNodeMeta['category'] | 'all'>('all');
 
   const filtered = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
-    return WORKFLOW_NODE_CATALOG.filter((item) => {
-      if (category !== 'all' && item.category !== category) return false;
-      if (!normalized) return true;
-      return `${item.title} ${item.description} ${item.type}`
+
+    if (!normalized) return WORKFLOW_NODE_CATALOG;
+
+    return WORKFLOW_NODE_CATALOG.filter((item) =>
+      `${item.title} ${item.description} ${item.type}`
         .toLowerCase()
-        .includes(normalized);
-    });
-  }, [category, keyword]);
+        .includes(normalized),
+    );
+  }, [keyword]);
 
   if (!open) return null;
 
   return (
     <aside
       className={[
-        'absolute left-4 top-[58px] z-40 flex max-h-[calc(100vh-132px)] w-[370px]',
+        'absolute left-4 top-[58px] z-40 flex max-h-[calc(100vh-132px)] w-[340px]',
         'flex-col overflow-hidden rounded-xl border border-[#d0d5dd] bg-white',
         'shadow-[0_18px_50px_rgba(16,24,40,0.16)] max-sm:w-[calc(100vw-32px)]',
       ].join(' ')}
+      onMouseDown={(event: MouseEvent<HTMLElement>) => event.stopPropagation()}
     >
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-[#eaecf0] px-2.5">
         <div className="flex items-center gap-1.5">
@@ -61,7 +54,12 @@ const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
           >
             <ChevronLeft size={17} />
           </button>
-          <strong className="text-[13px] text-[#344054]">添加节点</strong>
+          <div>
+            <strong className="block text-[13px] text-[#344054]">添加节点</strong>
+            <span className="block text-[9px] text-[#98a2b3]">
+              当前工作流仅支持 4 类节点
+            </span>
+          </div>
         </div>
         <button
           type="button"
@@ -73,89 +71,63 @@ const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
         </button>
       </header>
 
-      <div className="mx-2.5 mb-2 mt-2.5 flex h-[37px] shrink-0 items-center gap-1.5 rounded-lg border border-[#d0d5dd] bg-white px-2.5 text-[#98a2b3] focus-within:border-[#84adff] focus-within:shadow-[0_0_0_3px_rgba(21,94,239,0.08)]">
+      <div className="mx-2.5 mb-1.5 mt-2.5 flex h-[37px] shrink-0 items-center gap-1.5 rounded-lg border border-[#d0d5dd] bg-white px-2.5 text-[#98a2b3] focus-within:border-[#84adff] focus-within:shadow-[0_0_0_3px_rgba(21,94,239,0.08)]">
         <Search size={15} />
         <Input
           bordered={false}
           autoFocus
           value={keyword}
-          placeholder="搜索节点"
+          placeholder="搜索开始、结束、HTTP、Shell"
           onChange={(event) => setKeyword(event.target.value)}
           allowClear
           className="bg-transparent text-xs"
         />
       </div>
 
-      <div className="flex shrink-0 gap-1 overflow-x-auto px-2.5 pb-2 [scrollbar-width:none]">
-        <button
-          type="button"
-          className={[
-            'h-[27px] shrink-0 rounded-md border-0 px-2.5 text-[10px]',
-            category === 'all'
-              ? 'bg-[#eff4ff] font-semibold text-[#155eef]'
-              : 'bg-[#f2f4f7] text-[#667085]',
-          ].join(' ')}
-          onClick={() => setCategory('all')}
-        >
-          全部
-        </button>
-        {categoryOrder.map((value) => (
-          <button
-            key={value}
-            type="button"
-            className={[
-              'h-[27px] shrink-0 rounded-md border-0 px-2.5 text-[10px]',
-              category === value
-                ? 'bg-[#eff4ff] font-semibold text-[#155eef]'
-                : 'bg-[#f2f4f7] text-[#667085]',
-            ].join(' ')}
-            onClick={() => setCategory(value)}
-          >
-            {CATEGORY_LABELS[value]}
-          </button>
-        ))}
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2.5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
         {categoryOrder.map((group) => {
           const items = filtered.filter((item) => item.category === group);
           if (!items.length) return null;
+
           return (
             <section key={group}>
               <h3 className="mx-1.5 mb-1.5 mt-2.5 text-[9px] font-bold uppercase tracking-[0.08em] text-[#98a2b3]">
                 {CATEGORY_LABELS[group]}
               </h3>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="space-y-1">
                 {items.map((item) => (
                   <button
                     key={item.type}
                     type="button"
                     className={[
-                      'grid min-h-[58px] grid-cols-[30px_minmax(0,1fr)_16px] items-center gap-2',
-                      'rounded-lg border border-transparent bg-transparent px-2 py-2 text-left text-[#344054]',
-                      'hover:border-[#b2ccff] hover:bg-[#f5f8ff]',
+                      'group grid min-h-[62px] w-full grid-cols-[34px_minmax(0,1fr)_22px]',
+                      'items-center gap-2 rounded-lg border border-transparent px-2.5 py-2 text-left',
+                      'text-[#344054] transition-colors hover:border-[#b2ccff] hover:bg-[#f5f8ff]',
                     ].join(' ')}
                     onClick={() => {
                       onSelect(item.type);
                       onClose();
                     }}
                   >
-                    <span className="flex h-[29px] w-[29px] items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--node-color)_10%,white)]">
+                    <span className="flex h-[32px] w-[32px] items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--node-color)_10%,white)]">
                       <NodeIcon type={item.type} size={18} />
                     </span>
                     <span className="min-w-0">
                       <strong className="block text-[11px]">{item.title}</strong>
-                      <small className="mt-0.5 block overflow-hidden text-ellipsis whitespace-nowrap text-[9px] text-[#98a2b3]">
+                      <small className="mt-0.5 block text-[9px] leading-[14px] text-[#98a2b3]">
                         {item.description}
                       </small>
                     </span>
-                    <Plus size={15} className="text-[#98a2b3]" />
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md text-[#98a2b3] group-hover:bg-white group-hover:text-[#155eef]">
+                      <Plus size={14} />
+                    </span>
                   </button>
                 ))}
               </div>
             </section>
           );
         })}
+
         {!filtered.length && (
           <div className="py-11 text-center text-[11px] text-[#98a2b3]">
             没有匹配的节点
