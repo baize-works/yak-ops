@@ -12,6 +12,7 @@ import io.yak.ops.spi.datasource.DataSourcePlugin;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -184,7 +185,10 @@ public class DataSourceSecretCodec {
   private String normalizeKey(String key) {
     return key == null
         ? ""
-        : key.replace("_", "").replace("-", "").trim().toLowerCase();
+        : key.replace("_", "")
+            .replace("-", "")
+            .trim()
+            .toLowerCase(Locale.ROOT);
   }
 
   private boolean shouldPreserve(JsonNode value) {
