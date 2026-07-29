@@ -27,8 +27,8 @@ export const validateWorkflow = (
     issues.push({
       id: 'workflow-start-required',
       nodeTitle: '工作流',
-      severity: 'error',
-      message: '至少需要一个开始节点',
+      severity: 'warning',
+      message: '建议添加一个开始节点',
     });
   }
 
@@ -36,8 +36,8 @@ export const validateWorkflow = (
     issues.push({
       id: 'workflow-end-required',
       nodeTitle: '工作流',
-      severity: 'error',
-      message: '至少需要一个结束节点',
+      severity: 'warning',
+      message: '建议添加一个结束节点',
     });
   }
 
