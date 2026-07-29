@@ -247,7 +247,7 @@ const WorkflowHeader = ({
                     ].join(' ')}
                     onClick={onBack}
                   >
-                    工作室
+                    工作室11
                   </button>
                 </div>
               )}
