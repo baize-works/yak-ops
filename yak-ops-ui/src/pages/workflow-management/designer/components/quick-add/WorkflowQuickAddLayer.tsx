@@ -91,6 +91,7 @@ const WorkflowQuickAddLayer = () => {
   const viewport = useViewport();
   const [canvas, setCanvas] = useState<HTMLElement | null>(null);
   const [context, setContext] = useState<WorkflowQuickAddContext>();
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string>();
 
   useEffect(() => {
     setCanvas(document.querySelector<HTMLElement>('.dify-workflow-canvas'));
@@ -241,21 +242,24 @@ const WorkflowQuickAddLayer = () => {
           </marker>
         </defs>
 
-        {curves.map(({ edge, path }) => (
-          <path
-            key={edge.id}
-            d={path}
-            fill="none"
-            stroke={edge.selected ? '#155eef' : '#a6afbd'}
-            strokeWidth={edge.selected ? 2 : 1.6}
-            strokeLinecap="round"
-            markerEnd={
-              edge.selected
-                ? 'url(#yak-workflow-edge-arrow-active)'
-                : 'url(#yak-workflow-edge-arrow)'
-            }
-          />
-        ))}
+        {curves.map(({ edge, path }) => {
+          const active = edge.selected || hoveredEdgeId === edge.id;
+          return (
+            <path
+              key={edge.id}
+              d={path}
+              fill="none"
+              stroke={active ? '#155eef' : '#a6afbd'}
+              strokeWidth={active ? 2 : 1.6}
+              strokeLinecap="round"
+              markerEnd={
+                active
+                  ? 'url(#yak-workflow-edge-arrow-active)'
+                  : 'url(#yak-workflow-edge-arrow)'
+              }
+            />
+          );
+        })}
       </svg>
 
       {curves.map((curve) => (
@@ -263,6 +267,8 @@ const WorkflowQuickAddLayer = () => {
           key={`${curve.edge.id}-quick-add`}
           className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
           style={{ left: curve.middleX, top: curve.middleY }}
+          onMouseEnter={() => setHoveredEdgeId(curve.edge.id)}
+          onMouseLeave={() => setHoveredEdgeId(undefined)}
         >
           <QuickAddButton
             label="在连线中插入节点"
