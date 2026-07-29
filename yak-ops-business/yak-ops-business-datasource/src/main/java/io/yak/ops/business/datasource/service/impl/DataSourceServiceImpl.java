@@ -8,11 +8,13 @@ import io.yak.ops.business.datasource.dao.DataSourceDao;
 import io.yak.ops.business.datasource.exception.DataSourceException;
 import io.yak.ops.business.datasource.plugin.DataSourcePluginRegistry;
 import io.yak.ops.business.datasource.service.DataSourceService;
+import io.yak.ops.business.datasource.util.DataSourceSecretCodec;
 import io.yak.ops.common.bean.dto.datasource.DataSourceConnectTestDTO;
 import io.yak.ops.common.bean.dto.datasource.DataSourceDTO;
 import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
 import io.yak.ops.common.bean.po.datasource.DataSourcePO;
 import io.yak.ops.common.bean.vo.datasource.DataSourceOptionVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceSummaryVO;
 import io.yak.ops.common.bean.vo.datasource.DataSourceVO;
 import io.yak.ops.common.enums.datasource.DataSourceConnStatus;
 import io.yak.ops.common.enums.datasource.DataSourceDbType;
@@ -37,6 +39,7 @@ public class DataSourceServiceImpl implements DataSourceService {
   private final DataSourceDao dataSourceDao;
   private final DataSourcePluginRegistry pluginRegistry;
   private final DataSourceProperties properties;
+  private final DataSourceSecretCodec secretCodec;
 
   @Override
   @Transactional(
@@ -46,7 +49,7 @@ public class DataSourceServiceImpl implements DataSourceService {
     String name = normalizeName(dataSourceDTO.getName());
     ensureNameAvailable(name, null);
 
-    DataSourcePO dataSourcePO = buildDataSource(dataSourceDTO);
+    DataSourcePO dataSourcePO = buildDataSource(dataSourceDTO, dataSourceDTO.getConnectionParams());
     dataSourcePO.setName(name);
     dataSourcePO.setConnStatus(DataSourceConnStatus.UNKNOWN);
 
@@ -61,11 +64,24 @@ public class DataSourceServiceImpl implements DataSourceService {
       transactionManager = "opsDataSourceTransactionManager",
       rollbackFor = Exception.class)
   public boolean updateDataSource(Long id, DataSourceDTO dataSourceDTO) {
-    getDataSourceOrThrow(id);
+    DataSourcePO existing = getDataSourceOrThrow(id);
     String name = normalizeName(dataSourceDTO.getName());
     ensureNameAvailable(name, id);
 
-    DataSourcePO dataSourcePO = buildDataSource(dataSourceDTO);
+    DataSourceDbType requestedType = parseDbType(dataSourceDTO.getDbType());
+    if (requestedType != existing.getDbType()) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_DB_TYPE,
+          "编辑数据源时不允许修改数据源类型");
+    }
+
+    DataSourcePlugin plugin = pluginRegistry.get(requestedType);
+    String mergedConnectionJson =
+        secretCodec.mergeStoredSecrets(
+            plugin,
+            dataSourceDTO.getConnectionParams(),
+            existing.getConnectionParams());
+    DataSourcePO dataSourcePO = buildDataSource(dataSourceDTO, mergedConnectionJson);
     dataSourcePO.setId(id);
     dataSourcePO.setName(name);
     dataSourcePO.setConnStatus(DataSourceConnStatus.UNKNOWN);
@@ -87,9 +103,15 @@ public class DataSourceServiceImpl implements DataSourceService {
     IPage<DataSourcePO> page = dataSourceDao.selectPage(queryDTO);
     List<DataSourceVO> records =
         page.getRecords().stream()
-            .map(dataSourcePO -> toVO(dataSourcePO, true))
+            .map(dataSourcePO -> toVO(dataSourcePO, false))
             .collect(Collectors.toList());
     return new PagingData<>(records, page);
+  }
+
+  @Override
+  public DataSourceSummaryVO getSummary() {
+    DataSourceSummaryVO summary = dataSourceDao.selectSummary();
+    return summary == null ? new DataSourceSummaryVO() : summary;
   }
 
   @Override
@@ -131,12 +153,38 @@ public class DataSourceServiceImpl implements DataSourceService {
 
   @Override
   public boolean testConnection(DataSourceConnectTestDTO connectTestDTO) {
-    DataSourceDbType dbType =
-        StringUtils.hasText(connectTestDTO.getDbType())
-            ? parseDbType(connectTestDTO.getDbType())
-            : pluginRegistry.resolveConnectionType(connectTestDTO.getConnJson());
-    DataSourcePlugin plugin = pluginRegistry.get(dbType);
-    DataSourceConnection connection = parseConnection(plugin, connectTestDTO.getConnJson());
+    if (connectTestDTO == null) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+          "连接测试参数不能为空");
+    }
+
+    DataSourcePlugin plugin;
+    String connectionJson = connectTestDTO.getConnJson();
+    if (connectTestDTO.getDataSourceId() != null) {
+      DataSourcePO existing = getDataSourceOrThrow(connectTestDTO.getDataSourceId());
+      DataSourceDbType existingType = existing.getDbType();
+      if (StringUtils.hasText(connectTestDTO.getDbType())
+          && parseDbType(connectTestDTO.getDbType()) != existingType) {
+        throw new DataSourceException(
+            DataSourceErrorCode.INVALID_DB_TYPE,
+            "连接测试的数据源类型与已保存数据源不一致");
+      }
+      plugin = pluginRegistry.get(existingType);
+      connectionJson =
+          secretCodec.mergeStoredSecrets(
+              plugin,
+              connectionJson,
+              existing.getConnectionParams());
+    } else {
+      DataSourceDbType dbType =
+          StringUtils.hasText(connectTestDTO.getDbType())
+              ? parseDbType(connectTestDTO.getDbType())
+              : pluginRegistry.resolveConnectionType(connectionJson);
+      plugin = pluginRegistry.get(dbType);
+    }
+
+    DataSourceConnection connection = parseConnection(plugin, connectionJson);
     try {
       plugin.testConnection(connection, connectionTimeoutSeconds());
       return true;
@@ -159,11 +207,13 @@ public class DataSourceServiceImpl implements DataSourceService {
         .collect(Collectors.toList());
   }
 
-  private DataSourcePO buildDataSource(DataSourceDTO dataSourceDTO) {
+  private DataSourcePO buildDataSource(
+      DataSourceDTO dataSourceDTO,
+      String connectionJson) {
     DataSourceDbType dbType = parseDbType(dataSourceDTO.getDbType());
     DataSourceEnvironment environment = parseEnvironment(dataSourceDTO.getEnvironment());
     DataSourcePlugin plugin = pluginRegistry.get(dbType);
-    DataSourceConnection connection = parseConnection(plugin, dataSourceDTO.getConnectionParams());
+    DataSourceConnection connection = parseConnection(plugin, connectionJson);
 
     DataSourcePO dataSourcePO = new DataSourcePO();
     dataSourcePO.setDbType(dbType);
@@ -196,9 +246,9 @@ public class DataSourceServiceImpl implements DataSourceService {
       return (DataSourceException) exception;
     }
     return new DataSourceException(
-            DataSourceErrorCode.CONNECT_FAILED,
-            exception.getMessage(),
-            exception);
+        DataSourceErrorCode.CONNECT_FAILED,
+        exception.getMessage(),
+        exception);
   }
 
   private int connectionTimeoutSeconds() {
@@ -236,14 +286,25 @@ public class DataSourceServiceImpl implements DataSourceService {
   }
 
   private void normalizeQuery(DataSourceQueryDTO queryDTO) {
+    if (queryDTO == null) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_PARAMS,
+          "分页查询参数不能为空");
+    }
     if (StringUtils.hasText(queryDTO.getName())) {
       queryDTO.setName(queryDTO.getName().trim());
+    }
+    if (StringUtils.hasText(queryDTO.getKeyword())) {
+      queryDTO.setKeyword(queryDTO.getKeyword().trim());
     }
     if (StringUtils.hasText(queryDTO.getDbType())) {
       queryDTO.setDbType(parseDbType(queryDTO.getDbType()).name());
     }
     if (StringUtils.hasText(queryDTO.getEnvironment())) {
       queryDTO.setEnvironment(parseEnvironment(queryDTO.getEnvironment()).name());
+    }
+    if (StringUtils.hasText(queryDTO.getConnStatus())) {
+      queryDTO.setConnStatus(parseConnectionStatus(queryDTO.getConnStatus()).name());
     }
   }
 
@@ -269,12 +330,23 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
   }
 
+  private DataSourceConnStatus parseConnectionStatus(String value) {
+    try {
+      return DataSourceConnStatus.parse(value);
+    } catch (IllegalArgumentException exception) {
+      throw new DataSourceException(
+          DataSourceErrorCode.INVALID_CONNECTION_STATUS,
+          "不支持的连接状态：" + value,
+          exception);
+    }
+  }
+
   private DataSourceVO toVO(DataSourcePO dataSourcePO, boolean includeOriginalJson) {
     DataSourceVO dataSourceVO = new DataSourceVO();
     dataSourceVO.setId(dataSourcePO.getId());
     dataSourceVO.setName(dataSourcePO.getName());
     dataSourceVO.setDbType(dataSourcePO.getDbType().name());
-    dataSourceVO.setJdbcUrl(dataSourcePO.getJdbcUrl());
+    dataSourceVO.setJdbcUrl(secretCodec.maskSensitiveText(dataSourcePO.getJdbcUrl()));
     dataSourceVO.setEnvironment(dataSourcePO.getEnvironment().name());
     dataSourceVO.setEnvironmentName(dataSourcePO.getEnvironment().getDisplayName());
     dataSourceVO.setConnStatus(dataSourcePO.getConnStatus().name());
@@ -282,7 +354,9 @@ public class DataSourceServiceImpl implements DataSourceService {
     dataSourceVO.setCreateTime(dataSourcePO.getCreateTime());
     dataSourceVO.setUpdateTime(dataSourcePO.getUpdateTime());
     if (includeOriginalJson) {
-      dataSourceVO.setOriginalJson(dataSourcePO.getOriginalJson());
+      DataSourcePlugin plugin = pluginRegistry.get(dataSourcePO.getDbType());
+      dataSourceVO.setOriginalJson(
+          secretCodec.maskConnectionJson(plugin, dataSourcePO.getOriginalJson()));
     }
     return dataSourceVO;
   }
