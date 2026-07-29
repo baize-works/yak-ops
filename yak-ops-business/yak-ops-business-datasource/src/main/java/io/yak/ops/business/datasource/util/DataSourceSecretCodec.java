@@ -9,6 +9,7 @@ import io.yak.ops.common.bean.vo.datasource.DataSourcePluginConfigVO.FormFieldVO
 import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
 import io.yak.ops.spi.datasource.DataSourcePlugin;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -20,6 +21,9 @@ import org.springframework.stereotype.Component;
 public class DataSourceSecretCodec {
 
   public static final String MASKED_VALUE = "******";
+
+  private static final Set<String> COMMON_SECRET_KEYS =
+      Set.of("password", "pwd", "secret", "secretKey", "accessToken");
 
   private final ObjectMapper objectMapper;
 
@@ -71,11 +75,15 @@ public class DataSourceSecretCodec {
   }
 
   private Set<String> secretKeys(DataSourcePlugin plugin) {
-    Set<String> keys = new LinkedHashSet<>();
+    Set<String> keys = new LinkedHashSet<>(COMMON_SECRET_KEYS);
     if (plugin == null || plugin.pluginConfig() == null) {
       return keys;
     }
-    for (FormFieldVO field : plugin.pluginConfig().getFormFields()) {
+    List<FormFieldVO> fields = plugin.pluginConfig().getFormFields();
+    if (fields == null) {
+      return keys;
+    }
+    for (FormFieldVO field : fields) {
       if (field != null
           && field.getKey() != null
           && "PASSWORD".equalsIgnoreCase(field.getType())) {
