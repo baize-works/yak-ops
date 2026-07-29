@@ -3,6 +3,7 @@ package io.yak.ops.business.datasource.controller.v1;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.yak.framework.common.Result;
+import io.yak.framework.security.web.RequiresPermission;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.service.DataSourceCatalogService;
 import io.yak.ops.common.bean.vo.datasource.DataSourceCatalogColumnOptionVO;
@@ -11,6 +12,7 @@ import io.yak.ops.common.bean.vo.datasource.DataSourceCatalogOptionVO;
 import io.yak.ops.common.bean.vo.datasource.DataSourceCatalogTableVO;
 import io.yak.ops.common.bean.vo.datasource.DataSourceQueryResultVO;
 import io.yak.ops.common.constant.datasource.DataSourceConstants;
+import io.yak.ops.common.constant.datasource.DataSourcePermissionCode;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @ConditionalOnDataSourceEnabled
 @RequiredArgsConstructor
 @RequestMapping(DataSourceConstants.API_PREFIX + "/catalog")
+@RequiresPermission(DataSourcePermissionCode.READ)
 public class DataSourceCatalogController {
 
   private final DataSourceCatalogService catalogService;
