@@ -46,10 +46,9 @@ const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
   return (
     <aside
       className={[
-        'absolute left-4 top-[116px] z-40 flex w-[390px] max-h-[calc(100vh-145px)]',
-        'flex-col overflow-hidden rounded-[14px] border border-[#d0d5dd]/90 bg-white/[0.97]',
-        'shadow-[0_18px_50px_rgba(16,24,40,0.17)] backdrop-blur-[14px]',
-        'max-sm:w-[calc(100vw-32px)]',
+        'absolute left-4 top-[58px] z-40 flex max-h-[calc(100vh-132px)] w-[370px]',
+        'flex-col overflow-hidden rounded-xl border border-[#d0d5dd] bg-white',
+        'shadow-[0_18px_50px_rgba(16,24,40,0.16)] max-sm:w-[calc(100vw-32px)]',
       ].join(' ')}
     >
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-[#eaecf0] px-2.5">
@@ -74,7 +73,7 @@ const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
         </button>
       </header>
 
-      <div className="mx-2.5 mb-2 mt-2.5 flex h-[37px] shrink-0 items-center gap-1.5 rounded-lg border border-[#d0d5dd] bg-white px-2.5 text-[#98a2b3]">
+      <div className="mx-2.5 mb-2 mt-2.5 flex h-[37px] shrink-0 items-center gap-1.5 rounded-lg border border-[#d0d5dd] bg-white px-2.5 text-[#98a2b3] focus-within:border-[#84adff] focus-within:shadow-[0_0_0_3px_rgba(21,94,239,0.08)]">
         <Search size={15} />
         <Input
           bordered={false}
@@ -93,7 +92,7 @@ const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
           className={[
             'h-[27px] shrink-0 rounded-md border-0 px-2.5 text-[10px]',
             category === 'all'
-              ? 'bg-[#eeefff] font-semibold text-[#4f46e5]'
+              ? 'bg-[#eff4ff] font-semibold text-[#155eef]'
               : 'bg-[#f2f4f7] text-[#667085]',
           ].join(' ')}
           onClick={() => setCategory('all')}
@@ -107,7 +106,7 @@ const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
             className={[
               'h-[27px] shrink-0 rounded-md border-0 px-2.5 text-[10px]',
               category === value
-                ? 'bg-[#eeefff] font-semibold text-[#4f46e5]'
+                ? 'bg-[#eff4ff] font-semibold text-[#155eef]'
                 : 'bg-[#f2f4f7] text-[#667085]',
             ].join(' ')}
             onClick={() => setCategory(value)}
@@ -134,7 +133,7 @@ const BlockSelector = ({ open, onClose, onSelect }: BlockSelectorProps) => {
                     className={[
                       'grid min-h-[58px] grid-cols-[30px_minmax(0,1fr)_16px] items-center gap-2',
                       'rounded-lg border border-transparent bg-transparent px-2 py-2 text-left text-[#344054]',
-                      'hover:border-[#dddafe] hover:bg-[#f8f7ff]',
+                      'hover:border-[#b2ccff] hover:bg-[#f5f8ff]',
                     ].join(' ')}
                     onClick={() => {
                       onSelect(item.type);
