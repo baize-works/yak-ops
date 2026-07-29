@@ -57,12 +57,23 @@
   background: transparent;
 }
 
-.dify-workflow-canvas .react-flow__pane {
+.dify-workflow-canvas[data-interaction-mode='select'] .react-flow__pane {
+  cursor: default;
+}
+
+.dify-workflow-canvas[data-interaction-mode='pan'] .react-flow__pane {
   cursor: grab;
 }
 
-.dify-workflow-canvas .react-flow__pane:active {
+.dify-workflow-canvas[data-interaction-mode='pan'] .react-flow__pane:active {
   cursor: grabbing;
+}
+
+.dify-workflow-canvas[data-node-placement='true'] .react-flow__pane,
+.dify-workflow-canvas[data-node-placement='true'] .react-flow__pane:active,
+.dify-workflow-canvas[data-node-placement='true'] .react-flow__node,
+.dify-workflow-canvas[data-node-placement='true'] .react-flow__edge {
+  cursor: crosshair;
 }
 
 .dify-workflow-canvas .react-flow__edge-path {
@@ -83,32 +94,6 @@
 
 .dify-workflow-canvas .react-flow__background {
   opacity: 0.72;
-}
-
-.dify-add-block-trigger {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 20;
-  display: inline-flex;
-  height: 34px;
-  align-items: center;
-  gap: 6px;
-  padding: 0 11px;
-  border: 1px solid #d0d5dd;
-  border-radius: 9px;
-  color: #475467;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 5px 14px rgba(16, 24, 40, 0.08);
-  backdrop-filter: blur(10px);
-}
-
-.dify-add-block-trigger:hover {
-  color: #155eef;
-  border-color: #84adff;
-  background: #fff;
 }
 
 .dify-empty-canvas {
