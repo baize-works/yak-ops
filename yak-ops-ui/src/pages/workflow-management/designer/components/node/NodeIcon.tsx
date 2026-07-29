@@ -16,8 +16,8 @@ import {
   Variable,
 } from 'lucide-react';
 import type { CSSProperties } from 'react';
-import type { WorkflowNodeType } from '../../types';
-import { getNodeMeta } from '../constants';
+import type { WorkflowNodeType } from '../../../types';
+import { getNodeMeta } from '../../constants';
 
 const iconMap = {
   START: Play,
@@ -46,9 +46,12 @@ interface NodeIconProps {
 const NodeIcon = ({ type, size = 17, className, style }: NodeIconProps) => {
   const meta = getNodeMeta(type);
   const Icon = iconMap[meta.type] || MessageSquareText;
+
   return (
     <span
-      className={['workflow-node-icon', className].filter(Boolean).join(' ')}
+      className={['inline-flex text-[var(--node-color)]', className]
+        .filter(Boolean)
+        .join(' ')}
       style={{ '--node-color': meta.color, ...style } as CSSProperties}
     >
       <Icon size={size} strokeWidth={1.9} />

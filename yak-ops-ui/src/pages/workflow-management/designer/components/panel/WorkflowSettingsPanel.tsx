@@ -4,7 +4,15 @@ import { useEffect } from 'react';
 import type {
   WorkflowDefinitionRecord,
   WorkflowFailureStrategy,
-} from '../../types';
+} from '../../../types';
+import {
+  PanelTitle,
+  panelContentClass,
+  panelFooterClass,
+  panelHeaderClass,
+  panelIconButtonClass,
+  panelShellClass,
+} from './shared';
 
 interface SettingsValues {
   name: string;
@@ -19,7 +27,11 @@ interface WorkflowSettingsPanelProps {
   onClose: () => void;
 }
 
-const WorkflowSettingsPanel = ({ workflow, onApply, onClose }: WorkflowSettingsPanelProps) => {
+const WorkflowSettingsPanel = ({
+  workflow,
+  onApply,
+  onClose,
+}: WorkflowSettingsPanelProps) => {
   const [form] = Form.useForm<SettingsValues>();
 
   useEffect(() => {
@@ -37,16 +49,20 @@ const WorkflowSettingsPanel = ({ workflow, onApply, onClose }: WorkflowSettingsP
   };
 
   return (
-    <aside className="dify-workspace-panel">
-      <header>
-        <div>
-          <strong>工作流设置</strong>
-          <span>修改名称、描述与草稿策略</span>
-        </div>
-        <button type="button" onClick={onClose}><X size={17} /></button>
+    <aside className={panelShellClass}>
+      <header className={panelHeaderClass}>
+        <PanelTitle title="工作流设置" description="修改名称、描述与草稿策略" />
+        <button type="button" className={panelIconButtonClass} onClick={onClose}>
+          <X size={17} />
+        </button>
       </header>
-      <div className="dify-workspace-panel__content">
-        <Form form={form} layout="vertical" requiredMark={false} className="dify-workflow-settings-form">
+      <div className={[panelContentClass, 'p-4'].join(' ')}>
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          className="[&_.ant-form-item-label_label]:text-[11px] [&_.ant-form-item-label_label]:font-semibold [&_.ant-form-item-label_label]:text-[#475467]"
+        >
           <Form.Item
             label="工作流名称"
             name="name"
@@ -73,8 +89,15 @@ const WorkflowSettingsPanel = ({ workflow, onApply, onClose }: WorkflowSettingsP
           </Form.Item>
         </Form>
       </div>
-      <footer className="dify-workspace-panel__footer">
-        <button type="button" onClick={() => void apply()}><Save size={15} /> 应用设置</button>
+      <footer className={panelFooterClass}>
+        <span />
+        <button
+          type="button"
+          className="inline-flex h-[29px] items-center gap-1.5 rounded-md border border-[#d0d5dd] bg-white px-2.5 text-[9px] text-[#475467] hover:bg-[#f9fafb]"
+          onClick={() => void apply()}
+        >
+          <Save size={15} /> 应用设置
+        </button>
       </footer>
     </aside>
   );

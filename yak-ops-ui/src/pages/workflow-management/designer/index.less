@@ -1,5 +1,94 @@
-@import './styles/canvas.less';
-@import './styles/nodes.less';
-@import './styles/panels.less';
-@import './styles/operator.less';
-@import './styles/create.less';
+/* React Flow renders internal DOM outside our component boundaries. All product
+ * component styling lives in Tailwind classes; this file only adapts the
+ * third-party canvas shell and preserves the existing stable entry markup. */
+.dify-workflow-designer {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  color: #101828;
+  background: #f7f8fa;
+}
+
+.dify-workflow-loading,
+.dify-workflow-loading > .ant-spin-container,
+.dify-workflow-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.dify-workflow-loading > .ant-spin-container::after {
+  border-radius: 0;
+}
+
+.dify-workflow-canvas {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 0, rgba(109, 94, 252, 0.035), transparent 35%),
+    #f8f9fb;
+}
+
+.dify-workflow-canvas .react-flow__pane { cursor: grab; }
+.dify-workflow-canvas .react-flow__pane:active { cursor: grabbing; }
+.dify-workflow-canvas .react-flow__edge-path {
+  stroke: #98a2b3;
+  stroke-width: 1.5;
+}
+.dify-workflow-canvas .react-flow__edge.selected .react-flow__edge-path,
+.dify-workflow-canvas .react-flow__edge:hover .react-flow__edge-path {
+  stroke: #6d5efc;
+  stroke-width: 2;
+}
+.dify-workflow-canvas .react-flow__selection {
+  border: 1px solid rgba(93, 95, 239, 0.7);
+  background: rgba(93, 95, 239, 0.08);
+}
+
+.dify-add-block-trigger {
+  position: absolute;
+  top: 76px;
+  left: 16px;
+  z-index: 20;
+  display: inline-flex;
+  height: 35px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid #d0d5dd;
+  border-radius: 9px;
+  color: #475467;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 7px 20px rgba(16, 24, 40, 0.08);
+  backdrop-filter: blur(10px);
+}
+.dify-add-block-trigger:hover {
+  color: #4f46e5;
+  border-color: #a9a4fb;
+}
+
+.dify-empty-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 38px;
+  border: 1px dashed #cfd4dc;
+  border-radius: 13px;
+  color: #7c6ff4;
+  background: rgba(255, 255, 255, 0.72);
+  transform: translate(-50%, -50%);
+}
+.dify-empty-canvas strong {
+  margin-top: 10px;
+  color: #475467;
+  font-size: 12px;
+}
+.dify-empty-canvas span {
+  margin-top: 4px;
+  color: #98a2b3;
+  font-size: 9px;
+}
