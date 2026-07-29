@@ -28,12 +28,26 @@ public final class HttpWorkflowTaskPluginFactory implements WorkflowTaskPluginFa
   }
 
   @Override
+  public void validate(Map<String, Object> configuration) {
+    HttpTaskParameters parameters = HttpTaskParameters.from(configuration);
+    parameters.validate();
+  }
+
+  @Override
+  public Map<String, Object> normalize(Map<String, Object> configuration) {
+    HttpTaskParameters parameters = HttpTaskParameters.from(configuration);
+    parameters.validate();
+    return parameters.toConfiguration();
+  }
+
+  @Override
   public WorkflowTaskExecutor create() {
     return new HttpWorkflowTaskExecutor();
   }
 
   private static Map<String, Object> configurationSchema() {
     Map<String, Object> fields = new LinkedHashMap<>();
+    fields.put("localParams", field("parameter-list", false, "节点局部输入输出参数。", List.of()));
     fields.put("url", field("string", true, "请求地址，支持 ${parameter} 参数。", null));
     fields.put("method", field(
         "string",

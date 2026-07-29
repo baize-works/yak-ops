@@ -25,8 +25,6 @@ import java.util.stream.IntStream;
 /** 使用 JDK HttpClient 执行 HTTP 工作流任务。 */
 public final class HttpWorkflowTaskExecutor implements WorkflowTaskExecutor {
 
-  private static final Set<String> METHODS = Set.of(
-      "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS");
   private static final Set<Integer> DEFAULT_SUCCESS_CODES = IntStream
       .rangeClosed(200, 299)
       .boxed()
@@ -56,29 +54,8 @@ public final class HttpWorkflowTaskExecutor implements WorkflowTaskExecutor {
 
   @Override
   public void validate(Map<String, Object> configuration) {
-    String url = TaskConfiguration.requiredString(configuration, "url");
-    URI.create(url.replaceAll("\\$\\{[^}]+}", "placeholder"));
-
-    String method = TaskConfiguration.string(configuration, "method", "GET")
-        .trim()
-        .toUpperCase(Locale.ROOT);
-    if (!METHODS.contains(method)) {
-      throw new IllegalArgumentException("不支持的 HTTP 请求方法：" + method);
-    }
-
-    TaskConfiguration.stringMap(configuration, "headers");
-    TaskConfiguration.positiveInteger(
-        configuration,
-        "requestTimeoutSeconds",
-        DEFAULT_REQUEST_TIMEOUT_SECONDS);
-    TaskConfiguration.positiveInteger(
-        configuration,
-        "maxResponseBodyCharacters",
-        DEFAULT_MAX_RESPONSE_BODY_CHARACTERS);
-    TaskConfiguration.integerSet(
-        configuration,
-        "successCodes",
-        DEFAULT_SUCCESS_CODES);
+    HttpTaskParameters parameters = HttpTaskParameters.from(configuration);
+    parameters.validate();
   }
 
   @Override

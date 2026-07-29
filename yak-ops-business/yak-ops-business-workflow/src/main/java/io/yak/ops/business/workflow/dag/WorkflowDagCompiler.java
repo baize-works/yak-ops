@@ -48,7 +48,8 @@ public class WorkflowDagCompiler {
     }
 
     Set<String> uniqueEdges = new LinkedHashSet<>();
-    for (WorkflowEdge edge : dag.getEdges()) {
+    List<WorkflowEdge> edges = dag.getEdges() == null ? List.of() : dag.getEdges();
+    for (WorkflowEdge edge : edges) {
       if (edge == null || edge.getFrom() == null || edge.getTo() == null) {
         throw new IllegalArgumentException("工作流边的起止节点不能为空");
       }
@@ -75,6 +76,22 @@ public class WorkflowDagCompiler {
         order);
   }
 
+  /**
+   * Validates a draft and returns the canonical representation persisted by definition APIs.
+   */
+  public WorkflowDag normalizeAndValidate(WorkflowDag dag) {
+    CompiledWorkflowDag compiled = compile(dag);
+    WorkflowDag normalized = new WorkflowDag();
+    normalized.setNodes(new ArrayList<>(compiled.getNodes().values()));
+
+    List<WorkflowEdge> edges = new ArrayList<>();
+    compiled.getSuccessors().forEach((from, targets) ->
+        targets.forEach(to -> edges.add(new WorkflowEdge(from, to))));
+    normalized.setEdges(edges);
+    normalized.setViewport(dag.getViewport());
+    return normalized;
+  }
+
   private WorkflowNode normalize(WorkflowNode source) {
     if (source == null) {
       throw new IllegalArgumentException("工作流节点不能为空");
@@ -85,6 +102,9 @@ public class WorkflowDagCompiler {
     target.setType(source.getType() == null
         ? null
         : source.getType().trim().toUpperCase(Locale.ROOT));
+    target.setDescription(source.getDescription());
+    target.setPositionX(source.getPositionX());
+    target.setPositionY(source.getPositionY());
     target.setConfig(source.getConfig());
     target.setRetryTimes(source.getRetryTimes());
     target.setRetryIntervalSeconds(source.getRetryIntervalSeconds());
@@ -112,7 +132,7 @@ public class WorkflowDagCompiler {
       throw new IllegalArgumentException("重试和超时时间不能为负数：" + node.getKey());
     }
     if (node.isEnabled()) {
-      executorRegistry.validate(node.getType(), node.getConfig());
+      node.setConfig(executorRegistry.normalizeConfiguration(node.getType(), node.getConfig()));
     }
   }
 

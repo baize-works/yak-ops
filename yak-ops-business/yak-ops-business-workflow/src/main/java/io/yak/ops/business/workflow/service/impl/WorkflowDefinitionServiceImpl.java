@@ -10,6 +10,7 @@ import io.yak.ops.business.workflow.util.WorkflowConvertUtils;
 import io.yak.ops.business.workflow.util.WorkflowJsonCodec;
 import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
 import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
+import io.yak.ops.common.bean.entity.workflow.WorkflowDag;
 import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
 import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
 import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
@@ -42,6 +43,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
   @Transactional(transactionManager = "workflowTransactionManager")
   public Long addWorkflow(WorkflowDTO workflowDTO, String operator) {
     validate(workflowDTO);
+    WorkflowDag normalizedDag = dagCompiler.normalizeAndValidate(workflowDTO.getDag());
     String code = workflowDTO.getCode().trim();
     if (definitionDao.existsDefinitionByCode(code)) {
       throw new IllegalArgumentException("工作流编码已存在：" + code);
@@ -55,7 +57,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
     definitionPO.setState(DefinitionState.DRAFT.name());
     definitionPO.setFailureStrategy(strategy(workflowDTO.getFailureStrategy()).name());
     definitionPO.setMaxParallelism(workflowDTO.getMaxParallelism());
-    definitionPO.setDraftJson(jsonCodec.write(workflowDTO.getDag()));
+    definitionPO.setDraftJson(jsonCodec.write(normalizedDag));
     definitionPO.setCreatedBy(operator);
     definitionPO.setCreatedAt(now);
     definitionPO.setUpdatedAt(now);
@@ -67,6 +69,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
   @Transactional(transactionManager = "workflowTransactionManager")
   public void editWorkflow(Long workflowId, WorkflowUpdateDTO workflowDTO) {
     validate(workflowDTO);
+    WorkflowDag normalizedDag = dagCompiler.normalizeAndValidate(workflowDTO.getDag());
     requireWorkflow(workflowId);
     WorkflowDefinitionPO definitionPO = new WorkflowDefinitionPO();
     definitionPO.setId(workflowId);
@@ -74,7 +77,7 @@ public class WorkflowDefinitionServiceImpl implements WorkflowDefinitionService 
     definitionPO.setDescription(workflowDTO.getDescription());
     definitionPO.setFailureStrategy(strategy(workflowDTO.getFailureStrategy()).name());
     definitionPO.setMaxParallelism(workflowDTO.getMaxParallelism());
-    definitionPO.setDraftJson(jsonCodec.write(workflowDTO.getDag()));
+    definitionPO.setDraftJson(jsonCodec.write(normalizedDag));
     definitionPO.setUpdatedAt(new Date());
     if (definitionDao.editDefinition(definitionPO) != 1) {
       throw new IllegalArgumentException("工作流定义不存在：" + workflowId);

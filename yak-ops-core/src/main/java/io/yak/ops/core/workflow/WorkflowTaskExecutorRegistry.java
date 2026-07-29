@@ -64,7 +64,14 @@ public final class WorkflowTaskExecutorRegistry {
   }
 
   public void validate(String taskType, Map<String, Object> configuration) {
-    requireFactory(taskType).validate(configuration);
+    normalizeConfiguration(taskType, configuration);
+  }
+
+  /** Binds and normalizes one plugin's JSON task parameters. */
+  public Map<String, Object> normalizeConfiguration(
+      String taskType,
+      Map<String, Object> configuration) {
+    return requireFactory(taskType).normalize(configuration);
   }
 
   public WorkflowTaskPluginDescriptor descriptor(String taskType) {
