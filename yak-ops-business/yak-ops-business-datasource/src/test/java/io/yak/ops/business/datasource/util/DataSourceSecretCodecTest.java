@@ -24,10 +24,15 @@ class DataSourceSecretCodecTest {
     String masked =
         codec.maskConnectionJson(
             plugin,
-            "{\"host\":\"db\",\"username\":\"root\",\"password\":\"top-secret\"}");
+            "{\"host\":\"db\",\"username\":\"root\","
+                + "\"password\":\"top-secret\","
+                + "\"properties\":{\"accessToken\":\"nested-secret\"}}"
+        );
     JsonNode root = objectMapper.readTree(masked);
 
     assertThat(root.get("password").asText()).isEqualTo(DataSourceSecretCodec.MASKED_VALUE);
+    assertThat(root.path("properties").path("accessToken").asText())
+        .isEqualTo(DataSourceSecretCodec.MASKED_VALUE);
     assertThat(root.get("username").asText()).isEqualTo("root");
     assertThat(
             codec.maskSensitiveText(
@@ -42,12 +47,17 @@ class DataSourceSecretCodecTest {
     String merged =
         codec.mergeStoredSecrets(
             plugin,
-            "{\"host\":\"new-db\",\"password\":\"******\"}",
-            "{\"host\":\"old-db\",\"password\":\"top-secret\"}");
+            "{\"host\":\"new-db\",\"password\":\"******\","
+                + "\"properties\":{\"accessToken\":\"******\"}}",
+            "{\"host\":\"old-db\",\"password\":\"top-secret\","
+                + "\"properties\":{\"accessToken\":\"nested-secret\"}}"
+        );
     JsonNode root = objectMapper.readTree(merged);
 
     assertThat(root.get("host").asText()).isEqualTo("new-db");
     assertThat(root.get("password").asText()).isEqualTo("top-secret");
+    assertThat(root.path("properties").path("accessToken").asText())
+        .isEqualTo("nested-secret");
   }
 
   @Test
