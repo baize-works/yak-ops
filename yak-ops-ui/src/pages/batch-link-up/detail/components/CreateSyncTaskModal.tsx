@@ -19,6 +19,7 @@ interface CreateSyncTaskModalProps {
   open: boolean;
   onCancel: () => void;
   onCreated: (taskId: string) => void;
+  reservedTaskId?: string;
 }
 
 const modeOptions: Array<{
@@ -45,6 +46,7 @@ export default function CreateSyncTaskModal({
   open,
   onCancel,
   onCreated,
+  reservedTaskId,
 }: CreateSyncTaskModalProps) {
   const [form] = Form.useForm<CreateSyncTaskValues>();
   const [submitting, setSubmitting] = useState(false);
@@ -63,13 +65,16 @@ export default function CreateSyncTaskModal({
       const values = await form.validateFields();
       setSubmitting(true);
 
-      const idResponse = await linkupJobDefinitionApi.getUniqueId();
-      if (!isApiSuccess(idResponse)) {
-        message.error(responseMessage(idResponse, '生成任务 ID 失败'));
-        return;
+      let taskId = reservedTaskId || '';
+      if (!taskId) {
+        const idResponse = await linkupJobDefinitionApi.getUniqueId();
+        if (!isApiSuccess(idResponse)) {
+          message.error(responseMessage(idResponse, '生成任务 ID 失败'));
+          return;
+        }
+        taskId = extractGeneratedId(idResponse);
       }
 
-      const taskId = extractGeneratedId(idResponse);
       if (!taskId) {
         message.error('生成任务 ID 失败');
         return;
