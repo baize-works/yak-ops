@@ -7,9 +7,12 @@ import {
   X,
 } from 'lucide-react';
 import { useMemo, useState, type ChangeEvent } from 'react';
+import { useEdges, useNodes, useReactFlow } from 'reactflow';
 import type { WorkflowFlowNode, WorkflowNodeData } from '../../../types';
 import { getNodeMeta } from '../../constants';
 import NodeIcon from '../node/NodeIcon';
+import NextStepSection from '../quick-add/NextStepSection';
+import { openWorkflowQuickAdd } from '../quick-add/events';
 import EndPanel from './node/end';
 import HttpPanel from './node/http';
 import ShellPanel from './node/shell';
@@ -61,6 +64,9 @@ const NodePanel = ({
   onClose,
 }: NodePanelProps) => {
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const nodes = useNodes<WorkflowNodeData>();
+  const edges = useEdges();
+  const reactFlow = useReactFlow<WorkflowNodeData>();
   const data = node.data;
   const meta = getNodeMeta(data.nodeType);
   const isControlNode = data.nodeType === 'START' || data.nodeType === 'END';
@@ -69,6 +75,13 @@ const NodePanel = ({
     data.nodeType === 'END' ||
     data.nodeType === 'HTTP' ||
     data.nodeType === 'SHELL';
+
+  const nextNodes = useMemo(() => {
+    const targetIds = new Set(
+      edges.filter((edge) => edge.source === node.id).map((edge) => edge.target),
+    );
+    return nodes.filter((item) => targetIds.has(item.id));
+  }, [edges, node.id, nodes]);
 
   const patch = (values: Partial<WorkflowNodeData>) => {
     onChange({ ...data, ...values });
@@ -91,6 +104,27 @@ const NodePanel = ({
       ),
     [data.config],
   );
+
+  const openNextNode = (nodeId: string) => {
+    const target = reactFlow.getNode(nodeId);
+    if (!target) return;
+
+    const position = target.positionAbsolute || target.position;
+    void reactFlow.setCenter(
+      position.x + (target.width || 240) / 2,
+      position.y + (target.height || 112) / 2,
+      {
+        zoom: Math.max(reactFlow.getZoom(), 0.85),
+        duration: 220,
+      },
+    );
+
+    requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`.react-flow__node[data-id="${nodeId}"]`)
+        ?.click();
+    });
+  };
 
   const renderNodePanel = () => {
     switch (data.nodeType) {
@@ -182,6 +216,19 @@ const NodePanel = ({
         </section>
 
         {renderNodePanel()}
+
+        {isSupported && data.nodeType !== 'END' && (
+          <NextStepSection
+            nodes={nextNodes}
+            onOpenNode={openNextNode}
+            onAdd={() =>
+              openWorkflowQuickAdd({
+                mode: 'append',
+                sourceNodeId: node.id,
+              })
+            }
+          />
+        )}
 
         {!isControlNode && isSupported && (
           <section className="border-t border-[#f0f1f4] px-4 py-4">
