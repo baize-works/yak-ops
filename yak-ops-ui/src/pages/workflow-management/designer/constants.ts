@@ -66,6 +66,9 @@ export const WORKFLOW_NODE_CATALOG: WorkflowNodeMeta[] = [
       headers: {},
       body: '',
       requestTimeoutSeconds: 60,
+      successCodes: [],
+      maxResponseBodyCharacters: 1_000_000,
+      localParams: [],
     },
   },
   {
@@ -77,8 +80,10 @@ export const WORKFLOW_NODE_CATALOG: WorkflowNodeMeta[] = [
     backendType: 'SHELL',
     defaults: {
       command: '',
+      args: [],
       workDirectory: '',
       environment: {},
+      localParams: [],
     },
   },
 ];
