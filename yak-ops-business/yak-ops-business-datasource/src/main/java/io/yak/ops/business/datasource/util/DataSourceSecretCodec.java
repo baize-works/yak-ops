@@ -2,14 +2,17 @@ package io.yak.ops.business.datasource.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.exception.DataSourceException;
 import io.yak.ops.common.bean.vo.datasource.DataSourcePluginConfigVO.FormFieldVO;
 import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
 import io.yak.ops.spi.datasource.DataSourcePlugin;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,7 +26,7 @@ public class DataSourceSecretCodec {
   public static final String MASKED_VALUE = "******";
 
   private static final Set<String> COMMON_SECRET_KEYS =
-      Set.of("password", "pwd", "secret", "secretKey", "accessToken");
+      Set.of("password", "pwd", "secret", "secretkey", "accesstoken", "token");
 
   private final ObjectMapper objectMapper;
 
@@ -33,12 +36,7 @@ public class DataSourceSecretCodec {
       return null;
     }
     ObjectNode root = readObject(connectionJson);
-    for (String key : secretKeys(plugin)) {
-      JsonNode value = root.get(key);
-      if (value != null && !value.isNull()) {
-        root.put(key, MASKED_VALUE);
-      }
-    }
+    maskObject(root, secretKeys(plugin));
     return write(root);
   }
 
@@ -51,12 +49,7 @@ public class DataSourceSecretCodec {
       String storedJson) {
     ObjectNode submitted = readObject(submittedJson);
     ObjectNode stored = readObject(storedJson);
-    for (String key : secretKeys(plugin)) {
-      JsonNode submittedValue = submitted.get(key);
-      if (shouldPreserve(submittedValue) && stored.has(key)) {
-        submitted.set(key, stored.get(key).deepCopy());
-      }
-    }
+    mergeObject(submitted, stored, secretKeys(plugin));
     return write(submitted);
   }
 
@@ -74,8 +67,94 @@ public class DataSourceSecretCodec {
         "$1" + MASKED_VALUE + "@");
   }
 
+  private void maskObject(ObjectNode object, Set<String> configuredKeys) {
+    Iterator<Map.Entry<String, JsonNode>> fields = object.fields();
+    while (fields.hasNext()) {
+      Map.Entry<String, JsonNode> field = fields.next();
+      JsonNode value = field.getValue();
+      if (isSecretKey(field.getKey(), configuredKeys)) {
+        object.put(field.getKey(), MASKED_VALUE);
+      } else if (value != null && value.isObject()) {
+        maskObject((ObjectNode) value, configuredKeys);
+      } else if (value != null && value.isArray()) {
+        maskArray((ArrayNode) value, configuredKeys);
+      }
+    }
+  }
+
+  private void maskArray(ArrayNode array, Set<String> configuredKeys) {
+    for (JsonNode value : array) {
+      if (value != null && value.isObject()) {
+        maskObject((ObjectNode) value, configuredKeys);
+      } else if (value != null && value.isArray()) {
+        maskArray((ArrayNode) value, configuredKeys);
+      }
+    }
+  }
+
+  private void mergeObject(
+      ObjectNode submitted,
+      ObjectNode stored,
+      Set<String> configuredKeys) {
+    Iterator<Map.Entry<String, JsonNode>> storedFields = stored.fields();
+    while (storedFields.hasNext()) {
+      Map.Entry<String, JsonNode> field = storedFields.next();
+      String key = field.getKey();
+      JsonNode storedValue = field.getValue();
+      JsonNode submittedValue = submitted.get(key);
+
+      if (isSecretKey(key, configuredKeys) && shouldPreserve(submittedValue)) {
+        submitted.set(key, storedValue.deepCopy());
+      } else if (storedValue != null
+          && storedValue.isObject()
+          && submittedValue != null
+          && submittedValue.isObject()) {
+        mergeObject(
+            (ObjectNode) submittedValue,
+            (ObjectNode) storedValue,
+            configuredKeys);
+      } else if (storedValue != null
+          && storedValue.isArray()
+          && submittedValue != null
+          && submittedValue.isArray()) {
+        mergeArray(
+            (ArrayNode) submittedValue,
+            (ArrayNode) storedValue,
+            configuredKeys);
+      }
+    }
+  }
+
+  private void mergeArray(
+      ArrayNode submitted,
+      ArrayNode stored,
+      Set<String> configuredKeys) {
+    int length = Math.min(submitted.size(), stored.size());
+    for (int index = 0; index < length; index++) {
+      JsonNode submittedValue = submitted.get(index);
+      JsonNode storedValue = stored.get(index);
+      if (submittedValue != null
+          && submittedValue.isObject()
+          && storedValue != null
+          && storedValue.isObject()) {
+        mergeObject(
+            (ObjectNode) submittedValue,
+            (ObjectNode) storedValue,
+            configuredKeys);
+      } else if (submittedValue != null
+          && submittedValue.isArray()
+          && storedValue != null
+          && storedValue.isArray()) {
+        mergeArray(
+            (ArrayNode) submittedValue,
+            (ArrayNode) storedValue,
+            configuredKeys);
+      }
+    }
+  }
+
   private Set<String> secretKeys(DataSourcePlugin plugin) {
-    Set<String> keys = new LinkedHashSet<>(COMMON_SECRET_KEYS);
+    Set<String> keys = new LinkedHashSet<>();
     if (plugin == null || plugin.pluginConfig() == null) {
       return keys;
     }
@@ -87,10 +166,25 @@ public class DataSourceSecretCodec {
       if (field != null
           && field.getKey() != null
           && "PASSWORD".equalsIgnoreCase(field.getType())) {
-        keys.add(field.getKey());
+        keys.add(normalizeKey(field.getKey()));
       }
     }
     return keys;
+  }
+
+  private boolean isSecretKey(String key, Set<String> configuredKeys) {
+    String normalized = normalizeKey(key);
+    return COMMON_SECRET_KEYS.contains(normalized)
+        || configuredKeys.contains(normalized)
+        || normalized.endsWith("password")
+        || normalized.endsWith("secret")
+        || normalized.endsWith("token");
+  }
+
+  private String normalizeKey(String key) {
+    return key == null
+        ? ""
+        : key.replace("_", "").replace("-", "").trim().toLowerCase();
   }
 
   private boolean shouldPreserve(JsonNode value) {
