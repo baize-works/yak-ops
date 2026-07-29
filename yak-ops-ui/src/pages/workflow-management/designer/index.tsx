@@ -1,7 +1,7 @@
 import { API_SUCCESS_CODE } from '@/services/http/response';
 import { history, useParams } from '@umijs/max';
 import { message, Modal, Spin } from 'antd';
-import { Plus, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import {
   addEdge,
   Background,
@@ -24,6 +24,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from 'react';
 import 'reactflow/dist/style.css';
 import { fetchWorkflowDetail, updateWorkflow } from '../service';
@@ -41,7 +42,12 @@ import type {
 } from '../types';
 import BlockSelector from './components/BlockSelector';
 import CanvasOperator from './components/CanvasOperator';
+import type {
+  CanvasInteractionMode,
+  CanvasLibraryItem,
+} from './components/operator/CanvasOperator';
 import HistoryPanel from './components/HistoryPanel';
+import NodeIcon from './components/node/NodeIcon';
 import NodePanel from './components/NodePanel';
 import RunPanel from './components/RunPanel';
 import VariableInspectPanel from './components/VariableInspectPanel';
@@ -53,6 +59,7 @@ import WorkflowNode from './components/WorkflowNode';
 import WorkflowSettingsPanel from './components/WorkflowSettingsPanel';
 import {
   createNodeData,
+  getNodeMeta,
   resolveVisualNodeType,
 } from './constants';
 import { useWorkflowHistory } from './hooks/useWorkflowHistory';
@@ -64,6 +71,28 @@ interface ClipboardState {
   nodes: WorkflowFlowNode[];
   edges: WorkflowFlowEdge[];
 }
+
+type CanvasPoint = {
+  x: number;
+  y: number;
+};
+
+const CANVAS_LIBRARY_NODE_TYPE: Record<string, WorkflowNodeType> = {
+  llm: 'LLM',
+  'knowledge-retrieval': 'KNOWLEDGE',
+  'direct-answer': 'END',
+  agent: 'LLM',
+  'question-classifier': 'QUESTION_CLASSIFIER',
+  condition: 'CONDITION',
+  'human-intervention': 'NOOP',
+  iteration: 'ITERATION',
+  loop: 'ITERATION',
+  code: 'CODE',
+  template: 'TEMPLATE',
+  'variable-aggregator': 'VARIABLE',
+  'variable-tool': 'VARIABLE',
+  'input-tool': 'TEMPLATE',
+};
 
 const cloneNodes = (nodes: WorkflowFlowNode[]) =>
   nodes.map((node) => ({
@@ -97,6 +126,7 @@ const WorkflowDesignerContent = () => {
   const reactFlow = useReactFlow<WorkflowNodeData>();
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const clipboardRef = useRef<ClipboardState | undefined>(undefined);
+
   const [loading, setLoading] = useState(!createMode);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -104,14 +134,26 @@ const WorkflowDesignerContent = () => {
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
   const [activePanel, setActivePanel] = useState<WorkflowPanelType>(null);
   const [blockSelectorOpen, setBlockSelectorOpen] = useState(false);
+  const [nodeLibraryOpen, setNodeLibraryOpen] = useState(false);
+  const [interactionMode, setInteractionMode] =
+    useState<CanvasInteractionMode>('select');
+  const [blockSelectorPosition, setBlockSelectorPosition] =
+    useState<CanvasPoint>();
   const [quickAddSourceId, setQuickAddSourceId] = useState<string>();
-  const [contextMenu, setContextMenu] = useState<WorkflowContextMenuState>();
+  const [pendingNodeType, setPendingNodeType] =
+    useState<WorkflowNodeType>();
+  const [pendingNodePointer, setPendingNodePointer] =
+    useState<CanvasPoint>();
+  const [contextMenu, setContextMenu] =
+    useState<WorkflowContextMenuState>();
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [variableInspectOpen, setVariableInspectOpen] = useState(false);
   const [variables, setVariables] = useState<WorkflowVariable[]>([]);
-  const [environmentVariables, setEnvironmentVariables] = useState<WorkflowVariable[]>([]);
+  const [environmentVariables, setEnvironmentVariables] =
+    useState<WorkflowVariable[]>([]);
   const [snapshots, setSnapshots] = useState<WorkflowSnapshot[]>([]);
-  const [nodes, setNodes, onNodesChangeBase] = useNodesState<WorkflowNodeData>([]);
+  const [nodes, setNodes, onNodesChangeBase] =
+    useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChangeBase] = useEdgesState([]);
   const workflowHistory = useWorkflowHistory();
 
@@ -120,12 +162,38 @@ const WorkflowDesignerContent = () => {
     [nodes, selectedNodeId],
   );
 
+  const pendingNodeData = useMemo(
+    () =>
+      pendingNodeType
+        ? createNodeData(pendingNodeType, nodes.length + 1)
+        : undefined,
+    [nodes.length, pendingNodeType],
+  );
+
+  const pendingNodeMeta = useMemo(
+    () => (pendingNodeType ? getNodeMeta(pendingNodeType) : undefined),
+    [pendingNodeType],
+  );
+
   const persistWorkspace = useCallback(
-    (nextVariables = variables, nextEnvironment = environmentVariables, nextSnapshots = snapshots) => {
+    (
+      nextVariables = variables,
+      nextEnvironment = environmentVariables,
+      nextSnapshots = snapshots,
+    ) => {
       if (!workflowId || createMode) return;
-      localStorage.setItem(buildStorageKey(workflowId, 'variables'), JSON.stringify(nextVariables));
-      localStorage.setItem(buildStorageKey(workflowId, 'environment'), JSON.stringify(nextEnvironment));
-      localStorage.setItem(buildStorageKey(workflowId, 'snapshots'), JSON.stringify(nextSnapshots));
+      localStorage.setItem(
+        buildStorageKey(workflowId, 'variables'),
+        JSON.stringify(nextVariables),
+      );
+      localStorage.setItem(
+        buildStorageKey(workflowId, 'environment'),
+        JSON.stringify(nextEnvironment),
+      );
+      localStorage.setItem(
+        buildStorageKey(workflowId, 'snapshots'),
+        JSON.stringify(nextSnapshots),
+      );
     },
     [createMode, environmentVariables, snapshots, variables, workflowId],
   );
@@ -139,56 +207,70 @@ const WorkflowDesignerContent = () => {
         message.error(response.message || '加载工作流失败');
         return;
       }
+
       const detail = response.data;
-      const flowNodes: WorkflowFlowNode[] = (detail.draft?.nodes || []).map((node, index) => {
-        const nodeType = resolveVisualNodeType(node.type, node.config);
-        return {
-          id: node.key,
-          type: 'workflowNode',
-          position: {
-            x: node.positionX ?? 100 + index * 300,
-            y: node.positionY ?? 220,
-          },
-          data: {
-            title: node.name,
-            description: node.description,
-            nodeType,
-            taskType: node.type,
-            config: { ...(node.config || {}), __uiType: nodeType },
-            retryTimes: node.retryTimes || 0,
-            retryIntervalSeconds: node.retryIntervalSeconds || 0,
-            timeoutSeconds: node.timeoutSeconds || 0,
-            enabled: node.enabled !== false,
-            idempotent: Boolean(node.idempotent),
-            retryOnRestart: Boolean(node.retryOnRestart),
-            runningStatus: 'idle',
-          },
-        };
-      });
-      const flowEdges: WorkflowFlowEdge[] = (detail.draft?.edges || []).map((edge, index) => ({
-        id: `edge_${edge.from}_${edge.to}_${index}`,
-        source: edge.from,
-        target: edge.to,
-        type: 'smoothstep',
-        animated: false,
-        markerEnd: { type: MarkerType.ArrowClosed },
-      }));
+      const flowNodes: WorkflowFlowNode[] = (detail.draft?.nodes || []).map(
+        (node, index) => {
+          const nodeType = resolveVisualNodeType(node.type, node.config);
+          return {
+            id: node.key,
+            type: 'workflowNode',
+            position: {
+              x: node.positionX ?? 100 + index * 300,
+              y: node.positionY ?? 220,
+            },
+            data: {
+              title: node.name,
+              description: node.description,
+              nodeType,
+              taskType: node.type,
+              config: { ...(node.config || {}), __uiType: nodeType },
+              retryTimes: node.retryTimes || 0,
+              retryIntervalSeconds: node.retryIntervalSeconds || 0,
+              timeoutSeconds: node.timeoutSeconds || 0,
+              enabled: node.enabled !== false,
+              idempotent: Boolean(node.idempotent),
+              retryOnRestart: Boolean(node.retryOnRestart),
+              runningStatus: 'idle',
+            },
+          };
+        },
+      );
+      const flowEdges: WorkflowFlowEdge[] = (detail.draft?.edges || []).map(
+        (edge, index) => ({
+          id: `edge_${edge.from}_${edge.to}_${index}`,
+          source: edge.from,
+          target: edge.to,
+          type: 'smoothstep',
+          animated: false,
+          markerEnd: { type: MarkerType.ArrowClosed },
+        }),
+      );
 
       setWorkflow(detail);
       setNodes(flowNodes);
       setEdges(flowEdges);
-      setVariables(readStorage(buildStorageKey(workflowId, 'variables'), []));
-      setEnvironmentVariables(readStorage(buildStorageKey(workflowId, 'environment'), []));
-      setSnapshots(readStorage(buildStorageKey(workflowId, 'snapshots'), []));
+      setVariables(
+        readStorage(buildStorageKey(workflowId, 'variables'), []),
+      );
+      setEnvironmentVariables(
+        readStorage(buildStorageKey(workflowId, 'environment'), []),
+      );
+      setSnapshots(
+        readStorage(buildStorageKey(workflowId, 'snapshots'), []),
+      );
       setSelectedNodeId(undefined);
       setActivePanel(null);
+      setPendingNodeType(undefined);
+      setPendingNodePointer(undefined);
       setDirty(false);
       workflowHistory.reset();
 
       const viewport = detail.draft?.viewport;
       requestAnimationFrame(() => {
         if (viewport) reactFlow.setViewport(viewport, { duration: 0 });
-        else if (flowNodes.length) reactFlow.fitView({ padding: 0.25, duration: 0 });
+        else if (flowNodes.length)
+          reactFlow.fitView({ padding: 0.25, duration: 0 });
       });
     } finally {
       setLoading(false);
@@ -242,11 +324,15 @@ const WorkflowDesignerContent = () => {
             retryTimes: node.data.retryTimes,
             retryIntervalSeconds: node.data.retryIntervalSeconds,
             timeoutSeconds: node.data.timeoutSeconds,
-            enabled: node.data.nodeType === 'NOTE' ? false : node.data.enabled,
+            enabled:
+              node.data.nodeType === 'NOTE' ? false : node.data.enabled,
             idempotent: node.data.idempotent,
             retryOnRestart: node.data.retryOnRestart,
           })),
-          edges: edges.map((edge) => ({ from: edge.source, to: edge.target })),
+          edges: edges.map((edge) => ({
+            from: edge.source,
+            to: edge.target,
+          })),
           viewport,
         },
       });
@@ -254,6 +340,7 @@ const WorkflowDesignerContent = () => {
         message.error(response.message || '保存工作流失败');
         return;
       }
+
       const snapshot: WorkflowSnapshot = {
         id: `snapshot_${Date.now()}`,
         name: `草稿快照 ${snapshots.length + 1}`,
@@ -293,190 +380,312 @@ const WorkflowDesignerContent = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [dirty]);
 
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    onNodesChangeBase(changes);
-    if (changes.some((change) => change.type !== 'select')) markDirty();
-  }, [markDirty, onNodesChangeBase]);
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChangeBase(changes);
+      if (changes.some((change) => change.type !== 'select')) markDirty();
+    },
+    [markDirty, onNodesChangeBase],
+  );
 
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    if (changes.some((change) => change.type === 'remove')) recordHistory();
-    onEdgesChangeBase(changes);
-    if (changes.some((change) => change.type !== 'select')) markDirty();
-  }, [markDirty, onEdgesChangeBase, recordHistory]);
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      if (changes.some((change) => change.type === 'remove')) recordHistory();
+      onEdgesChangeBase(changes);
+      if (changes.some((change) => change.type !== 'select')) markDirty();
+    },
+    [markDirty, onEdgesChangeBase, recordHistory],
+  );
 
-  const onConnect = useCallback((connection: Connection) => {
-    if (!connection.source || !connection.target) return;
-    if (connection.source === connection.target) {
-      message.warning('节点不能连接到自身');
-      return;
-    }
-    const duplicated = edges.some(
-      (edge) => edge.source === connection.source && edge.target === connection.target,
-    );
-    if (duplicated) return;
-    recordHistory();
-    setEdges((current) => addEdge({
-      ...connection,
-      id: `edge_${connection.source}_${connection.target}_${Date.now()}`,
-      type: 'smoothstep',
-      markerEnd: { type: MarkerType.ArrowClosed },
-    }, current));
-    markDirty();
-  }, [edges, markDirty, recordHistory, setEdges]);
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
+      if (connection.source === connection.target) {
+        message.warning('节点不能连接到自身');
+        return;
+      }
+      const duplicated = edges.some(
+        (edge) =>
+          edge.source === connection.source &&
+          edge.target === connection.target,
+      );
+      if (duplicated) return;
 
-  const addNode = useCallback((type: WorkflowNodeType, requestedPosition?: { x: number; y: number }) => {
-    recordHistory();
-    const sourceNode = quickAddSourceId
-      ? nodes.find((node) => node.id === quickAddSourceId)
-      : undefined;
-    const position = requestedPosition || (sourceNode
-      ? { x: sourceNode.position.x + 330, y: sourceNode.position.y }
-      : reactFlow.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }));
-    const id = uniqueNodeId(type.toLowerCase());
-    const node: WorkflowFlowNode = {
-      id,
-      type: 'workflowNode',
-      position,
-      data: createNodeData(type, nodes.length + 1),
-    };
-    setNodes((current) => [...current, node]);
-    if (sourceNode && type !== 'NOTE') {
-      setEdges((current) => addEdge({
-        id: `edge_${sourceNode.id}_${id}_${Date.now()}`,
-        source: sourceNode.id,
-        target: id,
-        type: 'smoothstep',
-        markerEnd: { type: MarkerType.ArrowClosed },
-      }, current));
-    }
-    setSelectedNodeId(id);
-    setActivePanel('node');
-    setQuickAddSourceId(undefined);
-    markDirty();
-  }, [
-    markDirty,
-    nodes,
-    quickAddSourceId,
-    reactFlow,
-    recordHistory,
-    setEdges,
-    setNodes,
-  ]);
+      recordHistory();
+      setEdges((current) =>
+        addEdge(
+          {
+            ...connection,
+            id: `edge_${connection.source}_${connection.target}_${Date.now()}`,
+            type: 'smoothstep',
+            markerEnd: { type: MarkerType.ArrowClosed },
+          },
+          current,
+        ),
+      );
+      markDirty();
+    },
+    [edges, markDirty, recordHistory, setEdges],
+  );
 
-  const updateSelectedNode = useCallback((data: WorkflowNodeData) => {
-    if (!selectedNodeId) return;
-    setNodes((current) => current.map((node) =>
-      node.id === selectedNodeId ? { ...node, data } : node,
-    ));
-    markDirty();
-  }, [markDirty, selectedNodeId, setNodes]);
+  const addNode = useCallback(
+    (type: WorkflowNodeType, requestedPosition?: CanvasPoint) => {
+      recordHistory();
+      const sourceNode = quickAddSourceId
+        ? nodes.find((node) => node.id === quickAddSourceId)
+        : undefined;
+      const position =
+        requestedPosition ||
+        (sourceNode
+          ? { x: sourceNode.position.x + 330, y: sourceNode.position.y }
+          : reactFlow.screenToFlowPosition({
+              x: window.innerWidth / 2,
+              y: window.innerHeight / 2,
+            }));
+      const id = uniqueNodeId(type.toLowerCase());
+      const node: WorkflowFlowNode = {
+        id,
+        type: 'workflowNode',
+        position,
+        data: createNodeData(type, nodes.length + 1),
+      };
 
-  const deleteNode = useCallback((nodeId: string) => {
-    recordHistory();
-    setNodes((current) => current.filter((node) => node.id !== nodeId));
-    setEdges((current) => current.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
-    if (selectedNodeId === nodeId) {
+      setNodes((current) => [...current, node]);
+      if (sourceNode && type !== 'NOTE') {
+        setEdges((current) =>
+          addEdge(
+            {
+              id: `edge_${sourceNode.id}_${id}_${Date.now()}`,
+              source: sourceNode.id,
+              target: id,
+              type: 'smoothstep',
+              markerEnd: { type: MarkerType.ArrowClosed },
+            },
+            current,
+          ),
+        );
+      }
+      setSelectedNodeId(id);
+      setActivePanel('node');
+      setQuickAddSourceId(undefined);
+      setBlockSelectorPosition(undefined);
+      markDirty();
+    },
+    [
+      markDirty,
+      nodes,
+      quickAddSourceId,
+      reactFlow,
+      recordHistory,
+      setEdges,
+      setNodes,
+    ],
+  );
+
+  const cancelNodePlacement = useCallback(() => {
+    setPendingNodeType(undefined);
+    setPendingNodePointer(undefined);
+  }, []);
+
+  const placePendingNode = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!pendingNodeType) return false;
+      const point = reactFlow.screenToFlowPosition({ x: clientX, y: clientY });
+      addNode(pendingNodeType, {
+        x: point.x - 112,
+        y: point.y - 64,
+      });
+      cancelNodePlacement();
+      return true;
+    },
+    [addNode, cancelNodePlacement, pendingNodeType, reactFlow],
+  );
+
+  const beginNodePlacement = useCallback(
+    (type: WorkflowNodeType) => {
+      setPendingNodeType(type);
+      setPendingNodePointer(undefined);
+      setNodeLibraryOpen(false);
+      setBlockSelectorOpen(false);
+      setQuickAddSourceId(undefined);
+      setBlockSelectorPosition(undefined);
+      setContextMenu(undefined);
       setSelectedNodeId(undefined);
       setActivePanel(null);
-    }
-    markDirty();
-  }, [markDirty, recordHistory, selectedNodeId, setEdges, setNodes]);
+      setInteractionMode('select');
+    },
+    [],
+  );
 
-  const duplicateNode = useCallback((nodeId: string) => {
-    const source = nodes.find((node) => node.id === nodeId);
-    if (!source) return;
-    recordHistory();
-    const id = uniqueNodeId(source.data.nodeType.toLowerCase());
-    const duplicate: WorkflowFlowNode = {
-      ...source,
-      id,
-      selected: true,
-      position: { x: source.position.x + 42, y: source.position.y + 42 },
-      data: {
-        ...source.data,
-        title: `${source.data.title} 副本`,
-        config: JSON.parse(JSON.stringify(source.data.config || {})),
-        runningStatus: 'idle',
-      },
-    };
-    setNodes((current) => [
-      ...current.map((node) => ({ ...node, selected: false })),
-      duplicate,
-    ]);
-    setSelectedNodeId(id);
-    setActivePanel('node');
-    markDirty();
-  }, [markDirty, nodes, recordHistory, setNodes]);
+  const selectCanvasLibraryItem = useCallback(
+    (item: CanvasLibraryItem) => {
+      const nodeType = CANVAS_LIBRARY_NODE_TYPE[item.key];
+      if (!nodeType) {
+        message.warning(`节点“${item.label}”暂未接入工作流类型`);
+        return;
+      }
+      beginNodePlacement(nodeType);
+    },
+    [beginNodePlacement],
+  );
 
-  const toggleNode = useCallback((nodeId: string) => {
-    recordHistory();
-    setNodes((current) => current.map((node) =>
-      node.id === nodeId
-        ? { ...node, data: { ...node.data, enabled: !node.data.enabled } }
-        : node,
-    ));
-    markDirty();
-  }, [markDirty, recordHistory, setNodes]);
+  const updateSelectedNode = useCallback(
+    (data: WorkflowNodeData) => {
+      if (!selectedNodeId) return;
+      setNodes((current) =>
+        current.map((node) =>
+          node.id === selectedNodeId ? { ...node, data } : node,
+        ),
+      );
+      markDirty();
+    },
+    [markDirty, selectedNodeId, setNodes],
+  );
+
+  const deleteNode = useCallback(
+    (nodeId: string) => {
+      recordHistory();
+      setNodes((current) => current.filter((node) => node.id !== nodeId));
+      setEdges((current) =>
+        current.filter(
+          (edge) => edge.source !== nodeId && edge.target !== nodeId,
+        ),
+      );
+      if (selectedNodeId === nodeId) {
+        setSelectedNodeId(undefined);
+        setActivePanel(null);
+      }
+      markDirty();
+    },
+    [markDirty, recordHistory, selectedNodeId, setEdges, setNodes],
+  );
+
+  const duplicateNode = useCallback(
+    (nodeId: string) => {
+      const source = nodes.find((node) => node.id === nodeId);
+      if (!source) return;
+      recordHistory();
+      const id = uniqueNodeId(source.data.nodeType.toLowerCase());
+      const duplicate: WorkflowFlowNode = {
+        ...source,
+        id,
+        selected: true,
+        position: {
+          x: source.position.x + 42,
+          y: source.position.y + 42,
+        },
+        data: {
+          ...source.data,
+          title: `${source.data.title} 副本`,
+          config: JSON.parse(JSON.stringify(source.data.config || {})),
+          runningStatus: 'idle',
+        },
+      };
+      setNodes((current) => [
+        ...current.map((node) => ({ ...node, selected: false })),
+        duplicate,
+      ]);
+      setSelectedNodeId(id);
+      setActivePanel('node');
+      markDirty();
+    },
+    [markDirty, nodes, recordHistory, setNodes],
+  );
+
+  const toggleNode = useCallback(
+    (nodeId: string) => {
+      recordHistory();
+      setNodes((current) =>
+        current.map((node) =>
+          node.id === nodeId
+            ? {
+                ...node,
+                data: { ...node.data, enabled: !node.data.enabled },
+              }
+            : node,
+        ),
+      );
+      markDirty();
+    },
+    [markDirty, recordHistory, setNodes],
+  );
 
   const copySelection = useCallback(() => {
-    const selected = nodes.filter((node) => node.selected || node.id === selectedNodeId);
+    const selected = nodes.filter(
+      (node) => node.selected || node.id === selectedNodeId,
+    );
     if (!selected.length) return;
     const selectedIds = new Set(selected.map((node) => node.id));
     clipboardRef.current = {
       nodes: cloneNodes(selected),
-      edges: edges.filter((edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target)),
+      edges: edges.filter(
+        (edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target),
+      ),
     };
     message.success(`已复制 ${selected.length} 个节点`);
   }, [edges, nodes, selectedNodeId]);
 
-  const pasteSelection = useCallback((flowPosition?: { x: number; y: number }) => {
-    const clipboard = clipboardRef.current;
-    if (!clipboard?.nodes.length) return;
-    recordHistory();
-    const idMap = new Map<string, string>();
-    const minX = Math.min(...clipboard.nodes.map((node) => node.position.x));
-    const minY = Math.min(...clipboard.nodes.map((node) => node.position.y));
-    const pastedNodes = clipboard.nodes.map((node) => {
-      const id = uniqueNodeId(node.data.nodeType.toLowerCase());
-      idMap.set(node.id, id);
-      return {
-        ...node,
-        id,
-        selected: true,
-        position: flowPosition
-          ? {
-              x: flowPosition.x + (node.position.x - minX),
-              y: flowPosition.y + (node.position.y - minY),
-            }
-          : { x: node.position.x + 48, y: node.position.y + 48 },
-        data: {
-          ...node.data,
-          title: clipboard.nodes.length === 1 ? `${node.data.title} 副本` : node.data.title,
-          config: JSON.parse(JSON.stringify(node.data.config || {})),
-          runningStatus: 'idle' as const,
-        },
-      };
-    });
-    const pastedEdges = clipboard.edges.map((edge) => ({
-      ...edge,
-      id: `edge_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      source: idMap.get(edge.source)!,
-      target: idMap.get(edge.target)!,
-      selected: false,
-    }));
-    setNodes((current) => [
-      ...current.map((node) => ({ ...node, selected: false })),
-      ...pastedNodes,
-    ]);
-    setEdges((current) => [...current, ...pastedEdges]);
-    setSelectedNodeId(pastedNodes[0]?.id);
-    setActivePanel(pastedNodes.length === 1 ? 'node' : null);
-    markDirty();
-  }, [markDirty, recordHistory, setEdges, setNodes]);
+  const pasteSelection = useCallback(
+    (flowPosition?: CanvasPoint) => {
+      const clipboard = clipboardRef.current;
+      if (!clipboard?.nodes.length) return;
+      recordHistory();
+      const idMap = new Map<string, string>();
+      const minX = Math.min(...clipboard.nodes.map((node) => node.position.x));
+      const minY = Math.min(...clipboard.nodes.map((node) => node.position.y));
+      const pastedNodes = clipboard.nodes.map((node) => {
+        const id = uniqueNodeId(node.data.nodeType.toLowerCase());
+        idMap.set(node.id, id);
+        return {
+          ...node,
+          id,
+          selected: true,
+          position: flowPosition
+            ? {
+                x: flowPosition.x + (node.position.x - minX),
+                y: flowPosition.y + (node.position.y - minY),
+              }
+            : {
+                x: node.position.x + 48,
+                y: node.position.y + 48,
+              },
+          data: {
+            ...node.data,
+            title:
+              clipboard.nodes.length === 1
+                ? `${node.data.title} 副本`
+                : node.data.title,
+            config: JSON.parse(JSON.stringify(node.data.config || {})),
+            runningStatus: 'idle' as const,
+          },
+        };
+      });
+      const pastedEdges = clipboard.edges.map((edge) => ({
+        ...edge,
+        id: `edge_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        source: idMap.get(edge.source)!,
+        target: idMap.get(edge.target)!,
+        selected: false,
+      }));
+      setNodes((current) => [
+        ...current.map((node) => ({ ...node, selected: false })),
+        ...pastedNodes,
+      ]);
+      setEdges((current) => [...current, ...pastedEdges]);
+      setSelectedNodeId(pastedNodes[0]?.id);
+      setActivePanel(pastedNodes.length === 1 ? 'node' : null);
+      markDirty();
+    },
+    [markDirty, recordHistory, setEdges, setNodes],
+  );
 
   const selectAll = useCallback(() => {
-    setNodes((current) => current.map((node) => ({ ...node, selected: true })));
-    setEdges((current) => current.map((edge) => ({ ...edge, selected: true })));
+    setNodes((current) =>
+      current.map((node) => ({ ...node, selected: true })),
+    );
+    setEdges((current) =>
+      current.map((edge) => ({ ...edge, selected: true })),
+    );
     setSelectedNodeId(undefined);
     setActivePanel(null);
   }, [setEdges, setNodes]);
@@ -511,16 +720,25 @@ const WorkflowDesignerContent = () => {
       successors.set(node.id, []);
     });
     edges.forEach((edge) => {
-      if (incoming.has(edge.target)) incoming.set(edge.target, (incoming.get(edge.target) || 0) + 1);
+      if (incoming.has(edge.target))
+        incoming.set(edge.target, (incoming.get(edge.target) || 0) + 1);
       successors.get(edge.source)?.push(edge.target);
     });
-    const queue = nodes.filter((node) => (incoming.get(node.id) || 0) === 0).map((node) => node.id);
+    const queue = nodes
+      .filter((node) => (incoming.get(node.id) || 0) === 0)
+      .map((node) => node.id);
     const levels = new Map<string, number>();
     queue.forEach((id) => levels.set(id, 0));
     while (queue.length) {
       const id = queue.shift()!;
       for (const successor of successors.get(id) || []) {
-        levels.set(successor, Math.max(levels.get(successor) || 0, (levels.get(id) || 0) + 1));
+        levels.set(
+          successor,
+          Math.max(
+            levels.get(successor) || 0,
+            (levels.get(id) || 0) + 1,
+          ),
+        );
         incoming.set(successor, (incoming.get(successor) || 1) - 1);
         if (incoming.get(successor) === 0) queue.push(successor);
       }
@@ -531,15 +749,22 @@ const WorkflowDesignerContent = () => {
       const level = levels.get(node.id) || 0;
       groups.set(level, [...(groups.get(level) || []), node]);
     });
-    setNodes((current) => current.map((node) => {
-      if (node.data.nodeType === 'NOTE') return node;
-      const level = levels.get(node.id) || 0;
-      const siblings = groups.get(level) || [];
-      const index = siblings.findIndex((item) => item.id === node.id);
-      return { ...node, position: { x: 100 + level * 330, y: 100 + index * 210 } };
-    }));
+    setNodes((current) =>
+      current.map((node) => {
+        if (node.data.nodeType === 'NOTE') return node;
+        const level = levels.get(node.id) || 0;
+        const siblings = groups.get(level) || [];
+        const index = siblings.findIndex((item) => item.id === node.id);
+        return {
+          ...node,
+          position: { x: 100 + level * 330, y: 100 + index * 210 },
+        };
+      }),
+    );
     markDirty();
-    requestAnimationFrame(() => reactFlow.fitView({ padding: 0.2, duration: 260 }));
+    requestAnimationFrame(() =>
+      reactFlow.fitView({ padding: 0.2, duration: 260 }),
+    );
   }, [edges, markDirty, nodes, reactFlow, recordHistory, setNodes]);
 
   const exportWorkflow = useCallback(() => {
@@ -548,7 +773,9 @@ const WorkflowDesignerContent = () => {
       edges: edges.map((edge) => ({ ...edge })),
       viewport: reactFlow.getViewport(),
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
@@ -557,62 +784,98 @@ const WorkflowDesignerContent = () => {
     URL.revokeObjectURL(url);
   }, [edges, nodes, reactFlow, workflow?.code]);
 
-  const importWorkflow = useCallback(async (file: File) => {
-    try {
-      const parsed = JSON.parse(await file.text()) as Partial<WorkflowDesignerState>;
-      if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
-        message.error('工作流 JSON 格式不正确');
-        return;
-      }
-      recordHistory();
-      setNodes(parsed.nodes as WorkflowFlowNode[]);
-      setEdges(parsed.edges as WorkflowFlowEdge[]);
-      if (parsed.viewport) reactFlow.setViewport(parsed.viewport, { duration: 180 });
-      setSelectedNodeId(undefined);
-      setActivePanel(null);
-      markDirty();
-      message.success('工作流草稿已导入');
-    } catch {
-      message.error('无法解析工作流 JSON');
-    } finally {
-      if (importInputRef.current) importInputRef.current.value = '';
-    }
-  }, [markDirty, reactFlow, recordHistory, setEdges, setNodes]);
-
-  const restoreSnapshot = useCallback((snapshot: WorkflowSnapshot) => {
-    Modal.confirm({
-      title: '恢复历史快照',
-      content: '当前未保存修改会被覆盖，确定继续吗？',
-      okText: '恢复',
-      cancelText: '取消',
-      centered: true,
-      onOk: () => {
+  const importWorkflow = useCallback(
+    async (file: File) => {
+      try {
+        const parsed = JSON.parse(
+          await file.text(),
+        ) as Partial<WorkflowDesignerState>;
+        if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
+          message.error('工作流 JSON 格式不正确');
+          return;
+        }
         recordHistory();
-        setNodes(cloneNodes(snapshot.nodes));
-        setEdges(snapshot.edges.map((edge) => ({ ...edge })));
-        reactFlow.setViewport(snapshot.viewport, { duration: 220 });
-        setActivePanel(null);
+        setNodes(parsed.nodes as WorkflowFlowNode[]);
+        setEdges(parsed.edges as WorkflowFlowEdge[]);
+        if (parsed.viewport)
+          reactFlow.setViewport(parsed.viewport, { duration: 180 });
         setSelectedNodeId(undefined);
+        setActivePanel(null);
+        cancelNodePlacement();
         markDirty();
-      },
-    });
-  }, [markDirty, reactFlow, recordHistory, setEdges, setNodes]);
+        message.success('工作流草稿已导入');
+      } catch {
+        message.error('无法解析工作流 JSON');
+      } finally {
+        if (importInputRef.current) importInputRef.current.value = '';
+      }
+    },
+    [
+      cancelNodePlacement,
+      markDirty,
+      reactFlow,
+      recordHistory,
+      setEdges,
+      setNodes,
+    ],
+  );
 
-  const changeVariables = useCallback((next: WorkflowVariable[]) => {
-    setVariables(next);
-    persistWorkspace(next, environmentVariables, snapshots);
-  }, [environmentVariables, persistWorkspace, snapshots]);
+  const restoreSnapshot = useCallback(
+    (snapshot: WorkflowSnapshot) => {
+      Modal.confirm({
+        title: '恢复历史快照',
+        content: '当前未保存修改会被覆盖，确定继续吗？',
+        okText: '恢复',
+        cancelText: '取消',
+        centered: true,
+        onOk: () => {
+          recordHistory();
+          setNodes(cloneNodes(snapshot.nodes));
+          setEdges(snapshot.edges.map((edge) => ({ ...edge })));
+          reactFlow.setViewport(snapshot.viewport, { duration: 220 });
+          setActivePanel(null);
+          setSelectedNodeId(undefined);
+          cancelNodePlacement();
+          markDirty();
+        },
+      });
+    },
+    [
+      cancelNodePlacement,
+      markDirty,
+      reactFlow,
+      recordHistory,
+      setEdges,
+      setNodes,
+    ],
+  );
 
-  const changeEnvironment = useCallback((next: WorkflowVariable[]) => {
-    setEnvironmentVariables(next);
-    persistWorkspace(variables, next, snapshots);
-  }, [persistWorkspace, snapshots, variables]);
+  const changeVariables = useCallback(
+    (next: WorkflowVariable[]) => {
+      setVariables(next);
+      persistWorkspace(next, environmentVariables, snapshots);
+    },
+    [environmentVariables, persistWorkspace, snapshots],
+  );
 
-  const openPanel = useCallback((panel: Exclude<WorkflowPanelType, 'node' | null>) => {
-    setSelectedNodeId(undefined);
-    setActivePanel((current) => (current === panel ? null : panel));
-    setBlockSelectorOpen(false);
-  }, []);
+  const changeEnvironment = useCallback(
+    (next: WorkflowVariable[]) => {
+      setEnvironmentVariables(next);
+      persistWorkspace(variables, next, snapshots);
+    },
+    [persistWorkspace, snapshots, variables],
+  );
+
+  const openPanel = useCallback(
+    (panel: Exclude<WorkflowPanelType, 'node' | null>) => {
+      setSelectedNodeId(undefined);
+      setActivePanel((current) => (current === panel ? null : panel));
+      setBlockSelectorOpen(false);
+      setNodeLibraryOpen(false);
+      cancelNodePlacement();
+    },
+    [cancelNodePlacement],
+  );
 
   const onMoveEnd = useCallback<OnMoveEnd>(() => {
     markDirty();
@@ -621,13 +884,16 @@ const WorkflowDesignerContent = () => {
   useEffect(() => {
     const quickAdd = (event: Event) => {
       const customEvent = event as CustomEvent<{ nodeId: string }>;
+      cancelNodePlacement();
+      setNodeLibraryOpen(false);
       setQuickAddSourceId(customEvent.detail.nodeId);
+      setBlockSelectorPosition(undefined);
       setBlockSelectorOpen(true);
       setActivePanel(null);
     };
     window.addEventListener('yak-workflow-quick-add', quickAdd);
     return () => window.removeEventListener('yak-workflow-quick-add', quickAdd);
-  }, []);
+  }, [cancelNodePlacement]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -637,6 +903,7 @@ const WorkflowDesignerContent = () => {
         target?.tagName === 'TEXTAREA' ||
         target?.isContentEditable;
       if (editing) return;
+
       const modifier = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
       if (modifier && key === 's') {
@@ -663,19 +930,27 @@ const WorkflowDesignerContent = () => {
       } else if (modifier && key === 'a') {
         event.preventDefault();
         selectAll();
-      } else if (['delete', 'backspace'].includes(key) && selectedNodeId) {
+      } else if (
+        ['delete', 'backspace'].includes(key) &&
+        selectedNodeId
+      ) {
         event.preventDefault();
         deleteNode(selectedNodeId);
       } else if (event.key === 'Escape') {
         setContextMenu(undefined);
         setBlockSelectorOpen(false);
+        setNodeLibraryOpen(false);
+        setBlockSelectorPosition(undefined);
+        setQuickAddSourceId(undefined);
         setActivePanel(null);
         setSelectedNodeId(undefined);
+        cancelNodePlacement();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    cancelNodePlacement,
     copySelection,
     deleteNode,
     duplicateNode,
@@ -690,7 +965,10 @@ const WorkflowDesignerContent = () => {
   if (createMode) return <WorkflowCreateGuide />;
 
   return (
-    <div className="dify-workflow-designer" onMouseDown={() => setContextMenu(undefined)}>
+    <div
+      className="dify-workflow-designer"
+      onMouseDown={() => setContextMenu(undefined)}
+    >
       <WorkflowHeader
         workflow={workflow}
         dirty={dirty}
@@ -704,10 +982,29 @@ const WorkflowDesignerContent = () => {
         }}
         onSave={() => void saveWorkflow()}
         onOpenPanel={openPanel}
+        onOpenCanvas={() => {
+          setActivePanel(null);
+          setSelectedNodeId(undefined);
+        }}
       />
 
       <Spin spinning={loading} wrapperClassName="dify-workflow-loading">
-        <div className="dify-workflow-canvas">
+        <div
+          className="dify-workflow-canvas"
+          data-node-placement={Boolean(pendingNodeType)}
+          data-interaction-mode={interactionMode}
+          onMouseMove={(event) => {
+            if (!pendingNodeType) return;
+            const bounds = event.currentTarget.getBoundingClientRect();
+            setPendingNodePointer({
+              x: event.clientX - bounds.left,
+              y: event.clientY - bounds.top,
+            });
+          }}
+          onMouseLeave={() => {
+            if (pendingNodeType) setPendingNodePointer(undefined);
+          }}
+        >
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -717,43 +1014,81 @@ const WorkflowDesignerContent = () => {
             onConnect={onConnect}
             onNodeDragStart={recordHistory}
             onMoveEnd={onMoveEnd}
-            onNodeClick={(_, node) => {
+            onNodeClick={(event, node) => {
+              if (placePendingNode(event.clientX, event.clientY)) return;
               setSelectedNodeId(node.id);
               setActivePanel('node');
               setBlockSelectorOpen(false);
+              setNodeLibraryOpen(false);
             }}
-            onPaneClick={() => {
+            onPaneClick={(event) => {
+              if (placePendingNode(event.clientX, event.clientY)) return;
               setSelectedNodeId(undefined);
               if (activePanel === 'node') setActivePanel(null);
               setBlockSelectorOpen(false);
+              setNodeLibraryOpen(false);
             }}
             onPaneContextMenu={(event) => {
               event.preventDefault();
+              if (pendingNodeType) {
+                cancelNodePlacement();
+                return;
+              }
+              const flowPosition = reactFlow.screenToFlowPosition({
+                x: event.clientX,
+                y: event.clientY,
+              });
               setContextMenu({
                 kind: 'pane',
                 x: event.clientX,
                 y: event.clientY,
-                flowPosition: reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY }),
+                flowPosition,
               });
             }}
             onNodeContextMenu={(event, node) => {
               event.preventDefault();
+              if (pendingNodeType) {
+                cancelNodePlacement();
+                return;
+              }
               setSelectedNodeId(node.id);
-              setContextMenu({ kind: 'node', x: event.clientX, y: event.clientY, nodeId: node.id });
+              setContextMenu({
+                kind: 'node',
+                x: event.clientX,
+                y: event.clientY,
+                nodeId: node.id,
+              });
             }}
             onEdgeContextMenu={(event, edge) => {
               event.preventDefault();
-              setContextMenu({ kind: 'edge', x: event.clientX, y: event.clientY, edgeId: edge.id });
+              if (pendingNodeType) {
+                cancelNodePlacement();
+                return;
+              }
+              setContextMenu({
+                kind: 'edge',
+                x: event.clientX,
+                y: event.clientY,
+                edgeId: edge.id,
+              });
             }}
             minZoom={0.25}
             maxZoom={2}
             snapToGrid
             snapGrid={[16, 16]}
-            selectionOnDrag
+            selectionOnDrag={!pendingNodeType && interactionMode === 'select'}
             selectionMode={SelectionMode.Partial}
             multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
             deleteKeyCode={null}
-            panOnDrag={[1, 2]}
+            panOnDrag={
+              pendingNodeType
+                ? false
+                : interactionMode === 'pan'
+                  ? true
+                  : [1, 2]
+            }
+            nodesDraggable={!pendingNodeType && interactionMode === 'select'}
+            elementsSelectable={!pendingNodeType && interactionMode === 'select'}
             defaultEdgeOptions={{
               type: 'smoothstep',
               markerEnd: { type: MarkerType.ArrowClosed },
@@ -761,31 +1096,64 @@ const WorkflowDesignerContent = () => {
             connectionLineStyle={{ stroke: '#6b7cff', strokeWidth: 2 }}
             proOptions={{ hideAttribution: true }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#d9dee8" />
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={18}
+              size={1.2}
+              color="#d9dee8"
+            />
           </ReactFlow>
-
-          <button
-            type="button"
-            className="dify-add-block-trigger"
-            onClick={(event) => {
-              event.stopPropagation();
-              setQuickAddSourceId(undefined);
-              setBlockSelectorOpen((value) => !value);
-              setActivePanel(null);
-            }}
-          >
-            <Plus size={16} />
-            添加节点
-          </button>
 
           <BlockSelector
             open={blockSelectorOpen}
             onClose={() => {
               setBlockSelectorOpen(false);
               setQuickAddSourceId(undefined);
+              setBlockSelectorPosition(undefined);
             }}
-            onSelect={(type) => addNode(type, contextMenu?.flowPosition)}
+            onSelect={(type) => addNode(type, blockSelectorPosition)}
           />
+
+          {pendingNodeType && pendingNodeData && pendingNodePointer && (
+            <div
+              className={[
+                'pointer-events-none absolute z-30 w-[224px] -translate-x-1/2 -translate-y-1/2',
+                'overflow-hidden rounded-xl border border-[#84adff] bg-white/95',
+                'shadow-[0_0_0_3px_rgba(21,94,239,0.10),0_14px_34px_rgba(16,24,40,0.16)]',
+                'backdrop-blur-[8px]',
+              ].join(' ')}
+              style={
+                {
+                  left: pendingNodePointer.x,
+                  top: pendingNodePointer.y,
+                  '--node-color': pendingNodeMeta?.color,
+                } as CSSProperties
+              }
+            >
+              <div className="flex h-[43px] items-center gap-2 px-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--node-color)_10%,white)]">
+                  <NodeIcon type={pendingNodeType} size={17} />
+                </span>
+                <div className="min-w-0">
+                  <strong className="block truncate text-[12px] font-semibold text-[#344054]">
+                    {pendingNodeData.title}
+                  </strong>
+                  <span className="block text-[9px] uppercase tracking-[0.04em] text-[#98a2b3]">
+                    {pendingNodeMeta?.title}
+                  </span>
+                </div>
+              </div>
+              <div className="min-h-[54px] border-t border-[#f0f1f4] px-3 py-2.5">
+                <p className="line-clamp-2 text-[10px] leading-[16px] text-[#667085]">
+                  {pendingNodeData.description}
+                </p>
+              </div>
+              <div className="flex h-[29px] items-center justify-between border-t border-[#f0f1f4] bg-[#fcfcfd] px-3 text-[9px] text-[#667085]">
+                <span>单击放置节点</span>
+                <span>Esc / 右键取消</span>
+              </div>
+            </div>
+          )}
 
           {activePanel === 'node' && selectedNode && (
             <NodePanel
@@ -839,14 +1207,25 @@ const WorkflowDesignerContent = () => {
           {activePanel === 'run' && (
             <RunPanel
               nodes={nodes}
-              onStatusChange={(nodeId, status) => setNodes((current) => current.map((node) =>
-                node.id === nodeId ? { ...node, data: { ...node.data, runningStatus: status } } : node,
-              ))}
+              onStatusChange={(nodeId, status) =>
+                setNodes((current) =>
+                  current.map((node) =>
+                    node.id === nodeId
+                      ? {
+                          ...node,
+                          data: { ...node.data, runningStatus: status },
+                        }
+                      : node,
+                  ),
+                )
+              }
               onClose={() => {
-                setNodes((current) => current.map((node) => ({
-                  ...node,
-                  data: { ...node.data, runningStatus: 'idle' },
-                })));
+                setNodes((current) =>
+                  current.map((node) => ({
+                    ...node,
+                    data: { ...node.data, runningStatus: 'idle' },
+                  })),
+                );
                 setActivePanel(null);
               }}
             />
@@ -856,13 +1235,29 @@ const WorkflowDesignerContent = () => {
             canUndo={workflowHistory.canUndo}
             canRedo={workflowHistory.canRedo}
             showMiniMap={showMiniMap}
+            nodePanelOpen={nodeLibraryOpen}
+            interactionMode={interactionMode}
             onUndo={handleUndo}
             onRedo={handleRedo}
             onToggleMiniMap={() => setShowMiniMap((value) => !value)}
             onAutoLayout={autoLayout}
             onExport={exportWorkflow}
             onImport={() => importInputRef.current?.click()}
-            onToggleVariableInspect={() => setVariableInspectOpen((value) => !value)}
+            onToggleVariableInspect={() =>
+              setVariableInspectOpen((value) => !value)
+            }
+            onToggleNodePanel={() => {
+              cancelNodePlacement();
+              setBlockSelectorOpen(false);
+              setNodeLibraryOpen((value) => !value);
+              setSelectedNodeId(undefined);
+              setActivePanel(null);
+            }}
+            onInteractionModeChange={(mode) => {
+              cancelNodePlacement();
+              setInteractionMode(mode);
+            }}
+            onSelectLibraryItem={selectCanvasLibraryItem}
             variableInspectOpen={variableInspectOpen}
           />
 
@@ -880,33 +1275,52 @@ const WorkflowDesignerContent = () => {
               canPaste={Boolean(clipboardRef.current?.nodes.length)}
               onClose={() => setContextMenu(undefined)}
               onAddNode={() => {
+                cancelNodePlacement();
+                setNodeLibraryOpen(false);
                 setQuickAddSourceId(undefined);
+                setBlockSelectorPosition(contextMenu.flowPosition);
                 setBlockSelectorOpen(true);
               }}
               onPaste={() => pasteSelection(contextMenu.flowPosition)}
               onSelectAll={selectAll}
-              onFitView={() => reactFlow.fitView({ padding: 0.24, duration: 220 })}
-              onDuplicateNode={() => contextMenu.nodeId && duplicateNode(contextMenu.nodeId)}
-              onToggleNode={() => contextMenu.nodeId && toggleNode(contextMenu.nodeId)}
-              onDeleteNode={() => contextMenu.nodeId && deleteNode(contextMenu.nodeId)}
+              onFitView={() =>
+                reactFlow.fitView({ padding: 0.24, duration: 220 })
+              }
+              onDuplicateNode={() =>
+                contextMenu.nodeId && duplicateNode(contextMenu.nodeId)
+              }
+              onToggleNode={() =>
+                contextMenu.nodeId && toggleNode(contextMenu.nodeId)
+              }
+              onDeleteNode={() =>
+                contextMenu.nodeId && deleteNode(contextMenu.nodeId)
+              }
               onDeleteEdge={() => {
                 if (!contextMenu.edgeId) return;
                 recordHistory();
-                setEdges((current) => current.filter((edge) => edge.id !== contextMenu.edgeId));
+                setEdges((current) =>
+                  current.filter((edge) => edge.id !== contextMenu.edgeId),
+                );
                 markDirty();
               }}
             />
           )}
 
-          {!nodes.length && !loading && (
+          {!nodes.length && !loading && !pendingNodeType && (
             <button
               type="button"
               className="dify-empty-canvas"
-              onClick={() => setBlockSelectorOpen(true)}
+              onClick={() => {
+                cancelNodePlacement();
+                setBlockSelectorOpen(false);
+                setBlockSelectorPosition(undefined);
+                setQuickAddSourceId(undefined);
+                setNodeLibraryOpen(true);
+              }}
             >
               <Sparkles size={24} />
               <strong>开始构建工作流</strong>
-              <span>添加第一个节点，或从右键菜单粘贴已有流程。</span>
+              <span>从左侧节点面板选择节点，再单击画布完成放置。</span>
             </button>
           )}
 
