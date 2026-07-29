@@ -1,6 +1,9 @@
 package io.yak.ops.business.datasource.exception;
 
+import io.yak.framework.common.ErrorCode;
 import io.yak.framework.common.Result;
+import io.yak.framework.security.common.enums.ResultCode;
+import io.yak.framework.security.exception.YakSecurityException;
 import io.yak.ops.business.datasource.config.ConditionalOnDataSourceEnabled;
 import io.yak.ops.business.datasource.controller.v1.DataSourceController;
 import io.yak.ops.common.enums.datasource.DataSourceErrorCode;
@@ -8,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -22,6 +27,21 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @ConditionalOnDataSourceEnabled
 public class DataSourceExceptionHandler {
 
+  @ExceptionHandler(YakSecurityException.class)
+  public ResponseEntity<Result<Void>> handleSecurityException(
+      YakSecurityException exception) {
+    ErrorCode errorCode = exception.getErrorCode();
+    Result<Void> body =
+        errorCode == null
+            ? Result.fail(exception)
+            : Result.fail(errorCode.getCode(), errorCode.getMessage());
+    HttpStatus status =
+        errorCode == ResultCode.NO_PERMISSION
+            ? HttpStatus.FORBIDDEN
+            : HttpStatus.UNAUTHORIZED;
+    return ResponseEntity.status(status).body(body);
+  }
+
   @ExceptionHandler(DataSourceException.class)
   public Result<Void> handleDataSourceException(DataSourceException exception) {
     if (exception.getErrorCode() == null) {
@@ -31,16 +51,17 @@ public class DataSourceExceptionHandler {
   }
 
   @ExceptionHandler({
-      MethodArgumentNotValidException.class,
-      BindException.class,
-      HttpMessageNotReadableException.class
+    MethodArgumentNotValidException.class,
+    BindException.class,
+    HttpMessageNotReadableException.class
   })
   public Result<Void> handleInvalidRequest(Exception exception) {
     return Result.buildParamIllegal(resolveValidationMessage(exception));
   }
 
   @ExceptionHandler(DataIntegrityViolationException.class)
-  public Result<Void> handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+  public Result<Void> handleDataIntegrityViolation(
+      DataIntegrityViolationException exception) {
     log.warn("Datasource persistence constraint violation", exception);
     return Result.fail(
         DataSourceErrorCode.DUPLICATE_NAME.getCode(),
@@ -55,10 +76,10 @@ public class DataSourceExceptionHandler {
 
   private String resolveValidationMessage(Exception exception) {
     BindingResult bindingResult = null;
-    if (exception instanceof MethodArgumentNotValidException) {
-      bindingResult = ((MethodArgumentNotValidException) exception).getBindingResult();
-    } else if (exception instanceof BindException) {
-      bindingResult = ((BindException) exception).getBindingResult();
+    if (exception instanceof MethodArgumentNotValidException validException) {
+      bindingResult = validException.getBindingResult();
+    } else if (exception instanceof BindException bindException) {
+      bindingResult = bindException.getBindingResult();
     }
     if (bindingResult != null && bindingResult.getFieldError() != null) {
       return bindingResult.getFieldError().getDefaultMessage();
