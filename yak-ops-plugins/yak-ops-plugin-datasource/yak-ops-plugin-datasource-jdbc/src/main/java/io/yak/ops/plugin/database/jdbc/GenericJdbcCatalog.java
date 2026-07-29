@@ -553,6 +553,27 @@ public class GenericJdbcCatalog implements DataSourceCatalog {
     return value == null || value.trim().isEmpty();
   }
 
-  private record CatalogRequest(boolean sqlMode, String tablePath, String query) {
+  private static final class CatalogRequest {
+    private final boolean sqlMode;
+    private final String tablePath;
+    private final String query;
+
+    private CatalogRequest(boolean sqlMode, String tablePath, String query) {
+      this.sqlMode = sqlMode;
+      this.tablePath = tablePath;
+      this.query = query;
+    }
+
+    public boolean sqlMode() {
+      return sqlMode;
+    }
+
+    public String tablePath() {
+      return tablePath;
+    }
+
+    public String query() {
+      return query;
+    }
   }
 }
