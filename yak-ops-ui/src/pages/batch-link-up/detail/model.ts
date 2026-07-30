@@ -84,7 +84,7 @@ export const DEFAULT_ENV_CONFIG: EnvConfig = {
 };
 
 export const isApiSuccess = (response: any): boolean =>
-  response?.code === 200 || response?.code === API_SUCCESS_CODE;
+  response?.code === API_SUCCESS_CODE;
 
 export const responseMessage = (response: any, fallback: string): string =>
   response?.message || response?.msg || fallback;
