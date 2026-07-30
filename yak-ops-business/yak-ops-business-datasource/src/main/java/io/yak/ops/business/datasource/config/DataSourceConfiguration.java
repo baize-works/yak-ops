@@ -1,15 +1,14 @@
 package io.yak.ops.business.datasource.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
-import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.yak.ops.common.mybatis.MybatisPlusFactorySupport;
 import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.type.JdbcType;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -18,6 +17,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -58,15 +58,15 @@ public class DataSourceConfiguration {
     MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
     factory.setDataSource(dataSource);
     factory.setTypeAliasesPackage("io.yak.ops.common.bean.po.datasource");
-    factory.setMapperLocations(
-        new PathMatchingResourcePatternResolver()
-            .getResources("classpath*:mapper/datasource/*.xml"));
 
-    MybatisConfiguration configuration = new MybatisConfiguration();
-    configuration.setMapUnderscoreToCamelCase(true);
-    configuration.setJdbcTypeForNull(JdbcType.NULL);
-    configuration.setCacheEnabled(false);
-    factory.setConfiguration(configuration);
+    Resource[] mapperLocations = new PathMatchingResourcePatternResolver()
+        .getResources("classpath*:mapper/datasource/*.xml");
+    if (mapperLocations.length > 0) {
+      factory.setMapperLocations(mapperLocations);
+    }
+
+    factory.setConfiguration(MybatisPlusFactorySupport.createConfiguration());
+    factory.setGlobalConfig(MybatisPlusFactorySupport.createGlobalConfig());
 
     MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
     interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
