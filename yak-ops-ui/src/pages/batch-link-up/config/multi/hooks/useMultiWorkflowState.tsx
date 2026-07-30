@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {FormInstance, message} from "antd";
 import {debounce} from "lodash";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
@@ -164,7 +165,7 @@ export function useMultiWorkflowState({
 
   const fetchDataSourceOptionsU = useCallback(async (dbType: string) => {
     const res = await fetchDataSourceOptions(dbType);
-    if (res?.code === 0 && Array.isArray(res?.data)) {
+    if (res?.code === API_SUCCESS_CODE && Array.isArray(res?.data)) {
       return res.data;
     }
     return [];
@@ -179,7 +180,7 @@ export function useMultiWorkflowState({
         setCurrentSourceId(dataSourceId);
 
         const res = await dataSourceCatalogApi.listTable(dataSourceId);
-        if (res?.code === 0) {
+        if (res?.code === API_SUCCESS_CODE) {
           const nextTables = buildTableItems(res.data || []);
           setTableData(nextTables);
 
@@ -214,7 +215,7 @@ export function useMultiWorkflowState({
           keyword
         );
 
-        if (res?.code === 0) {
+        if (res?.code === API_SUCCESS_CODE) {
           setReadOnlyTables(buildTableItems(res.data || []));
         } else {
           message.error(res?.message || "获取参考表失败");
@@ -549,7 +550,7 @@ export function useMultiWorkflowState({
         finalPayload
       );
 
-      if (res?.code !== 0) {
+      if (res?.code !== API_SUCCESS_CODE) {
         return;
       }
 

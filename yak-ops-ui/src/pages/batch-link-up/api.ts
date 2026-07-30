@@ -1,3 +1,4 @@
+import type { ApiResponse } from '@/services/http/response';
 import HttpUtils from '@/utils/HttpUtils';
 
 export enum Operate {
@@ -17,17 +18,9 @@ export interface LinkupJobDefinition {
   updateTime?: string;
 }
 
-export interface OfflineApiResponse<T> {
-  code: number;
-  data: T;
-  message?: string;
-  msg?: string;
-}
+export type OfflineApiResponse<T> = ApiResponse<T>;
 
 export const apiPrefix = '/api/v1/job/batch-definition';
-
-const normalizeLegacySuccessCode = <T extends { code: number }>(response: T): T =>
-  response?.code === 200 ? ({ ...response, code: 0 } as T) : response;
 
 export const linkupJobDefinitionApi = {
   /** SCRIPT 模式保存/更新。 */
@@ -58,15 +51,8 @@ export const linkupJobDefinitionApi = {
     return HttpUtils.get(`${apiPrefix}/${id}/edit-detail`);
   },
 
-  /**
-   * 列表页仍按历史约定以 code=0 判断成功。
-   * 这里兼容统一响应协议的 code=200，避免旧服务返回值被误判。
-   */
-  getUniqueId: async (): Promise<OfflineApiResponse<string | number>> => {
-    const response = await HttpUtils.get<string | number>(
-      `${apiPrefix}/get-unique-id`,
-    );
-    return normalizeLegacySuccessCode(response);
+  getUniqueId: (): Promise<OfflineApiResponse<string | number>> => {
+    return HttpUtils.get(`${apiPrefix}/get-unique-id`);
   },
 
   delete: (id: string | number) => {

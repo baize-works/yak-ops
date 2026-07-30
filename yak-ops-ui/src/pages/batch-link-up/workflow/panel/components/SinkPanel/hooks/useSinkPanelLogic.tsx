@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {
   dataSourceCatalogApi,
   fetchDataSourceOptions,
@@ -253,7 +254,7 @@ export function useSinkPanelLogic({
         table_path: selectedSqlTable,
       });
 
-      if (res?.code !== 0) {
+      if (res?.code !== API_SUCCESS_CODE) {
         return;
       }
 

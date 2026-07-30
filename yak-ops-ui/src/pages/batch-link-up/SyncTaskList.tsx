@@ -322,7 +322,7 @@
 //     try {
 //       const data = await taskExecutionApi.batchExecute(selectedRowKeys);
 
-//       if (data?.code === 0) {
+//       if (data?.code === 200) {
 //         message.success(
 //           intl.formatMessage({
 //             id: "pages.job.batch.start.success",
@@ -353,7 +353,7 @@
 //     try {
 //       const data = await taskExecutionApi.batchCancel(selectedRowKeys);
 
-//       if (data?.code === 0) {
+//       if (data?.code === 200) {
 //         message.success(
 //           intl.formatMessage({
 //             id: "pages.job.batch.stop.success",

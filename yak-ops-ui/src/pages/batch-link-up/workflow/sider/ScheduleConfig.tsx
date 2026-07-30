@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import Header from "@/components/Header";
 import { Col, Form, Input, message, Popover, Radio, Row } from "antd";
 import { useState } from "react";
@@ -21,7 +22,7 @@ function ScheduleConfig({ form }) {
     }
 
     const res = await taskScheduleApi.getLast5ExecutionTimes(cron);
-    if (res?.code === 0) {
+    if (res?.code === API_SUCCESS_CODE) {
       setPreview(res.data || []);
     }
   };

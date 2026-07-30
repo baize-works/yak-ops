@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import HttpUtils from '@/utils/HttpUtils';
 import { Client } from '@stomp/stompjs';
 import type { TabsProps } from 'antd';
@@ -268,7 +269,7 @@ const WorkflowRunPanel: FC<WorkflowRunPanelProps> = ({
     try {
       const response = await HttpUtils.get(`/api/workflow/execute/${workflowId}`);
 
-      if (response?.code === 0) {
+      if (response?.code === API_SUCCESS_CODE) {
         message.success('工作流执行请求已发送');
         addLog('工作流执行请求已发送');
       } else {
