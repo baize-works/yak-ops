@@ -38,6 +38,10 @@
         </dependency>
         <dependency>
             <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-business-sync-offline</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
             <artifactId>yak-ops-business-sync-realtime</artifactId>
         </dependency>
         <dependency>

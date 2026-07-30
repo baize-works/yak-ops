@@ -88,6 +88,22 @@ yak:
     connection-test:
       timeout-seconds: ${YAK_DATASOURCE_CONNECT_TIMEOUT_SECONDS:5}
 
+  sync:
+    offline:
+      enabled: ${YAK_OFFLINE_SYNC_ENABLED:true}
+      datasource:
+        url: ${YAK_OFFLINE_SYNC_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+        username: ${YAK_OFFLINE_SYNC_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
+        password: ${YAK_OFFLINE_SYNC_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
+        driver-class-name: ${YAK_OFFLINE_SYNC_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+        minimum-idle: 1
+        maximum-pool-size: 8
+      engine:
+        enabled: ${YAK_LINK_UP_ENABLED:true}
+        base-url: ${YAK_LINK_UP_BASE_URL:http://127.0.0.1:18080}
+        connect-timeout: ${YAK_LINK_UP_CONNECT_TIMEOUT:10s}
+        request-timeout: ${YAK_LINK_UP_REQUEST_TIMEOUT:30s}
+
   schedule:
     enabled: true
     web-enabled: false
