@@ -1,25 +1,25 @@
 package io.yak.ops.business.sync.offline.service;
 
-import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.yak.framework.common.PagingData;
 import io.yak.ops.business.datasource.dao.DataSourceDao;
-import io.yak.ops.business.sync.offline.dao.mapper.OfflineJobDefinitionMapper;
+import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
+import io.yak.ops.business.sync.offline.dao.OfflineJobDefinitionDao;
 import io.yak.ops.business.sync.offline.engine.LinkUpHoconBuilder;
-import io.yak.ops.business.sync.offline.model.po.OfflineJobDefinitionPO;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionQueryDTO;
 import io.yak.ops.common.bean.po.datasource.DataSourcePO;
+import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineJobDefinitionVO;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,7 @@ public class OfflineJobDefinitionService {
   private static final DateTimeFormatter DATE_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-  private final OfflineJobDefinitionMapper mapper;
+  private final OfflineJobDefinitionDao definitionDao;
   private final DataSourceDao dataSourceDao;
   private final LinkUpHoconBuilder hoconBuilder;
   private final OfflineExecutionSynchronizer synchronizer;
@@ -42,12 +42,12 @@ public class OfflineJobDefinitionService {
   private final AtomicLong idSequence = new AtomicLong(System.currentTimeMillis() * 1000L);
 
   public OfflineJobDefinitionService(
-      OfflineJobDefinitionMapper mapper,
+      OfflineJobDefinitionDao definitionDao,
       DataSourceDao dataSourceDao,
       LinkUpHoconBuilder hoconBuilder,
       OfflineExecutionSynchronizer synchronizer,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
-    this.mapper = mapper;
+    this.definitionDao = definitionDao;
     this.dataSourceDao = dataSourceDao;
     this.hoconBuilder = hoconBuilder;
     this.synchronizer = synchronizer;
@@ -57,21 +57,20 @@ public class OfflineJobDefinitionService {
   public Long nextId() {
     long floor = System.currentTimeMillis() * 1000L;
     long candidate = idSequence.updateAndGet(current -> Math.max(current + 1L, floor));
-    while (mapper.selectById(candidate) != null) {
+    while (definitionDao.selectById(candidate) != null) {
       candidate = idSequence.incrementAndGet();
     }
     return candidate;
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
-  public Long saveGuide(JsonNode request) {
-    if (request == null || !request.isObject()) {
-      throw new IllegalArgumentException("任务定义不能为空");
-    }
-    Long id = request.path("id").asLong(0L);
+  public Long saveGuide(OfflineJobDefinitionDTO requestDTO) {
+    ObjectNode request = toObjectNode(requestDTO, "任务定义不能为空");
+    Long id = requestDTO.getId();
     if (id == null || id <= 0L) {
       id = nextId();
-      ((ObjectNode) request).put("id", id);
+      requestDTO.setId(id);
+      request.put("id", id);
     }
     JsonNode basic = request.path("basic");
     String jobName = requiredText(basic, "jobName", "任务名称不能为空");
@@ -79,7 +78,7 @@ public class OfflineJobDefinitionService {
     String mode = text(basic, "mode", text(request, "mode", "GUIDE_SINGLE"));
     ensureNameUnique(jobName, id);
 
-    OfflineJobDefinitionPO existing = mapper.selectById(id);
+    OfflineJobDefinitionPO existing = definitionDao.selectById(id);
     ensureEditable(existing);
     LinkUpHoconBuilder.BuildResult result = hoconBuilder.build(request);
     LocalDateTime now = LocalDateTime.now();
@@ -103,22 +102,21 @@ public class OfflineJobDefinitionService {
     definition.setCreateTime(existing == null ? now : existing.getCreateTime());
     definition.setUpdateTime(now);
     if (existing == null) {
-      mapper.insert(definition);
+      definitionDao.insert(definition);
     } else {
-      mapper.updateById(definition);
+      definitionDao.updateById(definition);
     }
     return id;
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
-  public Long saveScript(JsonNode request) {
-    if (request == null || !request.isObject()) {
-      throw new IllegalArgumentException("脚本任务定义不能为空");
-    }
-    long id = request.path("id").asLong(0L);
-    if (id <= 0L) {
+  public Long saveScript(OfflineJobDefinitionDTO requestDTO) {
+    ObjectNode request = toObjectNode(requestDTO, "脚本任务定义不能为空");
+    Long id = requestDTO.getId();
+    if (id == null || id <= 0L) {
       id = nextId();
-      ((ObjectNode) request).put("id", id);
+      requestDTO.setId(id);
+      request.put("id", id);
     }
     JsonNode basic = request.path("basic");
     String jobName = firstText(request, basic, "jobName");
@@ -130,7 +128,7 @@ public class OfflineJobDefinitionService {
       throw new IllegalArgumentException("SCRIPT 模式必须填写 Link-Up HOCON 配置");
     }
     ensureNameUnique(jobName, id);
-    OfflineJobDefinitionPO existing = mapper.selectById(id);
+    OfflineJobDefinitionPO existing = definitionDao.selectById(id);
     ensureEditable(existing);
     LocalDateTime now = LocalDateTime.now();
     OfflineJobDefinitionPO definition = existing == null ? new OfflineJobDefinitionPO() : existing;
@@ -147,30 +145,31 @@ public class OfflineJobDefinitionService {
     definition.setCreateTime(existing == null ? now : existing.getCreateTime());
     definition.setUpdateTime(now);
     if (existing == null) {
-      mapper.insert(definition);
+      definitionDao.insert(definition);
     } else {
-      mapper.updateById(definition);
+      definitionDao.updateById(definition);
     }
     return id;
   }
 
-  public String buildGuideConfig(JsonNode request) {
-    return hoconBuilder.build(request).getHocon();
+  public String buildGuideConfig(OfflineJobDefinitionDTO requestDTO) {
+    return hoconBuilder.build(toObjectNode(requestDTO, "任务定义不能为空")).getHocon();
   }
 
-  public String buildScriptConfig(JsonNode request) {
-    String hocon = firstText(request, request == null ? null : request.path("basic"),
+  public String buildScriptConfig(OfflineJobDefinitionDTO requestDTO) {
+    ObjectNode request = toObjectNode(requestDTO, "脚本任务定义不能为空");
+    String hocon = firstText(request, request.path("basic"),
         "hoconConfig", "jobDefinitionInfo", "script");
     if (!StringUtils.hasText(hocon)) {
       throw new IllegalArgumentException("SCRIPT 模式必须填写 Link-Up HOCON 配置");
     }
-    return hocon;
+    return hocon.trim();
   }
 
-  public Map<String, Object> get(Long id) {
+  public OfflineJobDefinitionVO get(Long id) {
     OfflineJobDefinitionPO definition = require(id);
     synchronizer.refreshDefinition(definition);
-    return toView(definition);
+    return toVO(definition);
   }
 
   public JsonNode getEditDetail(Long id) {
@@ -185,58 +184,19 @@ public class OfflineJobDefinitionService {
     state.put("releaseState", definition.getReleaseState());
     state.put("lastJobStatus", definition.getLastJobStatus());
     state.put("lastErrorMessage", definition.getLastErrorMessage());
-    state.put("lastExecutionId", definition.getLastExecutionId());
+    state.set("lastExecutionId", objectMapper.valueToTree(definition.getLastExecutionId()));
     state.put("lastEngineJobId", definition.getLastEngineJobId());
     return detail;
   }
 
-  public Map<String, Object> page(JsonNode request) {
-    int current = Math.max(1, request == null ? 1 : request.path("current").asInt(1));
-    int pageSize = Math.min(200, Math.max(1, request == null ? 10 : request.path("pageSize").asInt(10)));
-    LambdaQueryWrapper<OfflineJobDefinitionPO> query = new LambdaQueryWrapper<>();
-    if (request != null) {
-      String jobName = text(request, "jobName", null);
-      if (StringUtils.hasText(jobName)) {
-        query.like(OfflineJobDefinitionPO::getJobName, jobName.trim());
-      }
-      long id = request.path("id").asLong(0L);
-      if (id > 0L) {
-        query.eq(OfflineJobDefinitionPO::getId, id);
-      }
-      String status = normalizeQueryStatus(text(request, "status", null));
-      if (StringUtils.hasText(status)) {
-        query.eq(OfflineJobDefinitionPO::getLastJobStatus, status);
-      }
-      addLike(query, OfflineJobDefinitionPO::getSourceType, text(request, "sourceType", null));
-      addLike(query, OfflineJobDefinitionPO::getSinkType, text(request, "sinkType", null));
-      addLike(query, OfflineJobDefinitionPO::getSourceTable, text(request, "sourceTable", null));
-      addLike(query, OfflineJobDefinitionPO::getSinkTable, text(request, "sinkTable", null));
-      LocalDateTime start = parseDateTime(text(request, "createTimeStart", null));
-      LocalDateTime end = parseDateTime(text(request, "createTimeEnd", null));
-      if (start != null) {
-        query.ge(OfflineJobDefinitionPO::getCreateTime, start);
-      }
-      if (end != null) {
-        query.le(OfflineJobDefinitionPO::getCreateTime, end);
-      }
-    }
-    query.orderByDesc(OfflineJobDefinitionPO::getUpdateTime)
-        .orderByDesc(OfflineJobDefinitionPO::getId);
-    Page<OfflineJobDefinitionPO> page = mapper.selectPage(new Page<>(current, pageSize), query);
-    List<Map<String, Object>> records = new ArrayList<>();
+  public PagingData<OfflineJobDefinitionVO> page(OfflineJobDefinitionQueryDTO queryDTO) {
+    IPage<OfflineJobDefinitionPO> page = definitionDao.selectPage(queryDTO);
+    List<OfflineJobDefinitionVO> records = new ArrayList<>(page.getRecords().size());
     for (OfflineJobDefinitionPO definition : page.getRecords()) {
       synchronizer.refreshDefinition(definition);
-      records.add(toView(definition));
+      records.add(toVO(definition));
     }
-    Map<String, Object> pagination = new LinkedHashMap<>();
-    pagination.put("total", page.getTotal());
-    pagination.put("pages", page.getPages());
-    pagination.put("pageNo", current);
-    pagination.put("pageSize", pageSize);
-    Map<String, Object> data = new LinkedHashMap<>();
-    data.put("bizData", records);
-    data.put("pagination", pagination);
-    return data;
+    return new PagingData<>(records, page);
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
@@ -253,8 +213,7 @@ public class OfflineJobDefinitionService {
     }
     definition.setReleaseState("ONLINE");
     definition.setUpdateTime(LocalDateTime.now());
-    mapper.updateById(definition);
-    return true;
+    return definitionDao.updateById(definition);
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
@@ -266,8 +225,7 @@ public class OfflineJobDefinitionService {
     }
     definition.setReleaseState("OFFLINE");
     definition.setUpdateTime(LocalDateTime.now());
-    mapper.updateById(definition);
-    return true;
+    return definitionDao.updateById(definition);
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
@@ -280,68 +238,60 @@ public class OfflineJobDefinitionService {
     if (synchronizer.isActive(definition.getLastJobStatus())) {
       throw new IllegalStateException("运行中的任务不能删除，请先停止任务");
     }
-    return mapper.deleteById(id) > 0;
+    return definitionDao.deleteById(id);
   }
 
   public OfflineJobDefinitionPO require(Long id) {
     if (id == null || id <= 0L) {
       throw new IllegalArgumentException("任务定义 ID 不合法");
     }
-    OfflineJobDefinitionPO definition = mapper.selectById(id);
+    OfflineJobDefinitionPO definition = definitionDao.selectById(id);
     if (definition == null) {
       throw new IllegalArgumentException("离线同步任务不存在：" + id);
     }
     return definition;
   }
 
-  private Map<String, Object> toView(OfflineJobDefinitionPO definition) {
+  private OfflineJobDefinitionVO toVO(OfflineJobDefinitionPO definition) {
     DataSourcePO source = dataSource(definition.getSourceDatasourceId());
     DataSourcePO sink = dataSource(definition.getSinkDatasourceId());
     JsonNode schedule = readNullable(definition.getScheduleJson());
     String cronExpression = text(schedule, "cronExpression", null);
     String scheduleRunType = text(schedule, "scheduleRunType", "pause");
-    boolean scheduled = StringUtils.hasText(cronExpression) && !"pause".equalsIgnoreCase(scheduleRunType);
+    boolean scheduled = StringUtils.hasText(cronExpression)
+        && !"pause".equalsIgnoreCase(scheduleRunType);
 
-    Map<String, Object> view = new LinkedHashMap<>();
-    view.put("id", definition.getId());
-    view.put("jobName", definition.getJobName());
-    view.put("jobDesc", definition.getJobDesc());
-    view.put("jobType", "BATCH");
-    view.put("mode", definition.getMode());
-    view.put("releaseState", definition.getReleaseState());
-    view.put("sourceType", definition.getSourceType());
-    view.put("sinkType", definition.getSinkType());
-    view.put("sourceDatasourceId", definition.getSourceDatasourceId());
-    view.put("sinkDatasourceId", definition.getSinkDatasourceId());
-    view.put("sourceDatasourceName", source == null ? null : source.getName());
-    view.put("sinkDatasourceName", sink == null ? null : sink.getName());
-    view.put("sourceTable", definition.getSourceTable());
-    view.put("sinkTable", definition.getSinkTable());
-    view.put("lastJobStatus", definition.getLastJobStatus());
-    view.put("lastErrorMessage", definition.getLastErrorMessage());
-    view.put("instanceId", definition.getLastExecutionId());
-    view.put("engineJobId", definition.getLastEngineJobId());
-    view.put("runMode", scheduled ? "SCHEDULE" : "MANUAL");
-    view.put("duration", seconds(definition.getLastDurationMillis()));
-    view.put("readRowCount", value(definition.getLastReadRowCount()));
-    view.put("qps", value(definition.getLastQps()));
-    view.put("syncSize", formatBytes(definition.getLastSyncBytes()));
-    view.put("cronExpression", cronExpression);
-    view.put("scheduleStatus", scheduled ? "NORMAL" : "PAUSED");
-    view.put("lastScheduleTime", format(definition.getLastStartTime()));
-    view.put("nextScheduleTime", null);
-    view.put("createTime", format(definition.getCreateTime()));
-    view.put("updateTime", format(definition.getUpdateTime()));
-    return view;
-  }
-
-  private <T> void addLike(
-      LambdaQueryWrapper<OfflineJobDefinitionPO> query,
-      com.baomidou.mybatisplus.core.toolkit.support.SFunction<OfflineJobDefinitionPO, T> column,
-      String value) {
-    if (StringUtils.hasText(value)) {
-      query.like(column, value.trim());
-    }
+    return OfflineJobDefinitionVO.builder()
+        .id(definition.getId())
+        .jobName(definition.getJobName())
+        .jobDesc(definition.getJobDesc())
+        .jobType("BATCH")
+        .mode(definition.getMode())
+        .releaseState(definition.getReleaseState())
+        .sourceType(definition.getSourceType())
+        .sinkType(definition.getSinkType())
+        .sourceDatasourceId(definition.getSourceDatasourceId())
+        .sinkDatasourceId(definition.getSinkDatasourceId())
+        .sourceDatasourceName(source == null ? null : source.getName())
+        .sinkDatasourceName(sink == null ? null : sink.getName())
+        .sourceTable(definition.getSourceTable())
+        .sinkTable(definition.getSinkTable())
+        .lastJobStatus(definition.getLastJobStatus())
+        .lastErrorMessage(definition.getLastErrorMessage())
+        .instanceId(definition.getLastExecutionId())
+        .engineJobId(definition.getLastEngineJobId())
+        .runMode(scheduled ? "SCHEDULE" : "MANUAL")
+        .duration(seconds(definition.getLastDurationMillis()))
+        .readRowCount(value(definition.getLastReadRowCount()))
+        .qps(value(definition.getLastQps()))
+        .syncSize(formatBytes(definition.getLastSyncBytes()))
+        .cronExpression(cronExpression)
+        .scheduleStatus(scheduled ? "NORMAL" : "PAUSED")
+        .lastScheduleTime(format(definition.getLastStartTime()))
+        .nextScheduleTime(null)
+        .createTime(format(definition.getCreateTime()))
+        .updateTime(format(definition.getUpdateTime()))
+        .build();
   }
 
   private void ensureEditable(OfflineJobDefinitionPO existing) {
@@ -358,14 +308,9 @@ public class OfflineJobDefinitionService {
   }
 
   private void ensureNameUnique(String name, Long excludedId) {
-    LambdaQueryWrapper<OfflineJobDefinitionPO> query =
-        new LambdaQueryWrapper<OfflineJobDefinitionPO>()
-            .eq(OfflineJobDefinitionPO::getJobName, name.trim());
-    if (excludedId != null) {
-      query.ne(OfflineJobDefinitionPO::getId, excludedId);
-    }
-    if (mapper.selectCount(query) > 0L) {
-      throw new IllegalArgumentException("离线同步任务名称已存在：" + name.trim());
+    String normalized = name.trim();
+    if (definitionDao.existsByName(normalized, excludedId)) {
+      throw new IllegalArgumentException("离线同步任务名称已存在：" + normalized);
     }
   }
 
@@ -377,25 +322,15 @@ public class OfflineJobDefinitionService {
     return id == null ? null : dataSourceDao.selectById(id);
   }
 
-  private String normalizeQueryStatus(String status) {
-    if (!StringUtils.hasText(status)) {
-      return null;
+  private ObjectNode toObjectNode(OfflineJobDefinitionDTO requestDTO, String message) {
+    if (requestDTO == null) {
+      throw new IllegalArgumentException(message);
     }
-    String normalized = status.trim().toUpperCase(Locale.ROOT);
-    return "COMPLETED".equals(normalized) || "SUCCEEDED".equals(normalized)
-        ? "FINISHED"
-        : normalized;
-  }
-
-  private LocalDateTime parseDateTime(String value) {
-    if (!StringUtils.hasText(value)) {
-      return null;
+    JsonNode value = objectMapper.valueToTree(requestDTO);
+    if (!value.isObject()) {
+      throw new IllegalArgumentException(message);
     }
-    try {
-      return LocalDateTime.parse(value.trim(), DATE_TIME_FORMATTER);
-    } catch (DateTimeParseException exception) {
-      throw new IllegalArgumentException("时间格式必须为 yyyy-MM-dd HH:mm:ss：" + value, exception);
-    }
+    return (ObjectNode) value;
   }
 
   private JsonNode read(String value) {
@@ -480,13 +415,13 @@ public class OfflineJobDefinitionService {
     if (bytes == null || bytes <= 0L) {
       return "-";
     }
-    double value = bytes;
+    double size = bytes;
     String[] units = {"B", "KB", "MB", "GB", "TB"};
     int unit = 0;
-    while (value >= 1024D && unit < units.length - 1) {
-      value /= 1024D;
+    while (size >= 1024D && unit < units.length - 1) {
+      size /= 1024D;
       unit++;
     }
-    return String.format(Locale.ROOT, "%.2f %s", value, units[unit]);
+    return String.format(Locale.ROOT, "%.2f %s", size, units[unit]);
   }
 }
