@@ -2,7 +2,7 @@ import React from 'react';
 
 const Loading: React.FC = () => {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+    <div className="fixed inset-0 z-[35] flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-4">
         <div className="loading-spinner" aria-label="加载中" />
 
