@@ -6,6 +6,8 @@ import lombok.Getter;
 @Getter
 public final class OfflineApiResponse<T> {
 
+  private static final int SUCCESS_CODE = 200;
+
   private final int code;
   private final String message;
   private final T data;
@@ -17,7 +19,7 @@ public final class OfflineApiResponse<T> {
   }
 
   public static <T> OfflineApiResponse<T> success(T data) {
-    return new OfflineApiResponse<>(0, "success", data);
+    return new OfflineApiResponse<>(SUCCESS_CODE, "成功", data);
   }
 
   public static OfflineApiResponse<Void> success() {

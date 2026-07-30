@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {
   CloudDownloadOutlined,
   CloudUploadOutlined,
@@ -82,7 +83,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
     }
 
     linkupJobExecuteApi.pause(instanceId).then((data) => {
-      if (data?.code === 0) {
+      if (data?.code === API_SUCCESS_CODE) {
         message.success("停止成功");
         cbk();
       } else {
@@ -100,7 +101,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
 
     const response = await linkupJobDefinitionApi.online(record.id);
 
-    if (response?.code === 0) {
+    if (response?.code === API_SUCCESS_CODE) {
       message.success("上线成功");
       cbk();
       return;
@@ -122,7 +123,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
 
     const response = await linkupJobDefinitionApi.offline(record.id);
 
-    if (response?.code === 0) {
+    if (response?.code === API_SUCCESS_CODE) {
       message.success("下线成功");
       cbk();
       return;
@@ -134,7 +135,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
   const doDeleteTask = async (id: string | number) => {
     const response = await linkupJobDefinitionApi.delete(id);
 
-    if (response?.code === 0) {
+    if (response?.code === API_SUCCESS_CODE) {
       message.success(response?.msg || "删除成功");
       cbk();
     } else {
@@ -224,7 +225,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
 
     const data = await linkupJobDefinitionApi.selectEditDetail(record.id);
 
-    if (data?.code === 0) {
+    if (data?.code === API_SUCCESS_CODE) {
       goDetail(record.id, record);
     } else {
       message.error(data?.msg || data?.message || "获取任务详情失败");
@@ -366,7 +367,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
 
                 const data = await linkupJobExecuteApi.execute(record?.id);
 
-                if (data?.code === 0) {
+                if (data?.code === API_SUCCESS_CODE) {
                   message.success(
                     intl.formatMessage({
                       id: "pages.common.success",

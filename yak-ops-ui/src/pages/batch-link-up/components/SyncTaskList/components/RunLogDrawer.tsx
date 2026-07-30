@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { linkupClientApi } from "@/pages/batch-link-up/type";
 import {
   CloseOutlined, EditOutlined,
@@ -237,7 +238,7 @@ const RunLogDrawer: FC<RunLogDrawerProps> = ({
         jobMode
       );
 
-      if (response?.code !== 0) {
+      if (response?.code !== API_SUCCESS_CODE) {
         const msg = response?.msg || response?.message || "获取日志失败";
         setErrorText(msg);
         return;

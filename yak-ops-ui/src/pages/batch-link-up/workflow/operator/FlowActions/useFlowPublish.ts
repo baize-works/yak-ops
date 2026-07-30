@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { linkupJobDefinitionApi } from "@/pages/batch-link-up/api";
 import { message } from "antd";
 import { useReactFlow } from "reactflow";
@@ -36,7 +37,7 @@ export function useFlowPublish(nodes: any[], edges: any[], baseForm: any) {
         };
 
         const data = await linkupJobDefinitionApi.saveOrUpdateGuideMulti( httpParams);
-        if (data?.code === 0) {
+        if (data?.code === API_SUCCESS_CODE) {
             message.success("发布成功");
         }
         else {

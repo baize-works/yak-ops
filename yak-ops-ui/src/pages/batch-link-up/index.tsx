@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {
   ArrowRight,
   ChevronDown,
@@ -400,7 +401,7 @@ const BatchLinkUpPage: React.FC = () => {
       const data =
         await linkupJobDefinitionApi.getUniqueId();
 
-      if (data?.code !== 0) {
+      if (data?.code !== API_SUCCESS_CODE) {
         message.error(
           data?.message ||
             data?.msg ||
@@ -731,7 +732,7 @@ const BatchLinkUpPage: React.FC = () => {
           selectedRowKeys
         );
 
-      if (data?.code !== 0) {
+      if (data?.code !== API_SUCCESS_CODE) {
         message.error(
           data?.message ||
             data?.msg ||
@@ -795,7 +796,7 @@ const BatchLinkUpPage: React.FC = () => {
           selectedRowKeys
         );
 
-      if (data?.code !== 0) {
+      if (data?.code !== API_SUCCESS_CODE) {
         message.error(
           data?.message ||
             data?.msg ||

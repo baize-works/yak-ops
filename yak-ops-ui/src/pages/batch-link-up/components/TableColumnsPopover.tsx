@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import React, { useState } from "react";
 import { Popover, Table, message } from "antd";
 import "../index.less";
@@ -78,7 +79,7 @@ const TableColumnsPopover: React.FC<TableColumnsPopoverProps> = ({
 
       const res = await dataSourceCatalogApi.listColumn(sourceId, params);
 
-      if (res?.code === 0) {
+      if (res?.code === API_SUCCESS_CODE) {
         setColumns(res.data || []);
       } else {
         

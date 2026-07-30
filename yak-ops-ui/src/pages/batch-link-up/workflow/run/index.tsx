@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {Client} from "@stomp/stompjs";
 import {message} from "antd";
 import type {FC, ReactNode} from "react";
@@ -305,7 +306,7 @@ const RunLog: FC<RunLogProps> = ({
             params?.id
           );
 
-          if (detailResp?.code !== 0) {
+          if (detailResp?.code !== API_SUCCESS_CODE) {
             message.error("请先发布");
             addLogEntry("Job definition not published.", "error");
             return;
@@ -313,7 +314,7 @@ const RunLog: FC<RunLogProps> = ({
 
           const execResp = await linkupJobExecuteApi.execute(params?.id);
 
-          if (execResp?.code !== 0) {
+          if (execResp?.code !== API_SUCCESS_CODE) {
             addLogEntry(
               `Backend execute error: ${
                 execResp?.msg || execResp?.message || "unknown"

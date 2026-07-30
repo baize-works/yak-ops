@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { linkupJobInstanceApi } from "@/pages/batch-link-up/api";
 import { HistoryItem } from "@/pages/batch-link-up/type";
 import { message } from "antd";
@@ -98,7 +99,7 @@ export const useTaskHistory = ({
         queryEndTime,
       });
 
-      if (data?.code === 0) {
+      if (data?.code === API_SUCCESS_CODE) {
         setHistoryItems(data?.data?.bizData || []);
       } else {
         

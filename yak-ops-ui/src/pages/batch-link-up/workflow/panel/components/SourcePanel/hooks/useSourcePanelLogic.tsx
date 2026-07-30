@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {
   dataSourceCatalogApi,
   fetchDataSourceOptions,
@@ -269,7 +270,7 @@ export function useSourcePanelLogic({
         params
       );
 
-      if (resp?.code !== 0) {
+      if (resp?.code !== API_SUCCESS_CODE) {
         const errorMsg = resp?.message || "字段解析失败";
 
         updateNode(undefined, undefined, {
@@ -344,7 +345,7 @@ export function useSourcePanelLogic({
         getRequestParams()
       );
 
-      if (data?.code === 0) {
+      if (data?.code === API_SUCCESS_CODE) {
         qualityDetailRef.current?.onOpen(true, data);
       } else {
       }
@@ -392,7 +393,7 @@ export function useSourcePanelLogic({
         table_path: selectedSqlTable,
       });
 
-      if (res?.code !== 0) {
+      if (res?.code !== API_SUCCESS_CODE) {
         return;
       }
 
@@ -433,7 +434,7 @@ export function useSourcePanelLogic({
         paramsList: scheduleConfig?.paramsList || [],
       });
 
-      if (res?.code !== 0) {
+      if (res?.code !== API_SUCCESS_CODE) {
         message.error(res?.message || "SQL 变量解析失败");
         return;
       }

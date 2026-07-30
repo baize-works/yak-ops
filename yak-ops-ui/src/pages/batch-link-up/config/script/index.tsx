@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {history, useLocation, useParams} from "@umijs/max";
 import {Empty, message, Spin} from "antd";
 import {useEffect, useState} from "react";
@@ -326,7 +327,7 @@ export default function CustomConfigPage() {
         setLoading(true);
 
         const res = await linkupJobDefinitionApi.selectEditDetail(id);
-        if (res?.code !== 0 || !res?.data) {
+        if (res?.code !== API_SUCCESS_CODE || !res?.data) {
           message.error(res?.message || res?.msg || "获取编辑详情失败");
           setParams(null);
           return;
