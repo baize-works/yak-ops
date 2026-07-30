@@ -1,6 +1,9 @@
 package io.yak.ops.business.sync.offline.config;
 
+import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariConfig;
@@ -61,6 +64,9 @@ public class OfflineSyncConfiguration {
     configuration.setJdbcTypeForNull(JdbcType.NULL);
     configuration.setCacheEnabled(false);
     factory.setConfiguration(configuration);
+    MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+    interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+    factory.setPlugins(interceptor);
     return factory.getObject();
   }
 
