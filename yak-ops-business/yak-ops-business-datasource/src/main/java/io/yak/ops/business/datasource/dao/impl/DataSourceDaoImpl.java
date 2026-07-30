@@ -9,6 +9,7 @@ import io.yak.ops.business.datasource.dao.DataSourceDao;
 import io.yak.ops.business.datasource.dao.mapper.DataSourceMapper;
 import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
 import io.yak.ops.common.bean.po.datasource.DataSourcePO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceSummaryVO;
 import io.yak.ops.common.enums.datasource.DataSourceConnStatus;
 import io.yak.ops.common.enums.datasource.DataSourceDbType;
 import java.util.List;
@@ -50,6 +51,11 @@ public class DataSourceDaoImpl implements DataSourceDao {
   }
 
   @Override
+  public DataSourceSummaryVO selectSummary() {
+    return dataSourceMapper.selectSummary();
+  }
+
+  @Override
   public List<DataSourcePO> selectAll(DataSourceDbType dbType) {
     return dataSourceMapper.selectList(
         Wrappers.<DataSourcePO>lambdaQuery()
@@ -88,7 +94,16 @@ public class DataSourceDaoImpl implements DataSourceDao {
   }
 
   private LambdaQueryWrapper<DataSourcePO> queryWrapper(DataSourceQueryDTO queryDTO) {
-    return Wrappers.<DataSourcePO>lambdaQuery()
+    LambdaQueryWrapper<DataSourcePO> wrapper = Wrappers.lambdaQuery();
+    if (StringUtils.hasText(queryDTO.getKeyword())) {
+      wrapper.and(
+          nested ->
+              nested
+                  .like(DataSourcePO::getName, queryDTO.getKeyword())
+                  .or()
+                  .like(DataSourcePO::getJdbcUrl, queryDTO.getKeyword()));
+    }
+    return wrapper
         .like(
             StringUtils.hasText(queryDTO.getName()),
             DataSourcePO::getName,
@@ -100,6 +115,10 @@ public class DataSourceDaoImpl implements DataSourceDao {
         .eq(
             StringUtils.hasText(queryDTO.getEnvironment()),
             DataSourcePO::getEnvironment,
-            queryDTO.getEnvironment());
+            queryDTO.getEnvironment())
+        .eq(
+            StringUtils.hasText(queryDTO.getConnStatus()),
+            DataSourcePO::getConnStatus,
+            queryDTO.getConnStatus());
   }
 }

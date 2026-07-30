@@ -5,6 +5,7 @@ import io.yak.ops.common.bean.dto.datasource.DataSourceConnectTestDTO;
 import io.yak.ops.common.bean.dto.datasource.DataSourceDTO;
 import io.yak.ops.common.bean.dto.datasource.DataSourceQueryDTO;
 import io.yak.ops.common.bean.vo.datasource.DataSourceOptionVO;
+import io.yak.ops.common.bean.vo.datasource.DataSourceSummaryVO;
 import io.yak.ops.common.bean.vo.datasource.DataSourceVO;
 import java.util.List;
 
@@ -18,6 +19,8 @@ public interface DataSourceService {
   DataSourceVO getDataSource(Long id);
 
   PagingData<DataSourceVO> getDataSourcePage(DataSourceQueryDTO queryDTO);
+
+  DataSourceSummaryVO getSummary();
 
   PagingData<DataSourceVO> getAllDataSources();
 

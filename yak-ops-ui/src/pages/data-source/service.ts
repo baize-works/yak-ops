@@ -1,109 +1,180 @@
 import HttpUtils from '@/utils/HttpUtils';
-import type {CommonApiResponse, DataSourcePageParams, DataSourcePageResult, DataSourceRecord,} from './types';
+
+import type {
+  CommonApiResponse,
+  DataSourceConnectTestPayload,
+  DataSourceId,
+  DataSourcePageParams,
+  DataSourcePageResult,
+  DataSourceRecord,
+  DataSourceSavePayload,
+  DataSourceSummary,
+  DynamicFormSchemaResponse,
+} from './types';
 
 const DATA_SOURCE_API_PREFIX = '/api/v1/data-source';
+const DATA_SOURCE_CATALOG_API_PREFIX = `${DATA_SOURCE_API_PREFIX}/catalog`;
+
+const queryString = (params: Record<string, unknown>) => {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).length > 0) {
+      search.set(key, String(value));
+    }
+  });
+  const result = search.toString();
+  return result ? `?${result}` : '';
+};
 
 export async function fetchDataSourcePage(
   params: DataSourcePageParams,
 ): Promise<CommonApiResponse<DataSourcePageResult>> {
-  return HttpUtils.post(`${DATA_SOURCE_API_PREFIX}/page`, params);
+  return HttpUtils.post<DataSourcePageResult>(
+    `${DATA_SOURCE_API_PREFIX}/page`,
+    params,
+  );
+}
+
+export async function fetchDataSourceSummary(): Promise<
+  CommonApiResponse<DataSourceSummary>
+> {
+  return HttpUtils.get<DataSourceSummary>(`${DATA_SOURCE_API_PREFIX}/summary`);
 }
 
 export async function fetchDataSourceDetail(
-  id: string,
+  id: DataSourceId,
 ): Promise<CommonApiResponse<DataSourceRecord>> {
-  return HttpUtils.get(`${DATA_SOURCE_API_PREFIX}/${id}`);
+  return HttpUtils.get<DataSourceRecord>(`${DATA_SOURCE_API_PREFIX}/${id}`);
 }
 
-export async function fetchDataSourceAll(): Promise<CommonApiResponse<DataSourcePageResult>> {
-  return HttpUtils.post(`${DATA_SOURCE_API_PREFIX}/all`);
+export async function fetchDataSourceAll(): Promise<
+  CommonApiResponse<DataSourcePageResult>
+> {
+  return HttpUtils.get<DataSourcePageResult>(`${DATA_SOURCE_API_PREFIX}/all`);
 }
 
 export async function createDataSource(
-  payload: Record<string, unknown>,
+  payload: DataSourceSavePayload,
 ): Promise<CommonApiResponse<boolean>> {
-  return HttpUtils.post(DATA_SOURCE_API_PREFIX, payload);
+  return HttpUtils.post<boolean>(DATA_SOURCE_API_PREFIX, payload);
 }
 
 export async function updateDataSource(
-  id: string,
-  payload: Record<string, unknown>,
+  id: DataSourceId,
+  payload: DataSourceSavePayload,
 ): Promise<CommonApiResponse<boolean>> {
-  return HttpUtils.put(`${DATA_SOURCE_API_PREFIX}/${id}`, payload);
-}
-
-export async function selectDataSourceById(
-  id: any,
-): Promise<any> {
-  return HttpUtils.get(`${DATA_SOURCE_API_PREFIX}/${id}`);
+  return HttpUtils.put<boolean>(`${DATA_SOURCE_API_PREFIX}/${id}`, payload);
 }
 
 export async function deleteDataSource(
-  id: string,
+  id: DataSourceId,
 ): Promise<CommonApiResponse<boolean>> {
-  return HttpUtils.delete(`${DATA_SOURCE_API_PREFIX}/${id}`);
+  return HttpUtils.delete<boolean>(`${DATA_SOURCE_API_PREFIX}/${id}`);
 }
 
 export async function testDataSourceConnection(
-  id: string,
+  id: DataSourceId,
 ): Promise<CommonApiResponse<boolean>> {
-  return HttpUtils.get(`${DATA_SOURCE_API_PREFIX}/${id}/connect-test`);
+  return HttpUtils.post<boolean>(
+    `${DATA_SOURCE_API_PREFIX}/${id}/connect-test`,
+    {},
+  );
 }
 
 export async function testDataSourceConnectionWithParams(
-  payload: Record<string, unknown>,
+  payload: DataSourceConnectTestPayload,
 ): Promise<CommonApiResponse<boolean>> {
-  return HttpUtils.post(`${DATA_SOURCE_API_PREFIX}/connect-test-with-param`, payload);
+  return HttpUtils.post<boolean>(
+    `${DATA_SOURCE_API_PREFIX}/connect-test-with-param`,
+    payload,
+  );
 }
 
 export async function fetchDataSourceOptions(
-  dbType: string,
+  dbType?: string,
 ): Promise<CommonApiResponse<unknown[]>> {
-  return HttpUtils.get(`${DATA_SOURCE_API_PREFIX}/option?dbType=${dbType}`);
+  return HttpUtils.get<unknown[]>(
+    `${DATA_SOURCE_API_PREFIX}/option${queryString({ dbType })}`,
+  );
 }
 
-export const apiPrefixCatalog = "/api/v1/data-source/catalog"
+export async function fetchDataSourcePluginConfig(
+  pluginType: string,
+): Promise<CommonApiResponse<DynamicFormSchemaResponse>> {
+  return HttpUtils.get<DynamicFormSchemaResponse>(
+    `${DATA_SOURCE_API_PREFIX}/plugin/config${queryString({ pluginType })}`,
+  );
+}
+
+export async function installDataSourcePlugin(
+  pluginType: string,
+): Promise<CommonApiResponse<boolean>> {
+  return HttpUtils.post<boolean>(
+    `${DATA_SOURCE_API_PREFIX}/plugin/config/install${queryString({ pluginType })}`,
+    {},
+  );
+}
 
 export const dataSourceCatalogApi = {
+  listTable: (
+    id: DataSourceId,
+  ): Promise<CommonApiResponse<unknown[]>> =>
+    HttpUtils.get<unknown[]>(`${DATA_SOURCE_CATALOG_API_PREFIX}/list/${id}`),
 
-  listTable: (id: string): Promise<{ code: number; data: any; message?: string }> => {
-    return HttpUtils.get(`${apiPrefixCatalog}/list/${id}`);
-  },
+  listTableReference: (
+    id: DataSourceId,
+    matchMode?: string | number,
+    keyword?: string,
+  ): Promise<CommonApiResponse<unknown[]>> =>
+    HttpUtils.get<unknown[]>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/listByMatchMode/${id}${queryString({
+        matchMode,
+        keyword,
+      })}`,
+    ),
 
-  listTableReference: (id: string, matchMode: any, keyword: any): Promise<{ code: number; data: any[]; message?: string }> => {
-    return HttpUtils.get(`${apiPrefixCatalog}/listByMatchMode/${id}?matchMode=${matchMode}&keyword=${keyword}`);
-  },
+  count: (
+    dataSourceId: DataSourceId,
+    requestBody: Record<string, unknown>,
+  ): Promise<CommonApiResponse<number>> =>
+    HttpUtils.post<number>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/count/${dataSourceId}`,
+      requestBody,
+    ),
 
-  count: (datasourceId: string, requestBody: any): Promise<{ code: number; data: number; message?: string }> => {
-    return HttpUtils.post(`${apiPrefixCatalog}/count/${datasourceId}`, requestBody);
-  },
+  listColumn: (
+    id: DataSourceId,
+    requestBody: Record<string, unknown>,
+  ): Promise<CommonApiResponse<unknown[]>> =>
+    HttpUtils.post<unknown[]>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/column/${id}`,
+      requestBody,
+    ),
 
-  listColumn: (id: any, requestBody: any): Promise<{ code: number; data: any[]; message?: string }> => {
-    return HttpUtils.post(`${apiPrefixCatalog}/column/${id}`, requestBody);
-  },
-
-  getTop20Data: (datasourceId: string, requestBody: any): Promise<{ code: number; data: any[]; message?: string }> => {
-    return HttpUtils.post(`${apiPrefixCatalog}/getTop20Data/${datasourceId}`, requestBody);
-  },
+  getTop20Data: (
+    dataSourceId: DataSourceId,
+    requestBody: Record<string, unknown>,
+  ): Promise<CommonApiResponse<unknown>> =>
+    HttpUtils.post<unknown>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/getTop20Data/${dataSourceId}`,
+      requestBody,
+    ),
 
   buildSqlTemplate: (
-    datasourceId: string,
-    requestBody: any
-  ): Promise<{ code: number; data: string; message?: string }> => {
-    return HttpUtils.post(
-      `${apiPrefixCatalog}/sql-template/${datasourceId}`,
-      requestBody
-    );
-  },
+    dataSourceId: DataSourceId,
+    requestBody: Record<string, unknown>,
+  ): Promise<CommonApiResponse<string>> =>
+    HttpUtils.post<string>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/sql-template/${dataSourceId}`,
+      requestBody,
+    ),
 
   resolveSql: (
-    datasourceId: string,
-    requestBody: any
-  ): Promise<{ code: number; data: string; message?: string }> => {
-    return HttpUtils.post(
-      `${apiPrefixCatalog}/resolve-sql/${datasourceId}`,
-      requestBody
-    );
-  },
-
+    dataSourceId: DataSourceId,
+    requestBody: Record<string, unknown>,
+  ): Promise<CommonApiResponse<string>> =>
+    HttpUtils.post<string>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/resolve-sql/${dataSourceId}`,
+      requestBody,
+    ),
 };

@@ -1,21 +1,31 @@
-import HttpUtils from "@/utils/HttpUtils";
+import { API_SUCCESS_CODE } from '@/services/http/response';
+import HttpUtils from '@/utils/HttpUtils';
 
-export async function fetchPluginConfig(pluginType: string) {
-  return HttpUtils.get<any>(`/api/v1/data-source/plugin/config?pluginType=${pluginType}`);
+import type {
+  CommonApiResponse,
+  DynamicFormSchemaResponse,
+} from '../../../types';
+
+export async function fetchPluginConfig(
+  pluginType: string,
+): Promise<CommonApiResponse<DynamicFormSchemaResponse>> {
+  const query = new URLSearchParams({ pluginType }).toString();
+  return HttpUtils.get<DynamicFormSchemaResponse>(
+    `/api/v1/data-source/plugin/config?${query}`,
+  );
 }
 
 export async function uploadDriverJar(pluginType: string, file: File) {
   const formData = new FormData();
-  formData.append("file", file);
-  formData.append("pluginType", pluginType);
+  formData.append('file', file);
+  formData.append('pluginType', pluginType);
 
-  const res = await HttpUtils.postForm<any>(
-    "/api/v1/data-source/plugin/driver/upload",
-    formData
+  const response = await HttpUtils.postForm<unknown>(
+    '/api/v1/data-source/plugin/driver/upload',
+    formData,
   );
-
-  console.log(res);
-
-  if (res?.code !== 0) throw new Error(res?.message || "upload failed");
-  return res?.data; // string | { fileName, path }
+  if (response?.code !== API_SUCCESS_CODE) {
+    throw new Error(response?.message || response?.msg || '驱动包上传失败');
+  }
+  return response?.data;
 }
