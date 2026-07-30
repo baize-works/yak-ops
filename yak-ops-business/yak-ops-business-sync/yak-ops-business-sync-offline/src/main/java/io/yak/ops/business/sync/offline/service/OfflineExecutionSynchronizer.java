@@ -1,14 +1,14 @@
 package io.yak.ops.business.sync.offline.service;
 
-import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.yak.ops.business.sync.offline.dao.mapper.OfflineJobDefinitionMapper;
-import io.yak.ops.business.sync.offline.dao.mapper.OfflineJobExecutionMapper;
+import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
+import io.yak.ops.business.sync.offline.dao.OfflineJobDefinitionDao;
+import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
-import io.yak.ops.business.sync.offline.model.po.OfflineJobDefinitionPO;
-import io.yak.ops.business.sync.offline.model.po.OfflineJobExecutionPO;
+import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
+import io.yak.ops.common.bean.po.sync.offline.OfflineJobExecutionPO;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -32,18 +32,18 @@ public class OfflineExecutionSynchronizer {
       "CANCELING");
 
   private final LinkUpClient linkUpClient;
-  private final OfflineJobDefinitionMapper definitionMapper;
-  private final OfflineJobExecutionMapper executionMapper;
+  private final OfflineJobDefinitionDao definitionDao;
+  private final OfflineJobExecutionDao executionDao;
   private final ObjectMapper objectMapper;
 
   public OfflineExecutionSynchronizer(
       LinkUpClient linkUpClient,
-      OfflineJobDefinitionMapper definitionMapper,
-      OfflineJobExecutionMapper executionMapper,
+      OfflineJobDefinitionDao definitionDao,
+      OfflineJobExecutionDao executionDao,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
     this.linkUpClient = linkUpClient;
-    this.definitionMapper = definitionMapper;
-    this.executionMapper = executionMapper;
+    this.definitionDao = definitionDao;
+    this.executionDao = executionDao;
     this.objectMapper = objectMapper;
   }
 
@@ -57,12 +57,12 @@ public class OfflineExecutionSynchronizer {
       JsonNode snapshot = linkUpClient.getJob(definition.getLastEngineJobId());
       OfflineJobExecutionPO execution = definition.getLastExecutionId() == null
           ? null
-          : executionMapper.selectById(definition.getLastExecutionId());
+          : executionDao.selectById(definition.getLastExecutionId());
       apply(definition, execution, snapshot);
     } catch (RuntimeException exception) {
       definition.setLastErrorMessage(exception.getMessage());
       definition.setUpdateTime(LocalDateTime.now());
-      definitionMapper.updateById(definition);
+      definitionDao.updateById(definition);
     }
     return definition;
   }
@@ -74,7 +74,7 @@ public class OfflineExecutionSynchronizer {
       return execution;
     }
     JsonNode snapshot = linkUpClient.getJob(execution.getEngineJobId());
-    OfflineJobDefinitionPO definition = definitionMapper.selectById(execution.getJobDefinitionId());
+    OfflineJobDefinitionPO definition = definitionDao.selectById(execution.getJobDefinitionId());
     apply(definition, execution, snapshot);
     return execution;
   }
@@ -112,7 +112,7 @@ public class OfflineExecutionSynchronizer {
       execution.setStartTime(startTime);
       execution.setEndTime(endTime);
       execution.setUpdateTime(now);
-      executionMapper.updateById(execution);
+      executionDao.updateById(execution);
     }
 
     if (definition != null) {
@@ -125,7 +125,7 @@ public class OfflineExecutionSynchronizer {
       definition.setLastStartTime(startTime);
       definition.setLastEndTime(endTime);
       definition.setUpdateTime(now);
-      definitionMapper.updateById(definition);
+      definitionDao.updateById(definition);
     }
   }
 

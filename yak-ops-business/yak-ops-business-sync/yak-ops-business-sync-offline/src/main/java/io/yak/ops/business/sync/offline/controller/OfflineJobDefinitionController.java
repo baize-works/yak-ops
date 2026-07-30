@@ -1,10 +1,14 @@
 package io.yak.ops.business.sync.offline.controller;
 
-import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.yak.ops.business.sync.offline.model.response.OfflineApiResponse;
+import io.yak.framework.common.PagingResult;
+import io.yak.framework.common.Result;
+import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.service.OfflineJobDefinitionService;
-import java.util.Map;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionQueryDTO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineJobDefinitionVO;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,76 +31,82 @@ public class OfflineJobDefinitionController {
   }
 
   @GetMapping("/get-unique-id")
-  public OfflineApiResponse<Long> nextId() {
-    return OfflineApiResponse.success(service.nextId());
+  public Result<Long> nextId() {
+    return Result.success(service.nextId());
   }
 
   @PostMapping("/guide-single/saveOrUpdate")
-  public OfflineApiResponse<Long> saveGuideSingle(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.saveGuide(request));
+  public Result<Long> saveGuideSingle(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+    return Result.success(service.saveGuide(requestDTO));
   }
 
   @PostMapping("/guide-multi/saveOrUpdate")
-  public OfflineApiResponse<Long> saveGuideMulti(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.saveGuide(request));
+  public Result<Long> saveGuideMulti(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+    return Result.success(service.saveGuide(requestDTO));
   }
 
   @PostMapping("/script/saveOrUpdate")
-  public OfflineApiResponse<Long> saveScript(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.saveScript(request));
+  public Result<Long> saveScript(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+    return Result.success(service.saveScript(requestDTO));
   }
 
   @PostMapping("/guide-single/build-config")
-  public OfflineApiResponse<String> buildGuideSingleConfig(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.buildGuideConfig(request));
+  public Result<String> buildGuideSingleConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+    return Result.success(service.buildGuideConfig(requestDTO));
   }
 
   @PostMapping("/guide-multi/build-config")
-  public OfflineApiResponse<String> buildGuideMultiConfig(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.buildGuideConfig(request));
+  public Result<String> buildGuideMultiConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+    return Result.success(service.buildGuideConfig(requestDTO));
   }
 
   @PostMapping("/script/build-config")
-  public OfflineApiResponse<String> buildScriptConfig(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.buildScriptConfig(request));
+  public Result<String> buildScriptConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+    return Result.success(service.buildScriptConfig(requestDTO));
   }
 
   @PostMapping("/buildHoconConfig")
-  public OfflineApiResponse<String> buildHoconConfig(@RequestBody JsonNode request) {
-    String mode = request.path("basic").path("mode").asText(request.path("mode").asText());
-    return OfflineApiResponse.success(
+  public Result<String> buildHoconConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+    String mode = requestDTO == null ? null : requestDTO.getMode();
+    if (requestDTO != null
+        && requestDTO.getBasic() != null
+        && requestDTO.getBasic().getMode() != null) {
+      mode = requestDTO.getBasic().getMode();
+    }
+    return Result.success(
         "SCRIPT".equalsIgnoreCase(mode)
-            ? service.buildScriptConfig(request)
-            : service.buildGuideConfig(request));
+            ? service.buildScriptConfig(requestDTO)
+            : service.buildGuideConfig(requestDTO));
   }
 
   @GetMapping("/{id}")
-  public OfflineApiResponse<Map<String, Object>> get(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.get(id));
+  public Result<OfflineJobDefinitionVO> get(@PathVariable Long id) {
+    return Result.success(service.get(id));
   }
 
   @GetMapping("/{id}/edit-detail")
-  public OfflineApiResponse<JsonNode> editDetail(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.getEditDetail(id));
+  public Result<JsonNode> editDetail(@PathVariable Long id) {
+    return Result.success(service.getEditDetail(id));
   }
 
   @PostMapping("/page")
-  public OfflineApiResponse<Map<String, Object>> page(@RequestBody(required = false) JsonNode request) {
-    return OfflineApiResponse.success(service.page(request));
+  public PagingResult<OfflineJobDefinitionVO> page(
+      @Valid @RequestBody(required = false) OfflineJobDefinitionQueryDTO queryDTO) {
+    return PagingResult.success(service.page(queryDTO));
   }
 
   @PutMapping("/{id}/online")
-  public OfflineApiResponse<Boolean> online(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.online(id));
+  public Result<Boolean> online(@PathVariable Long id) {
+    return Result.success(service.online(id));
   }
 
   @PutMapping("/{id}/offline")
-  public OfflineApiResponse<Boolean> offline(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.offline(id));
+  public Result<Boolean> offline(@PathVariable Long id) {
+    return Result.success(service.offline(id));
   }
 
   @DeleteMapping("/{id}")
-  public OfflineApiResponse<Boolean> delete(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.delete(id));
+  public Result<Boolean> delete(@PathVariable Long id) {
+    return Result.success(service.delete(id));
   }
 }

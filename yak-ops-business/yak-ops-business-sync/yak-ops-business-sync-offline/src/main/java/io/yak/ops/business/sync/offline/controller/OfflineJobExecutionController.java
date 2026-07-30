@@ -1,11 +1,17 @@
 package io.yak.ops.business.sync.offline.controller;
 
-import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.yak.framework.common.PagingResult;
+import io.yak.framework.common.Result;
+import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
-import io.yak.ops.business.sync.offline.model.response.OfflineApiResponse;
 import io.yak.ops.business.sync.offline.service.OfflineJobExecutionService;
-import java.util.Map;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineBatchOperationDTO;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineJobExecutionQueryDTO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineBatchOperationVO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionDetailVO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionVO;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,68 +35,70 @@ public class OfflineJobExecutionController {
   }
 
   @GetMapping({"/api/v1/job/batch-execution/health", "/api/v1/executor/health"})
-  public OfflineApiResponse<JsonNode> health() {
-    return OfflineApiResponse.success(linkUpClient.health());
+  public Result<JsonNode> health() {
+    return Result.success(linkUpClient.health());
   }
 
   @GetMapping({"/api/v1/job/batch-execution/execute", "/api/v1/executor/execute"})
-  public OfflineApiResponse<Map<String, Object>> execute(@RequestParam Long jobDefineId) {
-    return OfflineApiResponse.success(service.execute(jobDefineId));
+  public Result<OfflineJobExecutionVO> execute(@RequestParam Long jobDefineId) {
+    return Result.success(service.execute(jobDefineId));
   }
 
   @PostMapping("/api/v1/job/batch-execution/{jobDefineId}/execute")
-  public OfflineApiResponse<Map<String, Object>> executeByPath(@PathVariable Long jobDefineId) {
-    return OfflineApiResponse.success(service.execute(jobDefineId));
+  public Result<OfflineJobExecutionVO> executeByPath(@PathVariable Long jobDefineId) {
+    return Result.success(service.execute(jobDefineId));
   }
 
   @GetMapping({"/api/v1/job/batch-execution/pause", "/api/v1/executor/pause"})
-  public OfflineApiResponse<Map<String, Object>> pause(@RequestParam Long jobInstanceId) {
-    return OfflineApiResponse.success(service.cancel(jobInstanceId));
+  public Result<OfflineJobExecutionVO> pause(@RequestParam Long jobInstanceId) {
+    return Result.success(service.cancel(jobInstanceId));
   }
 
   @PostMapping("/api/v1/job/batch-execution/{jobInstanceId}/cancel")
-  public OfflineApiResponse<Map<String, Object>> cancelByPath(@PathVariable Long jobInstanceId) {
-    return OfflineApiResponse.success(service.cancel(jobInstanceId));
+  public Result<OfflineJobExecutionVO> cancelByPath(@PathVariable Long jobInstanceId) {
+    return Result.success(service.cancel(jobInstanceId));
   }
 
   @PostMapping({"/api/v1/job/batch-execution/batch-execute", "/api/v1/executor/batch-execute"})
-  public OfflineApiResponse<Map<String, Object>> batchExecute(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.batchExecute(request));
+  public Result<OfflineBatchOperationVO> batchExecute(
+      @Valid @RequestBody OfflineBatchOperationDTO requestDTO) {
+    return Result.success(service.batchExecute(requestDTO));
   }
 
   @PostMapping({"/api/v1/job/batch-execution/batch-pause", "/api/v1/executor/batch-pause"})
-  public OfflineApiResponse<Map<String, Object>> batchPause(@RequestBody JsonNode request) {
-    return OfflineApiResponse.success(service.batchCancel(request));
+  public Result<OfflineBatchOperationVO> batchPause(
+      @Valid @RequestBody OfflineBatchOperationDTO requestDTO) {
+    return Result.success(service.batchCancel(requestDTO));
   }
 
   @PostMapping("/api/v1/job/batch-instance/page")
-  public OfflineApiResponse<Map<String, Object>> instancePage(
-      @RequestBody(required = false) JsonNode request) {
-    return OfflineApiResponse.success(service.page(request));
+  public PagingResult<OfflineJobExecutionVO> instancePage(
+      @Valid @RequestBody(required = false) OfflineJobExecutionQueryDTO queryDTO) {
+    return PagingResult.success(service.page(queryDTO));
   }
 
   @GetMapping("/api/v1/job/batch-instance/{id}")
-  public OfflineApiResponse<Map<String, Object>> instance(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.detail(id));
+  public Result<OfflineJobExecutionDetailVO> instance(@PathVariable Long id) {
+    return Result.success(service.detail(id));
   }
 
   @GetMapping("/api/v1/job/batch-instance/{id}/table-metrics")
-  public OfflineApiResponse<Object> tableMetrics(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.tableMetrics(id));
+  public Result<JsonNode> tableMetrics(@PathVariable Long id) {
+    return Result.success(service.tableMetrics(id));
   }
 
   @GetMapping("/api/v1/job/batch-instance/{id}/log")
-  public OfflineApiResponse<String> instanceLog(@PathVariable Long id) {
-    return OfflineApiResponse.success(service.logs(id));
+  public Result<String> instanceLog(@PathVariable Long id) {
+    return Result.success(service.logs(id));
   }
 
   @GetMapping("/api/v1/devops/client/instance/{id}/logs")
-  public OfflineApiResponse<String> compatibilityLog(
+  public Result<String> compatibilityLog(
       @PathVariable Long id,
       @RequestParam(defaultValue = "BATCH") String jobMode) {
     if (!"BATCH".equalsIgnoreCase(jobMode)) {
       throw new IllegalArgumentException("当前接口仅支持 BATCH 离线任务日志");
     }
-    return OfflineApiResponse.success(service.logs(id));
+    return Result.success(service.logs(id));
   }
 }

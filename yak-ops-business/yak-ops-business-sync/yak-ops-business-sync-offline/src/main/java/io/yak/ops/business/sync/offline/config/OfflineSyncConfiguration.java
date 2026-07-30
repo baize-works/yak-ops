@@ -58,7 +58,7 @@ public class OfflineSyncConfiguration {
       @Qualifier("offlineSyncDataSource") DataSource dataSource) throws Exception {
     MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
     factory.setDataSource(dataSource);
-    factory.setTypeAliasesPackage("io.yak.ops.business.sync.offline.model.po");
+    factory.setTypeAliasesPackage("io.yak.ops.common.bean.po.sync.offline");
     MybatisConfiguration configuration = new MybatisConfiguration();
     configuration.setMapUnderscoreToCamelCase(true);
     configuration.setJdbcTypeForNull(JdbcType.NULL);

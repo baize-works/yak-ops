@@ -1,4 +1,4 @@
-package io.yak.ops.business.sync.offline.model.po;
+package io.yak.ops.common.bean.po.sync.offline;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.ToString;
 
-/** 离线同步任务执行记录。 */
+/** 离线同步任务执行记录持久化对象。 */
 @Data
 @TableName("yak_offline_job_execution")
 public class OfflineJobExecutionPO {

@@ -1,7 +1,7 @@
 package io.yak.ops.business.sync.offline.controller;
 
+import io.yak.framework.common.Result;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
-import io.yak.ops.business.sync.offline.model.response.OfflineApiResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ public class OfflineJobScheduleController {
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   @GetMapping("/last5-execution-times")
-  public OfflineApiResponse<List<String>> nextFive(@RequestParam String cron) {
+  public Result<List<String>> nextFive(@RequestParam String cron) {
     if (!StringUtils.hasText(cron)) {
       throw new IllegalArgumentException("cron 不能为空");
     }
@@ -37,6 +37,6 @@ public class OfflineJobScheduleController {
       }
       values.add(cursor.format(FORMATTER));
     }
-    return OfflineApiResponse.success(values);
+    return Result.success(values);
   }
 }
