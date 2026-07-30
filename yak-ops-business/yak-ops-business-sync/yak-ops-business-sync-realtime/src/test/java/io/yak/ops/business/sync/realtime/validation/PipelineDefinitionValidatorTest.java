@@ -22,12 +22,12 @@ class PipelineDefinitionValidatorTest {
           name: mysql-to-doris
         """;
 
-    assertThat(validator.validate(yaml).valid()).isTrue();
+    assertThat(validator.validate(yaml).isValid()).isTrue();
   }
 
   @Test
   void reportsMissingSections() {
-    assertThat(validator.validate("pipeline:\n  name: test").messages())
+    assertThat(validator.validate("pipeline:\n  name: test").getMessages())
         .contains("source 必须是对象且不能为空", "sink 必须是对象且不能为空");
   }
 }

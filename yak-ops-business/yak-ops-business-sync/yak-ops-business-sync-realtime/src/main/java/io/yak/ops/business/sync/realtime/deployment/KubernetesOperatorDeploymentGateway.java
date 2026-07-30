@@ -37,8 +37,8 @@ public class KubernetesOperatorDeploymentGateway implements FlinkCdcDeploymentGa
   public DeploymentResult submit(FlinkCdcSubmission submission) {
     try {
       Path directory = properties.getWorkDirectory()
-          .resolve("job-" + submission.job().getId())
-          .resolve("deployment-" + submission.deployment().getId());
+          .resolve("job-" + submission.getJob().getId())
+          .resolve("deployment-" + submission.getDeployment().getId());
       Files.createDirectories(directory);
       Path manifest = directory.resolve("flink-deployment.yaml");
       Files.writeString(
@@ -50,7 +50,7 @@ public class KubernetesOperatorDeploymentGateway implements FlinkCdcDeploymentGa
           KubernetesManifestBuilder.resourceName(submission),
           command,
           manifest.toString(),
-          result.output());
+          result.getOutput());
     } catch (Exception exception) {
       if (exception instanceof IllegalStateException stateException) {
         throw stateException;
@@ -61,11 +61,11 @@ public class KubernetesOperatorDeploymentGateway implements FlinkCdcDeploymentGa
 
   @Override
   public void cancel(FlinkCdcSubmission submission) {
-    String manifest = submission.deployment().getManifestPath();
+    String manifest = submission.getDeployment().getManifestPath();
     if (manifest == null || manifest.isBlank()) {
       throw new IllegalStateException("部署记录缺少 Kubernetes 清单路径");
     }
-    commandExecutor.execute(kubectl(submission, "delete", "-f", manifest), null, submission.workDirectory());
+    commandExecutor.execute(kubectl(submission, "delete", "-f", manifest), null, submission.getWorkDirectory());
   }
 
   @Override
@@ -77,8 +77,8 @@ public class KubernetesOperatorDeploymentGateway implements FlinkCdcDeploymentGa
         requireExternalId(submission),
         "-o",
         "jsonpath={.status.jobStatus.state}");
-    CommandResult result = commandExecutor.execute(command, null, submission.workDirectory());
-    String raw = result.output().isBlank() ? "UNKNOWN" : result.output().trim();
+    CommandResult result = commandExecutor.execute(command, null, submission.getWorkDirectory());
+    String raw = result.getOutput().isBlank() ? "UNKNOWN" : result.getOutput().trim();
     DeploymentState state = switch (raw.toUpperCase()) {
       case "RUNNING", "RECONCILING", "DEPLOYING" -> DeploymentState.RUNNING;
       case "CANCELED", "CANCELLED" -> DeploymentState.CANCELLED;
@@ -86,7 +86,7 @@ public class KubernetesOperatorDeploymentGateway implements FlinkCdcDeploymentGa
       case "FAILED", "ERROR" -> DeploymentState.FAILED;
       default -> DeploymentState.UNKNOWN;
     };
-    return new DeploymentStatus(state, raw, result.output());
+    return new DeploymentStatus(state, raw, result.getOutput());
   }
 
   @Override
@@ -103,26 +103,26 @@ public class KubernetesOperatorDeploymentGateway implements FlinkCdcDeploymentGa
         "merge",
         "-p",
         patch);
-    CommandResult result = commandExecutor.execute(command, null, submission.workDirectory());
-    return new SavepointResult(nonce, targetDirectory, result.output());
+    CommandResult result = commandExecutor.execute(command, null, submission.getWorkDirectory());
+    return new SavepointResult(nonce, targetDirectory, result.getOutput());
   }
 
   private List<String> kubectl(FlinkCdcSubmission submission, String... arguments) {
     List<String> command = new ArrayList<>();
     command.add(properties.getKubectlCommand());
-    String kubeConfig = submission.deploymentConfig().get("kubeConfig");
+    String kubeConfig = submission.getDeploymentConfig().get("kubeConfig");
     if (kubeConfig != null && !kubeConfig.isBlank()) {
       command.add("--kubeconfig");
       command.add(kubeConfig);
     }
     command.add("-n");
-    command.add(submission.environment().getNamespace());
+    command.add(submission.getEnvironment().getNamespace());
     command.addAll(List.of(arguments));
     return List.copyOf(command);
   }
 
   private static String requireExternalId(FlinkCdcSubmission submission) {
-    String externalId = submission.deployment().getExternalId();
+    String externalId = submission.getDeployment().getExternalId();
     if (externalId == null || externalId.isBlank()) {
       throw new IllegalStateException("部署记录缺少 Kubernetes 资源名称");
     }

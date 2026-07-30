@@ -15,17 +15,17 @@ public final class FlinkCdcCommandBuilder {
   }
 
   public static List<String> submitCommand(FlinkCdcSubmission submission, Path pipelineFile) {
-    Path script = Path.of(submission.cdcVersion().getCdcHome(), "bin", "flink-cdc.sh");
+    Path script = Path.of(submission.getCdcVersion().getCdcHome(), "bin", "flink-cdc.sh");
     List<String> command = new ArrayList<>();
     command.add(script.toString());
     if (DeploymentMode.YARN_APPLICATION.name()
-        .equals(submission.environment().getDeploymentMode())) {
+        .equals(submission.getEnvironment().getDeploymentMode())) {
       command.add("-t");
       command.add("yarn-application");
     }
-    if (submission.savepointPath() != null && !submission.savepointPath().isBlank()) {
+    if (submission.getSavepointPath() != null && !submission.getSavepointPath().isBlank()) {
       command.add("-s");
-      command.add(submission.savepointPath().trim());
+      command.add(submission.getSavepointPath().trim());
     }
     mergedRuntimeOptions(submission).entrySet().stream()
         .sorted(Comparator.comparing(Map.Entry::getKey))
@@ -36,10 +36,10 @@ public final class FlinkCdcCommandBuilder {
 
   public static Map<String, String> processEnvironment(FlinkCdcSubmission submission) {
     Map<String, String> environment = new LinkedHashMap<>();
-    if (submission.environment().getFlinkHome() != null) {
-      environment.put("FLINK_HOME", submission.environment().getFlinkHome());
+    if (submission.getEnvironment().getFlinkHome() != null) {
+      environment.put("FLINK_HOME", submission.getEnvironment().getFlinkHome());
     }
-    submission.deploymentConfig().forEach((key, value) -> {
+    submission.getDeploymentConfig().forEach((key, value) -> {
       if (key.startsWith("env.") && key.length() > 4) {
         environment.put(key.substring(4), value);
       }
@@ -49,21 +49,21 @@ public final class FlinkCdcCommandBuilder {
 
   private static Map<String, String> mergedRuntimeOptions(FlinkCdcSubmission submission) {
     Map<String, String> merged = new LinkedHashMap<>();
-    DeploymentMode mode = DeploymentMode.valueOf(submission.environment().getDeploymentMode());
+    DeploymentMode mode = DeploymentMode.valueOf(submission.getEnvironment().getDeploymentMode());
     if (mode == DeploymentMode.YARN_SESSION) {
       merged.put("execution.target", "yarn-session");
-      putIfPresent(merged, "yarn.application.id", submission.environment().getClusterId());
+      putIfPresent(merged, "yarn.application.id", submission.getEnvironment().getClusterId());
     } else if (mode == DeploymentMode.KUBERNETES_SESSION) {
       merged.put("execution.target", "kubernetes-session");
-      putIfPresent(merged, "kubernetes.cluster-id", submission.environment().getClusterId());
-      putIfPresent(merged, "kubernetes.namespace", submission.environment().getNamespace());
+      putIfPresent(merged, "kubernetes.cluster-id", submission.getEnvironment().getClusterId());
+      putIfPresent(merged, "kubernetes.namespace", submission.getEnvironment().getNamespace());
     }
-    submission.deploymentConfig().forEach((key, value) -> {
+    submission.getDeploymentConfig().forEach((key, value) -> {
       if (key.startsWith("flink.") && key.length() > 6) {
         merged.put(key.substring(6), value);
       }
     });
-    merged.putAll(submission.runtimeOptions());
+    merged.putAll(submission.getRuntimeOptions());
     return merged;
   }
 

@@ -99,7 +99,7 @@ public class RealtimeJobService {
   @Transactional(transactionManager = "realtimeSyncTransactionManager")
   public ValidationResult validate(Long id) {
     RealtimeJobPO job = get(id);
-    List<String> messages = new ArrayList<>(pipelineValidator.validate(job.getPipelineYaml()).messages());
+    List<String> messages = new ArrayList<>(pipelineValidator.validate(job.getPipelineYaml()).getMessages());
     try {
       RealtimeEnvironmentPO environment = environmentService.requireEnabled(job.getEnvironmentId());
       FlinkCdcVersionPO version = versionService.requireEnabled(job.getCdcVersionId());
@@ -113,7 +113,7 @@ public class RealtimeJobService {
     ValidationResult result = messages.isEmpty()
         ? ValidationResult.success()
         : ValidationResult.failure(messages);
-    updateState(id, result.valid() ? JobState.VALIDATED : JobState.DRAFT, null);
+    updateState(id, result.isValid() ? JobState.VALIDATED : JobState.DRAFT, null);
     return result;
   }
 
