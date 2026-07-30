@@ -76,11 +76,13 @@ public class OfflineJobDefinitionService {
     String jobName = requiredText(basic, "jobName", "任务名称不能为空");
     String jobDesc = text(basic, "jobDesc", null);
     String mode = text(basic, "mode", text(request, "mode", "GUIDE_SINGLE"));
+    ensureGuideMode(mode);
     ensureNameUnique(jobName, id);
 
     OfflineJobDefinitionPO existing = definitionDao.selectById(id);
     ensureEditable(existing);
-    LinkUpHoconBuilder.BuildResult result = hoconBuilder.build(request);
+    LinkUpHoconBuilder.BuildResult result =
+        isGuideReady(request, mode) ? hoconBuilder.build(request) : null;
     LocalDateTime now = LocalDateTime.now();
     OfflineJobDefinitionPO definition = existing == null ? new OfflineJobDefinitionPO() : existing;
     definition.setId(id);
@@ -88,13 +90,7 @@ public class OfflineJobDefinitionService {
     definition.setJobDesc(trimToNull(jobDesc));
     definition.setMode(mode);
     definition.setDefinitionJson(write(request));
-    definition.setHoconConfig(result.getHocon());
-    definition.setSourceType(enumName(result.getSourceDataSource()));
-    definition.setSinkType(enumName(result.getSinkDataSource()));
-    definition.setSourceDatasourceId(result.getSourceDataSource().getId());
-    definition.setSinkDatasourceId(result.getSinkDataSource().getId());
-    definition.setSourceTable(result.getSourceTable());
-    definition.setSinkTable(result.getSinkTable());
+    applyGuideBuildResult(definition, result);
     definition.setScheduleJson(writeNullable(request.get("schedule")));
     definition.setEnvJson(writeNullable(request.get("env")));
     definition.setVersion(existing == null || existing.getVersion() == null ? 1 : existing.getVersion() + 1);
@@ -209,7 +205,7 @@ public class OfflineJobDefinitionService {
     } else {
       JsonNode detail = read(definition.getDefinitionJson());
       LinkUpHoconBuilder.BuildResult result = hoconBuilder.build(detail);
-      definition.setHoconConfig(result.getHocon());
+      applyGuideBuildResult(definition, result);
     }
     definition.setReleaseState("ONLINE");
     definition.setUpdateTime(LocalDateTime.now());
@@ -312,6 +308,113 @@ public class OfflineJobDefinitionService {
     if (definitionDao.existsByName(normalized, excludedId)) {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + normalized);
     }
+  }
+
+  private void ensureGuideMode(String mode) {
+    if (!"GUIDE_SINGLE".equals(mode) && !"GUIDE_MULTI".equals(mode)) {
+      throw new IllegalArgumentException("仅支持 GUIDE_SINGLE 和 GUIDE_MULTI 向导模式");
+    }
+  }
+
+  private boolean isGuideReady(JsonNode request, String mode) {
+    JsonNode workflow = request.path("workflow");
+    JsonNode basic = request.path("basic");
+    if (!workflow.isObject()) {
+      return false;
+    }
+    JsonNode source = endpointConfig(workflow, "source");
+    JsonNode sink = endpointConfig(workflow, "sink");
+    if (source == null || sink == null) {
+      return false;
+    }
+    if (resolveDataSourceId(source, basic, workflow, true) <= 0L
+        || resolveDataSourceId(sink, basic, workflow, false) <= 0L) {
+      return false;
+    }
+    if ("GUIDE_MULTI".equals(mode)) {
+      return hasConfiguredTables(source.path("tables"))
+          || StringUtils.hasText(text(source, "tablePattern", null));
+    }
+    boolean sourceReady = "sql".equalsIgnoreCase(text(source, "readMode", "table"))
+        ? StringUtils.hasText(text(source, "sql", null))
+        : StringUtils.hasText(text(source, "table", null));
+    boolean sinkReady = StringUtils.hasText(
+        text(sink, "targetTableName", text(sink, "table", null)));
+    return sourceReady && sinkReady;
+  }
+
+  private JsonNode endpointConfig(JsonNode workflow, String kind) {
+    JsonNode nodes = workflow.path("nodes");
+    if (!nodes.isArray()) {
+      return null;
+    }
+    for (JsonNode node : nodes) {
+      String nodeType = text(node.path("data"), "nodeType", text(node, "type", null));
+      if (kind.equalsIgnoreCase(nodeType)) {
+        JsonNode config = node.path("data").path("config");
+        return config.isObject() ? config : null;
+      }
+    }
+    return null;
+  }
+
+  private long resolveDataSourceId(
+      JsonNode config, JsonNode basic, JsonNode workflow, boolean source) {
+    long id = config.path("dataSourceId").asLong(0L);
+    if (id <= 0L) {
+      id = basic.path(source ? "sourceDataSourceId" : "targetDataSourceId").asLong(0L);
+    }
+    if (id <= 0L) {
+      id = workflow.path(source ? "sourceDataSourceId" : "targetDataSourceId").asLong(0L);
+    }
+    return id;
+  }
+
+  private boolean hasConfiguredTables(JsonNode tables) {
+    if (tables == null || tables.isNull() || tables.isMissingNode()) {
+      return false;
+    }
+    if (tables.isTextual()) {
+      return StringUtils.hasText(tables.asText());
+    }
+    if (tables.isArray()) {
+      for (JsonNode table : tables) {
+        if (hasConfiguredTables(table)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    if (tables.isObject()) {
+      var values = tables.elements();
+      while (values.hasNext()) {
+        if (hasConfiguredTables(values.next())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private void applyGuideBuildResult(
+      OfflineJobDefinitionPO definition, LinkUpHoconBuilder.BuildResult result) {
+    if (result == null) {
+      definition.setHoconConfig("");
+      definition.setSourceType(null);
+      definition.setSinkType(null);
+      definition.setSourceDatasourceId(null);
+      definition.setSinkDatasourceId(null);
+      definition.setSourceTable(null);
+      definition.setSinkTable(null);
+      return;
+    }
+    definition.setHoconConfig(result.getHocon());
+    definition.setSourceType(enumName(result.getSourceDataSource()));
+    definition.setSinkType(enumName(result.getSinkDataSource()));
+    definition.setSourceDatasourceId(result.getSourceDataSource().getId());
+    definition.setSinkDatasourceId(result.getSinkDataSource().getId());
+    definition.setSourceTable(result.getSourceTable());
+    definition.setSinkTable(result.getSinkTable());
   }
 
   private String enumName(DataSourcePO dataSource) {
