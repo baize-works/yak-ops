@@ -6,6 +6,18 @@ export enum Operate {
   Edit,
 }
 
+export interface Pagination {
+  total: number;
+  pages: number;
+  pageNo: number;
+  pageSize: number;
+}
+
+export interface PagingData<T> {
+  bizData: T[];
+  pagination: Pagination;
+}
+
 export interface LinkupJobDefinition {
   id?: string | number;
   jobName?: string;
@@ -18,36 +30,98 @@ export interface LinkupJobDefinition {
   updateTime?: string;
 }
 
+export interface OfflineJobDefinitionVO extends LinkupJobDefinition {
+  jobType?: 'BATCH';
+  mode?: string;
+  releaseState?: string;
+  sourceType?: string;
+  sinkType?: string;
+  sourceDatasourceId?: string | number;
+  sinkDatasourceId?: string | number;
+  sourceDatasourceName?: string;
+  sinkDatasourceName?: string;
+  sourceTable?: string;
+  sinkTable?: string;
+  lastJobStatus?: string;
+  lastErrorMessage?: string;
+  instanceId?: string | number;
+  engineJobId?: string;
+  runMode?: string;
+  duration?: number;
+  readRowCount?: number;
+  qps?: number;
+  syncSize?: string;
+  cronExpression?: string;
+  scheduleStatus?: string;
+  lastScheduleTime?: string;
+  nextScheduleTime?: string;
+}
+
+export interface OfflineJobExecutionVO {
+  id: string | number;
+  jobDefinitionId: string | number;
+  engineJobId?: string;
+  status?: string;
+  errorMessage?: string;
+  sourceRecordCount: number;
+  sinkSuccessRecordCount: number;
+  sourceReadBytes: number;
+  sinkWrittenBytes: number;
+  qps: number;
+  durationMillis: number;
+  createTime?: string;
+  startTime?: string;
+  endTime?: string;
+  updateTime?: string;
+}
+
+export interface OfflineBatchOperationError {
+  jobDefinitionId?: string | number;
+  message?: string;
+}
+
+export interface OfflineBatchOperationResult {
+  successCount: number;
+  failedCount: number;
+  errors: OfflineBatchOperationError[];
+}
+
 export type OfflineApiResponse<T> = ApiResponse<T>;
 
 export const apiPrefix = '/api/v1/job/batch-definition';
 
 export const linkupJobDefinitionApi = {
   /** SCRIPT 模式保存/更新。 */
-  saveOrUpdateScript: (data: any) => {
+  saveOrUpdateScript: (
+    data: Record<string, unknown>,
+  ): Promise<OfflineApiResponse<string | number>> => {
     return HttpUtils.post(`${apiPrefix}/script/saveOrUpdate`, data);
   },
 
   /** GUIDE_SINGLE 模式保存/更新。 */
-  saveOrUpdateGuideSingle: (data: any) => {
+  saveOrUpdateGuideSingle: (
+    data: Record<string, unknown>,
+  ): Promise<OfflineApiResponse<string | number>> => {
     return HttpUtils.post(`${apiPrefix}/guide-single/saveOrUpdate`, data);
   },
 
   /** GUIDE_MULTI 模式保存/更新。 */
-  saveOrUpdateGuideMulti: (data: any) => {
+  saveOrUpdateGuideMulti: (
+    data: Record<string, unknown>,
+  ): Promise<OfflineApiResponse<string | number>> => {
     return HttpUtils.post(`${apiPrefix}/guide-multi/saveOrUpdate`, data);
   },
 
   selectById: (
     id: string | number,
-  ): Promise<OfflineApiResponse<LinkupJobDefinition>> => {
+  ): Promise<OfflineApiResponse<OfflineJobDefinitionVO>> => {
     return HttpUtils.get(`${apiPrefix}/${id}`);
   },
 
   /** 编辑页详情查询。 */
   selectEditDetail: (
     id: string | number,
-  ): Promise<OfflineApiResponse<any>> => {
+  ): Promise<OfflineApiResponse<Record<string, unknown>>> => {
     return HttpUtils.get(`${apiPrefix}/${id}/edit-detail`);
   },
 
@@ -55,7 +129,7 @@ export const linkupJobDefinitionApi = {
     return HttpUtils.get(`${apiPrefix}/get-unique-id`);
   },
 
-  delete: (id: string | number) => {
+  delete: (id: string | number): Promise<OfflineApiResponse<boolean>> => {
     return HttpUtils.delete(`${apiPrefix}/${id}`);
   },
 
@@ -73,32 +147,36 @@ export const linkupJobDefinitionApi = {
     return HttpUtils.put(`${apiPrefix}/${id}/offline`);
   },
 
-  page: (data: any): Promise<OfflineApiResponse<any>> => {
+  page: (
+    data: Record<string, unknown>,
+  ): Promise<OfflineApiResponse<PagingData<OfflineJobDefinitionVO>>> => {
     return HttpUtils.post(`${apiPrefix}/page`, data);
   },
 
   /** GUIDE_SINGLE 模式预览 HOCON。 */
   buildGuideSingleConfig: (
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<OfflineApiResponse<string>> => {
     return HttpUtils.post(`${apiPrefix}/guide-single/build-config`, data);
   },
 
   /** GUIDE_MULTI 模式预览 HOCON。 */
   buildGuideMultiConfig: (
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<OfflineApiResponse<string>> => {
     return HttpUtils.post(`${apiPrefix}/guide-multi/build-config`, data);
   },
 
   /** SCRIPT 模式预览 HOCON。 */
   buildScriptConfig: (
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<OfflineApiResponse<string>> => {
     return HttpUtils.post(`${apiPrefix}/script/build-config`, data);
   },
 
-  hocon: (data: any) => {
+  hocon: (
+    data: Record<string, unknown>,
+  ): Promise<OfflineApiResponse<string>> => {
     return HttpUtils.post(`${apiPrefix}/buildHoconConfig`, data);
   },
 };
@@ -107,17 +185,21 @@ export const linkupJobDefinitionApi = {
 export const executeApiPrefix = '/api/v1/job/batch-execution';
 
 export const linkupJobExecuteApi = {
-  health: (): Promise<OfflineApiResponse<any>> => {
+  health: (): Promise<OfflineApiResponse<Record<string, unknown>>> => {
     return HttpUtils.get(`${executeApiPrefix}/health`);
   },
 
-  execute: (jobDefineId: string | number) => {
+  execute: (
+    jobDefineId: string | number,
+  ): Promise<OfflineApiResponse<OfflineJobExecutionVO>> => {
     return HttpUtils.get(
       `${executeApiPrefix}/execute?jobDefineId=${encodeURIComponent(jobDefineId)}`,
     );
   },
 
-  pause: (jobInstanceId: string | number) => {
+  pause: (
+    jobInstanceId: string | number,
+  ): Promise<OfflineApiResponse<OfflineJobExecutionVO>> => {
     return HttpUtils.get(
       `${executeApiPrefix}/pause?jobInstanceId=${encodeURIComponent(jobInstanceId)}`,
     );
@@ -127,17 +209,19 @@ export const linkupJobExecuteApi = {
 const instanceApiPrefix = '/api/v1/job/batch-instance';
 
 export const linkupJobInstanceApi = {
-  page: (data: any): Promise<OfflineApiResponse<any>> => {
+  page: (
+    data: Record<string, unknown>,
+  ): Promise<OfflineApiResponse<PagingData<OfflineJobExecutionVO>>> => {
     return HttpUtils.post(`${instanceApiPrefix}/page`, data);
   },
 
   selectById: (
     id: string | number,
-  ): Promise<OfflineApiResponse<any>> => {
+  ): Promise<OfflineApiResponse<Record<string, unknown>>> => {
     return HttpUtils.get(`${instanceApiPrefix}/${id}`);
   },
 
-  getLog(instanceId: string | number) {
+  getLog(instanceId: string | number): Promise<OfflineApiResponse<string>> {
     return HttpUtils.get(`${instanceApiPrefix}/${instanceId}/log`);
   },
 };
@@ -145,8 +229,10 @@ export const linkupJobInstanceApi = {
 const linkupJobScheduleApiPrefix = '/api/v1/job/schedule';
 
 export const linkupJobScheduleApi = {
-  getLast5ExecutionTimes: (cron: string) => {
-    return HttpUtils.get<any[]>(
+  getLast5ExecutionTimes: (
+    cron: string,
+  ): Promise<OfflineApiResponse<string[]>> => {
+    return HttpUtils.get(
       `${linkupJobScheduleApiPrefix}/last5-execution-times?cron=${encodeURIComponent(cron)}`,
     );
   },
@@ -173,21 +259,27 @@ export const linkupCopilotApi = {
 };
 
 export const batchJobInstanceApi = {
-  page: (data: any) => {
+  page: (
+    data: Record<string, unknown>,
+  ): Promise<OfflineApiResponse<PagingData<OfflineJobExecutionVO>>> => {
     return HttpUtils.post('/api/v1/job/batch-instance/page', data);
   },
 
-  detail: (id: string | number) => {
+  detail: (
+    id: string | number,
+  ): Promise<OfflineApiResponse<Record<string, unknown>>> => {
     return HttpUtils.get(`/api/v1/job/batch-instance/${id}`);
   },
 
-  tableMetrics: (instanceId: string | number) => {
+  tableMetrics: (
+    instanceId: string | number,
+  ): Promise<OfflineApiResponse<unknown>> => {
     return HttpUtils.get(
       `/api/v1/job/batch-instance/${instanceId}/table-metrics`,
     );
   },
 
-  log: (instanceId: string | number) => {
+  log: (instanceId: string | number): Promise<OfflineApiResponse<string>> => {
     return HttpUtils.get(`/api/v1/job/batch-instance/${instanceId}/log`);
   },
 };
