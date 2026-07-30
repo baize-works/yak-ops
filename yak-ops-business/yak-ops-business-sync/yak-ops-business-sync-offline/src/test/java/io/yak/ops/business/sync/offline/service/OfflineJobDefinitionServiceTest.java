@@ -94,7 +94,7 @@ class OfflineJobDefinitionServiceTest {
     assertThat(saved.getSourceDatasourceId()).isNull();
     assertThat(saved.getSinkDatasourceId()).isNull();
     assertThat(saved.getDefinitionJson()).contains("\"workflow\"");
-    verify(dataSourceDao, never()).selectById(any());
+    verify(dataSourceDao, never()).selectById(any(Long.class));
   }
 
   @Test
@@ -168,8 +168,8 @@ class OfflineJobDefinitionServiceTest {
     dataSource.setDbType(DataSourceDbType.MYSQL);
     dataSource.setJdbcUrl("jdbc:mysql://127.0.0.1:3306/test");
     dataSource.setConnectionParams(
-        "{\"url\":\"jdbc:mysql://127.0.0.1:3306/test\"," 
-            + "\"driver\":\"com.mysql.cj.jdbc.Driver\"," 
+        "{\"url\":\"jdbc:mysql://127.0.0.1:3306/test\","
+            + "\"driver\":\"com.mysql.cj.jdbc.Driver\","
             + "\"username\":\"root\",\"password\":\"secret\"}");
     return dataSource;
   }
