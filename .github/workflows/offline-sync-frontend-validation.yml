@@ -1,0 +1,31 @@
+name: Offline sync frontend validation
+
+on:
+  pull_request:
+    paths:
+      - 'yak-ops-ui/**'
+      - '.github/workflows/offline-sync-frontend-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install frontend dependencies
+        working-directory: yak-ops-ui
+        run: npm install --no-audit --no-fund
+
+      - name: Type-check frontend
+        working-directory: yak-ops-ui
+        run: npm run tsc
