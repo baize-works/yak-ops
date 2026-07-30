@@ -307,6 +307,26 @@ export const endpointNode = (
     (node) => node?.data?.nodeType === kind || node?.type === kind,
   );
 
+const resetConnectionDependentConfig = (
+  kind: EndpointKind,
+  config: Record<string, any>,
+): Record<string, any> =>
+  kind === 'source'
+    ? {
+        ...config,
+        table: '',
+        tables: [],
+        tablePattern: '',
+        sql: '',
+      }
+    : {
+        ...config,
+        table: '',
+        targetTableName: '',
+        sql: '',
+        primaryKey: '',
+      };
+
 const replaceEndpointNode = (
   workflow: SyncWorkflow,
   kind: EndpointKind,
@@ -316,13 +336,19 @@ const replaceEndpointNode = (
   const meta = connectorMeta(record)!;
   const existing = endpointNode(workflow, kind);
   const nextNode = existing || createEndpointNode('draft', kind, record);
+  const previousConfig = nextNode.data?.config || {};
+  const dataSourceChanged =
+    String(previousConfig.dataSourceId || '') !== recordId;
+  const nextConfig = dataSourceChanged
+    ? resetConnectionDependentConfig(kind, previousConfig)
+    : previousConfig;
   const nextData = {
     ...(nextNode.data || {}),
     dbType: meta.dbType,
     connectorType: meta.connectorType,
     pluginName: meta.pluginName,
     config: {
-      ...(nextNode.data?.config || {}),
+      ...nextConfig,
       dataSourceId: recordId,
       dbType: meta.dbType,
       connectorType: meta.connectorType,
