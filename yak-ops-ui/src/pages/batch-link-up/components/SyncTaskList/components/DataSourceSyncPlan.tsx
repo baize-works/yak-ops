@@ -1,4 +1,4 @@
-import { selectDataSourceById } from "@/pages/data-source/service";
+import { fetchDataSourceDetail } from "@/pages/data-source/service";
 import { DoubleRightOutlined } from "@ant-design/icons";
 import { Empty, Popover } from "antd";
 import { CSSProperties, useState } from "react";
@@ -402,11 +402,11 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    selectDataSourceById(record?.sourceDatasourceId).then(
+                    fetchDataSourceDetail(record?.sourceDatasourceId).then(
                       (data) => {
                         if (data?.code === 0) {
                           setJsonData(
-                            safeParse(data?.data?.connectionParams || {})
+                            safeParse(data?.data?.originalJson || {})
                           );
                           setSourcePopoverVisible(true);
                         }
@@ -493,11 +493,11 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    selectDataSourceById(record?.sinkDatasourceId).then(
+                    fetchDataSourceDetail(record?.sinkDatasourceId).then(
                       (data) => {
                         if (data?.code === 0) {
                           setJsonData(
-                            safeParse(data?.data?.connectionParams || {})
+                            safeParse(data?.data?.originalJson || {})
                           );
                           setSinkPopoverVisible(true);
                         }
