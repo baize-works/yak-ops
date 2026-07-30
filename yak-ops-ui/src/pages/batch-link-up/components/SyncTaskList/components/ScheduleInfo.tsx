@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { Badge, message, Popover } from "antd";
 import { useState } from "react";
 import { linkupJobScheduleApi } from "../../../api";
@@ -65,7 +66,7 @@ const ScheduleInfo: React.FC<ExecutionStatusProps> = ({ record }) => {
                 linkupJobScheduleApi
                   .getLast5ExecutionTimes(record?.cronExpression)
                   .then((data) => {
-                    if (data?.code === 0) {
+                    if (data?.code === API_SUCCESS_CODE) {
                       setCronExpression(data?.data || []);
                     } else {
                       message.error(data?.msg);

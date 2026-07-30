@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { fetchDataSourceDetail } from "@/pages/data-source/service";
 import { DoubleRightOutlined } from "@ant-design/icons";
 import { Empty, Popover } from "antd";
@@ -404,7 +405,7 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                     e.preventDefault();
                     fetchDataSourceDetail(record?.sourceDatasourceId).then(
                       (data) => {
-                        if (data?.code === 0) {
+                        if (data?.code === API_SUCCESS_CODE) {
                           setJsonData(
                             safeParse(data?.data?.originalJson || {})
                           );
@@ -495,7 +496,7 @@ const DataSourceSyncPlan: React.FC<DataSourceSyncPlanProps> = ({ record }) => {
                     e.preventDefault();
                     fetchDataSourceDetail(record?.sinkDatasourceId).then(
                       (data) => {
-                        if (data?.code === 0) {
+                        if (data?.code === API_SUCCESS_CODE) {
                           setJsonData(
                             safeParse(data?.data?.originalJson || {})
                           );

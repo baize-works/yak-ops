@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { FileSearchOutlined } from "@ant-design/icons";
 import { Popover, Tooltip, message } from "antd";
 import { useState } from "react";
@@ -31,7 +32,7 @@ export const HoconPreview = ({ onGenerate, checkStat, checkGroups }: any) => {
     setLoading(true);
     try {
       const data = await onGenerate();
-      if (data?.code === 0) {
+      if (data?.code === API_SUCCESS_CODE) {
         setContent(data.data);
         setOpen(true);
       } else {

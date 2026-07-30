@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 // import { history, useIntl } from "@umijs/max";
 // import { Divider, Table, message } from "antd";
 // import { TableRowSelection } from "antd/es/table/interface";
@@ -322,7 +323,7 @@
 //     try {
 //       const data = await taskExecutionApi.batchExecute(selectedRowKeys);
 
-//       if (data?.code === 0) {
+//       if (data?.code === API_SUCCESS_CODE) {
 //         message.success(
 //           intl.formatMessage({
 //             id: "pages.job.batch.start.success",
@@ -353,7 +354,7 @@
 //     try {
 //       const data = await taskExecutionApi.batchCancel(selectedRowKeys);
 
-//       if (data?.code === 0) {
+//       if (data?.code === API_SUCCESS_CODE) {
 //         message.success(
 //           intl.formatMessage({
 //             id: "pages.job.batch.stop.success",

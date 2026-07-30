@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { SyncOutlined } from "@ant-design/icons";
 import { Sender, SenderProps } from "@ant-design/x";
 import { Dropdown, Flex, GetRef, MenuProps, message } from "antd";
@@ -173,7 +174,7 @@ function useDataSources() {
   useEffect(() => {
     fetchDataSourceAll()
       .then((res: any) => {
-        if (res?.code !== 0) {
+        if (res?.code !== API_SUCCESS_CODE) {
           
           return;
         }
@@ -231,7 +232,7 @@ function useTables(
       .listTable(String(datasourceId))
       .then((res: any) => {
         if (cancelled) return;
-        if (res?.code !== 0)
+        if (res?.code !== API_SUCCESS_CODE)
           throw new Error(res?.message || "Load tables failed");
 
         const tables: string[] = (res?.data || [])
@@ -390,7 +391,7 @@ const App: React.FC = () => {
             intentType: activeAgentKey,
           };
           linkupCopilotApi.copilot(params).then((data) => {
-            if (data?.code === 0) {
+            if (data?.code === API_SUCCESS_CODE) {
               senderRef.current?.clear?.();
             } else {
               senderRef.current?.clear?.();

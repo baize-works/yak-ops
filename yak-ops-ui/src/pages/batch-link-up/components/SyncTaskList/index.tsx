@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import { CopyOutlined } from "@ant-design/icons";
 import { history, useIntl } from "@umijs/max";
 import { Divider, Empty, Table, Tooltip, message } from "antd";
@@ -484,7 +485,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
     try {
       const data = await batchJobExecutorApi.batchExecute(selectedRowKeys);
 
-      if (data?.code === 0) {
+      if (data?.code === API_SUCCESS_CODE) {
         const result = data?.data;
 
         message.success(
@@ -511,7 +512,7 @@ const App: React.FC<Props> = ({ goDetail }) => {
     try {
       const data = await batchJobExecutorApi.batchPause(selectedRowKeys);
 
-      if (data?.code === 0) {
+      if (data?.code === API_SUCCESS_CODE) {
         const result = data?.data;
 
         message.success(

@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 
 import { message } from "antd";
 import { debounce } from "lodash";
@@ -40,7 +41,7 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
 
   const fetchDataSourceOptionsU = useCallback(async (dbType: string) => {
     const res = await fetchDataSourceOptions(dbType);
-    if (res?.code === 0 && res?.data?.length) {
+    if (res?.code === API_SUCCESS_CODE && res?.data?.length) {
       return buildDataSourceOptions(res.data);
     }
     return [];
@@ -55,7 +56,7 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
         setLoading(true);
 
         const res = await dataSourceCatalogApi.listTable(dataSourceId);
-        if (res?.code === 0) {
+        if (res?.code === API_SUCCESS_CODE) {
           const tmp = buildTableItems(res.data);
 
           setData(tmp);
@@ -87,7 +88,7 @@ export const useWholeSync = ({ baseForm, form }: UseWholeSyncProps) => {
           mode,
           keyword
         );
-        if (res?.code === 0) {
+        if (res?.code === API_SUCCESS_CODE) {
           setReadOnlyTables(buildTableItems(res.data));
         } 
       } catch (err) {

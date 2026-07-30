@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import {message} from "antd";
 
 import {linkupJobDefinitionApi} from "@/pages/batch-link-up/api";
@@ -239,7 +240,7 @@ export function useCustomWorkflowState({
         finalPayload
       );
 
-      if (res?.code !== 0) {
+      if (res?.code !== API_SUCCESS_CODE) {
         return;
       }
 

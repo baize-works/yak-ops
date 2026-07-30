@@ -1,3 +1,4 @@
+import { API_SUCCESS_CODE } from '@/services/http/response';
 import api from "@/api";
 import HttpUtils from "@/utils/HttpUtils";
 import { message } from "antd";
@@ -16,7 +17,7 @@ import { useState } from "react";
     HttpUtils.post(api.datasource + '/select', {
       type: value?.toLocaleUpperCase(),
     }).then((data) => {
-      if (data?.code === 0) {
+      if (data?.code === API_SUCCESS_CODE) {
         setSources(data?.data);
       } else {
         message.error(data?.message);
