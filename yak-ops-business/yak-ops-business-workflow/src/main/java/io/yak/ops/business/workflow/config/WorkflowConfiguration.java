@@ -1,18 +1,17 @@
 package io.yak.ops.business.workflow.config;
 
-import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.yak.ops.common.constant.workflow.WorkflowConstant;
 import io.yak.ops.business.workflow.dag.WorkflowDagCompiler;
+import io.yak.ops.common.constant.workflow.WorkflowConstant;
+import io.yak.ops.common.mybatis.MybatisPlusFactorySupport;
 import io.yak.ops.core.workflow.LocalWorkflowTaskDispatcher;
 import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
 import io.yak.ops.spi.workflow.WorkflowTaskExecutor;
 import java.util.List;
 import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.type.JdbcType;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -22,6 +21,7 @@ import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomi
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -64,14 +64,15 @@ public class WorkflowConfiguration {
     MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
     factory.setDataSource(dataSource);
     factory.setTypeAliasesPackage("io.yak.ops.common.bean.po.workflow");
-    factory.setMapperLocations(new PathMatchingResourcePatternResolver()
-        .getResources("classpath*:mapper/workflow/*.xml"));
 
-    MybatisConfiguration configuration = new MybatisConfiguration();
-    configuration.setMapUnderscoreToCamelCase(true);
-    configuration.setJdbcTypeForNull(JdbcType.NULL);
-    configuration.setCacheEnabled(false);
-    factory.setConfiguration(configuration);
+    Resource[] mapperLocations = new PathMatchingResourcePatternResolver()
+        .getResources("classpath*:mapper/workflow/*.xml");
+    if (mapperLocations.length > 0) {
+      factory.setMapperLocations(mapperLocations);
+    }
+
+    factory.setConfiguration(MybatisPlusFactorySupport.createConfiguration());
+    factory.setGlobalConfig(MybatisPlusFactorySupport.createGlobalConfig());
     return factory.getObject();
   }
 
