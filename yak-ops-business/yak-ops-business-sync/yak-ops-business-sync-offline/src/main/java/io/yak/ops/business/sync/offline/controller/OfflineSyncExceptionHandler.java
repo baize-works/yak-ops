@@ -5,6 +5,7 @@ import io.yak.framework.common.Result;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -34,6 +35,12 @@ public class OfflineSyncExceptionHandler {
         .distinct()
         .collect(Collectors.joining("；"));
     return Result.buildParamIllegal(message);
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public Result<Void> handleUnreadableMessage(HttpMessageNotReadableException exception) {
+    return Result.buildParamIllegal("请求体格式或字段类型不正确");
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
