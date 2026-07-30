@@ -1,0 +1,73 @@
+name: Offline sync contract cleanup
+
+on:
+  push:
+    branches:
+      - agent/offline-sync-link-up-integration
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/offline-sync-link-up-integration
+          fetch-depth: 0
+
+      - name: Replace legacy success-code comparisons
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('yak-ops-ui/src/pages/batch-link-up')
+          pattern = re.compile(
+              r'(\b[A-Za-z_$][\w$]*(?:\?\.|\.)code)\s*(===|!==|==|!=)\s*0\b'
+          )
+          import_line = "import { API_SUCCESS_CODE } from '@/services/http/response';\n"
+          changed = []
+
+          for path in sorted(list(root.rglob('*.ts')) + list(root.rglob('*.tsx'))):
+              original = path.read_text(encoding='utf-8')
+              updated = pattern.sub(
+                  lambda match: f"{match.group(1)} {match.group(2)} API_SUCCESS_CODE",
+                  original,
+              )
+              if updated == original:
+                  continue
+              if 'API_SUCCESS_CODE' in updated and import_line.strip() not in updated:
+                  updated = import_line + updated
+              path.write_text(updated, encoding='utf-8')
+              changed.append(str(path))
+
+          if not changed:
+              raise SystemExit('No legacy success-code comparisons were found')
+
+          remaining = []
+          for path in sorted(list(root.rglob('*.ts')) + list(root.rglob('*.tsx'))):
+              text = path.read_text(encoding='utf-8')
+              if pattern.search(text):
+                  remaining.append(str(path))
+
+          if remaining:
+              raise SystemExit('Legacy comparisons remain: ' + ', '.join(remaining))
+
+          print('Updated files:')
+          print('\n'.join(changed))
+          PY
+
+      - name: Commit cleanup and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/offline-sync-contract-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add yak-ops-ui/src/pages/batch-link-up .github/workflows/offline-sync-contract-cleanup.yml
+          git commit -m "fix(ui): align offline sync success-code checks"
+          git push origin HEAD:agent/offline-sync-link-up-integration
