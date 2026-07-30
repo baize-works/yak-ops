@@ -29,7 +29,10 @@ public class OfflineExecutionSynchronizer {
       "PENDING",
       "SCHEDULED",
       "RUNNING",
-      "CANCELING");
+      "FAILING",
+      "DOING_SAVEPOINT",
+      "CANCELING",
+      "CANCELLING");
 
   private final LinkUpClient linkUpClient;
   private final OfflineJobDefinitionDao definitionDao;
@@ -138,10 +141,7 @@ public class OfflineExecutionSynchronizer {
     if ("SUCCEEDED".equals(normalized)) {
       return "FINISHED";
     }
-    if ("SUBMITTED".equals(normalized) || "CANCELLING".equals(normalized)) {
-      return "RUNNING";
-    }
-    return normalized;
+    return ACTIVE_STATUSES.contains(normalized) ? "RUNNING" : normalized;
   }
 
   private long number(JsonNode node, String field, long fallback) {
