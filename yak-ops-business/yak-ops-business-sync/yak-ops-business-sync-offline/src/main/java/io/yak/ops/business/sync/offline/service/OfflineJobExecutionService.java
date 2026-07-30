@@ -1,20 +1,25 @@
 package io.yak.ops.business.sync.offline.service;
 
-import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.yak.ops.business.sync.offline.dao.mapper.OfflineJobDefinitionMapper;
-import io.yak.ops.business.sync.offline.dao.mapper.OfflineJobExecutionMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import io.yak.framework.common.PagingData;
+import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
+import io.yak.ops.business.sync.offline.dao.OfflineJobDefinitionDao;
+import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
-import io.yak.ops.business.sync.offline.model.po.OfflineJobDefinitionPO;
-import io.yak.ops.business.sync.offline.model.po.OfflineJobExecutionPO;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineBatchOperationDTO;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineJobExecutionQueryDTO;
+import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
+import io.yak.ops.common.bean.po.sync.offline.OfflineJobExecutionPO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineBatchOperationErrorVO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineBatchOperationVO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionDetailVO;
+import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionVO;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -27,25 +32,25 @@ public class OfflineJobExecutionService {
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   private final OfflineJobDefinitionService definitionService;
-  private final OfflineJobDefinitionMapper definitionMapper;
-  private final OfflineJobExecutionMapper executionMapper;
+  private final OfflineJobDefinitionDao definitionDao;
+  private final OfflineJobExecutionDao executionDao;
   private final OfflineExecutionSynchronizer synchronizer;
   private final LinkUpClient linkUpClient;
 
   public OfflineJobExecutionService(
       OfflineJobDefinitionService definitionService,
-      OfflineJobDefinitionMapper definitionMapper,
-      OfflineJobExecutionMapper executionMapper,
+      OfflineJobDefinitionDao definitionDao,
+      OfflineJobExecutionDao executionDao,
       OfflineExecutionSynchronizer synchronizer,
       LinkUpClient linkUpClient) {
     this.definitionService = definitionService;
-    this.definitionMapper = definitionMapper;
-    this.executionMapper = executionMapper;
+    this.definitionDao = definitionDao;
+    this.executionDao = executionDao;
     this.synchronizer = synchronizer;
     this.linkUpClient = linkUpClient;
   }
 
-  public Map<String, Object> execute(Long definitionId) {
+  public OfflineJobExecutionVO execute(Long definitionId) {
     OfflineJobDefinitionPO definition = definitionService.require(definitionId);
     synchronizer.refreshDefinition(definition);
     if (!"ONLINE".equalsIgnoreCase(definition.getReleaseState())) {
@@ -71,13 +76,13 @@ public class OfflineJobExecutionService {
     execution.setDurationMillis(0L);
     execution.setCreateTime(now);
     execution.setUpdateTime(now);
-    executionMapper.insert(execution);
+    executionDao.insert(execution);
 
     definition.setLastExecutionId(execution.getId());
     definition.setLastJobStatus("RUNNING");
     definition.setLastErrorMessage(null);
     definition.setUpdateTime(now);
-    definitionMapper.updateById(definition);
+    definitionDao.updateById(definition);
 
     try {
       JsonNode summary = linkUpClient.submit(definition.getHoconConfig());
@@ -87,17 +92,17 @@ public class OfflineJobExecutionService {
       }
       execution.setEngineJobId(engineJobId);
       definition.setLastEngineJobId(engineJobId);
-      definitionMapper.updateById(definition);
-      executionMapper.updateById(execution);
+      definitionDao.updateById(definition);
+      executionDao.updateById(execution);
       synchronizer.apply(definition, execution, summary);
-      return toView(execution);
+      return toVO(execution);
     } catch (RuntimeException exception) {
       fail(definition, execution, exception.getMessage());
       throw exception;
     }
   }
 
-  public Map<String, Object> cancel(Long executionId) {
+  public OfflineJobExecutionVO cancel(Long executionId) {
     OfflineJobExecutionPO execution = require(executionId);
     synchronizer.refreshExecution(execution);
     if (!synchronizer.isActive(execution.getStatus())) {
@@ -107,12 +112,12 @@ public class OfflineJobExecutionService {
       throw new IllegalStateException("任务实例没有 Link-Up jobId");
     }
     JsonNode summary = linkUpClient.cancel(execution.getEngineJobId());
-    OfflineJobDefinitionPO definition = definitionMapper.selectById(execution.getJobDefinitionId());
+    OfflineJobDefinitionPO definition = definitionDao.selectById(execution.getJobDefinitionId());
     synchronizer.apply(definition, execution, summary);
-    return toView(execution);
+    return toVO(execution);
   }
 
-  public Map<String, Object> cancelLatest(Long definitionId) {
+  public OfflineJobExecutionVO cancelLatest(Long definitionId) {
     OfflineJobDefinitionPO definition = definitionService.require(definitionId);
     if (definition.getLastExecutionId() == null) {
       throw new IllegalStateException("任务没有可停止的运行实例");
@@ -120,38 +125,38 @@ public class OfflineJobExecutionService {
     return cancel(definition.getLastExecutionId());
   }
 
-  public Map<String, Object> batchExecute(JsonNode request) {
-    return batch(request, true);
+  public OfflineBatchOperationVO batchExecute(OfflineBatchOperationDTO requestDTO) {
+    return batch(requestDTO, true);
   }
 
-  public Map<String, Object> batchCancel(JsonNode request) {
-    return batch(request, false);
+  public OfflineBatchOperationVO batchCancel(OfflineBatchOperationDTO requestDTO) {
+    return batch(requestDTO, false);
   }
 
-  public Map<String, Object> get(Long executionId) {
+  public OfflineJobExecutionVO get(Long executionId) {
     OfflineJobExecutionPO execution = require(executionId);
     synchronizer.refreshExecution(execution);
-    return toView(execution);
+    return toVO(execution);
   }
 
-  public Map<String, Object> detail(Long executionId) {
+  public OfflineJobExecutionDetailVO detail(Long executionId) {
     OfflineJobExecutionPO execution = require(executionId);
     synchronizer.refreshExecution(execution);
-    Map<String, Object> detail = new LinkedHashMap<>();
-    detail.put("execution", toView(execution));
+    OfflineJobExecutionDetailVO detail =
+        OfflineJobExecutionDetailVO.builder().execution(toVO(execution)).build();
     if (StringUtils.hasText(execution.getEngineJobId())) {
-      detail.put("job", linkUpClient.getJob(execution.getEngineJobId()));
-      detail.put("pipelines", linkUpClient.pipelines(execution.getEngineJobId()));
-      detail.put("tasks", linkUpClient.tasks(execution.getEngineJobId()));
-      detail.put("metrics", linkUpClient.metrics(execution.getEngineJobId()));
+      detail.setJob(linkUpClient.getJob(execution.getEngineJobId()));
+      detail.setPipelines(linkUpClient.pipelines(execution.getEngineJobId()));
+      detail.setTasks(linkUpClient.tasks(execution.getEngineJobId()));
+      detail.setMetrics(linkUpClient.metrics(execution.getEngineJobId()));
     }
     return detail;
   }
 
-  public Object tableMetrics(Long executionId) {
+  public JsonNode tableMetrics(Long executionId) {
     OfflineJobExecutionPO execution = require(executionId);
     if (!StringUtils.hasText(execution.getEngineJobId())) {
-      return List.of();
+      return JsonNodeFactory.instance.arrayNode();
     }
     return linkUpClient.pipelines(execution.getEngineJobId());
   }
@@ -177,49 +182,27 @@ public class OfflineJobExecutionService {
     return log.toString();
   }
 
-  public Map<String, Object> page(JsonNode request) {
-    int current = Math.max(1, request == null ? 1 : request.path("current").asInt(1));
-    int pageSize = Math.min(200, Math.max(1, request == null ? 10 : request.path("pageSize").asInt(10)));
-    LambdaQueryWrapper<OfflineJobExecutionPO> query = new LambdaQueryWrapper<>();
-    if (request != null) {
-      long definitionId = request.path("jobDefinitionId").asLong(0L);
-      if (definitionId > 0L) {
-        query.eq(OfflineJobExecutionPO::getJobDefinitionId, definitionId);
-      }
-      String status = request.path("status").asText(null);
-      if (StringUtils.hasText(status)) {
-        query.eq(OfflineJobExecutionPO::getStatus, status.toUpperCase());
-      }
-    }
-    query.orderByDesc(OfflineJobExecutionPO::getId);
-    Page<OfflineJobExecutionPO> page = executionMapper.selectPage(new Page<>(current, pageSize), query);
-    List<Map<String, Object>> records = new ArrayList<>();
+  public PagingData<OfflineJobExecutionVO> page(OfflineJobExecutionQueryDTO queryDTO) {
+    IPage<OfflineJobExecutionPO> page = executionDao.selectPage(queryDTO);
+    List<OfflineJobExecutionVO> records = new ArrayList<>(page.getRecords().size());
     for (OfflineJobExecutionPO execution : page.getRecords()) {
       synchronizer.refreshExecution(execution);
-      records.add(toView(execution));
+      records.add(toVO(execution));
     }
-    Map<String, Object> pagination = new LinkedHashMap<>();
-    pagination.put("total", page.getTotal());
-    pagination.put("pages", page.getPages());
-    pagination.put("pageNo", current);
-    pagination.put("pageSize", pageSize);
-    Map<String, Object> data = new LinkedHashMap<>();
-    data.put("bizData", records);
-    data.put("pagination", pagination);
-    return data;
+    return new PagingData<>(records, page);
   }
 
-  private Map<String, Object> batch(JsonNode request, boolean execute) {
-    JsonNode ids = request == null ? null : request.path("jobDefinitionIds");
-    if (ids == null || !ids.isArray() || ids.isEmpty()) {
+  private OfflineBatchOperationVO batch(OfflineBatchOperationDTO requestDTO, boolean execute) {
+    if (requestDTO == null
+        || requestDTO.getJobDefinitionIds() == null
+        || requestDTO.getJobDefinitionIds().isEmpty()) {
       throw new IllegalArgumentException("jobDefinitionIds 不能为空");
     }
     int successCount = 0;
-    List<Map<String, Object>> errors = new ArrayList<>();
-    for (JsonNode idNode : ids) {
-      long definitionId = idNode.asLong(0L);
+    List<OfflineBatchOperationErrorVO> errors = new ArrayList<>();
+    for (Long definitionId : requestDTO.getJobDefinitionIds()) {
       try {
-        if (definitionId <= 0L) {
+        if (definitionId == null || definitionId <= 0L) {
           throw new IllegalArgumentException("任务定义 ID 不合法");
         }
         if (execute) {
@@ -229,24 +212,25 @@ public class OfflineJobExecutionService {
         }
         successCount++;
       } catch (RuntimeException exception) {
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("jobDefinitionId", definitionId);
-        error.put("message", exception.getMessage());
-        errors.add(error);
+        errors.add(
+            OfflineBatchOperationErrorVO.builder()
+                .jobDefinitionId(definitionId)
+                .message(exception.getMessage())
+                .build());
       }
     }
-    Map<String, Object> result = new LinkedHashMap<>();
-    result.put("successCount", successCount);
-    result.put("failedCount", errors.size());
-    result.put("errors", errors);
-    return result;
+    return OfflineBatchOperationVO.builder()
+        .successCount(successCount)
+        .failedCount(errors.size())
+        .errors(errors)
+        .build();
   }
 
   private OfflineJobExecutionPO require(Long executionId) {
     if (executionId == null || executionId <= 0L) {
       throw new IllegalArgumentException("任务实例 ID 不合法");
     }
-    OfflineJobExecutionPO execution = executionMapper.selectById(executionId);
+    OfflineJobExecutionPO execution = executionDao.selectById(executionId);
     if (execution == null) {
       throw new IllegalArgumentException("离线同步任务实例不存在：" + executionId);
     }
@@ -262,32 +246,32 @@ public class OfflineJobExecutionService {
     execution.setErrorMessage(message);
     execution.setEndTime(now);
     execution.setUpdateTime(now);
-    executionMapper.updateById(execution);
+    executionDao.updateById(execution);
     definition.setLastJobStatus("FAILED");
     definition.setLastErrorMessage(message);
     definition.setLastEndTime(now);
     definition.setUpdateTime(now);
-    definitionMapper.updateById(definition);
+    definitionDao.updateById(definition);
   }
 
-  private Map<String, Object> toView(OfflineJobExecutionPO execution) {
-    Map<String, Object> view = new LinkedHashMap<>();
-    view.put("id", execution.getId());
-    view.put("jobDefinitionId", execution.getJobDefinitionId());
-    view.put("engineJobId", execution.getEngineJobId());
-    view.put("status", execution.getStatus());
-    view.put("errorMessage", execution.getErrorMessage());
-    view.put("sourceRecordCount", number(execution.getSourceRecordCount()));
-    view.put("sinkSuccessRecordCount", number(execution.getSinkSuccessRecordCount()));
-    view.put("sourceReadBytes", number(execution.getSourceReadBytes()));
-    view.put("sinkWrittenBytes", number(execution.getSinkWrittenBytes()));
-    view.put("qps", execution.getQps() == null ? 0D : execution.getQps());
-    view.put("durationMillis", number(execution.getDurationMillis()));
-    view.put("createTime", format(execution.getCreateTime()));
-    view.put("startTime", format(execution.getStartTime()));
-    view.put("endTime", format(execution.getEndTime()));
-    view.put("updateTime", format(execution.getUpdateTime()));
-    return view;
+  private OfflineJobExecutionVO toVO(OfflineJobExecutionPO execution) {
+    return OfflineJobExecutionVO.builder()
+        .id(execution.getId())
+        .jobDefinitionId(execution.getJobDefinitionId())
+        .engineJobId(execution.getEngineJobId())
+        .status(execution.getStatus())
+        .errorMessage(execution.getErrorMessage())
+        .sourceRecordCount(number(execution.getSourceRecordCount()))
+        .sinkSuccessRecordCount(number(execution.getSinkSuccessRecordCount()))
+        .sourceReadBytes(number(execution.getSourceReadBytes()))
+        .sinkWrittenBytes(number(execution.getSinkWrittenBytes()))
+        .qps(execution.getQps() == null ? 0D : execution.getQps())
+        .durationMillis(number(execution.getDurationMillis()))
+        .createTime(format(execution.getCreateTime()))
+        .startTime(format(execution.getStartTime()))
+        .endTime(format(execution.getEndTime()))
+        .updateTime(format(execution.getUpdateTime()))
+        .build();
   }
 
   private long number(Long value) {
