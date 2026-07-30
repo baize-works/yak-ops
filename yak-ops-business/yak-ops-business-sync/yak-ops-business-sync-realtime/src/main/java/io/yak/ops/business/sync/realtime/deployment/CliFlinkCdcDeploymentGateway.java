@@ -51,13 +51,14 @@ public class CliFlinkCdcDeploymentGateway implements FlinkCdcDeploymentGateway {
       DeploymentFileSecurity.ownerReadWrite(pipelineFile);
       List<String> command = FlinkCdcCommandBuilder.submitCommand(submission, pipelineFile);
       CommandResult result = commandExecutor.execute(
-          command, FlinkCdcCommandBuilder.processEnvironment(submission), directory);
+              command, FlinkCdcCommandBuilder.processEnvironment(submission), directory);
       return new DeploymentResult(
-          parseExternalId(result.getOutput()), command, null, result.getOutput());
+              parseExternalId(result.getOutput()), command, null, result.getOutput());
+    } catch (IllegalStateException stateException) {
+      // 保持原有异常类型不变
+      throw stateException;
     } catch (Exception exception) {
-      if (exception instanceof IllegalStateException stateException) {
-        throw stateException;
-      }
+      // 包装其他异常
       throw new IllegalStateException("Flink CDC CLI 提交失败：" + exception.getMessage(), exception);
     }
   }

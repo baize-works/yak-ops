@@ -82,9 +82,11 @@ public class DataSourceExceptionHandler {
 
   private String resolveValidationMessage(Exception exception) {
     BindingResult bindingResult = null;
-    if (exception instanceof MethodArgumentNotValidException validException) {
+    if (exception instanceof MethodArgumentNotValidException) {
+      MethodArgumentNotValidException validException = (MethodArgumentNotValidException) exception;
       bindingResult = validException.getBindingResult();
-    } else if (exception instanceof BindException bindException) {
+    } else if (exception instanceof BindException) {
+      BindException bindException = (BindException) exception;
       bindingResult = bindException.getBindingResult();
     }
     if (bindingResult != null && bindingResult.getFieldError() != null) {

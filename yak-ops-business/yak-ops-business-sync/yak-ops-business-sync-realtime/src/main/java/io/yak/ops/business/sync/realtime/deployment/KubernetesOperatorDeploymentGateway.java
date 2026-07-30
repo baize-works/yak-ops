@@ -37,24 +37,25 @@ public class KubernetesOperatorDeploymentGateway implements FlinkCdcDeploymentGa
   public DeploymentResult submit(FlinkCdcSubmission submission) {
     try {
       Path directory = properties.getWorkDirectory()
-          .resolve("job-" + submission.getJob().getId())
-          .resolve("deployment-" + submission.getDeployment().getId());
+              .resolve("job-" + submission.getJob().getId())
+              .resolve("deployment-" + submission.getDeployment().getId());
       Files.createDirectories(directory);
       Path manifest = directory.resolve("flink-deployment.yaml");
       Files.writeString(
-          manifest, KubernetesManifestBuilder.build(submission), StandardCharsets.UTF_8);
+              manifest, KubernetesManifestBuilder.build(submission), StandardCharsets.UTF_8);
       DeploymentFileSecurity.ownerReadWrite(manifest);
       List<String> command = kubectl(submission, "apply", "-f", manifest.toString());
       CommandResult result = commandExecutor.execute(command, null, directory);
       return new DeploymentResult(
-          KubernetesManifestBuilder.resourceName(submission),
-          command,
-          manifest.toString(),
-          result.getOutput());
+              KubernetesManifestBuilder.resourceName(submission),
+              command,
+              manifest.toString(),
+              result.getOutput());
+    } catch (IllegalStateException stateException) {
+      // 重新抛出IllegalStateException，保持原有逻辑
+      throw stateException;
     } catch (Exception exception) {
-      if (exception instanceof IllegalStateException stateException) {
-        throw stateException;
-      }
+      // 捕获其他所有异常并包装为IllegalStateException
       throw new IllegalStateException("Kubernetes Operator 提交失败：" + exception.getMessage(), exception);
     }
   }

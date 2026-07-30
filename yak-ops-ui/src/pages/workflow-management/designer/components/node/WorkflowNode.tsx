@@ -3,6 +3,7 @@ import type { WorkflowNodeData } from '../../../types';
 import { getNodeMeta } from '../../constants';
 import BaseNode from './BaseNode';
 import NodeContent from './components/NodeContent';
+import { memo } from 'react';
 
 const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => {
   const meta = getNodeMeta(data.nodeType);
@@ -14,4 +15,4 @@ const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => {
   );
 };
 
-export default WorkflowNode;
+export default memo(WorkflowNode);

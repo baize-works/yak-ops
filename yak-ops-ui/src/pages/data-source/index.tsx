@@ -445,13 +445,13 @@ const DataSourcePage = () => {
               className="datasource-header"
             >
               <div>
-                <div className="datasource-header__eyebrow">
+                {/* <div className="datasource-header__eyebrow">
                   RESOURCE CENTER
-                </div>
+                </div> */}
                 <h1>数据源管理</h1>
-                <p>
+                {/* <p>
                   集中维护数据库连接、运行环境与连通状态，为同步任务提供统一的数据接入能力。
-                </p>
+                </p> */}
               </div>
 
               {canCreate && (

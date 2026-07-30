@@ -1083,8 +1083,6 @@ const WorkflowDesignerContent = () => {
             }}
             minZoom={0.25}
             maxZoom={2}
-            snapToGrid
-            snapGrid={[16, 16]}
             selectionOnDrag={!pendingNodeType && interactionMode === 'select'}
             selectionMode={SelectionMode.Partial}
             multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
