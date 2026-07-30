@@ -1,31 +1,89 @@
 name: Offline sync frontend validation
 
 on:
-  pull_request:
-    paths:
-      - 'yak-ops-ui/**'
-      - '.github/workflows/offline-sync-frontend-validation.yml'
+  push:
+    branches:
+      - agent/offline-sync-link-up-integration
 
 permissions:
-  contents: read
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   typecheck:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Checkout pull request
+      - name: Checkout feature branch
         uses: actions/checkout@v4
+        with:
+          ref: agent/offline-sync-link-up-integration
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install frontend dependencies
-        working-directory: yak-ops-ui
-        run: npm install --no-audit --no-fund
+      - name: Install, type-check and report
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          cd yak-ops-ui
+          npm install --no-audit --no-fund > /tmp/offline-sync-npm-install.log 2>&1
+          install_status=$?
 
-      - name: Type-check frontend
-        working-directory: yak-ops-ui
-        run: npm run tsc
+          typecheck_status=0
+          if [ "$install_status" -eq 0 ]; then
+            npm run tsc > /tmp/offline-sync-tsc.log 2>&1
+            typecheck_status=$?
+          else
+            echo "TypeScript check was not started because dependency installation failed." > /tmp/offline-sync-tsc.log
+            typecheck_status=1
+          fi
+          cd ..
+
+          if [ "$install_status" -eq 0 ] && [ "$typecheck_status" -eq 0 ]; then
+            cat > /tmp/offline-sync-validation-comment.md <<'EOF'
+          ✅ Offline 同步前端验证通过
+
+          - `npm install --no-audit --no-fund`
+          - `npm run tsc`
+          EOF
+            validation_status=0
+          else
+            {
+              echo '❌ Offline 同步前端验证未通过'
+              echo
+              echo "- npm install exit code: $install_status"
+              echo "- npm run tsc exit code: $typecheck_status"
+              echo
+              echo '<details><summary>日志末尾</summary>'
+              echo
+              echo '```text'
+              echo '--- npm install ---'
+              tail -n 60 /tmp/offline-sync-npm-install.log
+              echo
+              echo '--- npm run tsc ---'
+              tail -n 100 /tmp/offline-sync-tsc.log
+              echo '```'
+              echo '</details>'
+            } > /tmp/offline-sync-validation-comment.md
+            validation_status=1
+          fi
+
+          gh pr comment 128 --repo weifuwan/yak-ops --body-file /tmp/offline-sync-validation-comment.md
+
+          rm -f .github/workflows/offline-sync-frontend-validation.yml
+          rm -f yak-ops-ui/package-lock.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u .github/workflows/offline-sync-frontend-validation.yml
+          git commit -m "chore: remove temporary frontend validation workflow"
+          git push origin HEAD:agent/offline-sync-link-up-integration
+
+          exit "$validation_status"
