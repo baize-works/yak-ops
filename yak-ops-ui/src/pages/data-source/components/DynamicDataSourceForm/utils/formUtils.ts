@@ -4,11 +4,15 @@ import type { DynamicFormField, DynamicFormFieldRule } from '../../../types';
 
 export const transformRules = (
   rules: DynamicFormFieldRule[] | undefined,
+  fieldType?: DynamicFormField['type'],
 ): Rule[] => {
   if (!rules) return [];
 
   return rules.map((rule) => {
-    const formRule: Rule = { message: rule.message };
+    const formRule: Rule = {
+      message: rule.message,
+      ...(fieldType === 'NUMBER' ? { type: 'number' as const } : {}),
+    };
     if (rule.required === true) formRule.required = true;
     if (typeof rule.min === 'number') formRule.min = rule.min;
     if (typeof rule.max === 'number') formRule.max = rule.max;

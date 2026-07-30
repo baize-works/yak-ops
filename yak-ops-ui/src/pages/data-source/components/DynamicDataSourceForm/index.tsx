@@ -401,7 +401,7 @@ const DynamicDataSourceForm = ({
                   label={field.label}
                   name={field.key}
                   valuePropName={field.type === 'SWITCH' ? 'checked' : 'value'}
-                  rules={transformRules(field.rules)}
+                  rules={transformRules(field.rules, field.type)}
                   validateTrigger={['onChange', 'onBlur']}
                   className="!mb-[18px]"
                 >
