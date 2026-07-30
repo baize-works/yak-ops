@@ -4,7 +4,7 @@ import {
   CheckCircleFilled,
   SaveOutlined,
 } from '@ant-design/icons';
-import { history, useLocation } from '@umijs/max';
+import { history, useLocation, useParams } from '@umijs/max';
 import {
   Button,
   Drawer,
@@ -108,8 +108,16 @@ const validateTaskConfig = (editor: SyncEditorState): string | null => {
 
 export default function BatchLinkUpDetailPage() {
   const location = useLocation();
+  const routeParams = useParams<{ id?: string }>();
   const taskId = useMemo(
-    () => new URLSearchParams(location.search).get('id') || '',
+    () =>
+      routeParams.id ||
+      new URLSearchParams(location.search).get('id') ||
+      '',
+    [location.search, routeParams.id],
+  );
+  const editScene = useMemo(
+    () => new URLSearchParams(location.search).get('scene') === 'edit',
     [location.search],
   );
 
@@ -126,6 +134,7 @@ export default function BatchLinkUpDetailPage() {
   const [targetState, setTargetState] =
     useState<ConnectionTestState>('idle');
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const loadDataSources = useCallback(async () => {
     try {
@@ -174,8 +183,18 @@ export default function BatchLinkUpDetailPage() {
 
   useEffect(() => {
     if (!taskId) return;
+
+    const cacheKey = `batch-link-up-detail-${taskId}`;
+    const hasCreateCache = Boolean(sessionStorage.getItem(cacheKey));
+    if (hasCreateCache && !editScene) {
+      setCreateOpen(true);
+      void loadDataSources();
+      return;
+    }
+
+    setCreateOpen(false);
     void Promise.all([loadTask(), loadDataSources()]);
-  }, [loadDataSources, loadTask, taskId]);
+  }, [editScene, loadDataSources, loadTask, taskId]);
 
   const persistEditor = async (
     nextEditor: SyncEditorState,
@@ -209,7 +228,9 @@ export default function BatchLinkUpDetailPage() {
     }
   };
 
-  const testConnection = async (endpoint: 'source' | 'target') => {
+  const testConnection = async (
+    endpoint: 'source' | 'target',
+  ) => {
     const id = endpoint === 'source' ? sourceId : targetId;
     const setState = endpoint === 'source' ? setSourceState : setTargetState;
     if (!id) {
@@ -267,17 +288,31 @@ export default function BatchLinkUpDetailPage() {
   };
 
   if (!taskId) {
+    history.replace('/sync/batch-link-up');
+    return null;
+  }
+
+  if (createOpen) {
+    const cacheKey = `batch-link-up-detail-${taskId}`;
     return (
       <div className="relative min-h-screen bg-[#f8fafc]">
         <BatchLinkUpPage />
         <CreateSyncTaskModal
           open
-          onCancel={() => history.push('/batch-link-up')}
-          onCreated={(id) =>
-            history.replace(
-              `/batch-link-up/detail?id=${encodeURIComponent(id)}`,
-            )
-          }
+          reservedTaskId={taskId}
+          onCancel={() => {
+            sessionStorage.removeItem(cacheKey);
+            history.push('/sync/batch-link-up');
+          }}
+          onCreated={(id) => {
+            sessionStorage.removeItem(cacheKey);
+            setCreateOpen(false);
+            const nextPath = `/sync/batch-link-up/${encodeURIComponent(id)}/detail?scene=edit`;
+            history.replace(nextPath);
+            if (String(id) === String(taskId)) {
+              void loadTask();
+            }
+          }}
         />
       </div>
     );
@@ -298,7 +333,7 @@ export default function BatchLinkUpDetailPage() {
           description="未找到同步任务"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         >
-          <Button onClick={() => history.push('/batch-link-up')}>
+          <Button onClick={() => history.push('/sync/batch-link-up')}>
             返回任务列表
           </Button>
         </Empty>
@@ -316,7 +351,7 @@ export default function BatchLinkUpDetailPage() {
             <Button
               type="text"
               icon={<ArrowLeftOutlined />}
-              onClick={() => history.push('/batch-link-up')}
+              onClick={() => history.push('/sync/batch-link-up')}
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -331,16 +366,18 @@ export default function BatchLinkUpDetailPage() {
             </div>
           </div>
 
-          {activeStep === 1 && (
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              loading={saving}
-              onClick={handleSave}
-            >
-              保存配置
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {activeStep === 1 && (
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                loading={saving}
+                onClick={handleSave}
+              >
+                保存配置
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -390,7 +427,7 @@ export default function BatchLinkUpDetailPage() {
             当前阶段仅保存任务定义，不会触发任务执行。
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => history.push('/batch-link-up')}>取消</Button>
+            <Button onClick={() => history.push('/sync/batch-link-up')}>取消</Button>
             {activeStep === 0 ? (
               <Button
                 type="primary"
