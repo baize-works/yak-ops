@@ -6,23 +6,19 @@
 
     <parent>
         <groupId>io.yak.ops</groupId>
-        <artifactId>yak-ops</artifactId>
+        <artifactId>yak-ops-business</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>yak-ops-business</artifactId>
+    <artifactId>yak-ops-business-sync</artifactId>
     <packaging>pom</packaging>
 
-    <name>Yak Ops Business</name>
-    <description>Yak Ops business-domain module aggregation</description>
+    <name>Yak Ops Business Sync</name>
+    <description>Offline and realtime data synchronization module aggregation</description>
 
     <modules>
-        <module>yak-ops-business-datasource</module>
-        <module>yak-ops-business-job</module>
-        <module>yak-ops-business-workflow</module>
-        <module>yak-ops-business-quality</module>
-        <module>yak-ops-business-resource</module>
-        <module>yak-ops-business-sync</module>
+        <module>yak-ops-business-sync-offline</module>
+        <module>yak-ops-business-sync-realtime</module>
     </modules>
 </project>
