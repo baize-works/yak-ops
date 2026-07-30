@@ -22,6 +22,11 @@ yak:
       enabled: false
   datasource:
     enabled: false
+  sync:
+    offline:
+      enabled: false
+    realtime:
+      enabled: false
   schedule:
     enabled: false
     web-enabled: false
