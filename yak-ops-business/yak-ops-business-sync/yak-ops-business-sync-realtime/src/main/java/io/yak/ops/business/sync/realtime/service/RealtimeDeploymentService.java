@@ -61,13 +61,13 @@ public class RealtimeDeploymentService {
       throw new IllegalStateException("任务正在提交或运行，不能重复提交");
     }
     ValidationResult validation = jobService.validate(jobId);
-    if (!validation.valid()) {
-      throw new IllegalArgumentException(String.join("；", validation.messages()));
+    if (!validation.isValid()) {
+      throw new IllegalArgumentException(String.join("；", validation.getMessages()));
     }
     RealtimeEnvironmentPO environment = environmentService.requireEnabled(job.getEnvironmentId());
     ValidationResult environmentValidation = environmentService.check(environment.getId());
-    if (!environmentValidation.valid()) {
-      throw new IllegalArgumentException(String.join("；", environmentValidation.messages()));
+    if (!environmentValidation.isValid()) {
+      throw new IllegalArgumentException(String.join("；", environmentValidation.getMessages()));
     }
     FlinkCdcVersionPO version = versionService.requireEnabled(job.getCdcVersionId());
     RealtimeDeploymentPO deployment = createDeployment(job, environment, version, request);
@@ -117,13 +117,13 @@ public class RealtimeDeploymentService {
     DeploymentStatus status = gatewayRegistry
         .require(DeploymentMode.valueOf(deployment.getDeploymentMode()))
         .status(submission(job, environment, version, deployment, null));
-    if (status.state() != DeploymentState.UNKNOWN) {
-      updateState(deployment.getId(), status.state(), null);
-      if (status.state() == DeploymentState.FAILED) {
+    if (status.getState() != DeploymentState.UNKNOWN) {
+      updateState(deployment.getId(), status.getState(), null);
+      if (status.getState() == DeploymentState.FAILED) {
         jobService.updateState(jobId, JobState.FAILED, deployment.getId());
-      } else if (status.state() == DeploymentState.CANCELLED) {
+      } else if (status.getState() == DeploymentState.CANCELLED) {
         jobService.updateState(jobId, JobState.STOPPED, deployment.getId());
-      } else if (status.state() == DeploymentState.FINISHED) {
+      } else if (status.getState() == DeploymentState.FINISHED) {
         jobService.updateState(jobId, JobState.FINISHED, deployment.getId());
       }
     }
@@ -144,7 +144,7 @@ public class RealtimeDeploymentService {
             submission(job, environment, version, deployment, null), targetDirectory);
     RealtimeDeploymentPO update = new RealtimeDeploymentPO();
     update.setId(deployment.getId());
-    update.setSavepointPath(result.location() == null ? targetDirectory : result.location());
+    update.setSavepointPath(result.getLocation() == null ? targetDirectory : result.getLocation());
     update.setUpdatedAt(new Date());
     mapper.updateById(update);
     return result;
@@ -201,10 +201,10 @@ public class RealtimeDeploymentService {
     RealtimeDeploymentPO update = new RealtimeDeploymentPO();
     update.setId(id);
     update.setState(DeploymentState.RUNNING.name());
-    update.setExternalId(result.externalId());
-    update.setCommandJson(jsonCodec.writeList(result.command()));
-    update.setManifestPath(result.manifestPath());
-    update.setOutput(limit(result.output()));
+    update.setExternalId(result.getExternalId());
+    update.setCommandJson(jsonCodec.writeList(result.getCommand()));
+    update.setManifestPath(result.getManifestPath());
+    update.setOutput(limit(result.getOutput()));
     update.setSubmittedAt(new Date());
     update.setUpdatedAt(new Date());
     mapper.updateById(update);

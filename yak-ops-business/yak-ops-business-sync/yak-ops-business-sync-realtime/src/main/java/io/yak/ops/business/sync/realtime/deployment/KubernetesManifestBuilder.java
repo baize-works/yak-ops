@@ -12,7 +12,7 @@ public final class KubernetesManifestBuilder {
   }
 
   public static String resourceName(FlinkCdcSubmission submission) {
-    String normalized = submission.job().getName().toLowerCase(Locale.ROOT)
+    String normalized = submission.getJob().getName().toLowerCase(Locale.ROOT)
         .replaceAll("[^a-z0-9-]", "-")
         .replaceAll("-+", "-")
         .replaceAll("^-|-$", "");
@@ -21,13 +21,13 @@ public final class KubernetesManifestBuilder {
     }
     normalized = normalized.length() > 40 ? normalized.substring(0, 40) : normalized;
     normalized = normalized.replaceAll("-+$", "");
-    return normalized + "-" + submission.deployment().getId();
+    return normalized + "-" + submission.getDeployment().getId();
   }
 
   public static String build(FlinkCdcSubmission submission) {
-    Map<String, String> config = submission.deploymentConfig();
+    Map<String, String> config = submission.getDeploymentConfig();
     String name = resourceName(submission);
-    String namespace = required(submission.environment().getNamespace(), "namespace");
+    String namespace = required(submission.getEnvironment().getNamespace(), "namespace");
     String image = required(config.get("image"), "image");
     String flinkVersion = required(config.get("flinkVersion"), "flinkVersion");
     String serviceAccount = config.getOrDefault("serviceAccount", "flink");
@@ -37,10 +37,10 @@ public final class KubernetesManifestBuilder {
     String taskManagerMemory = config.getOrDefault("taskManagerMemory", "1024m");
     String parallelism = config.getOrDefault("parallelism", "1");
     String cdcHome = config.getOrDefault(
-        "cdcHome", "/opt/flink/flink-cdc-" + submission.cdcVersion().getVersion());
+        "cdcHome", "/opt/flink/flink-cdc-" + submission.getCdcVersion().getVersion());
     String pipelinePath = cdcHome + "/conf/pipeline.yaml";
     String jarUri = "local://" + cdcHome + "/lib/flink-cdc-dist-"
-        + submission.cdcVersion().getVersion() + ".jar";
+        + submission.getCdcVersion().getVersion() + ".jar";
     String flinkConfiguration = flinkConfiguration(submission);
 
     return """
@@ -99,7 +99,7 @@ public final class KubernetesManifestBuilder {
         """.formatted(
         name,
         namespace,
-        indent(submission.job().getPipelineYaml(), 4),
+        indent(submission.getJob().getPipelineYaml(), 4),
         name,
         namespace,
         image,
@@ -121,12 +121,12 @@ public final class KubernetesManifestBuilder {
   private static String flinkConfiguration(FlinkCdcSubmission submission) {
     Map<String, String> values = new LinkedHashMap<>();
     values.put("classloader.resolve-order", "parent-first");
-    submission.deploymentConfig().forEach((key, value) -> {
+    submission.getDeploymentConfig().forEach((key, value) -> {
       if (key.startsWith("flink.") && key.length() > 6) {
         values.put(key.substring(6), value);
       }
     });
-    values.putAll(submission.runtimeOptions());
+    values.putAll(submission.getRuntimeOptions());
     return values.entrySet().stream()
         .sorted(Map.Entry.comparingByKey())
         .map(entry -> "    " + entry.getKey() + ": '" + yamlScalar(entry.getValue()) + "'")

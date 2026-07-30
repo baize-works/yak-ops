@@ -61,9 +61,9 @@ public class CommandExecutor {
       }
       reader.join();
       CommandResult result = new CommandResult(process.exitValue(), output.toString().trim());
-      if (result.exitCode() != 0) {
+      if (result.getExitCode() != 0) {
         throw new IllegalStateException(
-            "外部命令执行失败，退出码 " + result.exitCode() + "：" + result.output());
+            "外部命令执行失败，退出码 " + result.getExitCode() + "：" + result.getOutput());
       }
       return result;
     } catch (InterruptedException exception) {
