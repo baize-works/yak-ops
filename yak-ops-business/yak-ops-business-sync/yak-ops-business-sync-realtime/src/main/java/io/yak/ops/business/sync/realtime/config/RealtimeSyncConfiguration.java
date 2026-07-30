@@ -1,16 +1,15 @@
 package io.yak.ops.business.sync.realtime.config;
 
-import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.yak.ops.common.mybatis.MybatisPlusFactorySupport;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.type.JdbcType;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -59,11 +58,8 @@ public class RealtimeSyncConfiguration {
     MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
     factory.setDataSource(dataSource);
     factory.setTypeAliasesPackage("io.yak.ops.business.sync.realtime.model.po");
-    MybatisConfiguration configuration = new MybatisConfiguration();
-    configuration.setMapUnderscoreToCamelCase(true);
-    configuration.setJdbcTypeForNull(JdbcType.NULL);
-    configuration.setCacheEnabled(false);
-    factory.setConfiguration(configuration);
+    factory.setConfiguration(MybatisPlusFactorySupport.createConfiguration());
+    factory.setGlobalConfig(MybatisPlusFactorySupport.createGlobalConfig());
     return factory.getObject();
   }
 
