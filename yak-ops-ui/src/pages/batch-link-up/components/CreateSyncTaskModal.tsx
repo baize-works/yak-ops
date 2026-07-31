@@ -11,7 +11,20 @@ import {
   Radio,
   message,
 } from 'antd';
-import { useEffect, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
+
+import {
+  BRAND_COLOR,
+  BRAND_COLOR_BORDER,
+  BRAND_COLOR_SOFT,
+  BRAND_COLOR_SOFT_HOVER,
+  BRAND_THEME,
+} from '@/styles/brand';
 
 import { linkupJobDefinitionApi } from '../api';
 import {
@@ -29,14 +42,6 @@ interface CreateSyncTaskDrawerProps {
   onCancel: () => void;
   onCreated: (taskId: string) => void;
 }
-
-const BRAND_COLOR = 'rgba(254,44,85,1)';
-const BRAND_COLOR_HOVER = 'rgba(254,44,85,0.88)';
-const BRAND_COLOR_ACTIVE = 'rgba(226,25,70,1)';
-const BRAND_COLOR_SOFT = 'rgba(254,44,85,0.06)';
-const BRAND_COLOR_SOFT_HOVER = 'rgba(254,44,85,0.1)';
-const BRAND_COLOR_BORDER = 'rgba(254,44,85,0.35)';
-const BRAND_COLOR_OUTLINE = 'rgba(254,44,85,0.16)';
 
 const modeOptions: Array<{
   value: SyncMode;
@@ -57,6 +62,13 @@ const modeOptions: Array<{
     icon: <DatabaseOutlined />,
   },
 ];
+
+const brandCssVariables = {
+  '--yak-brand-color': BRAND_COLOR,
+  '--yak-brand-color-border': BRAND_COLOR_BORDER,
+  '--yak-brand-color-soft': BRAND_COLOR_SOFT,
+  '--yak-brand-color-soft-hover': BRAND_COLOR_SOFT_HOVER,
+} as CSSProperties;
 
 export default function CreateSyncTaskDrawer({
   open,
@@ -130,19 +142,7 @@ export default function CreateSyncTaskDrawer({
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: BRAND_COLOR,
-          colorPrimaryHover: BRAND_COLOR_HOVER,
-          colorPrimaryActive: BRAND_COLOR_ACTIVE,
-          colorPrimaryBg: BRAND_COLOR_SOFT,
-          colorPrimaryBgHover: BRAND_COLOR_SOFT_HOVER,
-          colorPrimaryBorder: BRAND_COLOR_BORDER,
-          controlOutline: BRAND_COLOR_OUTLINE,
-        },
-      }}
-    >
+    <ConfigProvider theme={BRAND_THEME}>
       <Drawer
         open={open}
         width={620}
@@ -150,6 +150,7 @@ export default function CreateSyncTaskDrawer({
         destroyOnClose
         maskClosable={false}
         keyboard={!submitting}
+        rootStyle={brandCssVariables}
         onClose={handleCancel}
         title={
           <div>
@@ -188,7 +189,7 @@ export default function CreateSyncTaskDrawer({
               type="primary"
               loading={submitting}
               onClick={handleSubmit}
-              className="!border-[rgba(254,44,85,1)] !bg-[rgba(254,44,85,1)] !text-white hover:!border-[rgba(254,44,85,0.88)] hover:!bg-[rgba(254,44,85,0.88)] active:!border-[rgba(226,25,70,1)] active:!bg-[rgba(226,25,70,1)]"
+              className="!text-white"
             >
               创建
             </Button>
@@ -269,15 +270,22 @@ export default function CreateSyncTaskDrawer({
                     '!px-4',
                     '!py-4',
                     '!shadow-none',
-                    'hover:!border-[rgba(254,44,85,0.35)]',
-                    '[&.ant-radio-button-wrapper-checked]:!border-[rgba(254,44,85,1)]',
-                    '[&.ant-radio-button-wrapper-checked]:!bg-[rgba(254,44,85,0.06)]',
+                    'hover:!border-[var(--yak-brand-color-border)]',
+                    'hover:!bg-[var(--yak-brand-color-soft-hover)]',
+                    '[&.ant-radio-button-wrapper-checked]:!border-[var(--yak-brand-color)]',
+                    '[&.ant-radio-button-wrapper-checked]:!bg-[var(--yak-brand-color-soft)]',
                     '[&.ant-radio-button-wrapper-checked]:!text-inherit',
                     'before:!hidden',
                   ].join(' ')}
                 >
                   <div className="flex items-start gap-3 whitespace-normal">
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[rgba(254,44,85,0.08)] text-[17px] text-[rgba(254,44,85,1)]">
+                    <div
+                      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[17px]"
+                      style={{
+                        color: BRAND_COLOR,
+                        backgroundColor: BRAND_COLOR_SOFT_HOVER,
+                      }}
+                    >
                       {option.icon}
                     </div>
 
