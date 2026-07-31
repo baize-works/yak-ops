@@ -14,6 +14,7 @@ import { BRAND_THEME } from "@/styles/brand";
 
 import { linkupJobDefinitionApi } from "../api";
 import SyncTaskEditor from "./components/SyncTaskEditor";
+import { useSmoothWheelScroll } from "./hooks/useSmoothWheelScroll";
 import {
   buildSavePayload,
   endpointNode,
@@ -138,6 +139,7 @@ export default function BatchLinkUpDetailPage() {
   const location = useLocation();
   const routeParams = useParams<{ id?: string }>();
 
+  const pageRootRef = useRef<HTMLDivElement>(null);
   const actionBarRef = useRef<HTMLElement>(null);
 
   const taskId = useMemo(
@@ -169,6 +171,11 @@ export default function BatchLinkUpDetailPage() {
    */
   const [actionBarStuck, setActionBarStuck] =
     useState(false);
+
+  useSmoothWheelScroll(
+    pageRootRef,
+    editor?.mode === "GUIDE_SINGLE",
+  );
 
   const loadDataSources = useCallback(async () => {
     try {
@@ -424,7 +431,10 @@ export default function BatchLinkUpDetailPage() {
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-      <div className="min-h-[calc(100vh-64px)] bg-[#f7f8fa] text-[#161823]">
+      <div
+        ref={pageRootRef}
+        className="min-h-[calc(100vh-64px)] bg-[#f7f8fa] text-[#161823]"
+      >
         {/*
           编辑内容和底部操作栏放进同一个宽度容器。
 
