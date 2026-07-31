@@ -9,6 +9,7 @@ import {
   Spin,
   Switch,
 } from 'antd';
+import type { ReactNode } from 'react';
 
 import EditorSection from './EditorSection';
 
@@ -26,10 +27,10 @@ interface SingleTableConfigSectionProps {
 }
 
 interface EndpointPanelProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 function EndpointPanel({
@@ -64,7 +65,7 @@ function FieldLabel({
   children,
   required = false,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   required?: boolean;
 }) {
   return (
