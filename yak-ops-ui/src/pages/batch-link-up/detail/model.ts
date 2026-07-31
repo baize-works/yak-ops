@@ -1,12 +1,52 @@
-import { API_SUCCESS_CODE } from '@/services/http/response';
 import type { DataSourceRecord } from '@/pages/data-source/types';
-import type {
-  EnvConfig,
-  ScheduleConfig,
-} from '../workflow/components/ScheduleConfigContent/types';
+import { API_SUCCESS_CODE } from '@/services/http/response';
 
 export type SyncMode = 'GUIDE_SINGLE' | 'GUIDE_MULTI';
 export type EndpointKind = 'source' | 'sink';
+
+export interface ScheduleParam {
+  name: string;
+  value: string;
+}
+
+export interface ScheduleConfig {
+  paramsList: ScheduleParam[];
+  instanceGenerateMode: string;
+  scheduleRunType: string;
+  timeoutMode: string;
+  timeoutValue: number;
+  timeoutUnit: string;
+  rerunPolicy: string;
+  autoRetry: boolean;
+  retryTimes: number;
+  retryInterval: number;
+  scheduleType: string;
+  hourMode: string;
+  hourlyRangeValue?: {
+    startTime: string;
+    intervalHour: number;
+    endTime: string;
+  };
+  hourlyAppointValue?: {
+    hours: number[];
+    minute: string;
+  };
+  dailyValue?: {
+    time: string;
+  };
+  weeklyValue?: {
+    weekdays: string[];
+    time: string;
+  };
+  effectType: string;
+  cronExpression: string;
+}
+
+export interface EnvConfig {
+  jobMode: string;
+  parallelism: number;
+  [key: string]: unknown;
+}
 
 export interface SyncTaskBasic {
   jobName: string;
