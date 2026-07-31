@@ -163,7 +163,7 @@ export default function CreateSyncTaskDrawer({
 
     form.setFieldsValue({
       jobName: buildDefaultJobName(sourceName, targetName),
-      jobDesc: buildDefaultJobDescription(sourceName, targetName),
+      jobDesc: undefined,
       mode: 'GUIDE_SINGLE',
     });
   }, [form, open, sourceName, targetName]);
