@@ -612,10 +612,10 @@ export default function BatchLinkUpDetailPage() {
                   </Tag>
                 </div>
 
-                {/* <div className="mt-1 max-w-[760px] truncate text-sm text-[#667085]">
+                <div className="mt-1 max-w-[760px] truncate text-sm text-[#667085]">
                   {editor.basic.jobDesc ||
                     '配置数据源连接关系和同步任务参数'}
-                </div> */}
+                </div>
               </div>
             </div>
           </div>
