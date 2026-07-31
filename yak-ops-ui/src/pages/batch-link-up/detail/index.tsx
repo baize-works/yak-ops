@@ -375,6 +375,7 @@ export default function BatchLinkUpDetailPage() {
           width={460}
           title="调度配置"
           placement="right"
+          rootStyle={brandCssVariables}
           destroyOnClose={false}
           onClose={() => setScheduleOpen(false)}
           extra={
