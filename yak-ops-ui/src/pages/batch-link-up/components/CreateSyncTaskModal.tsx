@@ -159,9 +159,6 @@ export default function CreateSyncTaskDrawer({
               新建离线同步任务
             </div>
 
-            <div className="mt-0.5 text-[13px] font-normal leading-5 text-[#667085]">
-              填写任务基础信息，创建后可在任务列表中继续配置。
-            </div>
           </div>
         }
         extra={
@@ -210,12 +207,6 @@ export default function CreateSyncTaskDrawer({
               {
                 max: 64,
                 message: '任务名称不能超过 64 个字符',
-              },
-              {
-                validator: (_, value) =>
-                  value?.trim()
-                    ? Promise.resolve()
-                    : Promise.reject(new Error('任务名称不能为空')),
               },
             ]}
           >
