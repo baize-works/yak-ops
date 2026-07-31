@@ -107,6 +107,7 @@ const connectorMeta = (record?: DataSourceRecord | null) => {
   if (!record) return null;
 
   const dbType = record.dbType || '';
+
   return {
     dbType,
     connectorType: dbType,
@@ -126,7 +127,9 @@ const createEndpointNode = (
   return {
     id: nodeId,
     type: kind,
-    position: isSource ? { x: 120, y: 180 } : { x: 660, y: 180 },
+    position: isSource
+      ? { x: 120, y: 180 }
+      : { x: 660, y: 180 },
     data: {
       nodeType: kind,
       title: isSource ? '数据来源' : '数据去向',
@@ -220,7 +223,9 @@ export const buildCreatePayload = (
   };
 };
 
-const mergeSchedule = (schedule?: Partial<ScheduleConfig>): ScheduleConfig => ({
+const mergeSchedule = (
+  schedule?: Partial<ScheduleConfig>,
+): ScheduleConfig => ({
   ...DEFAULT_SCHEDULE_CONFIG,
   ...(schedule || {}),
   hourlyRangeValue: {
@@ -248,13 +253,21 @@ export const normalizeEditDetail = (
   const id = String(raw?.id || fallbackId);
   const basicRaw = raw?.basic || {};
   const workflowRaw = raw?.workflow || {};
-  const mode = (basicRaw?.mode || raw?.mode || 'GUIDE_SINGLE') as SyncMode;
+  const mode = (
+    basicRaw?.mode ||
+    raw?.mode ||
+    'GUIDE_SINGLE'
+  ) as SyncMode;
+
   const workflow =
-    Array.isArray(workflowRaw?.nodes) && workflowRaw.nodes.length > 0
+    Array.isArray(workflowRaw?.nodes) &&
+    workflowRaw.nodes.length > 0
       ? {
           ...workflowRaw,
           nodes: workflowRaw.nodes,
-          edges: Array.isArray(workflowRaw.edges) ? workflowRaw.edges : [],
+          edges: Array.isArray(workflowRaw.edges)
+            ? workflowRaw.edges
+            : [],
           channelConfig: {
             speedLimitEnabled: false,
             recordsPerSecond: 10000,
@@ -271,10 +284,18 @@ export const normalizeEditDetail = (
     basic: {
       jobName: basicRaw?.jobName || raw?.jobName || '',
       jobDesc: basicRaw?.jobDesc || raw?.jobDesc || '',
-      clientId: basicRaw?.clientId ? String(basicRaw.clientId) : '',
+      clientId: basicRaw?.clientId
+        ? String(basicRaw.clientId)
+        : '',
       mode,
-      sourceType: basicRaw?.sourceType || workflow.sourceType?.dbType || '',
-      targetType: basicRaw?.targetType || workflow.targetType?.dbType || '',
+      sourceType:
+        basicRaw?.sourceType ||
+        workflow.sourceType?.dbType ||
+        '',
+      targetType:
+        basicRaw?.targetType ||
+        workflow.targetType?.dbType ||
+        '',
       sourceDataSourceId: String(
         basicRaw?.sourceDataSourceId ||
           workflow.sourceDataSourceId ||
@@ -304,10 +325,12 @@ export const endpointNode = (
   kind: EndpointKind,
 ): any | undefined =>
   workflow.nodes.find(
-    (node) => node?.data?.nodeType === kind || node?.type === kind,
+    (node) =>
+      node?.data?.nodeType === kind ||
+      node?.type === kind,
   );
 
-const resetConnectionDependentConfig = (
+const resetEndpointConfig = (
   kind: EndpointKind,
   config: Record<string, any>,
 ): Record<string, any> =>
@@ -335,13 +358,15 @@ const replaceEndpointNode = (
   const recordId = String(record.id || '');
   const meta = connectorMeta(record)!;
   const existing = endpointNode(workflow, kind);
-  const nextNode = existing || createEndpointNode('draft', kind, record);
+  const nextNode =
+    existing || createEndpointNode('draft', kind, record);
   const previousConfig = nextNode.data?.config || {};
   const dataSourceChanged =
     String(previousConfig.dataSourceId || '') !== recordId;
   const nextConfig = dataSourceChanged
-    ? resetConnectionDependentConfig(kind, previousConfig)
+    ? resetEndpointConfig(kind, previousConfig)
     : previousConfig;
+
   const nextData = {
     ...(nextNode.data || {}),
     dbType: meta.dbType,
@@ -360,31 +385,51 @@ const replaceEndpointNode = (
     ...workflow,
     nodes: existing
       ? workflow.nodes.map((node) =>
-          node.id === existing.id ? { ...node, data: nextData } : node,
+          node.id === existing.id
+            ? { ...node, data: nextData }
+            : node,
         )
-      : [...workflow.nodes, { ...nextNode, data: nextData }],
+      : [
+          ...workflow.nodes,
+          { ...nextNode, data: nextData },
+        ],
     ...(kind === 'source'
-      ? { sourceType: meta, sourceDataSourceId: recordId }
-      : { targetType: meta, targetDataSourceId: recordId }),
+      ? {
+          sourceType: meta,
+          sourceDataSourceId: recordId,
+        }
+      : {
+          targetType: meta,
+          targetDataSourceId: recordId,
+        }),
   };
 };
 
-export const applyConnectionSelection = (
+export const applyEndpointSelection = (
   editor: SyncEditorState,
-  source: DataSourceRecord,
-  target: DataSourceRecord,
+  kind: EndpointKind,
+  record: DataSourceRecord,
 ): SyncEditorState => {
-  let workflow = replaceEndpointNode(editor.workflow, 'source', source);
-  workflow = replaceEndpointNode(workflow, 'sink', target);
+  const recordId = String(record.id || '');
+  const workflow = replaceEndpointNode(
+    editor.workflow,
+    kind,
+    record,
+  );
 
   return {
     ...editor,
     basic: {
       ...editor.basic,
-      sourceType: source.dbType || '',
-      targetType: target.dbType || '',
-      sourceDataSourceId: String(source.id || ''),
-      targetDataSourceId: String(target.id || ''),
+      ...(kind === 'source'
+        ? {
+            sourceType: record.dbType || '',
+            sourceDataSourceId: recordId,
+          }
+        : {
+            targetType: record.dbType || '',
+            targetDataSourceId: recordId,
+          }),
     },
     workflow,
   };
@@ -396,6 +441,7 @@ export const updateEndpointConfig = (
   patch: Record<string, any>,
 ): SyncEditorState => {
   const current = endpointNode(editor.workflow, kind);
+
   if (!current) return editor;
 
   return {
@@ -420,9 +466,15 @@ export const updateEndpointConfig = (
   };
 };
 
-export const buildSavePayload = (editor: SyncEditorState) => ({
+export const buildSavePayload = (
+  editor: SyncEditorState,
+) => ({
   id: editor.id,
-  basic: editor.basic,
+  basic: {
+    ...editor.basic,
+    jobName: editor.basic.jobName.trim(),
+    jobDesc: editor.basic.jobDesc.trim(),
+  },
   workflow: editor.workflow,
   schedule: editor.schedule,
   env: editor.env,
