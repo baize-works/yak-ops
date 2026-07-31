@@ -26,12 +26,10 @@ import {
 import type { DataSourceRecord } from '@/pages/data-source/types';
 
 import { linkupJobDefinitionApi } from '../api';
-import BatchLinkUpPage from '../index';
 import ScheduleConfigContent from '../workflow/components/ScheduleConfigContent';
 import ConnectionTestStep, {
   type ConnectionTestState,
 } from './components/ConnectionTestStep';
-import CreateSyncTaskModal from './components/CreateSyncTaskModal';
 import SyncTaskConfigStep from './components/SyncTaskConfigStep';
 import {
   applyConnectionSelection,
@@ -227,13 +225,6 @@ export default function BatchLinkUpDetailPage() {
     [location.search, routeParams.id],
   );
 
-  const editScene = useMemo(
-    () =>
-      new URLSearchParams(location.search).get('scene') ===
-      'edit',
-    [location.search],
-  );
-
   const [editor, setEditor] =
     useState<SyncEditorState | null>(null);
 
@@ -258,7 +249,6 @@ export default function BatchLinkUpDetailPage() {
     useState<ConnectionTestState>('idle');
 
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
 
   const loadDataSources = useCallback(async () => {
     try {
@@ -326,29 +316,11 @@ export default function BatchLinkUpDetailPage() {
   useEffect(() => {
     if (!taskId) return;
 
-    const cacheKey = `batch-link-up-detail-${taskId}`;
-    const hasCreateCache = Boolean(
-      sessionStorage.getItem(cacheKey),
-    );
-
-    if (hasCreateCache && !editScene) {
-      setCreateOpen(true);
-      void loadDataSources();
-      return;
-    }
-
-    setCreateOpen(false);
-
     void Promise.all([
       loadTask(),
       loadDataSources(),
     ]);
-  }, [
-    editScene,
-    loadDataSources,
-    loadTask,
-    taskId,
-  ]);
+  }, [loadDataSources, loadTask, taskId]);
 
   const persistEditor = async (
     nextEditor: SyncEditorState,
@@ -512,39 +484,6 @@ export default function BatchLinkUpDetailPage() {
   if (!taskId) {
     history.replace('/sync/batch-link-up');
     return null;
-  }
-
-  if (createOpen) {
-    const cacheKey = `batch-link-up-detail-${taskId}`;
-
-    return (
-      <div className="relative min-h-screen bg-white">
-        <BatchLinkUpPage />
-
-        <CreateSyncTaskModal
-          open
-          reservedTaskId={taskId}
-          onCancel={() => {
-            sessionStorage.removeItem(cacheKey);
-            history.push('/sync/batch-link-up');
-          }}
-          onCreated={(id) => {
-            sessionStorage.removeItem(cacheKey);
-            setCreateOpen(false);
-
-            const nextPath =
-              `/sync/batch-link-up/${encodeURIComponent(id)}` +
-              '/detail?scene=edit';
-
-            history.replace(nextPath);
-
-            if (String(id) === String(taskId)) {
-              void loadTask();
-            }
-          }}
-        />
-      </div>
-    );
   }
 
   if (loading) {

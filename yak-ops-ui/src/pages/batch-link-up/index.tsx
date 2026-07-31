@@ -29,6 +29,7 @@ import React, {
   useState,
 } from "react";
 import { linkupJobDefinitionApi } from "./api";
+import CreateSyncTaskModal from "./components/CreateSyncTaskModal";
 import ActionColumn from "./components/SyncTaskList/components/ActionColumn";
 import DataSourceSyncPlan from "./components/SyncTaskList/components/DataSourceSyncPlan";
 import ExecutionStatus from "./components/SyncTaskList/components/ExecutionStatus";
@@ -178,6 +179,9 @@ const BatchLinkUpPage: React.FC = () => {
     );
 
   const [loading, setLoading] =
+    useState(false);
+
+  const [createOpen, setCreateOpen] =
     useState(false);
 
   const [selectedRowKeys, setSelectedRowKeys] =
@@ -396,39 +400,23 @@ const BatchLinkUpPage: React.FC = () => {
     });
   };
 
-  const goCreate = async () => {
-    try {
-      const data =
-        await linkupJobDefinitionApi.getUniqueId();
+  const goCreate = () => {
+    setCreateOpen(true);
+  };
 
-      if (data?.code !== API_SUCCESS_CODE) {
-        message.error(
-          data?.message ||
-            data?.msg ||
-            "申请任务定义 ID 失败"
-        );
-        return;
-      }
+  const handleCreated = () => {
+    setCreateOpen(false);
+    setSelectedRowKeys([]);
 
-      const returnId = data?.data;
-
-      sessionStorage.setItem(
-        `batch-link-up-detail-${returnId}`,
-        JSON.stringify({
-          sourceType,
-          targetType,
-          id: returnId,
-        })
-      );
-
-      history.push(
-        `/sync/batch-link-up/${returnId}/detail`
-      );
-    } catch {
-      message.error(
-        "创建离线同步任务失败"
-      );
+    if (pagination.current === 1) {
+      void fetchTaskList();
+      return;
     }
+
+    setPagination((previous) => ({
+      ...previous,
+      current: 1,
+    }));
   };
 
   const goEdit = (
@@ -1702,6 +1690,12 @@ const BatchLinkUpPage: React.FC = () => {
           </div>
         </section>
       </div>
+
+      <CreateSyncTaskModal
+        open={createOpen}
+        onCancel={() => setCreateOpen(false)}
+        onCreated={handleCreated}
+      />
     </div>
   );
 };

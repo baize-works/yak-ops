@@ -4,7 +4,8 @@ import {
 } from '@ant-design/icons';
 import { Form, Input, Modal, Radio, message } from 'antd';
 import { useEffect, useState, type ReactNode } from 'react';
-import { linkupJobDefinitionApi } from '../../api';
+
+import { linkupJobDefinitionApi } from '../api';
 import {
   buildCreatePayload,
   extractGeneratedId,
@@ -13,13 +14,12 @@ import {
   responseMessage,
   type CreateSyncTaskValues,
   type SyncMode,
-} from '../model';
+} from '../detail/model';
 
 interface CreateSyncTaskModalProps {
   open: boolean;
   onCancel: () => void;
   onCreated: (taskId: string) => void;
-  reservedTaskId?: string;
 }
 
 const modeOptions: Array<{
@@ -46,13 +46,13 @@ export default function CreateSyncTaskModal({
   open,
   onCancel,
   onCreated,
-  reservedTaskId,
 }: CreateSyncTaskModalProps) {
   const [form] = Form.useForm<CreateSyncTaskValues>();
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+
     form.setFieldsValue({
       jobName: '',
       jobDesc: '',
@@ -60,20 +60,26 @@ export default function CreateSyncTaskModal({
     });
   }, [form, open]);
 
+  const handleCancel = () => {
+    if (submitting) return;
+
+    form.resetFields();
+    onCancel();
+  };
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       setSubmitting(true);
 
-      let taskId = reservedTaskId || '';
-      if (!taskId) {
-        const idResponse = await linkupJobDefinitionApi.getUniqueId();
-        if (!isApiSuccess(idResponse)) {
-          message.error(responseMessage(idResponse, '生成任务 ID 失败'));
-          return;
-        }
-        taskId = extractGeneratedId(idResponse);
+      const idResponse = await linkupJobDefinitionApi.getUniqueId();
+
+      if (!isApiSuccess(idResponse)) {
+        message.error(responseMessage(idResponse, '生成任务 ID 失败'));
+        return;
       }
+
+      const taskId = extractGeneratedId(idResponse);
 
       if (!taskId) {
         message.error('生成任务 ID 失败');
@@ -92,10 +98,13 @@ export default function CreateSyncTaskModal({
       }
 
       const createdId = extractSavedId(saveResponse, taskId);
+
+      form.resetFields();
       message.success('同步任务已创建');
       onCreated(createdId);
     } catch (error: any) {
       if (error?.errorFields) return;
+
       message.error(error?.message || '创建同步任务失败');
     } finally {
       setSubmitting(false);
@@ -110,11 +119,12 @@ export default function CreateSyncTaskModal({
       centered
       destroyOnClose
       maskClosable={false}
+      keyboard={!submitting}
       confirmLoading={submitting}
-      okText="创建并配置"
+      okText="创建"
       cancelText="取消"
       onOk={handleSubmit}
-      onCancel={onCancel}
+      onCancel={handleCancel}
       styles={{ body: { padding: '8px 4px 4px' } }}
     >
       <div className="mb-6">
@@ -122,7 +132,7 @@ export default function CreateSyncTaskModal({
           新建离线同步任务
         </div>
         <div className="mt-1 text-[13px] text-[#667085]">
-          先创建任务基本信息，随后完成连接测试和同步配置。
+          填写任务基础信息，创建后可在任务列表中继续配置。
         </div>
       </div>
 
