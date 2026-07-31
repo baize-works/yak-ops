@@ -1,5 +1,4 @@
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
-import { Button, Pagination, PaginationProps } from "antd";
+import { Pagination, Select } from "antd";
 
 interface CustomPaginationProps {
   total: number;
@@ -8,71 +7,48 @@ interface CustomPaginationProps {
   onChange?: (page: number, pageSize: number) => void;
 }
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
 const CustomPagination: React.FC<CustomPaginationProps> = ({
   total,
-  current,
-  pageSize,
+  current = 1,
+  pageSize = 20,
   onChange,
 }) => {
-  const itemRender: PaginationProps["itemRender"] = (
-    _,
-    type,
-    originalElement
-  ) => {
-    if (type === "prev") {
-      return (
-        <Button
-          style={{ marginRight: 4 }}
-          size="small"
-          icon={
-            <LeftOutlined
-              style={{
-                bottom: 2,
-                position: "relative",
-                paddingBottom: 5,
-                fontSize: 7,
-                color: "rgba(185,185,185,1)",
-              }}
-            />
-          }
-        />
-      );
-    }
-    if (type === "next") {
-      return (
-        <Button
-          style={{ marginLeft: 4, marginRight: 4 }}
-          size="small"
-          icon={
-            <RightOutlined
-              style={{
-                bottom: 2,
-                position: "relative",
-                fontSize: 7,
-                color: "rgba(185,185,185,1)",
-              }}
-            />
-          }
-        />
-      );
-    }
-    return originalElement;
+  const handlePageChange = (page: number) => {
+    onChange?.(page, pageSize);
+  };
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    onChange?.(1, nextPageSize);
   };
 
   return (
-    <div className="flex items-center gap-4 text-slate-500">
-      <span>共 {total} 条</span>
-
+    <div className="flex items-center gap-3 text-[13px] text-[#667085]">
       <Pagination
         size="small"
         total={total}
         current={current}
         pageSize={pageSize}
-        showSizeChanger
-        pageSizeOptions={[10, 20, 50]}
-        onChange={onChange}
-        onShowSizeChange={onChange}
+        showSizeChanger={false}
+        showQuickJumper={false}
+        onChange={handlePageChange}
       />
+
+      <span className="whitespace-nowrap">每页显示：</span>
+
+      <Select
+        size="small"
+        value={pageSize}
+        options={PAGE_SIZE_OPTIONS.map((value) => ({
+          label: value,
+          value,
+        }))}
+        onChange={handlePageSizeChange}
+        className="w-[64px]"
+      />
+
+      <span className="whitespace-nowrap text-[#344054]">总 {total} 行</span>
     </div>
   );
 };

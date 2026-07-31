@@ -9,16 +9,25 @@ import {
   FileSearchOutlined,
   PauseCircleOutlined,
   PlayCircleOutlined,
-} from "@ant-design/icons";
-import { useIntl } from "@umijs/max";
-import { Dropdown, Modal, Popconfirm, Space, message } from "antd";
-import { useRef, useState } from "react";
+} from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
+import {
+  Button,
+  Dropdown,
+  Modal,
+  Popconfirm,
+  Tooltip,
+  message,
+  type MenuProps,
+} from 'antd';
+import { useRef, useState } from 'react';
+
 import {
   linkupJobDefinitionApi,
   linkupJobExecuteApi,
-} from "../../../api";
-import TaskViewModal from "../../../TaskViewModal";
-import RunLogDrawer from "./RunLogDrawer";
+} from '../../../api';
+import TaskViewModal from '../../../TaskViewModal';
+import RunLogDrawer from './RunLogDrawer';
 
 interface ActionColumnProps {
   record: any;
@@ -28,23 +37,8 @@ interface ActionColumnProps {
 
 const { confirm } = Modal;
 
-const actionBaseClass =
-  "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition-all duration-150";
-
-const primaryActionClass = `${actionBaseClass} bg-[#eef3ff] text-[#3157d5] hover:bg-[#e1e9ff] hover:text-[#2448c2]`;
-
-const dangerActionClass = `${actionBaseClass} bg-[#fff1f0] text-[#cf1322] hover:bg-[#ffe1de] hover:text-[#a8071a]`;
-
-const secondaryActionClass = `${actionBaseClass} bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900`;
-
-const disabledActionClass = `${actionBaseClass} cursor-not-allowed bg-slate-100 text-slate-400`;
-
-const moreActionClass =
-  "inline-flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-slate-500 transition-all duration-150 hover:bg-slate-100 hover:text-slate-800";
-
-const isReleaseOnline = (releaseState?: string | number) => {
-  return releaseState === "ONLINE" || releaseState === 1;
-};
+const isReleaseOnline = (releaseState?: string | number) =>
+  releaseState === 'ONLINE' || releaseState === 1;
 
 const ActionColumn: React.FC<ActionColumnProps> = ({
   record,
@@ -52,424 +46,484 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
   goDetail,
 }) => {
   const intl = useIntl();
-
-  const ref = useRef<any>(null);
+  const taskViewRef = useRef<any>(null);
 
   const [runOpen, setRunOpen] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
 
   const isOnline = isReleaseOnline(record?.releaseState);
-  const isRunning = record?.lastJobStatus === "RUNNING";
-  const [logOpen, setLogOpen] = useState(false);
-  const canRun = isOnline && !isRunning;
+  const isRunning = record?.lastJobStatus === 'RUNNING';
 
-  /**
-   * 上线后不能编辑和删除。
-   * 运行中一般也不允许编辑和删除。
-   */
+  const canRun = isOnline && !isRunning;
   const canEdit = !isOnline && !isRunning;
   const canDelete = !isOnline && !isRunning;
 
-  const stopPropagation = (event: React.MouseEvent<HTMLElement>) => {
+  const stopPropagation = (
+    event: React.MouseEvent<HTMLElement>,
+  ) => {
     event.stopPropagation();
   };
 
-  const handleStop = () => {
+  const yesText = intl.formatMessage({
+    id: 'pages.common.yes',
+    defaultMessage: '确认',
+  });
+
+  const noText = intl.formatMessage({
+    id: 'pages.common.no',
+    defaultMessage: '取消',
+  });
+
+  const handleRun = async () => {
+    if (!canRun) {
+      message.warning('请先上线任务，再执行运行操作');
+      return;
+    }
+
+    if (record?.id === undefined || record?.id === null) {
+      message.error('任务定义 ID 不存在');
+      return;
+    }
+
+    try {
+      setRunLoading(true);
+
+      const response = await linkupJobExecuteApi.execute(record.id);
+
+      if (response?.code === API_SUCCESS_CODE) {
+        message.success(
+          intl.formatMessage({
+            id: 'pages.common.success',
+            defaultMessage: '运行成功',
+          }),
+        );
+
+        setRunOpen(false);
+        cbk();
+        return;
+      }
+
+      message.error(
+        response?.msg ||
+          response?.message ||
+          '运行失败',
+      );
+    } finally {
+      setRunLoading(false);
+    }
+  };
+
+  const handleStop = async () => {
     const instanceId = record?.instanceId;
 
     if (instanceId === undefined || instanceId === null) {
-      message.error("任务实例 ID 不存在");
+      message.error('任务实例 ID 不存在');
       return;
     }
 
-    linkupJobExecuteApi.pause(instanceId).then((data) => {
-      if (data?.code === API_SUCCESS_CODE) {
-        message.success("停止成功");
-        cbk();
-      } else {
-        message.error(data?.msg || "停止失败");
-        cbk();
-      }
-    });
-  };
-
-  const handleOnline = async () => {
-    if (!record?.id) {
-      message.error("任务定义ID 不存在");
-      return;
-    }
-
-    const response = await linkupJobDefinitionApi.online(record.id);
+    const response =
+      await linkupJobExecuteApi.pause(instanceId);
 
     if (response?.code === API_SUCCESS_CODE) {
-      message.success("上线成功");
+      message.success('停止成功');
       cbk();
       return;
     }
 
-    message.error(response?.msg || response?.message || "上线失败");
+    message.error(
+      response?.msg ||
+        response?.message ||
+        '停止失败',
+    );
+  };
+
+  const handleOnline = async () => {
+    if (record?.id === undefined || record?.id === null) {
+      message.error('任务定义 ID 不存在');
+      return;
+    }
+
+    const response =
+      await linkupJobDefinitionApi.online(record.id);
+
+    if (response?.code === API_SUCCESS_CODE) {
+      message.success('上线成功');
+      cbk();
+      return;
+    }
+
+    message.error(
+      response?.msg ||
+        response?.message ||
+        '上线失败',
+    );
   };
 
   const handleOffline = async () => {
     if (isRunning) {
-      message.warning("任务正在运行中，请先停止任务后再下线");
+      message.warning('任务正在运行中，请先停止任务后再下线');
       return;
     }
 
-    if (!record?.id) {
-      message.error("任务定义ID 不存在");
+    if (record?.id === undefined || record?.id === null) {
+      message.error('任务定义 ID 不存在');
       return;
     }
 
-    const response = await linkupJobDefinitionApi.offline(record.id);
+    const response =
+      await linkupJobDefinitionApi.offline(record.id);
 
     if (response?.code === API_SUCCESS_CODE) {
-      message.success("下线成功");
+      message.success('下线成功');
       cbk();
       return;
     }
 
-    message.error(response?.msg || response?.message || "下线失败");
+    message.error(
+      response?.msg ||
+        response?.message ||
+        '下线失败',
+    );
   };
 
-  const doDeleteTask = async (id: string | number) => {
-    const response = await linkupJobDefinitionApi.delete(id);
-
-    if (response?.code === API_SUCCESS_CODE) {
-      message.success(response?.msg || "删除成功");
-      cbk();
-    } else {
-      message.error(response?.msg || response?.message || "删除失败");
-    }
+  const showOnlineConfirm = () => {
+    confirm({
+      title: '任务上线',
+      centered: true,
+      content: (
+        <div className="text-sm leading-6 text-[#667085]">
+          上线后任务将恢复可运行状态，并同步恢复调度。
+          <br />
+          确认上线该任务吗？
+        </div>
+      ),
+      okText: '确认',
+      cancelText: '取消',
+      onOk: handleOnline,
+    });
   };
 
-  const handleDeleteTask = async () => {
-    if (!canDelete) {
-      if (isOnline) {
-        message.warning("任务已上线，请先下线后再删除");
-        return;
-      }
-
-      if (isRunning) {
-        message.warning("任务正在运行中，请先停止后再删除");
-        return;
-      }
+  const showOfflineConfirm = () => {
+    if (isRunning) {
+      message.warning('任务正在运行中，请先停止任务后再下线');
+      return;
     }
 
     confirm({
-      title: intl.formatMessage({
-        id: "pages.job.action.delete.confirmTitle",
-        defaultMessage: "Confirm delete?",
-      }),
+      title: '任务下线',
       centered: true,
       content: (
-        <span>
-          {intl.formatMessage(
-            {
-              id: "pages.job.action.delete.confirmContent",
-              defaultMessage:
-                "Are you sure you want to delete the task [{name}]?",
-            },
-            {
-              name: <span style={{ color: "orange" }}>{record?.jobName}</span>,
-            }
-          )}
+        <div className="text-sm leading-6 text-[#667085]">
+          下线后任务将不会再被调度触发。
           <br />
-        </span>
+          确认下线该任务吗？
+        </div>
       ),
-      okText: intl.formatMessage({
-        id: "pages.job.action.delete.okText",
-        defaultMessage: "Delete",
-      }),
-      okType: "primary",
-      okButtonProps: {
-        size: "small",
-        danger: true,
-      },
-      cancelButtonProps: {
-        size: "small",
-      },
-      maskClosable: true,
-      onOk() {
-        if (record?.id) {
-          doDeleteTask(record.id);
-        } else {
-          message.error(
-            intl.formatMessage({
-              id: "pages.job.message.idNotExist",
-              defaultMessage: "id is not exist",
-            })
-          );
-        }
-      },
+      okText: '确认',
+      cancelText: '取消',
+      onOk: handleOffline,
     });
   };
 
   const handleEdit = async () => {
     if (!canEdit) {
       if (isOnline) {
-        message.warning("任务已上线，请先下线后再编辑");
+        message.warning('任务已上线，请先下线后再编辑');
         return;
       }
 
       if (isRunning) {
-        message.warning("任务正在运行中，请先停止后再编辑");
+        message.warning('任务正在运行中，请先停止后再编辑');
         return;
       }
     }
 
-    if (!record?.id) {
-      message.error("任务定义ID 不存在");
+    if (record?.id === undefined || record?.id === null) {
+      message.error('任务定义 ID 不存在');
       return;
     }
 
-    const data = await linkupJobDefinitionApi.selectEditDetail(record.id);
+    const response =
+      await linkupJobDefinitionApi.selectEditDetail(
+        record.id,
+      );
 
-    if (data?.code === API_SUCCESS_CODE) {
+    if (response?.code === API_SUCCESS_CODE) {
       goDetail(record.id, record);
-    } else {
-      message.error(data?.msg || data?.message || "获取任务详情失败");
+      return;
     }
+
+    message.error(
+      response?.msg ||
+        response?.message ||
+        '获取任务详情失败',
+    );
   };
 
-  const handleMenuClick = (info: any) => {
-    info.domEvent.stopPropagation();
+  const doDeleteTask = async (
+    id: string | number,
+  ) => {
+    const response =
+      await linkupJobDefinitionApi.delete(id);
 
-    if (info?.key === "view") {
-      ref.current?.onOpen(true, record, cbk);
+    if (response?.code === API_SUCCESS_CODE) {
+      message.success(
+        response?.msg || '删除成功',
+      );
+      cbk();
       return;
     }
 
-    if (info?.key === "edit") {
-      handleEdit();
-      return;
-    }
-
-    if (info?.key === "log") {
-      setLogOpen(true);
-      return;
-    }
-
-    if (info?.key === "delete") {
-      handleDeleteTask();
-    }
+    message.error(
+      response?.msg ||
+        response?.message ||
+        '删除失败',
+    );
   };
 
-  const yesText = intl.formatMessage({
-    id: "pages.common.yes",
-    defaultMessage: "Yes",
-  });
+  const handleDeleteTask = () => {
+    if (!canDelete) {
+      if (isOnline) {
+        message.warning('任务已上线，请先下线后再删除');
+        return;
+      }
 
-  const noText = intl.formatMessage({
-    id: "pages.common.no",
-    defaultMessage: "No",
-  });
+      if (isRunning) {
+        message.warning('任务正在运行中，请先停止后再删除');
+        return;
+      }
+    }
 
-  const menuItems = [
+    confirm({
+      title: intl.formatMessage({
+        id: 'pages.job.action.delete.confirmTitle',
+        defaultMessage: '删除任务',
+      }),
+      centered: true,
+      content: (
+        <div className="text-sm leading-6 text-[#667085]">
+          确认删除任务
+          <span className="mx-1 font-medium text-[#344054]">
+            {record?.jobName || '-'}
+          </span>
+          吗？
+          <br />
+          删除后将无法恢复。
+        </div>
+      ),
+      okText: intl.formatMessage({
+        id: 'pages.job.action.delete.okText',
+        defaultMessage: '删除',
+      }),
+      cancelText: '取消',
+      okButtonProps: {
+        danger: true,
+      },
+      maskClosable: true,
+      onOk: () => {
+        if (
+          record?.id === undefined ||
+          record?.id === null
+        ) {
+          message.error('任务定义 ID 不存在');
+          return;
+        }
+
+        return doDeleteTask(record.id);
+      },
+    });
+  };
+
+  const menuItems: MenuProps['items'] = [
     {
-      key: "view",
+      key: 'view',
       icon: <EyeOutlined />,
-      label: <span style={{ fontWeight: 500 }}>查看详情</span>,
+      label: '查看详情',
     },
     {
-      key: "edit",
+      key: 'edit',
       icon: <EditOutlined />,
-      label: <span style={{ fontWeight: 500 }}>编辑配置</span>,
+      label: '编辑配置',
       disabled: !canEdit,
     },
     {
-      type: "divider" as const,
-    },
-    {
-      key: "log",
+      key: 'log',
       icon: <FileSearchOutlined />,
-      label: <span style={{ fontWeight: 500 }}>查看日志</span>,
-      // disabled: !canEdit,
+      label: '查看日志',
     },
     {
-      type: "divider" as const,
+      type: 'divider',
     },
     {
-      key: "delete",
+      key: isOnline ? 'offline' : 'online',
+      icon: isOnline ? (
+        <CloudDownloadOutlined />
+      ) : (
+        <CloudUploadOutlined />
+      ),
+      label: isOnline ? '下线任务' : '上线任务',
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'delete',
       icon: <DeleteOutlined />,
-      label: <span style={{ fontWeight: 500 }}>删除任务</span>,
+      label: '删除任务',
       danger: true,
       disabled: !canDelete,
     },
   ];
 
+  const handleMenuClick: MenuProps['onClick'] = ({
+    key,
+    domEvent,
+  }) => {
+    domEvent.stopPropagation();
+
+    switch (key) {
+      case 'view':
+        taskViewRef.current?.onOpen(
+          true,
+          record,
+          cbk,
+        );
+        break;
+
+      case 'edit':
+        handleEdit();
+        break;
+
+      case 'log':
+        setLogOpen(true);
+        break;
+
+      case 'online':
+        showOnlineConfirm();
+        break;
+
+      case 'offline':
+        showOfflineConfirm();
+        break;
+
+      case 'delete':
+        handleDeleteTask();
+        break;
+
+      default:
+        break;
+    }
+  };
+
   return (
     <>
-      <Space size={6} className="whitespace-nowrap">
+      <div className="flex items-center gap-1 whitespace-nowrap">
         {isRunning ? (
           <Popconfirm
             title={intl.formatMessage({
-              id: "pages.job.action.stop.title",
-              defaultMessage: "Stop Task",
+              id: 'pages.job.action.stop.title',
+              defaultMessage: '停止任务',
             })}
-            description={
-              <div style={{ marginRight: 12 }}>
-                {intl.formatMessage({
-                  id: "pages.job.action.stop.desc",
-                  defaultMessage: "Are you sure stop this job?",
-                })}
-              </div>
-            }
+            description="确认停止当前任务吗？"
             okText={yesText}
             cancelText={noText}
             onConfirm={handleStop}
           >
-            <button
-              type="button"
-              className={dangerActionClass}
+            <Button
+              size="small"
+              color="danger"
+              variant="filled"
+              icon={<PauseCircleOutlined />}
+              className="!h-7 !rounded-md !px-2.5 !text-xs"
               onClick={stopPropagation}
             >
-              <PauseCircleOutlined />
               停止
-            </button>
+            </Button>
           </Popconfirm>
         ) : (
-          <Popconfirm
-            title={intl.formatMessage({
-              id: "pages.job.action.run.title",
-              defaultMessage: "Run Task",
-            })}
-            open={canRun ? runOpen : false}
-            onOpenChange={(open) => {
-              if (!canRun) {
-                message.warning("请先上线任务，再执行运行操作");
-                return;
-              }
-
-              if (!runLoading) {
-                setRunOpen(open);
-              }
-            }}
-            okButtonProps={{ loading: runLoading }}
-            description={
-              <div style={{ marginRight: 12 }}>
-                {intl.formatMessage({
-                  id: "pages.job.action.run.desc",
-                  defaultMessage: "Are you sure to run this job?",
-                })}
-              </div>
+          <Tooltip
+            title={
+              canRun
+                ? undefined
+                : '请先上线任务'
             }
-            okText={yesText}
-            cancelText={noText}
-            onConfirm={async () => {
-              if (!canRun) {
-                message.warning("请先上线任务，再执行运行操作");
-                return;
-              }
-
-              try {
-                setRunLoading(true);
-
-                const data = await linkupJobExecuteApi.execute(record?.id);
-
-                if (data?.code === API_SUCCESS_CODE) {
-                  message.success(
-                    intl.formatMessage({
-                      id: "pages.common.success",
-                      defaultMessage: "Success",
-                    })
-                  );
-                  cbk();
-                  setRunOpen(false);
-                } else {
-                  message.error(data?.msg || "运行失败");
-                }
-              } finally {
-                setRunLoading(false);
-              }
-            }}
           >
-            <button
-              type="button"
-              disabled={!canRun}
-              className={canRun ? primaryActionClass : disabledActionClass}
-              onClick={(event) => {
-                event.stopPropagation();
-
+            <Popconfirm
+              title={intl.formatMessage({
+                id: 'pages.job.action.run.title',
+                defaultMessage: '运行任务',
+              })}
+              description="确认运行当前任务吗？"
+              open={canRun && runOpen}
+              okText={yesText}
+              cancelText={noText}
+              okButtonProps={{
+                loading: runLoading,
+              }}
+              onConfirm={handleRun}
+              onOpenChange={(open) => {
                 if (!canRun) {
-                  message.warning("请先上线任务，再执行运行操作");
+                  if (open) {
+                    message.warning(
+                      '请先上线任务，再执行运行操作',
+                    );
+                  }
+
+                  return;
+                }
+
+                if (!runLoading) {
+                  setRunOpen(open);
                 }
               }}
             >
-              <PlayCircleOutlined />
-              运行
-            </button>
-          </Popconfirm>
-        )}
-
-        {isOnline ? (
-          <Popconfirm
-            title="任务下线"
-            description={
-              <div style={{ marginRight: 12 }}>
-                下线后任务将不会再被调度触发，
-                <br />
-                确认下线该任务吗？
-              </div>
-            }
-            okText="确认"
-            cancelText="取消"
-            onConfirm={handleOffline}
-          >
-            <button
-              type="button"
-              className={secondaryActionClass}
-              onClick={stopPropagation}
-            >
-              <CloudDownloadOutlined />
-              下线
-            </button>
-          </Popconfirm>
-        ) : (
-          <Popconfirm
-            title="任务上线"
-            description={
-              <div style={{ marginRight: 12 }}>
-                上线后任务将恢复可运行状态，并同步恢复调度，
-                <br />
-                确认上线该任务吗？
-              </div>
-            }
-            okText="确认"
-            cancelText="取消"
-            onConfirm={handleOnline}
-          >
-            <button
-              type="button"
-              className={secondaryActionClass}
-              onClick={stopPropagation}
-            >
-              <CloudUploadOutlined />
-              上线
-            </button>
-          </Popconfirm>
+              <Button
+                size="small"
+                color={
+                  canRun ? 'primary' : 'default'
+                }
+                variant="filled"
+                loading={runLoading}
+                aria-disabled={!canRun}
+                icon={<PlayCircleOutlined />}
+                className={[
+                  '!h-7 !rounded-md !px-2.5 !text-xs',
+                  !canRun
+                    ? '!cursor-not-allowed !text-[#98a2b3]'
+                    : '',
+                ].join(' ')}
+                onClick={stopPropagation}
+              >
+                运行
+              </Button>
+            </Popconfirm>
+          </Tooltip>
         )}
 
         <Dropdown
-          trigger={["click"]}
+          trigger={['click']}
+          placement="bottomRight"
           menu={{
             items: menuItems,
             onClick: handleMenuClick,
           }}
-          placement="bottomLeft"
         >
-          <button
-            type="button"
-            className={moreActionClass}
+          <Button
+            size="small"
+            color="default"
+            variant="text"
+            className="!h-7 !rounded-md !px-2 !text-xs !text-[#667085]"
             onClick={stopPropagation}
           >
             更多
-            <DownOutlined style={{ fontSize: 10 }} />
-          </button>
+            <DownOutlined className="text-[9px]" />
+          </Button>
         </Dropdown>
-      </Space>
+      </div>
 
-      <TaskViewModal ref={ref} />
+      <TaskViewModal ref={taskViewRef} />
+
       <RunLogDrawer
         open={logOpen}
         jobMode="BATCH"
@@ -477,7 +531,9 @@ const ActionColumn: React.FC<ActionColumnProps> = ({
         onClose={() => setLogOpen(false)}
         title="运行日志"
         subtitle={
-          record?.jobName ? `任务：${record.jobName}` : "查看任务运行输出"
+          record?.jobName
+            ? `任务：${record.jobName}`
+            : '查看任务运行输出'
         }
       />
     </>

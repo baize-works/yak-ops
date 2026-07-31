@@ -1,5 +1,11 @@
 import { history, useLocation, useParams } from "@umijs/max";
-import { Button, ConfigProvider, Empty, message, Spin } from "antd";
+import {
+  Button,
+  ConfigProvider,
+  Empty,
+  message,
+  Spin,
+} from "antd";
 import {
   useCallback,
   useEffect,
@@ -24,46 +30,6 @@ import {
   responseMessage,
   type SyncEditorState,
 } from "./model";
-
-/**
- * 查找当前元素真正所在的纵向滚动容器。
- *
- * Umi / ProLayout 页面通常不是 window 滚动，
- * 而是中间的内容区域滚动，因此不能只监听 window。
- */
-const findScrollContainer = (
-  element: HTMLElement,
-): HTMLElement | Window => {
-  let parent = element.parentElement;
-
-  while (parent) {
-    const style = window.getComputedStyle(parent);
-    const overflowY = style.overflowY;
-
-    if (/(auto|scroll|overlay)/.test(overflowY)) {
-      return parent;
-    }
-
-    parent = parent.parentElement;
-  }
-
-  return window;
-};
-
-/**
- * 获取滚动容器可视区域的底部位置。
- */
-const getScrollViewportBottom = (
-  scrollContainer: HTMLElement | Window,
-): number => {
-  if (scrollContainer === window) {
-    return window.innerHeight;
-  }
-
-  return (
-    scrollContainer as HTMLElement
-  ).getBoundingClientRect().bottom;
-};
 
 const validateTaskConfig = (
   editor: SyncEditorState,
@@ -140,7 +106,6 @@ export default function BatchLinkUpDetailPage() {
   const routeParams = useParams<{ id?: string }>();
 
   const pageRootRef = useRef<HTMLDivElement>(null);
-  const actionBarRef = useRef<HTMLElement>(null);
 
   const taskId = useMemo(
     () =>
@@ -162,15 +127,6 @@ export default function BatchLinkUpDetailPage() {
   const [dataSources, setDataSources] = useState<
     DataSourceRecord[]
   >([]);
-
-  /**
-   * 底部栏当前是否已经吸附。
-   *
-   * 这个状态主要用于控制阴影动画，不负责控制定位。
-   * 真正的定位由 CSS sticky 完成。
-   */
-  const [actionBarStuck, setActionBarStuck] =
-    useState(false);
 
   useSmoothWheelScroll(
     pageRootRef,
@@ -239,99 +195,6 @@ export default function BatchLinkUpDetailPage() {
     ]);
   }, [loadDataSources, loadTask, taskId]);
 
-  /**
-   * 检测 sticky 操作栏是否已经贴住滚动区域底部。
-   *
-   * 吸附时增加轻微顶部阴影；
-   * 恢复普通文档流后，阴影平滑消失。
-   */
-  useEffect(() => {
-    if (!editor) return;
-
-    const actionBar = actionBarRef.current;
-
-    if (!actionBar) return;
-
-    const scrollContainer =
-      findScrollContainer(actionBar);
-
-    let animationFrameId = 0;
-
-    const updateStickyState = () => {
-      window.cancelAnimationFrame(animationFrameId);
-
-      animationFrameId =
-        window.requestAnimationFrame(() => {
-          const actionBarRect =
-            actionBar.getBoundingClientRect();
-
-          const viewportBottom =
-            getScrollViewportBottom(scrollContainer);
-
-          const isVisible =
-            actionBarRect.top < viewportBottom &&
-            actionBarRect.bottom > 0;
-
-          const isAtBottom =
-            Math.abs(
-              actionBarRect.bottom - viewportBottom,
-            ) <= 3;
-
-          const nextStuck = isVisible && isAtBottom;
-
-          setActionBarStuck((previous) =>
-            previous === nextStuck
-              ? previous
-              : nextStuck,
-          );
-        });
-    };
-
-    updateStickyState();
-
-    scrollContainer.addEventListener(
-      "scroll",
-      updateStickyState,
-      {
-        passive: true,
-      },
-    );
-
-    window.addEventListener(
-      "resize",
-      updateStickyState,
-    );
-
-    const resizeObserver =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(updateStickyState)
-        : null;
-
-    resizeObserver?.observe(actionBar);
-
-    if (scrollContainer !== window) {
-      resizeObserver?.observe(
-        scrollContainer as HTMLElement,
-      );
-    }
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-
-      scrollContainer.removeEventListener(
-        "scroll",
-        updateStickyState,
-      );
-
-      window.removeEventListener(
-        "resize",
-        updateStickyState,
-      );
-
-      resizeObserver?.disconnect();
-    };
-  }, [editor]);
-
   const persistEditor = async (
     nextEditor: SyncEditorState,
   ): Promise<SyncEditorState | null> => {
@@ -351,10 +214,7 @@ export default function BatchLinkUpDetailPage() {
 
       if (!isApiSuccess(response)) {
         message.error(
-          responseMessage(
-            response,
-            "保存同步任务失败",
-          ),
+          responseMessage(response, "保存同步任务失败"),
         );
 
         return null;
@@ -431,66 +291,50 @@ export default function BatchLinkUpDetailPage() {
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-      <div
-        ref={pageRootRef}
-        className="min-h-[calc(100vh-64px)] bg-[#f7f8fa] text-[#161823]"
-      >
-        {/*
-          编辑内容和底部操作栏放进同一个宽度容器。
+      {/*
+        这里必须限制高度并隐藏外层滚动，
+        让 pageRootRef 成为唯一的滚动容器。
+      */}
+      <div className="h-[calc(100vh-64px)] overflow-hidden bg-[#f7f8fa] text-[#161823]">
+        <div
+          ref={pageRootRef}
+          className="h-full overflow-y-auto"
+        >
+          <div className="mx-auto w-full max-w-[1040px] px-6 pt-6">
+            <main className="pb-4">
+              <SyncTaskEditor
+                editor={editor}
+                dataSources={dataSources}
+                dataSourceLoading={dataSourceLoading}
+                onChange={setEditor}
+              />
+            </main>
 
-          这样操作栏不需要计算侧边栏宽度，
-          也不会出现比上面任务区域更宽的问题。
-        */}
-        <div className="mx-auto w-full max-w-[1040px] px-6 pt-6">
-          <main>
-            <SyncTaskEditor
-              editor={editor}
-              dataSources={dataSources}
-              dataSourceLoading={dataSourceLoading}
-              onChange={setEditor}
-            />
-          </main>
+            {/*
+              直接使用 sticky 即可。
+              它会相对于上面的 pageRootRef 滚动容器吸附。
+            */}
+            <footer className="sticky bottom-0 z-50 overflow-hidden rounded-t-lg border border-b-0 border-[#eaecf0] bg-white shadow-[0_-8px_16px_rgba(0,0,0,0.06)]">
+              <div className="flex min-h-[80px] items-center gap-3 px-8 py-4">
+                <Button
+                  type="primary"
+                  loading={saving}
+                  className="!h-9 !min-w-[120px] !rounded-lg !px-6 !font-medium !text-white"
+                  onClick={handleSave}
+                >
+                  保存配置
+                </Button>
 
-          {/*
-            初始状态：
-            操作栏位于表单内容下方，并保留 16px 间距。
-
-            向下滚动：
-            当操作栏接触滚动区域底部时，通过 sticky 吸附。
-
-            向上滚动：
-            操作栏回到正常文档流，继续保留顶部 16px 间距。
-          */}
-          <footer
-            ref={actionBarRef}
-            className={[
-              "sticky bottom-0 z-20 mt-4 overflow-hidden",
-              "rounded-t-lg bg-white",
-              "transition-[box-shadow] duration-300 ease-in-out",
-              actionBarStuck
-                ? "shadow-[0_-8px_10px_0_rgba(0,0,0,0.06)]"
-                : "shadow-none",
-            ].join(" ")}
-          >
-            <div className="flex min-h-[80px] items-center gap-3 px-8 py-4">
-              <Button
-                type="primary"
-                loading={saving}
-                className="!h-9 !min-w-[120px] !rounded-lg !px-6 !font-medium !text-white"
-                onClick={handleSave}
-              >
-                保存配置
-              </Button>
-
-              <Button
-                disabled={saving}
-                className="!h-9 !min-w-[120px] !rounded-lg !border-0 !bg-[#f2f3f5] !px-5 !font-medium !text-[#344054] hover:!bg-[#e9eaec]"
-                onClick={handleCancel}
-              >
-                取消
-              </Button>
-            </div>
-          </footer>
+                <Button
+                  disabled={saving}
+                  className="!h-9 !min-w-[120px] !rounded-lg !border-0 !bg-[#f2f3f5] !px-5 !font-medium !text-[#344054] hover:!bg-[#e9eaec]"
+                  onClick={handleCancel}
+                >
+                  取消
+                </Button>
+              </div>
+            </footer>
+          </div>
         </div>
       </div>
     </ConfigProvider>

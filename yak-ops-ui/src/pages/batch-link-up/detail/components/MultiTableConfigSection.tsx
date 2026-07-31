@@ -148,9 +148,6 @@ export default function MultiTableConfigSection({
               <div className="text-[12px] font-medium text-[#475467]">
                 自动创建目标表
               </div>
-              <div className="mt-0.5 text-[11px] text-[#98a2b3]">
-                目标表不存在时由任务自动创建
-              </div>
             </div>
 
             <Switch

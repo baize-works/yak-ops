@@ -1,129 +1,109 @@
-import HandIcon from "@/pages/batch-link-up/icon/HandIcon";
-import { ClockCircleOutlined } from "@ant-design/icons";
-
 import { useIntl } from "@umijs/max";
+import type { ReactNode } from "react";
 
-interface ExecutionStatusProps {
-  record: any;
+interface ExecutionRecord {
+  runMode?: string;
+  duration?: string | number;
+  readRowCount?: number;
+  qps?: number;
+  syncSize?: string;
 }
 
-const ExecutionStatus: React.FC<ExecutionStatusProps> = ({ record }) => {
+interface ExecutionStatusProps {
+  record?: ExecutionRecord;
+}
+
+interface MetricItemProps {
+  label: ReactNode;
+  value: ReactNode;
+}
+
+const MetricItem = ({ label, value }: MetricItemProps) => {
+  return (
+    <div className="min-w-0">
+      <div className="mb-0.5 whitespace-nowrap text-[11px] leading-4 text-[#98a2b3]">
+        {label}
+      </div>
+
+      <div className="truncate whitespace-nowrap text-[13px] font-medium leading-5 text-[#344054] tabular-nums">
+        {value}
+      </div>
+    </div>
+  );
+};
+
+const ExecutionStatus = ({ record }: ExecutionStatusProps) => {
   const intl = useIntl();
 
+  const isManual = record?.runMode === "MANUAL";
+
+  const durationUnit = intl.formatMessage({
+    id: "pages.job.execution.unit.seconds",
+    defaultMessage: "秒",
+  });
+
+  const rowsUnit = intl.formatMessage({
+    id: "pages.job.execution.unit.rows",
+    defaultMessage: "行",
+  });
+
+  const rowsPerSecondUnit = intl.formatMessage({
+    id: "pages.job.execution.unit.rowsPerSecond",
+    defaultMessage: "行/秒",
+  });
+
   return (
-    <>
-      {/* Execution */}
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <span
-          style={{
-            fontWeight: 700,
-            fontSize: 19,
-            marginRight: 8,
-            color: "#1890ff",
-          }}
-        >
-          ·
-        </span>
+    <div className="min-w-[190px]">
+      <div className="mb-2 flex items-center gap-2">
+        {/* <span className="text-[11px] text-[#98a2b3]">运行模式</span> */}
 
-        <span style={{ marginRight: 16, fontWeight: 700, color: "#333" }}>
-          {intl.formatMessage({
-            id: "pages.job.execution.runMode",
-            defaultMessage: "Run Mode:",
-          })}{" "}
-        </span>
+        <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[#344054]">
+       
 
-        {record?.runMode === "MANUAL" ? (
-          <div
-            style={{
-              display: "inline-block",
-              transition: "transform 0.3s",
-              animation: "bounce 1.2s infinite",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.3)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            <HandIcon width={20} height={20} fill="#fa8c16" />
-          </div>
-        ) : (
-          <ClockCircleOutlined
-            style={{
-              fontSize: 20,
-              color: "#52c41a",
-              transition: "transform 0.3s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          />
-        )}
+          <span className="rounded bg-[#f2f4f7] px-1.5 py-0.5 text-[11px] font-medium leading-5 text-[#667085]">
+            {isManual ? "手动运行" : "定时调度"}
+          </span>
+        </span>
       </div>
 
-      {/* Time */}
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <span style={{ fontWeight: 700, fontSize: 19, marginRight: 8 }}>·</span>
-        <span style={{ marginRight: 42, fontWeight: 700 }}>
-          {intl.formatMessage({
+      <div className="grid grid-cols-2 gap-x-5 gap-y-2">
+        <MetricItem
+          label={intl.formatMessage({
             id: "pages.job.execution.time",
-            defaultMessage: "Time:",
-          })}{" "}
-        </span>
-        <span style={{ color: "gray" }}>
-          {record?.duration || "-"}{" "}
-          {intl.formatMessage({
-            id: "pages.job.execution.unit.seconds",
-            defaultMessage: "s",
+            defaultMessage: "耗时",
           })}
-        </span>
-      </div>
+          value={
+            record?.duration !== undefined && record?.duration !== null
+              ? `${record.duration} ${durationUnit}`
+              : "-"
+          }
+        />
 
-      {/* Amount */}
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <span style={{ fontWeight: 700, fontSize: 19, marginRight: 8 }}>·</span>
-        <span style={{ marginRight: 30, fontWeight: 700 }}>
-          {intl.formatMessage({
+        <MetricItem
+          label={intl.formatMessage({
             id: "pages.job.execution.amount",
-            defaultMessage: "Amount:",
-          })}{" "}
-        </span>
-        <span style={{ color: "gray" }}>
-          {record?.readRowCount ?? 0}{" "}
-          {intl.formatMessage({
-            id: "pages.job.execution.unit.rows",
-            defaultMessage: "r",
+            defaultMessage: "数据量",
           })}
-        </span>
-      </div>
+          value={`${record?.readRowCount ?? 0} ${rowsUnit}`}
+        />
 
-      {/* QPS */}
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <span style={{ fontWeight: 700, fontSize: 19, marginRight: 8 }}>·</span>
-        <span style={{ marginRight: 43, fontWeight: 700 }}>
-          {intl.formatMessage({
+        <MetricItem
+          label={intl.formatMessage({
             id: "pages.job.execution.qps",
-            defaultMessage: "QPS:",
-          })}{" "}
-        </span>
-        <span style={{ color: "gray" }}>
-          {record?.qps ?? 0}{" "}
-          {intl.formatMessage({
-            id: "pages.job.execution.unit.rowsPerSecond",
-            defaultMessage: "r/s",
+            defaultMessage: "QPS",
           })}
-        </span>
-      </div>
+          value={`${record?.qps ?? 0} ${rowsPerSecondUnit}`}
+        />
 
-      {/* Size */}
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <span style={{ fontWeight: 700, fontSize: 19, marginRight: 8 }}>·</span>
-        <span style={{ marginRight: 43, fontWeight: 700 }}>
-          {intl.formatMessage({
+        <MetricItem
+          label={intl.formatMessage({
             id: "pages.job.execution.size",
-            defaultMessage: "Size:",
-          })}{" "}
-        </span>
-        <span style={{ color: "gray" }}>{record?.syncSize || "-"}</span>
+            defaultMessage: "同步大小",
+          })}
+          value={record?.syncSize || "-"}
+        />
       </div>
-    </>
+    </div>
   );
 };
 

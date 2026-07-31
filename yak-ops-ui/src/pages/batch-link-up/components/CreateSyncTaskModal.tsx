@@ -2,7 +2,7 @@ import {
   ArrowRightOutlined,
   DatabaseOutlined,
   TableOutlined,
-} from '@ant-design/icons';
+} from "@ant-design/icons";
 import {
   Button,
   ConfigProvider,
@@ -10,14 +10,17 @@ import {
   Form,
   Input,
   Radio,
+  Select,
   message,
-} from 'antd';
+} from "antd";
 import {
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
-} from 'react';
+} from "react";
 
 import {
   BRAND_COLOR,
@@ -25,9 +28,10 @@ import {
   BRAND_COLOR_SOFT,
   BRAND_COLOR_SOFT_HOVER,
   BRAND_THEME,
-} from '@/styles/brand';
+} from "@/styles/brand";
 
-import { linkupJobDefinitionApi } from '../api';
+import { linkupJobDefinitionApi } from "../api";
+import { generateDataSourceOptions } from "../DataSourceSelect";
 import {
   buildCreatePayload,
   extractGeneratedId,
@@ -36,27 +40,33 @@ import {
   responseMessage,
   type CreateSyncTaskValues,
   type SyncMode,
-} from '../detail/model';
-
-export interface CreateSyncEndpoint {
-  name?: string;
-  dbType?: string;
-  connectorType?: string;
-  pluginName?: string;
-}
+} from "../detail/model";
 
 interface CreateSyncTaskDrawerProps {
   open: boolean;
-  source: CreateSyncEndpoint;
-  target: CreateSyncEndpoint;
   onCancel: () => void;
   onCreated: (taskId: string) => void;
 }
 
-interface EndpointSummaryProps {
-  role: '来源端' | '目标端';
-  endpoint: CreateSyncEndpoint;
+interface CreateSyncTaskFormValues extends CreateSyncTaskValues {
+  sourceDbType: string;
+  targetDbType: string;
 }
+
+interface ConnectorOption {
+  value: string;
+  label: ReactNode;
+  connectorType?: string;
+  pluginName?: string;
+}
+
+interface CreateSyncEndpoint {
+  dbType: string;
+  connectorType: string;
+  pluginName: string;
+}
+
+const DEFAULT_DB_TYPE = "MYSQL";
 
 const modeOptions: Array<{
   value: SyncMode;
@@ -65,162 +75,215 @@ const modeOptions: Array<{
   icon: ReactNode;
 }> = [
   {
-    value: 'GUIDE_SINGLE',
-    title: '单表同步',
-    description: '配置一张来源表到一张目标表的离线同步任务',
+    value: "GUIDE_SINGLE",
+    title: "单表同步",
+    description: "配置一张来源表到一张目标表的离线同步任务",
     icon: <TableOutlined />,
   },
   {
-    value: 'GUIDE_MULTI',
-    title: '多表同步',
-    description: '批量选择多张来源表，并按规则写入目标端',
+    value: "GUIDE_MULTI",
+    title: "多表同步",
+    description: "批量选择多张来源表，并按规则写入目标端",
     icon: <DatabaseOutlined />,
   },
 ];
 
 const brandCssVariables = {
-  '--yak-brand-color': BRAND_COLOR,
-  '--yak-brand-color-border': BRAND_COLOR_BORDER,
-  '--yak-brand-color-soft': BRAND_COLOR_SOFT,
-  '--yak-brand-color-soft-hover': BRAND_COLOR_SOFT_HOVER,
+  "--yak-brand-color": BRAND_COLOR,
+  "--yak-brand-color-border": BRAND_COLOR_BORDER,
+  "--yak-brand-color-soft": BRAND_COLOR_SOFT,
+  "--yak-brand-color-soft-hover": BRAND_COLOR_SOFT_HOVER,
 } as CSSProperties;
 
-const endpointName = (endpoint: CreateSyncEndpoint) =>
-  endpoint.name?.trim() || endpoint.dbType?.trim() || '未指定';
+const buildDefaultJobName = (sourceDbType: string, targetDbType: string) =>
+  `${sourceDbType} → ${targetDbType} 离线同步`.slice(0, 64);
 
-const endpointMeta = (endpoint: CreateSyncEndpoint) =>
-  [endpoint.connectorType, endpoint.pluginName]
-    .map((value) => value?.trim())
-    .filter(Boolean)
-    .join(' · ');
+const resolveEndpoint = (
+  dbType: string,
+  options: ConnectorOption[]
+): CreateSyncEndpoint => {
+  const option = options.find((item) => item.value === dbType);
 
-const buildDefaultJobName = (
-  sourceName: string,
-  targetName: string,
-) => `${sourceName} → ${targetName} 离线同步`.slice(0, 64);
+  return {
+    dbType,
+    connectorType: option?.connectorType || dbType,
+    pluginName: option?.pluginName || dbType,
+  };
+};
 
-const buildDefaultJobDescription = (
-  sourceName: string,
-  targetName: string,
-) =>
-  [
-    '业务场景：请填写所属业务或使用场景；',
-    `同步范围：从 ${sourceName} 的【来源表】同步至 ${targetName} 的【目标表】；`,
-    '同步目的：请填写数据分析、数据服务、数据归档等使用目的。',
-  ]
-    .join('\n')
-    .slice(0, 200);
+const applyConnectorSelection = (
+  payload: any,
+  source: CreateSyncEndpoint,
+  target: CreateSyncEndpoint
+) => {
+  const patchNode = (
+    node: any,
+    kind: "source" | "sink",
+    endpoint: CreateSyncEndpoint
+  ) => {
+    const nodeKind = node?.data?.nodeType || node?.type;
 
-function EndpointSummary({
-  role,
-  endpoint,
-}: EndpointSummaryProps) {
-  const name = endpointName(endpoint);
-  const meta = endpointMeta(endpoint);
+    if (nodeKind !== kind) return node;
 
-  return (
-    <div className="min-w-0 rounded-xl border border-[#e4e7ec] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(16,24,40,0.03)]">
-      <div className="flex items-center gap-3">
-        <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[16px]"
-          style={{
-            color: BRAND_COLOR,
-            backgroundColor: BRAND_COLOR_SOFT_HOVER,
-          }}
-        >
-          <DatabaseOutlined />
-        </div>
+    return {
+      ...node,
+      data: {
+        ...(node?.data || {}),
+        dbType: endpoint.dbType,
+        connectorType: endpoint.connectorType,
+        pluginName: endpoint.pluginName,
+        config: {
+          ...(node?.data?.config || {}),
+          dbType: endpoint.dbType,
+          connectorType: endpoint.connectorType,
+          pluginName: endpoint.pluginName,
+        },
+      },
+    };
+  };
 
-        <div className="min-w-0">
-
-          <div
-            className="mt-0.5 truncate text-[14px] font-semibold text-[#182230]"
-            title={name}
-          >
-            {name}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+  return {
+    ...payload,
+    basic: {
+      ...(payload?.basic || {}),
+      sourceType: source.dbType,
+      targetType: target.dbType,
+    },
+    workflow: {
+      ...(payload?.workflow || {}),
+      sourceType: source,
+      targetType: target,
+      nodes: Array.isArray(payload?.workflow?.nodes)
+        ? payload.workflow.nodes.map((node: any) => {
+            const sourceNode = patchNode(node, "source", source);
+            return patchNode(sourceNode, "sink", target);
+          })
+        : [],
+    },
+  };
+};
 
 export default function CreateSyncTaskDrawer({
   open,
-  source,
-  target,
   onCancel,
   onCreated,
 }: CreateSyncTaskDrawerProps) {
-  const [form] = Form.useForm<CreateSyncTaskValues>();
+  const [form] = Form.useForm<CreateSyncTaskFormValues>();
   const [submitting, setSubmitting] = useState(false);
+  const autoJobNameRef = useRef("");
 
-  const sourceName = endpointName(source);
-  const targetName = endpointName(target);
+  const connectorOptions = useMemo(
+    () => generateDataSourceOptions() as ConnectorOption[],
+    []
+  );
+
+  const sourceDbType = Form.useWatch("sourceDbType", form);
+  const targetDbType = Form.useWatch("targetDbType", form);
 
   useEffect(() => {
     if (!open) return;
 
+    const defaultDbType =
+      connectorOptions.find((item) => item.value === DEFAULT_DB_TYPE)?.value ||
+      connectorOptions[0]?.value ||
+      "";
+
+    const defaultJobName = buildDefaultJobName(defaultDbType, defaultDbType);
+
+    autoJobNameRef.current = defaultJobName;
+
     form.setFieldsValue({
-      jobName: buildDefaultJobName(sourceName, targetName),
+      sourceDbType: defaultDbType,
+      targetDbType: defaultDbType,
+      jobName: defaultJobName,
       jobDesc: undefined,
-      mode: 'GUIDE_SINGLE',
+      mode: "GUIDE_SINGLE",
     });
-  }, [form, open, sourceName, targetName]);
+  }, [connectorOptions, form, open]);
+
+  const updateAutoJobName = (side: "source" | "target", value: string) => {
+    const nextSourceDbType =
+      side === "source" ? value : form.getFieldValue("sourceDbType") || "";
+
+    const nextTargetDbType =
+      side === "target" ? value : form.getFieldValue("targetDbType") || "";
+
+    if (!nextSourceDbType || !nextTargetDbType) return;
+
+    const currentJobName = form.getFieldValue("jobName")?.trim() || "";
+    const nextJobName = buildDefaultJobName(nextSourceDbType, nextTargetDbType);
+
+    if (!currentJobName || currentJobName === autoJobNameRef.current) {
+      form.setFieldValue("jobName", nextJobName);
+    }
+
+    autoJobNameRef.current = nextJobName;
+  };
 
   const handleCancel = () => {
     if (submitting) return;
 
     form.resetFields();
+    autoJobNameRef.current = "";
     onCancel();
   };
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+
       const normalizedValues: CreateSyncTaskValues = {
-        ...values,
         jobName: values.jobName.trim(),
         jobDesc: values.jobDesc?.trim(),
+        mode: values.mode,
       };
+
+      const source = resolveEndpoint(values.sourceDbType, connectorOptions);
+
+      const target = resolveEndpoint(values.targetDbType, connectorOptions);
 
       setSubmitting(true);
 
       const idResponse = await linkupJobDefinitionApi.getUniqueId();
 
       if (!isApiSuccess(idResponse)) {
-        message.error(responseMessage(idResponse, '生成任务 ID 失败'));
+        message.error(responseMessage(idResponse, "生成任务 ID 失败"));
         return;
       }
 
       const taskId = extractGeneratedId(idResponse);
 
       if (!taskId) {
-        message.error('生成任务 ID 失败');
+        message.error("生成任务 ID 失败");
         return;
       }
 
-      const payload = buildCreatePayload(taskId, normalizedValues);
+      const payload = applyConnectorSelection(
+        buildCreatePayload(taskId, normalizedValues),
+        source,
+        target
+      );
 
       const saveResponse =
-        normalizedValues.mode === 'GUIDE_MULTI'
+        normalizedValues.mode === "GUIDE_MULTI"
           ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(payload)
           : await linkupJobDefinitionApi.saveOrUpdateGuideSingle(payload);
 
       if (!isApiSuccess(saveResponse)) {
-        message.error(responseMessage(saveResponse, '创建同步任务失败'));
+        message.error(responseMessage(saveResponse, "创建同步任务失败"));
         return;
       }
 
       const createdId = extractSavedId(saveResponse, taskId);
 
       form.resetFields();
-      message.success('同步任务已创建');
+      autoJobNameRef.current = "";
+      message.success("同步任务已创建");
       onCreated(createdId);
     } catch (error: any) {
       if (error?.errorFields) return;
 
-      message.error(error?.message || '创建同步任务失败');
+      message.error(error?.message || "创建同步任务失败");
     } finally {
       setSubmitting(false);
     }
@@ -243,7 +306,6 @@ export default function CreateSyncTaskDrawer({
             <div className="text-[18px] font-semibold leading-7 text-[#101828]">
               新建离线同步任务
             </div>
-
           </div>
         }
         extra={
@@ -259,6 +321,7 @@ export default function CreateSyncTaskDrawer({
             <Button
               type="primary"
               loading={submitting}
+              disabled={!sourceDbType || !targetDbType}
               onClick={handleSubmit}
               className="!h-9 !rounded-lg !px-5 !font-medium !text-white"
             >
@@ -268,55 +331,94 @@ export default function CreateSyncTaskDrawer({
         }
         styles={{
           header: {
-            padding: '18px 24px',
-            borderBottom: '1px solid #eaecf0',
+            padding: "18px 24px",
+            borderBottom: "1px solid #eaecf0",
           },
           body: {
-            padding: '24px',
+            padding: "24px",
           },
         }}
       >
-        <div className="mb-6">
-          <div className="mb-2 text-[13px] font-medium text-[#344054]">
-            同步链路
-          </div>
-
-          <div className="grid grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-center gap-2 rounded-xl bg-[#f8fafc] p-3">
-            <EndpointSummary
-              role="来源端"
-              endpoint={source}
-            />
-
-            <div className="flex items-center justify-center text-[#98a2b3]">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e4e7ec] bg-white">
-                <ArrowRightOutlined />
-              </span>
-            </div>
-
-            <EndpointSummary
-              role="目标端"
-              endpoint={target}
-            />
-          </div>
-
-        </div>
-
-        <Form<CreateSyncTaskValues>
+        <Form<CreateSyncTaskFormValues>
           form={form}
           layout="vertical"
           requiredMark="optional"
         >
+          <div className="mb-6">
+            {/* <div className="mb-2 text-[13px] font-medium text-[#344054]">
+              同步链路
+            </div> */}
+
+            <div className="grid grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)] items-end gap-3">
+              <Form.Item
+                name="sourceDbType"
+                label="来源类型"
+                className="!mb-0"
+                rules={[
+                  {
+                    required: true,
+                    message: "请选择来源类型",
+                  },
+                ]}
+              >
+                <Select
+                  showSearch
+                  variant="filled"
+                  options={connectorOptions}
+                  placeholder="请选择来源类型"
+                  optionFilterProp="value"
+                  filterOption={(input, option) =>
+                    String(option?.value || "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  onChange={(value) => updateAutoJobName("source", value)}
+                />
+              </Form.Item>
+
+              <div className="flex h-8 items-center justify-center text-[#98a2b3]">
+                <ArrowRightOutlined />
+              </div>
+
+              <Form.Item
+                name="targetDbType"
+                label="目标类型"
+                className="!mb-0"
+                rules={[
+                  {
+                    required: true,
+                    message: "请选择目标类型",
+                  },
+                ]}
+              >
+                <Select
+                  showSearch
+                  variant="filled"
+                  options={connectorOptions}
+                  placeholder="请选择目标类型"
+                  optionFilterProp="value"
+                  filterOption={(input, option) =>
+                    String(option?.value || "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  onChange={(value) => updateAutoJobName("target", value)}
+                />
+              </Form.Item>
+            </div>
+          </div>
+
           <Form.Item
             name="jobName"
             label="任务名称"
             rules={[
               {
                 required: true,
-                message: '请输入任务名称',
+                message: "请输入任务名称",
               },
               {
                 max: 64,
-                message: '任务名称不能超过 64 个字符',
+                message: "任务名称不能超过 64 个字符",
               },
             ]}
           >
@@ -335,7 +437,7 @@ export default function CreateSyncTaskDrawer({
             rules={[
               {
                 max: 200,
-                message: '任务描述不能超过 200 个字符',
+                message: "任务描述不能超过 200 个字符",
               },
             ]}
           >
@@ -354,7 +456,7 @@ export default function CreateSyncTaskDrawer({
             rules={[
               {
                 required: true,
-                message: '请选择同步类型',
+                message: "请选择同步类型",
               },
             ]}
           >
@@ -364,20 +466,20 @@ export default function CreateSyncTaskDrawer({
                   key={option.value}
                   value={option.value}
                   className={[
-                    '!h-auto',
-                    '!rounded-lg',
-                    '!border',
-                    '!border-[#e4e7ec]',
-                    '!px-4',
-                    '!py-4',
-                    '!shadow-none',
-                    'hover:!border-[var(--yak-brand-color-border)]',
-                    'hover:!bg-[var(--yak-brand-color-soft-hover)]',
-                    '[&.ant-radio-button-wrapper-checked]:!border-[var(--yak-brand-color)]',
-                    '[&.ant-radio-button-wrapper-checked]:!bg-[var(--yak-brand-color-soft)]',
-                    '[&.ant-radio-button-wrapper-checked]:!text-inherit',
-                    'before:!hidden',
-                  ].join(' ')}
+                    "!h-auto",
+                    "!rounded-lg",
+                    "!border",
+                    "!border-[#e4e7ec]",
+                    "!px-4",
+                    "!py-4",
+                    "!shadow-none",
+                    "hover:!border-[var(--yak-brand-color-border)]",
+                    "hover:!bg-[var(--yak-brand-color-soft-hover)]",
+                    "[&.ant-radio-button-wrapper-checked]:!border-[var(--yak-brand-color)]",
+                    "[&.ant-radio-button-wrapper-checked]:!bg-[var(--yak-brand-color-soft)]",
+                    "[&.ant-radio-button-wrapper-checked]:!text-inherit",
+                    "before:!hidden",
+                  ].join(" ")}
                 >
                   <div className="flex items-start gap-3 whitespace-normal">
                     <div
