@@ -100,7 +100,6 @@ export default function TaskBasicSection({
   return (
     <EditorSection
       title="任务基础信息"
-      description="确认任务信息和同步链路。本版本不执行连接测试，选择数据源后可直接配置数据表。"
     >
       <div className="space-y-5">
         <EditorField label="任务名称" required>

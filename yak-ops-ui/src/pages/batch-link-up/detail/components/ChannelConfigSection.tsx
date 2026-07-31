@@ -52,7 +52,6 @@ export default function ChannelConfigSection({
   return (
     <EditorSection
       title="运行参数"
-      description="控制任务并发、批次大小和传输速度，配置会随任务定义一起保存。"
     >
       <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
         <Field label="Channel 并发数">

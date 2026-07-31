@@ -93,7 +93,6 @@ export default function SingleTableConfigSection({
   return (
     <EditorSection
       title="单表同步配置"
-      description="配置一张来源表到一张目标表的读取与写入规则。"
     >
       <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
         <EndpointPanel

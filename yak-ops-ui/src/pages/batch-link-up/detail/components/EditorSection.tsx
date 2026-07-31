@@ -19,8 +19,8 @@ export default function EditorSection({
   children,
 }: EditorSectionProps) {
   return (
-    <section className="overflow-hidden rounded-xl border border-[#ebecef] bg-white shadow-[0_8px_26px_rgba(22,24,35,0.035)]">
-      <header className="border-b border-[#f0f1f3] px-7 py-5">
+    <section className="overflow-hidden rounded-xl  bg-white ">
+      <header className=" px-7 py-5" style={{paddingBottom: 0}}>
         <h2 className="m-0 text-[17px] font-semibold leading-6 text-[#161823]">
           {title}
         </h2>

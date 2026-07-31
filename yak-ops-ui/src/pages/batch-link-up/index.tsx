@@ -985,7 +985,7 @@ const BatchLinkUpPage: React.FC = () => {
           shadow-[0_6px_28px_rgba(22,24,35,0.035)]
         "
       >
-        <header
+        {/* <header
           className="
             flex h-[76px] items-center
             px-7
@@ -999,9 +999,10 @@ const BatchLinkUpPage: React.FC = () => {
           >
             离线任务
           </h1>
-        </header>
+        </header> */}
 
         <section
+        style={{marginTop: 16}}
           className="
             mx-7 overflow-hidden
             rounded-[11px]

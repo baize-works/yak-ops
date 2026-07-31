@@ -1,36 +1,23 @@
-import {
-  ArrowLeftOutlined,
-  CalendarOutlined,
-  SaveOutlined,
-} from '@ant-design/icons';
 import { history, useLocation, useParams } from '@umijs/max';
 import {
   Button,
   ConfigProvider,
-  Drawer,
   Empty,
   message,
   Spin,
-  Tag,
 } from 'antd';
 import {
   useCallback,
   useEffect,
   useMemo,
   useState,
-  type CSSProperties,
 } from 'react';
 
 import { fetchDataSourceAll } from '@/pages/data-source/service';
 import type { DataSourceRecord } from '@/pages/data-source/types';
-import {
-  BRAND_COLOR,
-  BRAND_COLOR_SOFT_HOVER,
-  BRAND_THEME,
-} from '@/styles/brand';
+import { BRAND_THEME } from '@/styles/brand';
 
 import { linkupJobDefinitionApi } from '../api';
-import ScheduleConfigContent from '../workflow/components/ScheduleConfigContent';
 import SyncTaskEditor from './components/SyncTaskEditor';
 import {
   buildSavePayload,
@@ -41,16 +28,6 @@ import {
   responseMessage,
   type SyncEditorState,
 } from './model';
-
-const modeLabel = {
-  GUIDE_SINGLE: '单表同步',
-  GUIDE_MULTI: '多表同步',
-} as const;
-
-const brandCssVariables = {
-  '--yak-brand-color': BRAND_COLOR,
-  '--yak-brand-color-soft-hover': BRAND_COLOR_SOFT_HOVER,
-} as CSSProperties;
 
 const validateTaskConfig = (
   editor: SyncEditorState,
@@ -136,14 +113,16 @@ export default function BatchLinkUpDetailPage() {
 
   const [editor, setEditor] =
     useState<SyncEditorState | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [dataSourceLoading, setDataSourceLoading] =
     useState(false);
+
   const [dataSources, setDataSources] = useState<
     DataSourceRecord[]
   >([]);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   const loadDataSources = useCallback(async () => {
     try {
@@ -155,6 +134,7 @@ export default function BatchLinkUpDetailPage() {
         message.error(
           responseMessage(response, '获取数据源失败'),
         );
+
         setDataSources([]);
         return;
       }
@@ -181,6 +161,7 @@ export default function BatchLinkUpDetailPage() {
         message.error(
           responseMessage(response, '获取同步任务失败'),
         );
+
         setEditor(null);
         return;
       }
@@ -226,6 +207,7 @@ export default function BatchLinkUpDetailPage() {
         message.error(
           responseMessage(response, '保存同步任务失败'),
         );
+
         return null;
       }
 
@@ -243,7 +225,10 @@ export default function BatchLinkUpDetailPage() {
 
       return savedEditor;
     } catch (error: any) {
-      message.error(error?.message || '保存同步任务失败');
+      message.error(
+        error?.message || '保存同步任务失败',
+      );
+
       return null;
     } finally {
       setSaving(false);
@@ -261,6 +246,10 @@ export default function BatchLinkUpDetailPage() {
     }
 
     await persistEditor(editor);
+  };
+
+  const handleCancel = () => {
+    history.push('/sync/batch-link-up');
   };
 
   if (!taskId) {
@@ -283,11 +272,7 @@ export default function BatchLinkUpDetailPage() {
           description="未找到同步任务"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         >
-          <Button
-            onClick={() =>
-              history.push('/sync/batch-link-up')
-            }
-          >
+          <Button onClick={handleCancel}>
             返回任务列表
           </Button>
         </Empty>
@@ -297,47 +282,8 @@ export default function BatchLinkUpDetailPage() {
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-      <div
-        className="min-h-[calc(100vh-64px)] bg-[#f7f8fa] text-[#161823]"
-        style={brandCssVariables}
-      >
-        <header className="sticky top-0 z-30 border-b border-black/[0.055] bg-white/95 backdrop-blur">
-          <div className="mx-auto flex min-h-[68px] max-w-[1040px] items-center justify-between gap-5 px-6 py-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <Button
-                type="text"
-                icon={<ArrowLeftOutlined />}
-                className="!h-9 !w-9 !shrink-0 !rounded-lg !text-[#475467] hover:!bg-[#f2f3f5]"
-                onClick={() =>
-                  history.push('/sync/batch-link-up')
-                }
-              />
-
-              <div className="min-w-0">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <h1 className="m-0 truncate text-[18px] font-semibold leading-7 text-[#161823]">
-                    {editor.basic.jobName ||
-                      '未命名同步任务'}
-                  </h1>
-
-                  <Tag className="!m-0 !rounded-md !border-[#ffd1da] !bg-[#fff4f6] !px-2 !text-[11px] !font-medium !text-[var(--yak-brand-color)]">
-                    {modeLabel[editor.mode]}
-                  </Tag>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              icon={<CalendarOutlined />}
-              className="!h-9 !rounded-lg !border-[#dfe1e5] !px-4 !font-medium !text-[#344054] hover:!border-[var(--yak-brand-color)] hover:!text-[var(--yak-brand-color)]"
-              onClick={() => setScheduleOpen(true)}
-            >
-              调度配置
-            </Button>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-[1040px] px-6 py-6 pb-8">
+      <div className="flex min-h-[calc(100vh-64px)] flex-col bg-[#f7f8fa] text-[#161823]">
+        <main className="mx-auto w-full max-w-[1040px] flex-1 px-6 py-6">
           <SyncTaskEditor
             editor={editor}
             dataSources={dataSources}
@@ -346,63 +292,26 @@ export default function BatchLinkUpDetailPage() {
           />
         </main>
 
-        <footer className="sticky bottom-0 z-20 border-t border-black/[0.055] bg-white/[0.96] shadow-[0_-8px_24px_rgba(22,24,35,0.035)] backdrop-blur">
-          <div className="mx-auto flex min-h-[68px] max-w-[1040px] items-center justify-end gap-3 px-6 py-3">
-            <Button
-              disabled={saving}
-              className="!h-9 !rounded-lg !border-[#dfe1e5] !px-5 !font-medium !text-[#344054]"
-              onClick={() =>
-                history.push('/sync/batch-link-up')
-              }
-            >
-              取消
-            </Button>
-
+        <footer className="sticky bottom-0 z-20 mx-auto w-full max-w-[1040px] px-6">
+          <div className="flex min-h-[64px] items-center gap-3 border-t border-black/[0.055] bg-white/[0.98] px-4 py-3 shadow-[0_-8px_24px_rgba(22,24,35,0.035)] backdrop-blur">
             <Button
               type="primary"
-              icon={<SaveOutlined />}
               loading={saving}
-              className="!h-9 !rounded-lg !px-6 !font-medium !text-white"
+              className="!h-9 !min-w-[96px] !rounded-lg !px-6 !font-medium !text-white"
               onClick={handleSave}
             >
               保存配置
             </Button>
+
+            <Button
+              disabled={saving}
+              className="!h-9 !min-w-[72px] !rounded-lg !border-[#dfe1e5] !px-5 !font-medium !text-[#344054]"
+              onClick={handleCancel}
+            >
+              取消
+            </Button>
           </div>
         </footer>
-
-        <Drawer
-          open={scheduleOpen}
-          width={460}
-          title="调度配置"
-          placement="right"
-          rootStyle={brandCssVariables}
-          destroyOnClose={false}
-          onClose={() => setScheduleOpen(false)}
-          extra={
-            <Tag className="!m-0 !rounded-md !border-[#ffd1da] !bg-[#fff4f6] !text-[var(--yak-brand-color)]">
-              随任务保存
-            </Tag>
-          }
-        >
-          <ScheduleConfigContent
-            value={editor.schedule}
-            onChange={(value) =>
-              setEditor((previous) => {
-                if (!previous) return previous;
-
-                const schedule =
-                  typeof value === 'function'
-                    ? value(previous.schedule)
-                    : value;
-
-                return {
-                  ...previous,
-                  schedule,
-                };
-              })
-            }
-          />
-        </Drawer>
       </div>
     </ConfigProvider>
   );
