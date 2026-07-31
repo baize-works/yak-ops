@@ -1,4 +1,5 @@
 import { InputNumber, Select } from 'antd';
+import type { ReactNode } from 'react';
 
 import type { SyncEditorState } from '../model';
 import EditorSection from './EditorSection';
@@ -15,7 +16,7 @@ function Field({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div>
