@@ -29,7 +29,7 @@ import React, {
   useState,
 } from "react";
 import { linkupJobDefinitionApi } from "./api";
-import CreateSyncTaskModal from "./components/CreateSyncTaskModal";
+import CreateSyncTaskDrawer from "./components/CreateSyncTaskModal";
 import ActionColumn from "./components/SyncTaskList/components/ActionColumn";
 import DataSourceSyncPlan from "./components/SyncTaskList/components/DataSourceSyncPlan";
 import ExecutionStatus from "./components/SyncTaskList/components/ExecutionStatus";
@@ -1691,8 +1691,10 @@ const BatchLinkUpPage: React.FC = () => {
         </section>
       </div>
 
-      <CreateSyncTaskModal
+      <CreateSyncTaskDrawer
         open={createOpen}
+        source={sourceType}
+        target={targetType}
         onCancel={() => setCreateOpen(false)}
         onCreated={handleCreated}
       />

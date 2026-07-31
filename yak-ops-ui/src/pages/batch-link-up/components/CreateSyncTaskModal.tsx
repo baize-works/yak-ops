@@ -1,4 +1,5 @@
 import {
+  ArrowRightOutlined,
   DatabaseOutlined,
   TableOutlined,
 } from '@ant-design/icons';
@@ -37,10 +38,24 @@ import {
   type SyncMode,
 } from '../detail/model';
 
+export interface CreateSyncEndpoint {
+  name?: string;
+  dbType?: string;
+  connectorType?: string;
+  pluginName?: string;
+}
+
 interface CreateSyncTaskDrawerProps {
   open: boolean;
+  source: CreateSyncEndpoint;
+  target: CreateSyncEndpoint;
   onCancel: () => void;
   onCreated: (taskId: string) => void;
+}
+
+interface EndpointSummaryProps {
+  role: '来源端' | '目标端';
+  endpoint: CreateSyncEndpoint;
 }
 
 const modeOptions: Array<{
@@ -70,23 +85,100 @@ const brandCssVariables = {
   '--yak-brand-color-soft-hover': BRAND_COLOR_SOFT_HOVER,
 } as CSSProperties;
 
+const endpointName = (endpoint: CreateSyncEndpoint) =>
+  endpoint.name?.trim() || endpoint.dbType?.trim() || '未指定';
+
+const endpointMeta = (endpoint: CreateSyncEndpoint) =>
+  [endpoint.connectorType, endpoint.pluginName]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(' · ');
+
+const buildDefaultJobName = (
+  sourceName: string,
+  targetName: string,
+) => `${sourceName} → ${targetName} 离线同步`.slice(0, 64);
+
+const buildDefaultJobDescription = (
+  sourceName: string,
+  targetName: string,
+) =>
+  [
+    '业务场景：请填写所属业务或使用场景；',
+    `同步范围：从 ${sourceName} 的【来源表】同步至 ${targetName} 的【目标表】；`,
+    '同步目的：请填写数据分析、数据服务、数据归档等使用目的。',
+  ]
+    .join('\n')
+    .slice(0, 200);
+
+function EndpointSummary({
+  role,
+  endpoint,
+}: EndpointSummaryProps) {
+  const name = endpointName(endpoint);
+  const meta = endpointMeta(endpoint);
+
+  return (
+    <div className="min-w-0 rounded-xl border border-[#e4e7ec] bg-white px-4 py-3 shadow-[0_1px_2px_rgba(16,24,40,0.03)]">
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[16px]"
+          style={{
+            color: BRAND_COLOR,
+            backgroundColor: BRAND_COLOR_SOFT_HOVER,
+          }}
+        >
+          <DatabaseOutlined />
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-[11px] font-medium text-[#98a2b3]">
+            {role}
+          </div>
+
+          <div
+            className="mt-0.5 truncate text-[14px] font-semibold text-[#182230]"
+            title={name}
+          >
+            {name}
+          </div>
+
+          {meta ? (
+            <div
+              className="mt-0.5 truncate text-[11px] text-[#667085]"
+              title={meta}
+            >
+              {meta}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CreateSyncTaskDrawer({
   open,
+  source,
+  target,
   onCancel,
   onCreated,
 }: CreateSyncTaskDrawerProps) {
   const [form] = Form.useForm<CreateSyncTaskValues>();
   const [submitting, setSubmitting] = useState(false);
 
+  const sourceName = endpointName(source);
+  const targetName = endpointName(target);
+
   useEffect(() => {
     if (!open) return;
 
     form.setFieldsValue({
-      jobName: '',
-      jobDesc: '',
+      jobName: buildDefaultJobName(sourceName, targetName),
+      jobDesc: buildDefaultJobDescription(sourceName, targetName),
       mode: 'GUIDE_SINGLE',
     });
-  }, [form, open]);
+  }, [form, open, sourceName, targetName]);
 
   const handleCancel = () => {
     if (submitting) return;
@@ -98,6 +190,11 @@ export default function CreateSyncTaskDrawer({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      const normalizedValues: CreateSyncTaskValues = {
+        ...values,
+        jobName: values.jobName.trim(),
+        jobDesc: values.jobDesc?.trim(),
+      };
 
       setSubmitting(true);
 
@@ -115,10 +212,10 @@ export default function CreateSyncTaskDrawer({
         return;
       }
 
-      const payload = buildCreatePayload(taskId, values);
+      const payload = buildCreatePayload(taskId, normalizedValues);
 
       const saveResponse =
-        values.mode === 'GUIDE_MULTI'
+        normalizedValues.mode === 'GUIDE_MULTI'
           ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(payload)
           : await linkupJobDefinitionApi.saveOrUpdateGuideSingle(payload);
 
@@ -159,6 +256,9 @@ export default function CreateSyncTaskDrawer({
               新建离线同步任务
             </div>
 
+            <div className="mt-0.5 text-[12px] font-normal text-[#667085]">
+              已根据同步方向生成基础信息，可直接调整后创建。
+            </div>
           </div>
         }
         extra={
@@ -191,6 +291,34 @@ export default function CreateSyncTaskDrawer({
           },
         }}
       >
+        <div className="mb-6">
+          <div className="mb-2 text-[13px] font-medium text-[#344054]">
+            同步链路
+          </div>
+
+          <div className="grid grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-center gap-2 rounded-xl bg-[#f8fafc] p-3">
+            <EndpointSummary
+              role="来源端"
+              endpoint={source}
+            />
+
+            <div className="flex items-center justify-center text-[#98a2b3]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e4e7ec] bg-white">
+                <ArrowRightOutlined />
+              </span>
+            </div>
+
+            <EndpointSummary
+              role="目标端"
+              endpoint={target}
+            />
+          </div>
+
+          <div className="mt-2 text-[11px] leading-5 text-[#98a2b3]">
+            同步方向已在任务列表页确定，创建后可继续配置具体数据源和数据表。
+          </div>
+        </div>
+
         <Form<CreateSyncTaskValues>
           form={form}
           layout="vertical"
@@ -199,6 +327,7 @@ export default function CreateSyncTaskDrawer({
           <Form.Item
             name="jobName"
             label="任务名称"
+            extra="已根据同步链路自动生成，可按业务命名习惯修改。"
             rules={[
               {
                 required: true,
@@ -221,6 +350,7 @@ export default function CreateSyncTaskDrawer({
           <Form.Item
             name="jobDesc"
             label="任务描述"
+            extra="已生成填写模板，请补充业务、来源表、目标表和使用目的。"
             rules={[
               {
                 max: 200,
@@ -229,10 +359,10 @@ export default function CreateSyncTaskDrawer({
             ]}
           >
             <Input.TextArea
-              rows={4}
+              rows={5}
               maxLength={200}
               showCount
-              placeholder="说明数据范围、用途或维护责任人"
+              placeholder="请说明业务场景、同步范围和使用目的"
             />
           </Form.Item>
 
