@@ -132,7 +132,6 @@ export default function TaskBasicSection({
         <EditorField
           label="同步链路"
           required
-          hint="来源端和目标端在这里直接选择，不再单独进行连接测试。"
         >
           <div className="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,1fr)] items-center gap-3 max-md:grid-cols-1">
             <div className="rounded-lg border border-[#ebecef] bg-[#fcfcfd] p-3">

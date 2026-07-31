@@ -86,7 +86,6 @@ export default function MultiTableConfigSection({
   return (
     <EditorSection
       title="多表同步配置"
-      description="批量选择来源表，并统一配置目标表命名和写入规则。"
     >
       <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
         <EndpointPanel

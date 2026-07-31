@@ -15,7 +15,6 @@ interface EditorFieldProps {
 
 export default function EditorSection({
   title,
-  description,
   children,
 }: EditorSectionProps) {
   return (
@@ -25,11 +24,6 @@ export default function EditorSection({
           {title}
         </h2>
 
-        {description ? (
-          <p className="mb-0 mt-1 text-[12px] leading-5 text-[rgba(22,24,35,0.48)]">
-            {description}
-          </p>
-        ) : null}
       </header>
 
       <div className="px-7 py-6">{children}</div>
