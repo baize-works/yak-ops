@@ -1155,14 +1155,11 @@ const BatchLinkUpPage: React.FC = () => {
                 flex h-12 items-center
                 justify-center gap-2
                 rounded-[9px] border-0
-                px-4 text-[12px]
+                px-4 text-[14px]
                 font-semibold text-white
                 bg-[linear-gradient(102deg,#fe516e_0%,#fe2c55_100%)]
                 shadow-[0_8px_20px_rgba(254,44,85,0.20)]
-                transition
-                hover:-translate-y-px
-                hover:shadow-[0_10px_24px_rgba(254,44,85,0.25)]
-                active:translate-y-0
+                
                 disabled:cursor-not-allowed
                 disabled:opacity-45
               "
