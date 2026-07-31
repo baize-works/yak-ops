@@ -132,9 +132,6 @@ function EndpointSummary({
         </div>
 
         <div className="min-w-0">
-          <div className="text-[11px] font-medium text-[#98a2b3]">
-            {role}
-          </div>
 
           <div
             className="mt-0.5 truncate text-[14px] font-semibold text-[#182230]"
@@ -142,15 +139,6 @@ function EndpointSummary({
           >
             {name}
           </div>
-
-          {meta ? (
-            <div
-              className="mt-0.5 truncate text-[11px] text-[#667085]"
-              title={meta}
-            >
-              {meta}
-            </div>
-          ) : null}
         </div>
       </div>
     </div>
@@ -256,9 +244,6 @@ export default function CreateSyncTaskDrawer({
               新建离线同步任务
             </div>
 
-            <div className="mt-0.5 text-[12px] font-normal text-[#667085]">
-              已根据同步方向生成基础信息，可直接调整后创建。
-            </div>
           </div>
         }
         extra={
@@ -314,9 +299,6 @@ export default function CreateSyncTaskDrawer({
             />
           </div>
 
-          <div className="mt-2 text-[11px] leading-5 text-[#98a2b3]">
-            同步方向已在任务列表页确定，创建后可继续配置具体数据源和数据表。
-          </div>
         </div>
 
         <Form<CreateSyncTaskValues>
@@ -327,7 +309,6 @@ export default function CreateSyncTaskDrawer({
           <Form.Item
             name="jobName"
             label="任务名称"
-            extra="已根据同步链路自动生成，可按业务命名习惯修改。"
             rules={[
               {
                 required: true,
@@ -343,6 +324,7 @@ export default function CreateSyncTaskDrawer({
               autoFocus
               maxLength={64}
               showCount
+              variant="filled"
               placeholder="例如：订单数据每日同步"
             />
           </Form.Item>
@@ -350,7 +332,6 @@ export default function CreateSyncTaskDrawer({
           <Form.Item
             name="jobDesc"
             label="任务描述"
-            extra="已生成填写模板，请补充业务、来源表、目标表和使用目的。"
             rules={[
               {
                 max: 200,
@@ -361,6 +342,7 @@ export default function CreateSyncTaskDrawer({
             <Input.TextArea
               rows={5}
               maxLength={200}
+              variant="filled"
               showCount
               placeholder="请说明业务场景、同步范围和使用目的"
             />
