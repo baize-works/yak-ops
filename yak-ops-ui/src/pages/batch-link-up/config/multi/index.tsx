@@ -1,1 +1,1 @@
-export { default } from '../../detail/LegacyConfigRedirect';
+export { default } from '../../detail';
