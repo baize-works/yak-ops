@@ -2,7 +2,14 @@ import {
   DatabaseOutlined,
   TableOutlined,
 } from '@ant-design/icons';
-import { Form, Input, Modal, Radio, message } from 'antd';
+import {
+  Button,
+  Drawer,
+  Form,
+  Input,
+  Radio,
+  message,
+} from 'antd';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { linkupJobDefinitionApi } from '../api';
@@ -16,7 +23,7 @@ import {
   type SyncMode,
 } from '../detail/model';
 
-interface CreateSyncTaskModalProps {
+interface CreateSyncTaskDrawerProps {
   open: boolean;
   onCancel: () => void;
   onCreated: (taskId: string) => void;
@@ -42,11 +49,11 @@ const modeOptions: Array<{
   },
 ];
 
-export default function CreateSyncTaskModal({
+export default function CreateSyncTaskDrawer({
   open,
   onCancel,
   onCreated,
-}: CreateSyncTaskModalProps) {
+}: CreateSyncTaskDrawerProps) {
   const [form] = Form.useForm<CreateSyncTaskValues>();
   const [submitting, setSubmitting] = useState(false);
 
@@ -70,6 +77,7 @@ export default function CreateSyncTaskModal({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+
       setSubmitting(true);
 
       const idResponse = await linkupJobDefinitionApi.getUniqueId();
@@ -87,6 +95,7 @@ export default function CreateSyncTaskModal({
       }
 
       const payload = buildCreatePayload(taskId, values);
+
       const saveResponse =
         values.mode === 'GUIDE_MULTI'
           ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(payload)
@@ -112,30 +121,59 @@ export default function CreateSyncTaskModal({
   };
 
   return (
-    <Modal
+    <Drawer
       open={open}
-      title={null}
       width={620}
-      centered
+      placement="right"
       destroyOnClose
       maskClosable={false}
       keyboard={!submitting}
-      confirmLoading={submitting}
-      okText="创建"
-      cancelText="取消"
-      onOk={handleSubmit}
-      onCancel={handleCancel}
-      styles={{ body: { padding: '8px 4px 4px' } }}
-    >
-      <div className="mb-6">
-        <div className="text-[20px] font-semibold text-[#101828]">
-          新建离线同步任务
-        </div>
-        <div className="mt-1 text-[13px] text-[#667085]">
-          填写任务基础信息，创建后可在任务列表中继续配置。
-        </div>
-      </div>
+      onClose={handleCancel}
+      title={
+        <div>
+          <div className="text-[18px] font-semibold text-[#101828]">
+            新建离线同步任务
+          </div>
 
+          <div className="mt-1 text-[13px] font-normal text-[#667085]">
+            填写任务基础信息，创建后可在任务列表中继续配置。
+          </div>
+        </div>
+      }
+      styles={{
+        header: {
+          padding: '20px 24px',
+          borderBottom: '1px solid #eaecf0',
+        },
+        body: {
+          padding: '24px',
+        },
+        footer: {
+          padding: '16px 24px',
+          borderTop: '1px solid #eaecf0',
+        },
+      }}
+      footer={
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            disabled={submitting}
+            onClick={handleCancel}
+          >
+            取消
+          </Button>
+
+          <Button
+            type="primary"
+            danger
+            loading={submitting}
+            onClick={handleSubmit}
+            className="!border-[#ef4444] !bg-[#ef4444] !text-white hover:!border-[#dc2626] hover:!bg-[#dc2626]"
+          >
+            创建
+          </Button>
+        </div>
+      }
+    >
       <Form<CreateSyncTaskValues>
         form={form}
         layout="vertical"
@@ -145,8 +183,14 @@ export default function CreateSyncTaskModal({
           name="jobName"
           label="任务名称"
           rules={[
-            { required: true, message: '请输入任务名称' },
-            { max: 64, message: '任务名称不能超过 64 个字符' },
+            {
+              required: true,
+              message: '请输入任务名称',
+            },
+            {
+              max: 64,
+              message: '任务名称不能超过 64 个字符',
+            },
             {
               validator: (_, value) =>
                 value?.trim()
@@ -166,10 +210,15 @@ export default function CreateSyncTaskModal({
         <Form.Item
           name="jobDesc"
           label="任务描述"
-          rules={[{ max: 200, message: '任务描述不能超过 200 个字符' }]}
+          rules={[
+            {
+              max: 200,
+              message: '任务描述不能超过 200 个字符',
+            },
+          ]}
         >
           <Input.TextArea
-            rows={3}
+            rows={4}
             maxLength={200}
             showCount
             placeholder="说明数据范围、用途或维护责任人"
@@ -179,23 +228,42 @@ export default function CreateSyncTaskModal({
         <Form.Item
           name="mode"
           label="同步类型"
-          rules={[{ required: true, message: '请选择同步类型' }]}
+          rules={[
+            {
+              required: true,
+              message: '请选择同步类型',
+            },
+          ]}
         >
           <Radio.Group className="grid w-full grid-cols-2 gap-3">
             {modeOptions.map((option) => (
               <Radio.Button
                 key={option.value}
                 value={option.value}
-                className="!h-auto !rounded-lg !border !border-[#e4e7ec] !px-4 !py-4 [&.ant-radio-button-wrapper-checked]:!border-[#315efb] [&.ant-radio-button-wrapper-checked]:!bg-[#f5f7ff]"
+                className={[
+                  '!h-auto',
+                  '!rounded-lg',
+                  '!border',
+                  '!border-[#e4e7ec]',
+                  '!px-4',
+                  '!py-4',
+                  '!shadow-none',
+                  '[&.ant-radio-button-wrapper-checked]:!border-[#315efb]',
+                  '[&.ant-radio-button-wrapper-checked]:!bg-[#f5f7ff]',
+                  '[&.ant-radio-button-wrapper-checked]:!text-inherit',
+                  'before:!hidden',
+                ].join(' ')}
               >
                 <div className="flex items-start gap-3 whitespace-normal">
                   <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef2ff] text-[17px] text-[#315efb]">
                     {option.icon}
                   </div>
-                  <div>
+
+                  <div className="min-w-0 text-left">
                     <div className="font-medium text-[#182230]">
                       {option.title}
                     </div>
+
                     <div className="mt-1 text-xs leading-5 text-[#667085]">
                       {option.description}
                     </div>
@@ -206,6 +274,6 @@ export default function CreateSyncTaskModal({
           </Radio.Group>
         </Form.Item>
       </Form>
-    </Modal>
+    </Drawer>
   );
 }
