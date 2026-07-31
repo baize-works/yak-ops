@@ -7,7 +7,15 @@ export const YAK_OPS_PERMISSIONS = {
     delete: 'datasource:delete',
     test: 'datasource:test',
   },
+  resource: {
+    read: 'resource:view',
+    create: 'resource:upload',
+    update: 'resource:update',
+    delete: 'resource:delete',
+    download: 'resource:download',
+  },
 } as const;
 
 export type YakOpsPermissionCode =
-  (typeof YAK_OPS_PERMISSIONS.dataSource)[keyof typeof YAK_OPS_PERMISSIONS.dataSource];
+  | (typeof YAK_OPS_PERMISSIONS.dataSource)[keyof typeof YAK_OPS_PERMISSIONS.dataSource]
+  | (typeof YAK_OPS_PERMISSIONS.resource)[keyof typeof YAK_OPS_PERMISSIONS.resource];
