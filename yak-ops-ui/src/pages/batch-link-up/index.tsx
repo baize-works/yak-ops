@@ -605,6 +605,7 @@ const BatchLinkUpPage: React.FC = () => {
       }}
     >
       <div className="flex min-h-[calc(100vh-64px)] flex-col bg-white px-5 pt-4">
+        <h1 style={{fontSize: 17}}>离线同步</h1>
         <div className="mx-auto flex w-full max-w-full flex-1 flex-col">
           <div className="mb-3">
             {/* 查询区域 */}

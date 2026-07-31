@@ -17,21 +17,24 @@ interface ScheduleInfoProps {
   record?: ScheduleRecord;
 }
 
-interface TimeRowProps {
+interface ScheduleTimeRowProps {
   label: string;
   value?: string;
 }
 
-const TimeRow = ({ label, value }: TimeRowProps) => {
+const ScheduleTimeRow = ({
+  label,
+  value,
+}: ScheduleTimeRowProps) => {
   return (
-    <div className="grid min-w-0 grid-cols-[64px_minmax(0,1fr)] items-center gap-2 leading-5">
-      <span className="whitespace-nowrap text-[11px] text-[#98a2b3]">
+    <div className="grid min-w-0 grid-cols-[58px_minmax(0,1fr)] items-center gap-2 leading-5">
+      <span className="whitespace-nowrap text-[12px] text-[#98a2b3]">
         {label}
       </span>
 
       <span
         title={value || '-'}
-        className="truncate whitespace-nowrap text-[12px] font-medium text-[#475467] tabular-nums"
+        className="truncate whitespace-nowrap text-[12px] text-[#475467] tabular-nums"
       >
         {value || '-'}
       </span>
@@ -87,7 +90,7 @@ const ScheduleInfo = ({ record }: ScheduleInfoProps) => {
 
     if (!executionTimes.length) {
       return (
-        <div className="w-[260px] py-2">
+        <div className="w-[260px] py-1">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description="暂无执行时间"
@@ -97,40 +100,40 @@ const ScheduleInfo = ({ record }: ScheduleInfoProps) => {
     }
 
     return (
-      <div className="w-[260px]">
-        <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto">
-          {executionTimes.map((time, index) => (
-            <div
-              key={`${time}-${index}`}
-              className="flex items-center gap-2 rounded-md bg-[#f8fafc] px-2.5 py-1.5"
-            >
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#315efb]" />
+      <div className="flex w-[260px] max-h-[220px] flex-col gap-1 overflow-y-auto">
+        {executionTimes.map((time, index) => (
+          <div
+            key={`${time}-${index}`}
+            className="flex items-center gap-2 rounded-md bg-[#f8fafc] px-2.5 py-1.5"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#315efb]" />
 
-              <span className="truncate text-[12px] text-[#475467] tabular-nums">
-                {time || '-'}
-              </span>
-            </div>
-          ))}
-        </div>
+            <span className="truncate text-[12px] text-[#475467] tabular-nums">
+              {time || '-'}
+            </span>
+          </div>
+        ))}
       </div>
     );
   };
 
   return (
-    <div className="flex min-w-[220px] flex-col gap-1.5">
+    <div className="flex min-w-[210px] flex-col gap-1.5">
       <div className="flex min-w-0 items-center gap-2">
         <span
           className={[
             'inline-flex h-5 shrink-0 items-center rounded px-1.5 text-[11px] font-medium',
             isNormal
               ? 'bg-[#eef4ff] text-[#315efb]'
-              : 'bg-[#f2f4f7] text-[#667085]',
+              : 'bg-[#fff1f0] text-[#cf1322]',
           ].join(' ')}
         >
           {isNormal ? '已启用' : '已暂停'}
         </span>
 
         <Popover
+          trigger="click"
+          placement="rightTop"
           title={
             <div className="flex items-center gap-1.5">
               <ClockCircleOutlined className="text-[#667085]" />
@@ -138,8 +141,6 @@ const ScheduleInfo = ({ record }: ScheduleInfoProps) => {
             </div>
           }
           content={renderExecutionTimes()}
-          trigger="click"
-          placement="rightTop"
           onOpenChange={(open) => {
             if (open) {
               loadExecutionTimes();
@@ -149,14 +150,16 @@ const ScheduleInfo = ({ record }: ScheduleInfoProps) => {
           <button
             type="button"
             title={record?.cronExpression || '-'}
-            className="min-w-0 flex-1 cursor-pointer truncate rounded bg-[#f2f4f7] px-2 py-0.5 text-left font-mono text-[11px] leading-5 text-[#475467] transition-colors hover:bg-[#e9eef8] hover:text-[#315efb]"
+            className="inline-flex min-w-0 max-w-[150px] cursor-pointer items-center rounded bg-[#f2f4f7] px-2 py-0.5 font-mono text-[11px] leading-5 text-[#344054] transition-colors hover:bg-[#e9eef8] hover:text-[#315efb]"
           >
-            {record?.cronExpression || '未配置 Cron'}
+            <span className="truncate">
+              {record?.cronExpression || '未配置 Cron'}
+            </span>
           </button>
         </Popover>
       </div>
 
-      <TimeRow
+      <ScheduleTimeRow
         label={intl.formatMessage({
           id: 'pages.job.schedule.lastRunTime',
           defaultMessage: '上次运行',
@@ -164,7 +167,7 @@ const ScheduleInfo = ({ record }: ScheduleInfoProps) => {
         value={record?.lastScheduleTime}
       />
 
-      <TimeRow
+      <ScheduleTimeRow
         label={intl.formatMessage({
           id: 'pages.job.schedule.nextRunTime',
           defaultMessage: '下次运行',
