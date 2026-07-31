@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS yak_ops_resource (
     create_time DATETIME(3) NOT NULL,
     update_time DATETIME(3) NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uk_yak_resource_full_path (full_path),
     UNIQUE KEY uk_yak_resource_parent_name (parent_id, name),
+    KEY idx_yak_resource_full_path (full_path(255)),
     KEY idx_yak_resource_parent_type (parent_id, node_type),
     KEY idx_yak_resource_storage (storage_type, storage_path(255))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

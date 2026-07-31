@@ -307,7 +307,17 @@ export const appRoutes: readonly NavigationRoute[] = [
     iconKey: 'database',
     order: 10,
   },
-
+  {
+    id: 'resource-management',
+    mode: 'one',
+    permission: 'resource:view',
+    path: '/resource-management',
+    title: '文件资源',
+    component: './resource-management',
+    iconKey: 'database',
+    menuGroup: 'resources',
+    order: 10,
+  },
   {
     id: 'client',
     mode: 'one',
