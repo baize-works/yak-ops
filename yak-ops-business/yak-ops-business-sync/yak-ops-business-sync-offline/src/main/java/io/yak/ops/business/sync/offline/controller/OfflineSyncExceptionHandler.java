@@ -26,14 +26,18 @@ public class OfflineSyncExceptionHandler {
   @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public Result<Void> handleValidationException(Exception exception) {
-    org.springframework.validation.BindingResult bindingResult =
-        exception instanceof MethodArgumentNotValidException methodException
-            ? methodException.getBindingResult()
-            : ((BindException) exception).getBindingResult();
+    org.springframework.validation.BindingResult bindingResult;
+    if (exception instanceof MethodArgumentNotValidException) {
+      bindingResult = ((MethodArgumentNotValidException) exception).getBindingResult();
+    } else {
+      bindingResult = ((BindException) exception).getBindingResult();
+    }
+
     String message = bindingResult.getFieldErrors().stream()
-        .map(error -> error.getDefaultMessage() == null ? error.getField() : error.getDefaultMessage())
-        .distinct()
-        .collect(Collectors.joining("；"));
+            .map(error -> error.getDefaultMessage() == null ? error.getField() : error.getDefaultMessage())
+            .distinct()
+            .collect(Collectors.joining("；"));
+
     return Result.buildParamIllegal(message);
   }
 
