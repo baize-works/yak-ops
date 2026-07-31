@@ -29,14 +29,12 @@ interface SingleTableConfigSectionProps {
 interface EndpointPanelProps {
   icon: ReactNode;
   title: string;
-  description: string;
   children: ReactNode;
 }
 
 function EndpointPanel({
   icon,
   title,
-  description,
   children,
 }: EndpointPanelProps) {
   return (
@@ -49,9 +47,6 @@ function EndpointPanel({
         <div>
           <div className="text-[14px] font-semibold text-[#182230]">
             {title}
-          </div>
-          <div className="mt-0.5 text-[11px] leading-5 text-[#667085]">
-            {description}
           </div>
         </div>
       </div>
@@ -98,7 +93,6 @@ export default function SingleTableConfigSection({
         <EndpointPanel
           icon={<DatabaseOutlined />}
           title="Source 来源配置"
-          description="选择来源表，或使用 SQL 读取需要同步的数据。"
         >
           <div>
             <FieldLabel>读取方式</FieldLabel>
@@ -161,7 +155,6 @@ export default function SingleTableConfigSection({
         <EndpointPanel
           icon={<ExportOutlined />}
           title="Sink 目标配置"
-          description="选择目标表，并配置建表方式和写入策略。"
         >
           <div className="flex items-center justify-between rounded-lg bg-[#f5f5f6] px-3.5 py-3">
             <div>

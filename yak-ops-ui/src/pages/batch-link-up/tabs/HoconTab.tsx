@@ -1,6 +1,6 @@
 import {Card} from "antd";
 import React from "react";
-import CodeBlockWithCopy from "../workflow/operator/CodeBlockWithCopy";
+
 
 const HoconTab: React.FC<any> = ({config = ""}) => {
   return (
@@ -12,11 +12,7 @@ const HoconTab: React.FC<any> = ({config = ""}) => {
     >
       <div className="overflow-hidden  bg-[#FCFDFE]">
         <div className="">
-          <CodeBlockWithCopy
-            content={config}
-            height={670}
-            title="HOCON Preview"
-          />
+          
         </div>
       </div>
     </Card>

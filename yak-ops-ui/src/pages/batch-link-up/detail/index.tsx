@@ -1,30 +1,13 @@
+import { history, useLocation, useParams } from "@umijs/max";
+import { Button, ConfigProvider, Empty, message, Spin } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import {
-  ArrowLeftOutlined,
-  SaveOutlined,
-} from '@ant-design/icons';
+import { fetchDataSourceAll } from "@/pages/data-source/service";
+import type { DataSourceRecord } from "@/pages/data-source/types";
+import { BRAND_THEME } from "@/styles/brand";
 
-import { history, useLocation, useParams } from '@umijs/max';
-import {
-  Button,
-  ConfigProvider,
-  Empty,
-  message,
-  Spin,
-} from 'antd';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-
-import { fetchDataSourceAll } from '@/pages/data-source/service';
-import type { DataSourceRecord } from '@/pages/data-source/types';
-import { BRAND_THEME } from '@/styles/brand';
-
-import { linkupJobDefinitionApi } from '../api';
-import SyncTaskEditor from './components/SyncTaskEditor';
+import { linkupJobDefinitionApi } from "../api";
+import SyncTaskEditor from "./components/SyncTaskEditor";
 import {
   buildSavePayload,
   endpointNode,
@@ -33,73 +16,57 @@ import {
   normalizeEditDetail,
   responseMessage,
   type SyncEditorState,
-} from './model';
+} from "./model";
 
-const validateTaskConfig = (
-  editor: SyncEditorState,
-): string | null => {
+const validateTaskConfig = (editor: SyncEditorState): string | null => {
   if (!editor.basic.jobName.trim()) {
-    return '请输入任务名称';
+    return "请输入任务名称";
   }
 
   if (!editor.basic.sourceDataSourceId) {
-    return '请选择来源数据源';
+    return "请选择来源数据源";
   }
 
   if (!editor.basic.targetDataSourceId) {
-    return '请选择目标数据源';
+    return "请选择目标数据源";
   }
 
-  const source =
-    endpointNode(editor.workflow, 'source')?.data?.config || {};
+  const source = endpointNode(editor.workflow, "source")?.data?.config || {};
 
-  const sink =
-    endpointNode(editor.workflow, 'sink')?.data?.config || {};
+  const sink = endpointNode(editor.workflow, "sink")?.data?.config || {};
 
-  if (editor.mode === 'GUIDE_MULTI') {
-    if (
-      !source.tables?.length &&
-      !source.tablePattern?.trim()
-    ) {
-      return '请选择来源表，或填写表名过滤规则';
+  if (editor.mode === "GUIDE_MULTI") {
+    if (!source.tables?.length && !source.tablePattern?.trim()) {
+      return "请选择来源表，或填写表名过滤规则";
     }
 
-    if (
-      sink.tableNamingRule !== 'same_name' &&
-      !sink.tableNameAffix?.trim()
-    ) {
-      return '请填写目标表名前缀或后缀';
+    if (sink.tableNamingRule !== "same_name" && !sink.tableNameAffix?.trim()) {
+      return "请填写目标表名前缀或后缀";
     }
-  } else if (source.readMode === 'sql') {
+  } else if (source.readMode === "sql") {
     if (!source.sql?.trim()) {
-      return '请填写来源查询 SQL';
+      return "请填写来源查询 SQL";
     }
   } else if (!source.table) {
-    return '请选择来源表';
+    return "请选择来源表";
   }
 
-  if (editor.mode === 'GUIDE_SINGLE') {
+  if (editor.mode === "GUIDE_SINGLE") {
     if (sink.autoCreateTable) {
       if (!sink.targetTableName?.trim()) {
-        return '请输入目标表名';
+        return "请输入目标表名";
       }
     } else if (!sink.table) {
-      return '请选择目标表';
+      return "请选择目标表";
     }
   }
 
-  if (
-    sink.writeMode === 'upsert' &&
-    !sink.primaryKey?.trim()
-  ) {
-    return 'Upsert 写入模式需要配置主键字段';
+  if (sink.writeMode === "upsert" && !sink.primaryKey?.trim()) {
+    return "Upsert 写入模式需要配置主键字段";
   }
 
-  if (
-    !editor.env.parallelism ||
-    editor.env.parallelism < 1
-  ) {
-    return 'Channel 并发数必须大于 0';
+  if (!editor.env.parallelism || editor.env.parallelism < 1) {
+    return "Channel 并发数必须大于 0";
   }
 
   return null;
@@ -111,24 +78,18 @@ export default function BatchLinkUpDetailPage() {
 
   const taskId = useMemo(
     () =>
-      routeParams.id ||
-      new URLSearchParams(location.search).get('id') ||
-      '',
-    [location.search, routeParams.id],
+      routeParams.id || new URLSearchParams(location.search).get("id") || "",
+    [location.search, routeParams.id]
   );
 
-  const [editor, setEditor] =
-    useState<SyncEditorState | null>(null);
+  const [editor, setEditor] = useState<SyncEditorState | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [dataSourceLoading, setDataSourceLoading] =
-    useState(false);
+  const [dataSourceLoading, setDataSourceLoading] = useState(false);
 
-  const [dataSources, setDataSources] = useState<
-    DataSourceRecord[]
-  >([]);
+  const [dataSources, setDataSources] = useState<DataSourceRecord[]>([]);
 
   const loadDataSources = useCallback(async () => {
     try {
@@ -137,9 +98,7 @@ export default function BatchLinkUpDetailPage() {
       const response = await fetchDataSourceAll();
 
       if (!isApiSuccess(response)) {
-        message.error(
-          responseMessage(response, '获取数据源失败'),
-        );
+        message.error(responseMessage(response, "获取数据源失败"));
 
         setDataSources([]);
         return;
@@ -147,7 +106,7 @@ export default function BatchLinkUpDetailPage() {
 
       setDataSources(response?.data?.bizData || []);
     } catch (error: any) {
-      message.error(error?.message || '获取数据源失败');
+      message.error(error?.message || "获取数据源失败");
       setDataSources([]);
     } finally {
       setDataSourceLoading(false);
@@ -160,23 +119,18 @@ export default function BatchLinkUpDetailPage() {
     try {
       setLoading(true);
 
-      const response =
-        await linkupJobDefinitionApi.selectEditDetail(taskId);
+      const response = await linkupJobDefinitionApi.selectEditDetail(taskId);
 
       if (!isApiSuccess(response) || !response?.data) {
-        message.error(
-          responseMessage(response, '获取同步任务失败'),
-        );
+        message.error(responseMessage(response, "获取同步任务失败"));
 
         setEditor(null);
         return;
       }
 
-      setEditor(
-        normalizeEditDetail(response.data, taskId),
-      );
+      setEditor(normalizeEditDetail(response.data, taskId));
     } catch (error: any) {
-      message.error(error?.message || '获取同步任务失败');
+      message.error(error?.message || "获取同步任务失败");
       setEditor(null);
     } finally {
       setLoading(false);
@@ -186,14 +140,11 @@ export default function BatchLinkUpDetailPage() {
   useEffect(() => {
     if (!taskId) return;
 
-    void Promise.all([
-      loadTask(),
-      loadDataSources(),
-    ]);
+    void Promise.all([loadTask(), loadDataSources()]);
   }, [loadDataSources, loadTask, taskId]);
 
   const persistEditor = async (
-    nextEditor: SyncEditorState,
+    nextEditor: SyncEditorState
   ): Promise<SyncEditorState | null> => {
     try {
       setSaving(true);
@@ -201,18 +152,12 @@ export default function BatchLinkUpDetailPage() {
       const payload = buildSavePayload(nextEditor);
 
       const response =
-        nextEditor.mode === 'GUIDE_MULTI'
-          ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(
-              payload,
-            )
-          : await linkupJobDefinitionApi.saveOrUpdateGuideSingle(
-              payload,
-            );
+        nextEditor.mode === "GUIDE_MULTI"
+          ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(payload)
+          : await linkupJobDefinitionApi.saveOrUpdateGuideSingle(payload);
 
       if (!isApiSuccess(response)) {
-        message.error(
-          responseMessage(response, '保存同步任务失败'),
-        );
+        message.error(responseMessage(response, "保存同步任务失败"));
 
         return null;
       }
@@ -220,20 +165,15 @@ export default function BatchLinkUpDetailPage() {
       const savedEditor: SyncEditorState = {
         ...nextEditor,
         basic: payload.basic,
-        id: extractSavedId(
-          response,
-          nextEditor.id,
-        ),
+        id: extractSavedId(response, nextEditor.id),
       };
 
       setEditor(savedEditor);
-      message.success('任务配置已保存');
+      message.success("任务配置已保存");
 
       return savedEditor;
     } catch (error: any) {
-      message.error(
-        error?.message || '保存同步任务失败',
-      );
+      message.error(error?.message || "保存同步任务失败");
 
       return null;
     } finally {
@@ -255,11 +195,11 @@ export default function BatchLinkUpDetailPage() {
   };
 
   const handleCancel = () => {
-    history.push('/sync/batch-link-up');
+    history.push("/sync/batch-link-up");
   };
 
   if (!taskId) {
-    history.replace('/sync/batch-link-up');
+    history.replace("/sync/batch-link-up");
     return null;
   }
 
@@ -278,9 +218,7 @@ export default function BatchLinkUpDetailPage() {
           description="未找到同步任务"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         >
-          <Button onClick={handleCancel}>
-            返回任务列表
-          </Button>
+          <Button onClick={handleCancel}>返回任务列表</Button>
         </Empty>
       </div>
     );
@@ -288,7 +226,8 @@ export default function BatchLinkUpDetailPage() {
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-
+      <div className="min-h-[calc(100vh-64px)] bg-[#f7f8fa] text-[#161823]">
+        <main className="mx-auto w-full max-w-[1040px] px-6 py-6 pb-[96px]">
           <SyncTaskEditor
             editor={editor}
             dataSources={dataSources}
@@ -297,24 +236,26 @@ export default function BatchLinkUpDetailPage() {
           />
         </main>
 
-        <footer className="sticky bottom-0 z-20 mx-auto w-full max-w-[1040px] px-6">
-          <div className="flex min-h-[64px] items-center gap-3 border-t border-black/[0.055] bg-white/[0.98] px-4 py-3 shadow-[0_-8px_24px_rgba(22,24,35,0.035)] backdrop-blur">
-            <Button
-              type="primary"
-              loading={saving}
-              className="!h-9 !min-w-[96px] !rounded-lg !px-6 !font-medium !text-white"
-              onClick={handleSave}
-            >
-              保存配置
-            </Button>
+        <footer className="pointer-events-none fixed bottom-0 left-[184px] right-0 z-30">
+          <div className="mx-auto w-full max-w-[1040px] px-6">
+            <div className="pointer-events-auto flex min-h-[68px] items-center gap-3 border-t border-black/[0.055] bg-white/[0.98] px-6 py-3 shadow-[0_-8px_24px_rgba(22,24,35,0.035)] backdrop-blur">
+              <Button
+                type="primary"
+                loading={saving}
+                className="!h-9 !min-w-[96px] !rounded-lg !px-6 !font-medium !text-white"
+                onClick={handleSave}
+              >
+                保存配置
+              </Button>
 
-            <Button
-              disabled={saving}
-              className="!h-9 !min-w-[72px] !rounded-lg !border-[#dfe1e5] !px-5 !font-medium !text-[#344054]"
-              onClick={handleCancel}
-            >
-              取消
-            </Button>
+              <Button
+                disabled={saving}
+                className="!h-9 !min-w-[72px] !rounded-lg !border-[#dfe1e5] !px-5 !font-medium !text-[#344054]"
+                onClick={handleCancel}
+              >
+                取消
+              </Button>
+            </div>
           </div>
         </footer>
       </div>

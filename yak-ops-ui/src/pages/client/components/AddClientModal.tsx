@@ -1,4 +1,4 @@
-import ZetaIcon from "@/pages/batch-link-up/workflow/sider/icon/ZetaIcon";
+
 import {ApiOutlined, ClusterOutlined, DeleteOutlined, PlusOutlined, SmileOutlined,} from "@ant-design/icons";
 import {Button, Col, Form, Input, Modal, Row, Segmented, Select, Switch,} from "antd";
 import React, {useEffect, useRef} from "react";
@@ -58,7 +58,7 @@ const engineOptions = [
   {
     label: (
       <div className="flex items-center gap-2">
-        <ZetaIcon height="20" width="20"/>
+        
         <span>ZETA</span>
       </div>
     ),
