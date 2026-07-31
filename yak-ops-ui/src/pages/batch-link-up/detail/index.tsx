@@ -1,13 +1,11 @@
 import {
   ArrowLeftOutlined,
-  CalendarOutlined,
   SaveOutlined,
 } from '@ant-design/icons';
 import { history, useLocation, useParams } from '@umijs/max';
 import {
   Button,
   ConfigProvider,
-  Drawer,
   Empty,
   message,
   Spin,
@@ -30,7 +28,6 @@ import {
 } from '@/styles/brand';
 
 import { linkupJobDefinitionApi } from '../api';
-import ScheduleConfigContent from '../workflow/components/ScheduleConfigContent';
 import SyncTaskEditor from './components/SyncTaskEditor';
 import {
   buildSavePayload,
@@ -143,7 +140,6 @@ export default function BatchLinkUpDetailPage() {
   const [dataSources, setDataSources] = useState<
     DataSourceRecord[]
   >([]);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   const loadDataSources = useCallback(async () => {
     try {
@@ -302,7 +298,7 @@ export default function BatchLinkUpDetailPage() {
         style={brandCssVariables}
       >
         <header className="sticky top-0 z-30 border-b border-black/[0.055] bg-white/95 backdrop-blur">
-          <div className="mx-auto flex min-h-[68px] max-w-[1040px] items-center justify-between gap-5 px-6 py-3">
+          <div className="mx-auto flex min-h-[68px] max-w-[1040px] items-center px-6 py-3">
             <div className="flex min-w-0 items-center gap-3">
               <Button
                 type="text"
@@ -313,27 +309,17 @@ export default function BatchLinkUpDetailPage() {
                 }
               />
 
-              <div className="min-w-0">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <h1 className="m-0 truncate text-[18px] font-semibold leading-7 text-[#161823]">
-                    {editor.basic.jobName ||
-                      '未命名同步任务'}
-                  </h1>
+              <div className="flex min-w-0 items-center gap-2.5">
+                <h1 className="m-0 truncate text-[18px] font-semibold leading-7 text-[#161823]">
+                  {editor.basic.jobName ||
+                    '未命名同步任务'}
+                </h1>
 
-                  <Tag className="!m-0 !rounded-md !border-[#ffd1da] !bg-[#fff4f6] !px-2 !text-[11px] !font-medium !text-[var(--yak-brand-color)]">
-                    {modeLabel[editor.mode]}
-                  </Tag>
-                </div>
+                <Tag className="!m-0 !rounded-md !border-[#ffd1da] !bg-[#fff4f6] !px-2 !text-[11px] !font-medium !text-[var(--yak-brand-color)]">
+                  {modeLabel[editor.mode]}
+                </Tag>
               </div>
             </div>
-
-            <Button
-              icon={<CalendarOutlined />}
-              className="!h-9 !rounded-lg !border-[#dfe1e5] !px-4 !font-medium !text-[#344054] hover:!border-[var(--yak-brand-color)] hover:!text-[var(--yak-brand-color)]"
-              onClick={() => setScheduleOpen(true)}
-            >
-              调度配置
-            </Button>
           </div>
         </header>
 
@@ -369,40 +355,6 @@ export default function BatchLinkUpDetailPage() {
             </Button>
           </div>
         </footer>
-
-        <Drawer
-          open={scheduleOpen}
-          width={460}
-          title="调度配置"
-          placement="right"
-          rootStyle={brandCssVariables}
-          destroyOnClose={false}
-          onClose={() => setScheduleOpen(false)}
-          extra={
-            <Tag className="!m-0 !rounded-md !border-[#ffd1da] !bg-[#fff4f6] !text-[var(--yak-brand-color)]">
-              随任务保存
-            </Tag>
-          }
-        >
-          <ScheduleConfigContent
-            value={editor.schedule}
-            onChange={(value) =>
-              setEditor((previous) => {
-                if (!previous) return previous;
-
-                const schedule =
-                  typeof value === 'function'
-                    ? value(previous.schedule)
-                    : value;
-
-                return {
-                  ...previous,
-                  schedule,
-                };
-              })
-            }
-          />
-        </Drawer>
       </div>
     </ConfigProvider>
   );
