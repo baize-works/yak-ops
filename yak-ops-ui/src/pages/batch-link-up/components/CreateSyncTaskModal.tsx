@@ -147,40 +147,29 @@ export default function CreateSyncTaskDrawer({
         open={open}
         width={620}
         placement="right"
+        closable={false}
         destroyOnClose
         maskClosable={false}
         keyboard={!submitting}
         rootStyle={brandCssVariables}
         onClose={handleCancel}
         title={
-          <div>
-            <div className="text-[18px] font-semibold text-[#101828]">
+          <div className="min-w-0">
+            <div className="text-[18px] font-semibold leading-7 text-[#101828]">
               新建离线同步任务
             </div>
 
-            <div className="mt-1 text-[13px] font-normal text-[#667085]">
+            <div className="mt-0.5 text-[13px] font-normal leading-5 text-[#667085]">
               填写任务基础信息，创建后可在任务列表中继续配置。
             </div>
           </div>
         }
-        styles={{
-          header: {
-            padding: '20px 24px',
-            borderBottom: '1px solid #eaecf0',
-          },
-          body: {
-            padding: '24px',
-          },
-          footer: {
-            padding: '16px 24px',
-            borderTop: '1px solid #eaecf0',
-          },
-        }}
-        footer={
-          <div className="flex items-center justify-end gap-3">
+        extra={
+          <div className="flex shrink-0 items-center gap-2">
             <Button
               disabled={submitting}
               onClick={handleCancel}
+              className="!h-9 !rounded-lg !px-4 !font-medium"
             >
               取消
             </Button>
@@ -189,12 +178,21 @@ export default function CreateSyncTaskDrawer({
               type="primary"
               loading={submitting}
               onClick={handleSubmit}
-              className="!text-white"
+              className="!h-9 !rounded-lg !px-5 !font-medium !text-white"
             >
               创建
             </Button>
           </div>
         }
+        styles={{
+          header: {
+            padding: '18px 24px',
+            borderBottom: '1px solid #eaecf0',
+          },
+          body: {
+            padding: '24px',
+          },
+        }}
       >
         <Form<CreateSyncTaskValues>
           form={form}
