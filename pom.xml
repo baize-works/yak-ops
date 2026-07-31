@@ -25,6 +25,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <yak-framework.version>1.0.0-SNAPSHOT</yak-framework.version>
+        <minio.version>8.6.0</minio.version>
+        <hadoop.version>3.5.0</hadoop.version>
         <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
@@ -39,6 +41,7 @@
         <module>yak-ops-core</module>
         <module>yak-ops-business</module>
         <module>yak-ops-plugins/yak-ops-plugin-datasource</module>
+        <module>yak-ops-plugins/yak-ops-plugin-storage</module>
         <module>yak-ops-plugins/yak-ops-plugin-task</module>
         <module>yak-ops-boot</module>
         <module>yak-ops-ui</module>
@@ -142,6 +145,26 @@
             <dependency>
                 <groupId>io.yak.ops</groupId>
                 <artifactId>yak-ops-plugin-datasource-all</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-storage-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-storage-minio</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-storage-hdfs</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-plugin-storage-all</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

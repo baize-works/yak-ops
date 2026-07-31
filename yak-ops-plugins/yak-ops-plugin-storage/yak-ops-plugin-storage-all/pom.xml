@@ -3,23 +3,26 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>io.yak.ops</groupId>
-        <artifactId>yak-ops</artifactId>
+        <artifactId>yak-ops-plugin-storage</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>yak-ops-spi</artifactId>
-    <name>Yak Ops SPI</name>
-    <description>Stable extension contracts for Yak Ops plugins</description>
+
+    <artifactId>yak-ops-plugin-storage-all</artifactId>
+    <name>Yak Ops All Storage Plugins</name>
+    <description>Aggregates all built-in resource storage plugins</description>
+
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
-            <artifactId>yak-ops-common</artifactId>
+            <artifactId>yak-ops-plugin-storage-minio</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-plugin-storage-hdfs</artifactId>
         </dependency>
     </dependencies>
 </project>

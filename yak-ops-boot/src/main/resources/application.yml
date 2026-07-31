@@ -5,7 +5,7 @@ server:
 spring:
   application:
     name: yak-ops
-  # Yak Security、Yak Datasource 和 Yak Workflow 分别维护自己的数据源与事务管理器。
+  # Yak Security、Yak Datasource、Yak Resource 和 Yak Workflow 分别维护自己的数据源与事务管理器。
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
@@ -13,6 +13,10 @@ spring:
   # 各业务模块自行创建并执行 Flyway。
   flyway:
     enabled: false
+  servlet:
+    multipart:
+      max-file-size: ${YAK_RESOURCE_MAX_FILE_SIZE:100MB}
+      max-request-size: ${YAK_RESOURCE_MAX_REQUEST_SIZE:110MB}
   lifecycle:
     timeout-per-shutdown-phase: 20s
   jackson:
@@ -87,6 +91,34 @@ yak:
       maximum-pool-size: 8
     connection-test:
       timeout-seconds: ${YAK_DATASOURCE_CONNECT_TIMEOUT_SECONDS:5}
+
+  resource:
+    enabled: ${YAK_RESOURCE_ENABLED:true}
+    max-file-size: ${YAK_RESOURCE_MAX_FILE_BYTES:104857600}
+    editable-max-bytes: ${YAK_RESOURCE_EDITABLE_MAX_BYTES:2097152}
+    database:
+      url: ${YAK_RESOURCE_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+      username: ${YAK_RESOURCE_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
+      password: ${YAK_RESOURCE_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
+      driver-class-name: ${YAK_RESOURCE_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+      minimum-idle: 1
+      maximum-pool-size: 8
+    storage:
+      type: ${YAK_RESOURCE_STORAGE_TYPE:MINIO}
+      minio:
+        enabled: ${YAK_RESOURCE_MINIO_ENABLED:true}
+        endpoint: ${YAK_RESOURCE_MINIO_ENDPOINT:http://127.0.0.1:9000}
+        access-key: ${YAK_RESOURCE_MINIO_ACCESS_KEY:minioadmin}
+        secret-key: ${YAK_RESOURCE_MINIO_SECRET_KEY:minioadmin}
+        bucket: ${YAK_RESOURCE_MINIO_BUCKET:yak-ops}
+        base-prefix: ${YAK_RESOURCE_MINIO_BASE_PREFIX:resources}
+        auto-create-bucket: ${YAK_RESOURCE_MINIO_AUTO_CREATE_BUCKET:true}
+      hdfs:
+        enabled: ${YAK_RESOURCE_HDFS_ENABLED:false}
+        uri: ${YAK_RESOURCE_HDFS_URI:hdfs://127.0.0.1:9000}
+        user: ${YAK_RESOURCE_HDFS_USER:hdfs}
+        base-directory: ${YAK_RESOURCE_HDFS_BASE_DIRECTORY:/yak-ops/resources}
+        replication: ${YAK_RESOURCE_HDFS_REPLICATION:1}
 
   sync:
     offline:
