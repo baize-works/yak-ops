@@ -1,3 +1,9 @@
+
+import {
+  ArrowLeftOutlined,
+  SaveOutlined,
+} from '@ant-design/icons';
+
 import { history, useLocation, useParams } from '@umijs/max';
 import {
   Button,
@@ -282,8 +288,7 @@ export default function BatchLinkUpDetailPage() {
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-      <div className="flex min-h-[calc(100vh-64px)] flex-col bg-[#f7f8fa] text-[#161823]">
-        <main className="mx-auto w-full max-w-[1040px] flex-1 px-6 py-6">
+
           <SyncTaskEditor
             editor={editor}
             dataSources={dataSources}
