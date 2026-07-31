@@ -346,7 +346,7 @@ export default function BatchLinkUpDetailPage() {
           />
         </main>
 
-        <footer className="sticky bottom-0 z-20 border-t border-black/[0.055] bg-white/96 shadow-[0_-8px_24px_rgba(22,24,35,0.035)] backdrop-blur">
+        <footer className="sticky bottom-0 z-20 border-t border-black/[0.055] bg-white/[0.96] shadow-[0_-8px_24px_rgba(22,24,35,0.035)] backdrop-blur">
           <div className="mx-auto flex min-h-[68px] max-w-[1040px] items-center justify-end gap-3 px-6 py-3">
             <Button
               disabled={saving}
