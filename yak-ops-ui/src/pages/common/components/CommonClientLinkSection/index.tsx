@@ -1,12 +1,25 @@
-import {linkupClientApi} from "@/pages/client/api";
+import { generateDataSourceOptions } from "@/pages/batch-link-up/DataSourceSelect";
+import { linkupClientApi } from "@/pages/client/api";
 import AddClientModal from "@/pages/client/components/AddClientModal";
 import AddOrEditDataSourceModal from "@/pages/data-source/components/AddOrEditDataSourceModal";
-import {fetchDataSourceOptions} from "@/pages/data-source/service";
-import {DataSourceModalRef, DataSourceOperateType,} from "@/pages/data-source/types";
-import {generateDataSourceOptions} from "@/pages/batch-link-up/DataSourceSelect";
-import {CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined,} from "@ant-design/icons";
-import {Button, Form, message, Popover, Select} from "antd";
-import React, {useCallback, useEffect, useMemo, useRef, useState,} from "react";
+import { fetchDataSourceOptions } from "@/pages/data-source/service";
+import {
+  DataSourceModalRef,
+  DataSourceOperateType,
+} from "@/pages/data-source/types";
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  LoadingOutlined,
+} from "@ant-design/icons";
+import { Button, Form, message, Popover, Select } from "antd";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import "./client-link.less";
 
@@ -74,14 +87,16 @@ interface CommonClientLinkSectionProps {
   }) => Record<string, any>;
 }
 
-const statusMap: Record<ConnectivityStatus,
+const statusMap: Record<
+  ConnectivityStatus,
   {
     text: string;
     dot: string;
     textClass: string;
     bgClass: string;
     icon?: React.ReactNode;
-  }> = {
+  }
+> = {
   idle: {
     text: "未测试",
     dot: "bg-slate-300",
@@ -93,21 +108,21 @@ const statusMap: Record<ConnectivityStatus,
     dot: "bg-blue-500",
     textClass: "text-blue-600",
     bgClass: "bg-blue-50",
-    icon: <LoadingOutlined spin/>,
+    icon: <LoadingOutlined spin />,
   },
   success: {
     text: "已通过",
     dot: "bg-emerald-500",
     textClass: "text-emerald-600",
     bgClass: "bg-emerald-50",
-    icon: <CheckCircleOutlined/>,
+    icon: <CheckCircleOutlined />,
   },
   error: {
     text: "失败",
     dot: "bg-rose-500",
     textClass: "text-rose-600",
     bgClass: "bg-rose-50",
-    icon: <CloseCircleOutlined/>,
+    icon: <CloseCircleOutlined />,
   },
 };
 
@@ -119,13 +134,12 @@ const normalizeClientOptions = (data: any[]): SelectOption[] => {
 };
 
 const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
-                                                                         items = [],
-                                                                       }) => {
+  items = [],
+}) => {
   if (!items.length) {
     return (
       <div className="w-[280px] rounded-2xl bg-white p-1">
-        <div
-          className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-4 text-xs text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-4 text-xs text-slate-500">
           暂无检查项详情，点击测试后可查看。
         </div>
       </div>
@@ -139,7 +153,7 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
     <div className="max-h-[560px] w-[380px] max-w-[72vw] overflow-hidden rounded-2xl bg-white">
       <div
         className="mb-3 flex items-start justify-between border-b border-slate-100"
-        style={{padding: 8}}
+        style={{ padding: 8 }}
       >
         <div>
           <div className="text-sm font-semibold text-slate-900">
@@ -221,8 +235,7 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
                   ) : null}
 
                   {(item.actualValue || item.expectedValue) && (
-                    <div
-                      className="mt-2.5 grid gap-1.5 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 text-[11px]">
+                    <div className="mt-2.5 grid gap-1.5 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 text-[11px]">
                       {item.expectedValue ? (
                         <div className="flex gap-1.5">
                           <span className="shrink-0 text-slate-400">期望</span>
@@ -255,7 +268,7 @@ const VerifyItemsPopoverContent: React.FC<{ items?: VerifyItem[] }> = ({
 const SimpleStatus: React.FC<{
   status: ConnectivityStatus;
   items?: VerifyItem[];
-}> = ({status, items = []}) => {
+}> = ({ status, items = [] }) => {
   const config = statusMap[status];
   const showPopover = status !== "idle" && items.length > 0;
 
@@ -271,9 +284,9 @@ const SimpleStatus: React.FC<{
     >
       <span className="flex h-3.5 w-3.5 items-center justify-center">
         {status === "loading" ? (
-          <LoadingOutlined spin className="text-[12px]"/>
+          <LoadingOutlined spin className="text-[12px]" />
         ) : (
-          <span className={["h-2 w-2 rounded-full", config.dot].join(" ")}/>
+          <span className={["h-2 w-2 rounded-full", config.dot].join(" ")} />
         )}
       </span>
 
@@ -295,7 +308,7 @@ const SimpleStatus: React.FC<{
     <Popover
       trigger="hover"
       placement="right"
-      content={<VerifyItemsPopoverContent items={items}/>}
+      content={<VerifyItemsPopoverContent items={items} />}
       overlayInnerStyle={{
         borderRadius: 18,
         padding: 12,
@@ -310,7 +323,7 @@ const LinkStatusAction: React.FC<{
   status: ConnectivityStatus;
   onTest?: () => void;
   reverse?: boolean;
-}> = ({status, onTest, reverse = false}) => {
+}> = ({ status, onTest, reverse = false }) => {
   const config = statusMap[status];
 
   return (
@@ -339,9 +352,9 @@ const LinkStatusAction: React.FC<{
       >
         <span className="flex h-3.5 w-3.5 items-center justify-center">
           {status === "loading" ? (
-            <LoadingOutlined spin className="text-[12px]"/>
+            <LoadingOutlined spin className="text-[12px]" />
           ) : (
-            <span className={["h-2 w-2 rounded-full", config.dot].join(" ")}/>
+            <span className={["h-2 w-2 rounded-full", config.dot].join(" ")} />
           )}
         </span>
 
@@ -357,16 +370,15 @@ const SectionCard: React.FC<{
   verifyItems?: VerifyItem[];
   children: React.ReactNode;
   footer?: React.ReactNode;
-}> = ({title, status, verifyItems, children, footer}) => {
+}> = ({ title, status, verifyItems, children, footer }) => {
   return (
-    <section
-      className="min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+    <section className="min-w-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className="shrink-0 text-sm font-semibold text-slate-800">
             {title}
           </div>
-          {status ? <SimpleStatus status={status} items={verifyItems}/> : null}
+          {status ? <SimpleStatus status={status} items={verifyItems} /> : null}
         </div>
       </div>
 
@@ -381,12 +393,12 @@ const SectionCard: React.FC<{
 const CreateDataSourceButton: React.FC<{
   text: string;
   onClick: () => void;
-}> = ({text, onClick}) => {
+}> = ({ text, onClick }) => {
   return (
     <Button
       block
       type="default"
-      style={{marginTop: 8}}
+      style={{ marginTop: 8 }}
       className={[
         "h-[32px] rounded-full px-3",
         "border border-[#D9D9D9] bg-white shadow-none",
@@ -414,38 +426,38 @@ const CreateDataSourceButton: React.FC<{
 };
 
 const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
-                                                                           scene = "offline",
+  scene = "offline",
 
-                                                                           activeStep,
-                                                                           sourceType,
-                                                                           targetType,
-                                                                           sourceLabel,
-                                                                           targetLabel,
-                                                                           clientId,
-                                                                           setClientId,
-                                                                           handleSourceChange,
-                                                                           handleTargetChange,
-                                                                           sectionRef,
+  activeStep,
+  sourceType,
+  targetType,
+  sourceLabel,
+  targetLabel,
+  clientId,
+  setClientId,
+  handleSourceChange,
+  handleTargetChange,
+  sectionRef,
 
-                                                                           sourceDataSourceId,
-                                                                           targetDataSourceId,
-                                                                           setSourceDataSourceId,
-                                                                           setTargetDataSourceId,
+  sourceDataSourceId,
+  targetDataSourceId,
+  setSourceDataSourceId,
+  setTargetDataSourceId,
 
-                                                                           sourceTestStatus,
-                                                                           targetTestStatus,
-                                                                           setSourceTestStatus,
-                                                                           setTargetTestStatus,
+  sourceTestStatus,
+  targetTestStatus,
+  setSourceTestStatus,
+  setTargetTestStatus,
 
-                                                                           clientLabel = "我的客户端",
-                                                                           clientPlaceholder = "请选择 Zeta 客户端节点",
-                                                                           sourceTitle = "来源",
-                                                                           targetTitle = "去向",
-                                                                           sourceCreateText = "新建来源数据源",
-                                                                           targetCreateText = "新建去向数据源",
+  clientLabel = "我的客户端",
+  clientPlaceholder = "请选择 Zeta 客户端节点",
+  sourceTitle = "来源",
+  targetTitle = "去向",
+  sourceCreateText = "新建来源数据源",
+  targetCreateText = "新建去向数据源",
 
-                                                                           getVerifyExtraParams,
-                                                                         }) => {
+  getVerifyExtraParams,
+}) => {
   const [form] = Form.useForm();
   const [clientForm] = Form.useForm();
 
@@ -1075,8 +1087,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
     <>
       <div ref={sectionRef} className="bg-white px-4 py-6 md:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-[1480px] space-y-6">
-          <div
-            className="overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-4 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] md:px-6 md:py-5">
+          <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-b from-slate-50 to-white px-4 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] md:px-6 md:py-5">
             <div className="overflow-x-auto">
               <div className="flex min-w-[760px] items-center justify-center gap-4 text-sm text-slate-700">
                 <span className="shrink-0 font-medium text-slate-900">
@@ -1084,7 +1095,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
                 </span>
 
                 <div className="flex items-center gap-3">
-                  <div className="h-px w-8 bg-slate-300 md:w-10"/>
+                  <div className="h-px w-8 bg-slate-300 md:w-10" />
                   <LinkStatusAction
                     status={sourceTestStatus}
                     onTest={() =>
@@ -1094,7 +1105,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
                       })
                     }
                   />
-                  <div className="h-px w-8 bg-slate-300 md:w-10"/>
+                  <div className="h-px w-8 bg-slate-300 md:w-10" />
                 </div>
 
                 <span className="shrink-0 font-medium text-slate-900">
@@ -1102,7 +1113,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
                 </span>
 
                 <div className="flex items-center gap-3">
-                  <div className="h-px w-8 bg-slate-300 md:w-10"/>
+                  <div className="h-px w-8 bg-slate-300 md:w-10" />
                   <LinkStatusAction
                     status={targetTestStatus}
                     onTest={() =>
@@ -1113,7 +1124,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
                     }
                     reverse
                   />
-                  <div className="h-px w-8 bg-slate-300 md:w-10"/>
+                  <div className="h-px w-8 bg-slate-300 md:w-10" />
                 </div>
 
                 <span className="shrink-0 font-medium text-slate-900">
@@ -1272,7 +1283,7 @@ const CommonClientLinkSection: React.FC<CommonClientLinkSectionProps> = ({
         onSubmit={handleCreateClient}
       />
 
-      <AddOrEditDataSourceModal ref={modalRef}/>
+      <AddOrEditDataSourceModal ref={modalRef} />
     </>
   );
 };

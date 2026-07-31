@@ -143,7 +143,7 @@ const WorkflowCreateGuide = () => {
               <button
                 type="button"
                 className={[
-                  'relative h-[102px] w-[198px] rounded-xl border border-[#c7d2fe] bg-white p-3 text-left',
+                  'relative h-[122px] w-[218px] rounded-xl border border-[#c7d2fe] bg-white p-3 text-left',
                   'shadow-[0_4px_12px_rgba(79,70,229,0.08)] outline outline-2 outline-[#6366f1]',
                   'max-sm:w-full',
                 ].join(' ')}
@@ -166,7 +166,7 @@ const WorkflowCreateGuide = () => {
                 title="暂未开放"
                 disabled
                 className={[
-                  'relative h-[102px] w-[198px] cursor-not-allowed rounded-xl border border-[#e4e7ec]',
+                  'relative h-[122px] w-[218px] cursor-not-allowed rounded-xl border border-[#e4e7ec]',
                   'bg-white p-3 text-left opacity-70 shadow-[0_1px_2px_rgba(16,24,40,0.03)]',
                   'max-sm:w-full',
                 ].join(' ')}

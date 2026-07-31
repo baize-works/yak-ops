@@ -188,24 +188,7 @@ export default function SyncTaskConfigStep({
 
   return (
     <div>
-      <Alert
-        showIcon
-        type="info"
-        className="mb-5 !border-[#c7d7fe] !bg-[#f5f7ff]"
-        message={isMulti ? '多表同步配置' : '单表同步配置'}
-        description={
-          <span>
-            当前连接为 {sourceDataSource.name} → {targetDataSource.name}。
-            <button
-              type="button"
-              className="ml-1 cursor-pointer border-0 bg-transparent p-0 text-[#315efb]"
-              onClick={onBackToConnection}
-            >
-              重新选择并测试连接
-            </button>
-          </span>
-        }
-      />
+      
 
       <div className="grid grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)] items-stretch gap-4">
         <Card className="!rounded-xl !border-[#e4e7ec]" styles={{ body: { padding: 24 } }}>
