@@ -285,13 +285,17 @@ export const useSmoothWheelScroll = (
       startAnimation();
     };
 
+    const wheelListener: EventListener = (event) => {
+      handleWheel(event as WheelEvent);
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (SCROLL_KEYS.has(event.key)) {
         stopAnimation();
       }
     };
 
-    scrollContainer.addEventListener("wheel", handleWheel, {
+    scrollContainer.addEventListener("wheel", wheelListener, {
       passive: false,
     });
 
@@ -314,7 +318,7 @@ export const useSmoothWheelScroll = (
 
       scrollContainer.removeEventListener(
         "wheel",
-        handleWheel,
+        wheelListener,
       );
 
       scrollContainer.removeEventListener(
