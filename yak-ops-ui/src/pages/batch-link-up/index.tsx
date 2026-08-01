@@ -1,5 +1,5 @@
 import { API_SUCCESS_CODE } from "@/services/http/response";
-import { CopyOutlined, DownOutlined, ReloadOutlined } from "@ant-design/icons";
+import { CopyOutlined, DownOutlined, FilterOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { history } from "@umijs/max";
 import {
   Button,
@@ -9,6 +9,7 @@ import {
   Empty,
   Input,
   message,
+  Popover,
   Select,
   Table,
   Tooltip,
@@ -412,6 +413,8 @@ const BatchLinkUpPage: React.FC = () => {
     }
   };
 
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
   const onStopAll = async () => {
     const selectedRows = getSelectedRows();
 
@@ -469,6 +472,46 @@ const BatchLinkUpPage: React.FC = () => {
     "[&_li]:!leading-5",
     "[&_p]:!my-0",
   ].join(" ");
+
+  const applyFilter = (nextDraft: SearchState) => {
+  setFilterDraft(nextDraft);
+  setSearchParams(nextDraft);
+  setPagination((previous) => ({
+    ...previous,
+    current: 1,
+  }));
+};
+
+const handleQuickFilterChange = (
+  field: keyof SearchState,
+  value: SearchState[keyof SearchState]
+) => {
+  const nextDraft = {
+    ...filterDraft,
+    [field]: value,
+  };
+
+  applyFilter(nextDraft);
+};
+
+const handleAdvancedReset = () => {
+  const nextDraft: SearchState = {
+    ...filterDraft,
+    id: undefined,
+    sinkType: undefined,
+    sourceTable: undefined,
+    sinkTable: undefined,
+  };
+
+  applyFilter(nextDraft);
+};
+
+const advancedFilterCount = [
+  filterDraft.id,
+  filterDraft.sinkType,
+  filterDraft.sourceTable,
+  filterDraft.sinkTable,
+].filter(Boolean).length;
 
   const columns = [
     {
@@ -609,179 +652,242 @@ const BatchLinkUpPage: React.FC = () => {
         <div className="mx-auto flex w-full max-w-full flex-1 flex-col">
           <div className="mb-3">
             {/* 查询区域 */}
-            <div className="border-b border-[#f0f0f0]">
-              <div className="flex min-h-[44px] flex-wrap items-center gap-x-4 gap-y-2 py-2">
-                <div className="flex min-w-[420px] flex-1 items-center gap-3">
-                  <span className="shrink-0 text-[13px] text-[#344054]">
-                    任务名称：
-                  </span>
+<div className="border-b border-[#f0f0f0]">
+  <div className="flex min-h-[54px] items-center justify-between gap-4 py-2">
+    {/* 左侧状态切换 */}
+    <div className="flex shrink-0 items-center gap-1 rounded-lg bg-[#f5f5f6] p-1">
+      {statusTabs.map((item) => {
+        const active = currentTab === item.value;
 
-                  <Input
-                    allowClear
-                    value={filterDraft.jobName}
-                    variant="filled"
-                    onChange={(event) =>
-                      updateFilterDraft(
-                        "jobName",
-                        event.target.value || undefined
-                      )
-                    }
-                    onPressEnter={handleSearch}
-                    placeholder="请输入任务名"
-                    className="!h-8 min-w-[240px] flex-1"
-                  />
-                </div>
+        return (
+          <button
+            key={item.value}
+            type="button"
+            onClick={() => handleTabChange(item.value)}
+            className={[
+              "h-8 rounded-md px-3.5 text-[13px] font-medium transition-all",
+              active
+                ? "bg-white text-[#ff4d4f] shadow-[0_1px_4px_rgba(16,24,40,0.08)]"
+                : "text-[#667085] hover:bg-white/70 hover:text-[#344054]",
+            ].join(" ")}
+          >
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
 
-                <div className="flex min-w-[420px] flex-1 items-center gap-3">
-                  <span className="shrink-0 text-[13px] text-[#344054]">
-                    任务 ID：
-                  </span>
+    {/* 右侧高频条件 */}
+    <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-x-auto">
+      <Input
+        allowClear
+        variant="filled"
+        value={filterDraft.jobName}
+        prefix={<SearchOutlined className="text-[#98a2b3]" />}
+        placeholder="搜索任务名称"
+        className="!h-9 !w-[220px] !min-w-[180px]"
+        onChange={(event) =>
+          updateFilterDraft(
+            "jobName",
+            event.target.value || undefined
+          )
+        }
+        onPressEnter={handleSearch}
+      />
 
-                  <Input
-                    allowClear
-                    value={filterDraft.id}
-                    variant="filled"
-                    onChange={(event) =>
-                      updateFilterDraft("id", event.target.value || undefined)
-                    }
-                    onPressEnter={handleSearch}
-                    placeholder="请输入任务 ID"
-                    className="!h-8 min-w-[240px] flex-1"
-                  />
-                </div>
+      <Select
+        allowClear
+        showSearch
+        variant="filled"
+        value={filterDraft.sourceType}
+        options={connectorOptions}
+        placeholder="来源类型"
+        className="!h-9 !w-[150px] !min-w-[140px]"
+        optionFilterProp="label"
+        onChange={(value) =>
+          handleQuickFilterChange("sourceType", value)
+        }
+      />
 
-                <div className="ml-auto flex shrink-0 items-center gap-2">
-                  <Button
-                    size="small"
-                    className="!h-8 !px-4"
-                    onClick={handleSearch}
-                  >
-                    搜索
-                  </Button>
+      <RangePicker
+        allowClear
+        variant="filled"
+        value={filterDraft.createTime as any}
+        format="YYYY-MM-DD"
+        placeholder={["开始日期", "结束日期"]}
+        className="!h-9 !w-[250px] !min-w-[230px]"
+        onChange={(value) =>
+          handleQuickFilterChange(
+            "createTime",
+            value || undefined
+          )
+        }
+      />
 
-                  <Button
-                    size="small"
-                    className="!h-8 !px-4"
-                    onClick={handleReset}
-                  >
-                    重置
-                  </Button>
+      <Button
+        size="small"
+        className="!h-9 !px-4"
+        onClick={handleSearch}
+      >
+        查询
+      </Button>
 
-                  <Button
-                    type="link"
-                    size="small"
-                    className="!h-8 !px-1"
-                    onClick={() => setShowMoreFilters((current) => !current)}
-                  >
-                    {showMoreFilters ? "收起" : "展开"}
-
-                    <DownOutlined
-                      className={[
-                        "ml-1 text-[10px] transition-transform",
-                        showMoreFilters ? "rotate-180" : "",
-                      ].join(" ")}
-                    />
-                  </Button>
-                </div>
+      <Popover
+        trigger="click"
+        placement="bottomRight"
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
+        overlayClassName="sync-task-advanced-filter"
+        content={
+          <div className="w-[430px]">
+            <div className="mb-4">
+              <div className="text-[14px] font-semibold text-[#101828]">
+                高级搜索
               </div>
 
-              {showMoreFilters && (
-                <div className="flex flex-wrap items-center gap-4 pb-3">
-                  <div className="flex min-w-[300px] items-center gap-3">
-                    <span className="shrink-0 text-[13px] text-[#344054]">
-                      来源类型：
-                    </span>
-
-                    <Select
-                      variant="filled"
-                      allowClear
-                      showSearch
-                      value={filterDraft.sourceType}
-                      onChange={(value) =>
-                        updateFilterDraft("sourceType", value)
-                      }
-                      options={connectorOptions}
-                      placeholder="请选择来源类型"
-                      className="w-[200px]"
-                    />
-                  </div>
-
-                  <div className="flex min-w-[300px] items-center gap-3">
-                    <span className="shrink-0 text-[13px] text-[#344054]">
-                      目标类型：
-                    </span>
-
-                    <Select
-                      variant="filled"
-                      allowClear
-                      showSearch
-                      value={filterDraft.sinkType}
-                      onChange={(value) => updateFilterDraft("sinkType", value)}
-                      options={connectorOptions}
-                      placeholder="请选择目标类型"
-                      className="w-[200px]"
-                    />
-                  </div>
-
-                  <div className="flex min-w-[360px] items-center gap-3">
-                    <span className="shrink-0 text-[13px] text-[#344054]">
-                      创建时间：
-                    </span>
-
-                    <RangePicker
-                      variant="filled"
-                      value={filterDraft.createTime as any}
-                      onChange={(value) =>
-                        updateFilterDraft("createTime", value || undefined)
-                      }
-                      className="w-[280px]"
-                    />
-                  </div>
-
-                  <div className="flex min-w-[360px] items-center gap-3">
-                    <span className="shrink-0 text-[13px] text-[#344054]">
-                      来源表：
-                    </span>
-
-                    <Input
-                      variant="filled"
-                      allowClear
-                      value={filterDraft.sourceTable}
-                      onChange={(event) =>
-                        updateFilterDraft(
-                          "sourceTable",
-                          event.target.value || undefined
-                        )
-                      }
-                      onPressEnter={handleSearch}
-                      placeholder="请输入来源表"
-                      className="w-[260px]"
-                    />
-                  </div>
-
-                  <div className="flex min-w-[360px] items-center gap-3">
-                    <span className="shrink-0 text-[13px] text-[#344054]">
-                      目标表：
-                    </span>
-
-                    <Input
-                      allowClear
-                      variant="filled"
-                      value={filterDraft.sinkTable}
-                      onChange={(event) =>
-                        updateFilterDraft(
-                          "sinkTable",
-                          event.target.value || undefined
-                        )
-                      }
-                      onPressEnter={handleSearch}
-                      placeholder="请输入目标表"
-                      className="w-[260px]"
-                    />
-                  </div>
-                </div>
-              )}
+              <div className="mt-1 text-[12px] text-[#98a2b3]">
+                按任务标识、目标类型和同步表信息进一步筛选
+              </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+              <div>
+                <div className="mb-1.5 text-[12px] text-[#667085]">
+                  任务 ID
+                </div>
+
+                <Input
+                  allowClear
+                  variant="filled"
+                  value={filterDraft.id}
+                  placeholder="请输入任务 ID"
+                  onChange={(event) =>
+                    updateFilterDraft(
+                      "id",
+                      event.target.value || undefined
+                    )
+                  }
+                  onPressEnter={() => {
+                    handleSearch();
+                    setAdvancedOpen(false);
+                  }}
+                />
+              </div>
+
+              <div>
+                <div className="mb-1.5 text-[12px] text-[#667085]">
+                  目标类型
+                </div>
+
+                <Select
+                  allowClear
+                  showSearch
+                  variant="filled"
+                  value={filterDraft.sinkType}
+                  options={connectorOptions}
+                  placeholder="请选择目标类型"
+                  optionFilterProp="label"
+                  className="w-full"
+                  onChange={(value) =>
+                    updateFilterDraft("sinkType", value)
+                  }
+                />
+              </div>
+
+              <div>
+                <div className="mb-1.5 text-[12px] text-[#667085]">
+                  来源表
+                </div>
+
+                <Input
+                  allowClear
+                  variant="filled"
+                  value={filterDraft.sourceTable}
+                  placeholder="请输入来源表"
+                  onChange={(event) =>
+                    updateFilterDraft(
+                      "sourceTable",
+                      event.target.value || undefined
+                    )
+                  }
+                  onPressEnter={() => {
+                    handleSearch();
+                    setAdvancedOpen(false);
+                  }}
+                />
+              </div>
+
+              <div>
+                <div className="mb-1.5 text-[12px] text-[#667085]">
+                  目标表
+                </div>
+
+                <Input
+                  allowClear
+                  variant="filled"
+                  value={filterDraft.sinkTable}
+                  placeholder="请输入目标表"
+                  onChange={(event) =>
+                    updateFilterDraft(
+                      "sinkTable",
+                      event.target.value || undefined
+                    )
+                  }
+                  onPressEnter={() => {
+                    handleSearch();
+                    setAdvancedOpen(false);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2 border-t border-[#f0f0f0] pt-4">
+              <Button
+                size="small"
+                className="!h-8"
+                onClick={handleAdvancedReset}
+              >
+                重置
+              </Button>
+
+              <Button
+                danger
+                type="primary"
+                size="small"
+                className="!h-8"
+                onClick={() => {
+                  handleSearch();
+                  setAdvancedOpen(false);
+                }}
+              >
+                应用筛选
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        <Button
+          size="small"
+          icon={<FilterOutlined />}
+          className={[
+            "!h-9 !px-3",
+            advancedFilterCount > 0
+              ? "!border-[#ffccc7] !bg-[#fff1f0] !text-[#ff4d4f]"
+              : "",
+          ].join(" ")}
+        >
+          高级搜索
+
+          {advancedFilterCount > 0 && (
+            <span className="ml-1.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#ff4d4f] px-1 text-[10px] leading-[18px] text-white">
+              {advancedFilterCount}
+            </span>
+          )}
+        </Button>
+      </Popover>
+    </div>
+  </div>
+</div>
 
             {/* 操作区域 */}
             <div className="flex min-h-[48px] items-center justify-between">
