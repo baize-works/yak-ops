@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 离线同步任务定义接口，保持现有前端 batch-definition 契约。 */
+/** 离线同步任务定义接口，仅保留单表和多表向导模式。 */
 @ConditionalOnOfflineSyncEnabled
 @RestController
 @RequestMapping("/api/v1/job/batch-definition")
@@ -35,48 +35,14 @@ public class OfflineJobDefinitionController {
     return Result.success(service.nextId());
   }
 
-  @PostMapping("/guide-single/saveOrUpdate")
-  public Result<Long> saveGuideSingle(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+  @PostMapping({"/guide-single/saveOrUpdate", "/guide-multi/saveOrUpdate"})
+  public Result<Long> saveGuide(@RequestBody OfflineJobDefinitionDTO requestDTO) {
     return Result.success(service.saveGuide(requestDTO));
   }
 
-  @PostMapping("/guide-multi/saveOrUpdate")
-  public Result<Long> saveGuideMulti(@RequestBody OfflineJobDefinitionDTO requestDTO) {
-    return Result.success(service.saveGuide(requestDTO));
-  }
-
-  @PostMapping("/script/saveOrUpdate")
-  public Result<Long> saveScript(@RequestBody OfflineJobDefinitionDTO requestDTO) {
-    return Result.success(service.saveScript(requestDTO));
-  }
-
-  @PostMapping("/guide-single/build-config")
-  public Result<String> buildGuideSingleConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
+  @PostMapping({"/guide-single/build-config", "/guide-multi/build-config", "/buildHoconConfig"})
+  public Result<String> buildGuideConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
     return Result.success(service.buildGuideConfig(requestDTO));
-  }
-
-  @PostMapping("/guide-multi/build-config")
-  public Result<String> buildGuideMultiConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
-    return Result.success(service.buildGuideConfig(requestDTO));
-  }
-
-  @PostMapping("/script/build-config")
-  public Result<String> buildScriptConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
-    return Result.success(service.buildScriptConfig(requestDTO));
-  }
-
-  @PostMapping("/buildHoconConfig")
-  public Result<String> buildHoconConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
-    String mode = requestDTO == null ? null : requestDTO.getMode();
-    if (requestDTO != null
-        && requestDTO.getBasic() != null
-        && requestDTO.getBasic().getMode() != null) {
-      mode = requestDTO.getBasic().getMode();
-    }
-    return Result.success(
-        "SCRIPT".equalsIgnoreCase(mode)
-            ? service.buildScriptConfig(requestDTO)
-            : service.buildGuideConfig(requestDTO));
   }
 
   @GetMapping("/{id}")

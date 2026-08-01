@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -20,11 +21,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 
-/** 离线同步模块基础设施配置。 */
+/** 离线同步控制面基础设施配置。 */
 @ConditionalOnOfflineSyncEnabled
 @Configuration(proxyBeanMethods = false)
+@EnableScheduling
 @EnableConfigurationProperties(OfflineSyncProperties.class)
 @MapperScan(
     basePackages = "io.yak.ops.business.sync.offline.dao.mapper",
@@ -60,7 +63,6 @@ public class OfflineSyncConfiguration {
     factory.setTypeAliasesPackage("io.yak.ops.common.bean.po.sync.offline");
     factory.setConfiguration(MybatisPlusFactorySupport.createConfiguration());
     factory.setGlobalConfig(MybatisPlusFactorySupport.createGlobalConfig());
-
     MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
     interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
     factory.setPlugins(interceptor);
@@ -87,7 +89,9 @@ public class OfflineSyncConfiguration {
 
   @Bean(name = "offlineSyncJsonMapper")
   public ObjectMapper offlineSyncJsonMapper() {
-    return new ObjectMapper().findAndRegisterModules();
+    return new ObjectMapper()
+        .findAndRegisterModules()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   @Bean(name = "offlineSyncHttpClient")
