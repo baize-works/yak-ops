@@ -80,9 +80,9 @@ const SideNavItem = ({
           : 'gap-2',
         active
           ? [
-              'bg-[#eaf0ff]',
-              'font-semibold text-[#155eef]',
-              'shadow-[inset_0_0_0_1px_rgba(178,204,255,0.45)]',
+              'bg-[var(--yak-brand-color-soft)]',
+              'font-semibold text-[var(--yak-brand-color)]',
+              'shadow-[inset_0_0_0_1px_var(--yak-brand-color-outline)]',
             ].join(' ')
           : [
               'bg-transparent',
@@ -513,7 +513,7 @@ const WorkflowHeader = ({
                   className={[
                     'flex h-7 w-7 shrink-0',
                     'items-center justify-center',
-                    'rounded-full bg-[#155eef]',
+                    'rounded-full bg-[var(--yak-brand-color)]',
                     'text-[12px] font-semibold',
                     'text-white',
                   ].join(' ')}
@@ -543,7 +543,7 @@ const WorkflowHeader = ({
                     'shadow-[0_1px_2px_rgba(16,24,40,0.05)]',
                     'transition-colors',
                     'hover:bg-[#f9fafb]',
-                    'hover:text-[#155eef]',
+                    'hover:text-[var(--yak-brand-color)]',
                   ].join(' ')}
                 >
                   <CircleHelp size={15} />
@@ -631,9 +631,9 @@ const WorkflowHeader = ({
               'transition-colors',
               activePanel === 'run'
                 ? [
-                    'border-[#b2ccff]',
-                    'bg-[#eff4ff]',
-                    'text-[#155eef]',
+                    'border-[var(--yak-brand-color-border)]',
+                    'bg-[var(--yak-brand-color-soft)]',
+                    'text-[var(--yak-brand-color)]',
                   ].join(' ')
                 : [
                     'border-[#e4e7ec]',
@@ -655,10 +655,10 @@ const WorkflowHeader = ({
             className={[
               'inline-flex h-8 items-center gap-1.5',
               'rounded-[10px] border-0',
-              'bg-[#155eef] px-3.5',
+              'bg-[var(--yak-brand-color)] px-3.5',
               'text-[12px] font-semibold text-white',
               'transition-colors',
-              'hover:bg-[#004eeb]',
+              'hover:bg-[var(--yak-brand-color-hover)]',
               'disabled:cursor-not-allowed',
               'disabled:opacity-50',
             ].join(' ')}

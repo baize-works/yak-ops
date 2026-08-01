@@ -132,7 +132,7 @@ const RunPanel = ({ nodes, onStatusChange, onClose }: RunPanelProps) => {
 
   const statusClass = (status: WorkflowRunLog['status']) => {
     if (status === 'running')
-      return 'border-[#c7d7fe] bg-[#f5f8ff] text-[#4f46e5]';
+      return 'border-[#c7d7fe] bg-[var(--yak-brand-color-soft)] text-[var(--yak-brand-color)]';
     if (status === 'success')
       return 'border-[#abefc6] bg-[#f6fef9] text-[#039855]';
     if (status === 'failed')
@@ -173,7 +173,7 @@ const RunPanel = ({ nodes, onStatusChange, onClose }: RunPanelProps) => {
             ) : (
               <button
                 type="button"
-                className="inline-flex h-[30px] items-center gap-1.5 rounded-md border-0 bg-[#5d5fef] px-2.5 text-[9px] text-white"
+                className="inline-flex h-[30px] items-center gap-1.5 rounded-md border-0 bg-[var(--yak-brand-color)] px-2.5 text-[9px] text-white"
                 onClick={() => void run()}
               >
                 <Play size={14} /> 开始运行

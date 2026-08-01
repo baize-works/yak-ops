@@ -238,7 +238,7 @@ const WorkflowQuickAddLayer = () => {
             orient="auto"
             markerUnits="strokeWidth"
           >
-            <path d="M 0 0 L 8 4 L 0 8 z" fill="#155eef" />
+            <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--yak-brand-color)" />
           </marker>
         </defs>
 
@@ -249,7 +249,7 @@ const WorkflowQuickAddLayer = () => {
               key={edge.id}
               d={path}
               fill="none"
-              stroke={active ? '#155eef' : '#a6afbd'}
+              stroke={active ? 'var(--yak-brand-color)' : '#a6afbd'}
               strokeWidth={active ? 2 : 1.6}
               strokeLinecap="round"
               markerEnd={

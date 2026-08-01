@@ -131,7 +131,7 @@ export const AddButton = ({
           'text-[#667085]',
           'transition-colors duration-150',
           'hover:bg-[#f2f4f7]',
-          'hover:text-[#155eef]',
+          'hover:text-[var(--yak-brand-color)]',
         ].join(' ')}
       >
         <Plus size={15} strokeWidth={2} />
@@ -148,8 +148,8 @@ export const AddButton = ({
       className={[
         '!h-7 !rounded-md !px-2',
         '!text-[12px] !font-medium',
-        '!text-[#155eef]',
-        'hover:!bg-[#eef4ff]',
+        '!text-[var(--yak-brand-color)]',
+        'hover:!bg-[var(--yak-brand-color-soft)]',
       ].join(' ')}
     >
       {children}
@@ -296,8 +296,8 @@ export const KeyValueEditor = ({
           'bg-[#fcfcfd]',
           'text-[12px] text-[#667085]',
           'transition-colors duration-150',
-          'hover:bg-[#f8faff]',
-          'hover:text-[#155eef]',
+          'hover:bg-[var(--yak-brand-color-soft)]',
+          'hover:text-[var(--yak-brand-color)]',
         ].join(' ')}
       >
         <Plus size={14} strokeWidth={2} />

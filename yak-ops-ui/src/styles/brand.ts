@@ -1,4 +1,5 @@
 import type { ThemeConfig } from 'antd';
+import type { CSSProperties } from 'react';
 
 /** Yak Ops 全局品牌主色。 */
 export const BRAND_COLOR = 'rgba(254,44,85,1)';
@@ -10,6 +11,16 @@ export const BRAND_COLOR_SOFT = 'rgba(254,44,85,0.06)';
 export const BRAND_COLOR_SOFT_HOVER = 'rgba(254,44,85,0.1)';
 export const BRAND_COLOR_BORDER = 'rgba(254,44,85,0.35)';
 export const BRAND_COLOR_OUTLINE = 'rgba(254,44,85,0.16)';
+
+/** 供 Tailwind 任意值、Less 及 SVG 复用的品牌色 CSS 变量。 */
+export const BRAND_CSS_VARIABLES = {
+  '--yak-brand-color': BRAND_COLOR,
+  '--yak-brand-color-hover': BRAND_COLOR_HOVER,
+  '--yak-brand-color-soft': BRAND_COLOR_SOFT,
+  '--yak-brand-color-soft-hover': BRAND_COLOR_SOFT_HOVER,
+  '--yak-brand-color-border': BRAND_COLOR_BORDER,
+  '--yak-brand-color-outline': BRAND_COLOR_OUTLINE,
+} as CSSProperties;
 
 /**
  * Ant Design 品牌主题。
