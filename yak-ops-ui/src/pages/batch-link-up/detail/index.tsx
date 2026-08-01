@@ -1,26 +1,21 @@
-import { history, useLocation, useParams } from "@umijs/max";
-import {
-  Button,
-  ConfigProvider,
-  Empty,
-  message,
-  Spin,
-} from "antd";
+import { history, useLocation, useParams } from '@umijs/max';
+import { Button, ConfigProvider, Empty, message, Spin } from 'antd';
 import {
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from "react";
+} from 'react';
 
-import { fetchDataSourceAll } from "@/pages/data-source/service";
-import type { DataSourceRecord } from "@/pages/data-source/types";
-import { BRAND_THEME } from "@/styles/brand";
+import { fetchDataSourceAll } from '@/pages/data-source/service';
+import type { DataSourceRecord } from '@/pages/data-source/types';
+import { BRAND_THEME } from '@/styles/brand';
 
-import { linkupJobDefinitionApi } from "../api";
-import SyncTaskEditor from "./components/SyncTaskEditor";
-import { useSmoothWheelScroll } from "./hooks/useSmoothWheelScroll";
+import { linkupJobDefinitionApi } from '../api';
+import SyncTaskEditor from './components/SyncTaskEditor';
+import validateEditorConnectorForms from './form-schema/validateEditorConnectorForms';
+import { useSmoothWheelScroll } from './hooks/useSmoothWheelScroll';
 import {
   buildSavePayload,
   endpointNode,
@@ -29,73 +24,61 @@ import {
   normalizeEditDetail,
   responseMessage,
   type SyncEditorState,
-} from "./model";
+} from './model';
 
 const validateTaskConfig = (
   editor: SyncEditorState,
 ): string | null => {
   if (!editor.basic.jobName.trim()) {
-    return "请输入任务名称";
+    return '请输入任务名称';
   }
 
   if (!editor.basic.sourceDataSourceId) {
-    return "请选择来源数据源";
+    return '请选择来源数据源';
   }
 
   if (!editor.basic.targetDataSourceId) {
-    return "请选择目标数据源";
+    return '请选择目标数据源';
   }
 
-  const source =
-    endpointNode(editor.workflow, "source")?.data?.config || {};
+  const source = endpointNode(editor.workflow, 'source')?.data?.config || {};
+  const sink = endpointNode(editor.workflow, 'sink')?.data?.config || {};
 
-  const sink =
-    endpointNode(editor.workflow, "sink")?.data?.config || {};
-
-  if (editor.mode === "GUIDE_MULTI") {
-    if (
-      !source.tables?.length &&
-      !source.tablePattern?.trim()
-    ) {
-      return "请选择来源表，或填写表名过滤规则";
+  if (editor.mode === 'GUIDE_MULTI') {
+    if (!source.tables?.length && !source.tablePattern?.trim()) {
+      return '请选择来源表，或填写表名过滤规则';
     }
 
     if (
-      sink.tableNamingRule !== "same_name" &&
+      sink.tableNamingRule !== 'same_name' &&
       !sink.tableNameAffix?.trim()
     ) {
-      return "请填写目标表名前缀或后缀";
+      return '请填写目标表名前缀或后缀';
     }
-  } else if (source.readMode === "sql") {
+  } else if (source.readMode === 'sql') {
     if (!source.sql?.trim()) {
-      return "请填写来源查询 SQL";
+      return '请填写来源查询 SQL';
     }
   } else if (!source.table) {
-    return "请选择来源表";
+    return '请选择来源表';
   }
 
-  if (editor.mode === "GUIDE_SINGLE") {
+  if (editor.mode === 'GUIDE_SINGLE') {
     if (sink.autoCreateTable) {
       if (!sink.targetTableName?.trim()) {
-        return "请输入目标表名";
+        return '请输入目标表名';
       }
     } else if (!sink.table) {
-      return "请选择目标表";
+      return '请选择目标表';
     }
   }
 
-  if (
-    sink.writeMode === "upsert" &&
-    !sink.primaryKey?.trim()
-  ) {
-    return "Upsert 写入模式需要配置主键字段";
+  if (sink.writeMode === 'upsert' && !sink.primaryKey?.trim()) {
+    return 'Upsert 写入模式需要配置主键字段';
   }
 
-  if (
-    !editor.env.parallelism ||
-    editor.env.parallelism < 1
-  ) {
-    return "Channel 并发数必须大于 0";
+  if (!editor.env.parallelism || editor.env.parallelism < 1) {
+    return 'Channel 并发数必须大于 0';
   }
 
   return null;
@@ -104,53 +87,42 @@ const validateTaskConfig = (
 export default function BatchLinkUpDetailPage() {
   const location = useLocation();
   const routeParams = useParams<{ id?: string }>();
-
   const pageRootRef = useRef<HTMLDivElement>(null);
 
   const taskId = useMemo(
     () =>
       routeParams.id ||
-      new URLSearchParams(location.search).get("id") ||
-      "",
+      new URLSearchParams(location.search).get('id') ||
+      '',
     [location.search, routeParams.id],
   );
 
-  const [editor, setEditor] =
-    useState<SyncEditorState | null>(null);
-
+  const [editor, setEditor] = useState<SyncEditorState | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const [dataSourceLoading, setDataSourceLoading] =
-    useState(false);
-
-  const [dataSources, setDataSources] = useState<
-    DataSourceRecord[]
-  >([]);
+  const [connectorFormErrors, setConnectorFormErrors] = useState<string[]>([]);
+  const [dataSourceLoading, setDataSourceLoading] = useState(false);
+  const [dataSources, setDataSources] = useState<DataSourceRecord[]>([]);
 
   useSmoothWheelScroll(
     pageRootRef,
-    editor?.mode === "GUIDE_SINGLE",
+    editor?.mode === 'GUIDE_SINGLE',
   );
 
   const loadDataSources = useCallback(async () => {
     try {
       setDataSourceLoading(true);
-
       const response = await fetchDataSourceAll();
 
       if (!isApiSuccess(response)) {
-        message.error(
-          responseMessage(response, "获取数据源失败"),
-        );
-
+        message.error(responseMessage(response, '获取数据源失败'));
         setDataSources([]);
         return;
       }
 
       setDataSources(response?.data?.bizData || []);
     } catch (error: any) {
-      message.error(error?.message || "获取数据源失败");
+      message.error(error?.message || '获取数据源失败');
       setDataSources([]);
     } finally {
       setDataSourceLoading(false);
@@ -162,24 +134,18 @@ export default function BatchLinkUpDetailPage() {
 
     try {
       setLoading(true);
-
-      const response =
-        await linkupJobDefinitionApi.selectEditDetail(taskId);
+      const response = await linkupJobDefinitionApi.selectEditDetail(taskId);
 
       if (!isApiSuccess(response) || !response?.data) {
-        message.error(
-          responseMessage(response, "获取同步任务失败"),
-        );
-
+        message.error(responseMessage(response, '获取同步任务失败'));
         setEditor(null);
         return;
       }
 
-      setEditor(
-        normalizeEditDetail(response.data, taskId),
-      );
+      setEditor(normalizeEditDetail(response.data, taskId));
+      setConnectorFormErrors([]);
     } catch (error: any) {
-      message.error(error?.message || "获取同步任务失败");
+      message.error(error?.message || '获取同步任务失败');
       setEditor(null);
     } finally {
       setLoading(false);
@@ -188,11 +154,7 @@ export default function BatchLinkUpDetailPage() {
 
   useEffect(() => {
     if (!taskId) return;
-
-    void Promise.all([
-      loadTask(),
-      loadDataSources(),
-    ]);
+    void Promise.all([loadTask(), loadDataSources()]);
   }, [loadDataSources, loadTask, taskId]);
 
   const persistEditor = async (
@@ -200,44 +162,28 @@ export default function BatchLinkUpDetailPage() {
   ): Promise<SyncEditorState | null> => {
     try {
       setSaving(true);
-
       const payload = buildSavePayload(nextEditor);
-
       const response =
-        nextEditor.mode === "GUIDE_MULTI"
-          ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(
-              payload,
-            )
-          : await linkupJobDefinitionApi.saveOrUpdateGuideSingle(
-              payload,
-            );
+        nextEditor.mode === 'GUIDE_MULTI'
+          ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(payload)
+          : await linkupJobDefinitionApi.saveOrUpdateGuideSingle(payload);
 
       if (!isApiSuccess(response)) {
-        message.error(
-          responseMessage(response, "保存同步任务失败"),
-        );
-
+        message.error(responseMessage(response, '保存同步任务失败'));
         return null;
       }
 
       const savedEditor: SyncEditorState = {
         ...nextEditor,
         basic: payload.basic,
-        id: extractSavedId(
-          response,
-          nextEditor.id,
-        ),
+        id: extractSavedId(response, nextEditor.id),
       };
 
       setEditor(savedEditor);
-      message.success("任务配置已保存");
-
+      message.success('任务配置已保存');
       return savedEditor;
     } catch (error: any) {
-      message.error(
-        error?.message || "保存同步任务失败",
-      );
-
+      message.error(error?.message || '保存同步任务失败');
       return null;
     } finally {
       setSaving(false);
@@ -248,9 +194,19 @@ export default function BatchLinkUpDetailPage() {
     if (!editor) return;
 
     const error = validateTaskConfig(editor);
-
     if (error) {
       message.warning(error);
+      return;
+    }
+
+    if (connectorFormErrors.length > 0) {
+      message.warning(connectorFormErrors[0]);
+      return;
+    }
+
+    const remoteErrors = await validateEditorConnectorForms(editor);
+    if (remoteErrors.length > 0) {
+      message.warning(remoteErrors[0]);
       return;
     }
 
@@ -258,11 +214,11 @@ export default function BatchLinkUpDetailPage() {
   };
 
   const handleCancel = () => {
-    history.push("/sync/batch-link-up");
+    history.push('/sync/batch-link-up');
   };
 
   if (!taskId) {
-    history.replace("/sync/batch-link-up");
+    history.replace('/sync/batch-link-up');
     return null;
   }
 
@@ -281,9 +237,7 @@ export default function BatchLinkUpDetailPage() {
           description="未找到同步任务"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         >
-          <Button onClick={handleCancel}>
-            返回任务列表
-          </Button>
+          <Button onClick={handleCancel}>返回任务列表</Button>
         </Empty>
       </div>
     );
@@ -291,15 +245,8 @@ export default function BatchLinkUpDetailPage() {
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-      {/*
-        这里必须限制高度并隐藏外层滚动，
-        让 pageRootRef 成为唯一的滚动容器。
-      */}
       <div className="h-[calc(100vh-64px)] overflow-hidden bg-[#f7f8fa] text-[#161823]">
-        <div
-          ref={pageRootRef}
-          className="h-full overflow-y-auto"
-        >
+        <div ref={pageRootRef} className="h-full overflow-y-auto">
           <div className="mx-auto w-full max-w-[1040px] px-6 pt-6">
             <main className="pb-4">
               <SyncTaskEditor
@@ -307,13 +254,10 @@ export default function BatchLinkUpDetailPage() {
                 dataSources={dataSources}
                 dataSourceLoading={dataSourceLoading}
                 onChange={setEditor}
+                onValidationChange={setConnectorFormErrors}
               />
             </main>
 
-            {/*
-              直接使用 sticky 即可。
-              它会相对于上面的 pageRootRef 滚动容器吸附。
-            */}
             <footer className="sticky bottom-0 z-50 overflow-hidden rounded-t-lg border border-b-0 border-[#eaecf0] bg-white shadow-[0_-8px_16px_rgba(0,0,0,0.06)]">
               <div className="flex min-h-[80px] items-center gap-3 px-8 py-4">
                 <Button

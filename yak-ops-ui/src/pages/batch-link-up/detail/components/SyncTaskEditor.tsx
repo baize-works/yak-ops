@@ -1,5 +1,6 @@
 import type { DataSourceRecord } from '@/pages/data-source/types';
 
+import useDataSourceColumns from '../hooks/useDataSourceColumns';
 import useDataSourceTables from '../hooks/useDataSourceTables';
 import {
   endpointNode,
@@ -7,6 +8,7 @@ import {
   type SyncEditorState,
 } from '../model';
 import ChannelConfigSection from './ChannelConfigSection';
+import ConnectorSchemaConfigSection from './ConnectorSchemaConfigSection';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
@@ -16,6 +18,7 @@ interface SyncTaskEditorProps {
   dataSources: DataSourceRecord[];
   dataSourceLoading: boolean;
   onChange: (value: SyncEditorState) => void;
+  onValidationChange?: (errors: string[]) => void;
 }
 
 export default function SyncTaskEditor({
@@ -23,6 +26,7 @@ export default function SyncTaskEditor({
   dataSources,
   dataSourceLoading,
   onChange,
+  onValidationChange,
 }: SyncTaskEditorProps) {
   const sourceNode = endpointNode(editor.workflow, 'source');
   const sinkNode = endpointNode(editor.workflow, 'sink');
@@ -36,12 +40,42 @@ export default function SyncTaskEditor({
   const sourceCatalog = useDataSourceTables(sourceId);
   const targetCatalog = useDataSourceTables(targetId);
 
+  const sourceColumnRequest = sourceConfig.readMode === 'sql'
+    ? sourceConfig.sql?.trim()
+      ? { query: sourceConfig.sql }
+      : undefined
+    : sourceConfig.table
+      ? { table_path: sourceConfig.table }
+      : undefined;
+  const targetColumnRequest = sinkConfig.autoCreateTable
+    ? sourceColumnRequest
+    : sinkConfig.table
+      ? { table_path: sinkConfig.table }
+      : undefined;
+  const primaryKeyCatalog = useDataSourceColumns(
+    sinkConfig.autoCreateTable ? sourceId : targetId,
+    targetColumnRequest,
+  );
+
   const updateSource = (patch: Record<string, any>) => {
     onChange(updateEndpointConfig(editor, 'source', patch));
   };
 
   const updateSink = (patch: Record<string, any>) => {
     onChange(updateEndpointConfig(editor, 'sink', patch));
+  };
+
+  const updateChannel = (patch: Record<string, any>) => {
+    onChange({
+      ...editor,
+      workflow: {
+        ...editor.workflow,
+        channelConfig: {
+          ...(editor.workflow.channelConfig || {}),
+          ...patch,
+        },
+      },
+    });
   };
 
   return (
@@ -72,12 +106,24 @@ export default function SyncTaskEditor({
           targetTables={targetCatalog.tables}
           sourceLoading={sourceCatalog.loading}
           targetLoading={targetCatalog.loading}
+          primaryKeyOptions={primaryKeyCatalog.columns}
+          primaryKeyLoading={primaryKeyCatalog.loading}
           sourceReady={Boolean(sourceId)}
           targetReady={Boolean(targetId)}
           onSourceChange={updateSource}
           onSinkChange={updateSink}
         />
       )}
+
+      <ConnectorSchemaConfigSection
+        editor={editor}
+        sourceConfig={sourceConfig}
+        sinkConfig={sinkConfig}
+        onSourceChange={updateSource}
+        onSinkChange={updateSink}
+        onChannelChange={updateChannel}
+        onValidationChange={onValidationChange}
+      />
 
       <ChannelConfigSection
         editor={editor}

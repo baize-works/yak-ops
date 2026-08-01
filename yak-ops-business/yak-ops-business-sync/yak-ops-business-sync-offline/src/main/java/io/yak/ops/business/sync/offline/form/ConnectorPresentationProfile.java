@@ -1,6 +1,7 @@
 package io.yak.ops.business.sync.offline.form;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,6 +64,9 @@ public final class ConnectorPresentationProfile {
     private final String valueSource;
     private final String help;
     private final String placeholder;
+    private final List<String> dependsOn;
+    private final Boolean clearWhenHidden;
+    private final OptionSourceProfile optionSource;
 
     private FieldProfile(Builder builder) {
       this.label = builder.label;
@@ -75,6 +79,9 @@ public final class ConnectorPresentationProfile {
       this.valueSource = builder.valueSource;
       this.help = builder.help;
       this.placeholder = builder.placeholder;
+      this.dependsOn = Collections.unmodifiableList(new ArrayList<>(builder.dependsOn));
+      this.clearWhenHidden = builder.clearWhenHidden;
+      this.optionSource = builder.optionSource;
     }
 
     public static Builder builder() { return new Builder(); }
@@ -88,6 +95,9 @@ public final class ConnectorPresentationProfile {
     public String getValueSource() { return valueSource; }
     public String getHelp() { return help; }
     public String getPlaceholder() { return placeholder; }
+    public List<String> getDependsOn() { return dependsOn; }
+    public Boolean getClearWhenHidden() { return clearWhenHidden; }
+    public OptionSourceProfile getOptionSource() { return optionSource; }
 
     public static final class Builder {
       private String label;
@@ -100,6 +110,9 @@ public final class ConnectorPresentationProfile {
       private String valueSource;
       private String help;
       private String placeholder;
+      private List<String> dependsOn = new ArrayList<>();
+      private Boolean clearWhenHidden;
+      private OptionSourceProfile optionSource;
 
       public Builder label(String value) { this.label = value; return this; }
       public Builder group(String value) { this.groupId = value; return this; }
@@ -111,7 +124,41 @@ public final class ConnectorPresentationProfile {
       public Builder valueSource(String value) { this.valueSource = value; return this; }
       public Builder help(String value) { this.help = value; return this; }
       public Builder placeholder(String value) { this.placeholder = value; return this; }
+      public Builder dependsOn(String... values) {
+        this.dependsOn = values == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(values));
+        return this;
+      }
+      public Builder clearWhenHidden(boolean value) { this.clearWhenHidden = value; return this; }
+      public Builder optionSource(String action, boolean searchable, boolean multiple,
+          long cacheTtlMillis, String... requestValueKeys) {
+        this.optionSource = new OptionSourceProfile(action, searchable, multiple, cacheTtlMillis,
+            requestValueKeys == null ? List.of() : Arrays.asList(requestValueKeys));
+        return this;
+      }
       public FieldProfile build() { return new FieldProfile(this); }
     }
+  }
+
+  public static final class OptionSourceProfile {
+    private final String action;
+    private final boolean searchable;
+    private final boolean multiple;
+    private final long cacheTtlMillis;
+    private final List<String> requestValueKeys;
+
+    public OptionSourceProfile(String action, boolean searchable, boolean multiple,
+        long cacheTtlMillis, List<String> requestValueKeys) {
+      this.action = action;
+      this.searchable = searchable;
+      this.multiple = multiple;
+      this.cacheTtlMillis = cacheTtlMillis;
+      this.requestValueKeys = Collections.unmodifiableList(new ArrayList<>(requestValueKeys));
+    }
+
+    public String getAction() { return action; }
+    public boolean isSearchable() { return searchable; }
+    public boolean isMultiple() { return multiple; }
+    public long getCacheTtlMillis() { return cacheTtlMillis; }
+    public List<String> getRequestValueKeys() { return requestValueKeys; }
   }
 }

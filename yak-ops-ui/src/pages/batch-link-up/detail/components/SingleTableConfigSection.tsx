@@ -9,8 +9,9 @@ import {
   Spin,
   Switch,
 } from 'antd';
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 
+import type { DataSourceColumnOption } from '../hooks/useDataSourceColumns';
 import EditorSection from './EditorSection';
 
 interface SingleTableConfigSectionProps {
@@ -20,6 +21,8 @@ interface SingleTableConfigSectionProps {
   targetTables: string[];
   sourceLoading: boolean;
   targetLoading: boolean;
+  primaryKeyOptions: DataSourceColumnOption[];
+  primaryKeyLoading: boolean;
   sourceReady: boolean;
   targetReady: boolean;
   onSourceChange: (patch: Record<string, any>) => void;
@@ -32,46 +35,34 @@ interface EndpointPanelProps {
   children: ReactNode;
 }
 
-function EndpointPanel({
-  icon,
-  title,
-  children,
-}: EndpointPanelProps) {
+function EndpointPanel({ icon, title, children }: EndpointPanelProps) {
   return (
     <div className="rounded-xl border border-[#ebecef] bg-[#fcfcfd] p-5">
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--yak-brand-color-soft-hover)] text-[var(--yak-brand-color)]">
           {icon}
         </span>
-
-        <div>
-          <div className="text-[14px] font-semibold text-[#182230]">
-            {title}
-          </div>
-        </div>
+        <div className="text-[14px] font-semibold text-[#182230]">{title}</div>
       </div>
-
       <div className="mt-5 space-y-5">{children}</div>
     </div>
   );
 }
 
-function FieldLabel({
-  children,
-  required = false,
-}: {
-  children: ReactNode;
-  required?: boolean;
-}) {
+function FieldLabel({ children, required = false }: { children: ReactNode; required?: boolean }) {
   return (
     <div className="mb-2 text-[12px] font-medium text-[#475467]">
       {children}
-      {required ? (
-        <span className="ml-1 text-[var(--yak-brand-color)]">*</span>
-      ) : null}
+      {required ? <span className="ml-1 text-[var(--yak-brand-color)]">*</span> : null}
     </div>
   );
 }
+
+const splitPrimaryKeys = (value: unknown): string[] =>
+  String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 
 export default function SingleTableConfigSection({
   sourceConfig,
@@ -80,20 +71,17 @@ export default function SingleTableConfigSection({
   targetTables,
   sourceLoading,
   targetLoading,
+  primaryKeyOptions,
+  primaryKeyLoading,
   sourceReady,
   targetReady,
   onSourceChange,
   onSinkChange,
 }: SingleTableConfigSectionProps) {
   return (
-    <EditorSection
-      title="单表同步配置"
-    >
+    <EditorSection title="单表同步配置">
       <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
-        <EndpointPanel
-          icon={<DatabaseOutlined />}
-          title="Source 来源配置"
-        >
+        <EndpointPanel icon={<DatabaseOutlined />} title="Source 来源配置">
           <div>
             <FieldLabel>读取方式</FieldLabel>
             <Segmented
@@ -103,8 +91,11 @@ export default function SingleTableConfigSection({
                 { label: '选择数据表', value: 'table' },
                 { label: '自定义 SQL', value: 'sql' },
               ]}
-              onChange={(readMode) =>
-                onSourceChange({ readMode })
+              onChange={(readMode: string | number) =>
+                onSourceChange({
+                  readMode,
+                  ...(readMode === 'table' ? { sql: '' } : { table: '' }),
+                })
               }
             />
           </div>
@@ -118,9 +109,7 @@ export default function SingleTableConfigSection({
                 value={sourceConfig.sql || ''}
                 placeholder="SELECT * FROM source_table"
                 className="font-mono"
-                onChange={(event) =>
-                  onSourceChange({ sql: event.target.value })
-                }
+                onChange={(event: ChangeEvent<HTMLTextAreaElement>) => onSourceChange({ sql: event.target.value })}
               />
             </div>
           ) : (
@@ -131,42 +120,30 @@ export default function SingleTableConfigSection({
                 variant="filled"
                 disabled={!sourceReady}
                 value={sourceConfig.table || undefined}
-                options={sourceTables.map((table) => ({
-                  label: table,
-                  value: table,
-                }))}
+                options={sourceTables.map((table) => ({ label: table, value: table }))}
                 loading={sourceLoading}
-                notFoundContent={
-                  sourceLoading ? <Spin size="small" /> : undefined
-                }
-                placeholder={
-                  sourceReady
-                    ? '请选择来源表'
-                    : '请先选择来源数据源'
-                }
+                notFoundContent={sourceLoading ? <Spin size="small" /> : undefined}
+                placeholder={sourceReady ? '请选择来源表' : '请先选择来源数据源'}
                 optionFilterProp="label"
                 className="w-full"
-                onChange={(table) => onSourceChange({ table })}
+                onChange={(table: string) => onSourceChange({ table })}
               />
             </div>
           )}
         </EndpointPanel>
 
-        <EndpointPanel
-          icon={<ExportOutlined />}
-          title="Sink 目标配置"
-        >
+        <EndpointPanel icon={<ExportOutlined />} title="Sink 目标配置">
           <div className="flex items-center justify-between rounded-lg bg-[#f5f5f6] px-3.5 py-3">
-            <div>
-              <div className="text-[12px] font-medium text-[#475467]">
-                自动创建目标表
-              </div>
-            </div>
-
+            <div className="text-[12px] font-medium text-[#475467]">自动创建目标表</div>
             <Switch
               checked={Boolean(sinkConfig.autoCreateTable)}
-              onChange={(autoCreateTable) =>
-                onSinkChange({ autoCreateTable })
+              onChange={(autoCreateTable: boolean) =>
+                onSinkChange({
+                  autoCreateTable,
+                  table: '',
+                  targetTableName: '',
+                  primaryKey: '',
+                })
               }
             />
           </div>
@@ -178,16 +155,8 @@ export default function SingleTableConfigSection({
                 variant="filled"
                 disabled={!targetReady}
                 value={sinkConfig.targetTableName || ''}
-                placeholder={
-                  targetReady
-                    ? '请输入需要创建的目标表名'
-                    : '请先选择目标数据源'
-                }
-                onChange={(event) =>
-                  onSinkChange({
-                    targetTableName: event.target.value,
-                  })
-                }
+                placeholder={targetReady ? '请输入需要创建的目标表名' : '请先选择目标数据源'}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => onSinkChange({ targetTableName: event.target.value })}
               />
             </div>
           ) : (
@@ -198,19 +167,12 @@ export default function SingleTableConfigSection({
                 variant="filled"
                 disabled={!targetReady}
                 value={sinkConfig.table || undefined}
-                options={targetTables.map((table) => ({
-                  label: table,
-                  value: table,
-                }))}
+                options={targetTables.map((table) => ({ label: table, value: table }))}
                 loading={targetLoading}
-                placeholder={
-                  targetReady
-                    ? '请选择目标表'
-                    : '请先选择目标数据源'
-                }
+                placeholder={targetReady ? '请选择目标表' : '请先选择目标数据源'}
                 optionFilterProp="label"
                 className="w-full"
-                onChange={(table) => onSinkChange({ table })}
+                onChange={(table: string) => onSinkChange({ table, primaryKey: '' })}
               />
             </div>
           )}
@@ -226,8 +188,11 @@ export default function SingleTableConfigSection({
                 { label: '主键更新 Upsert', value: 'upsert' },
               ]}
               className="w-full"
-              onChange={(writeMode) =>
-                onSinkChange({ writeMode })
+              onChange={(writeMode: string) =>
+                onSinkChange({
+                  writeMode,
+                  ...(writeMode === 'upsert' ? {} : { primaryKey: '' }),
+                })
               }
             />
           </div>
@@ -235,12 +200,31 @@ export default function SingleTableConfigSection({
           {sinkConfig.writeMode === 'upsert' ? (
             <div>
               <FieldLabel required>主键字段</FieldLabel>
-              <Input
+              <Select
+                mode="tags"
+                allowClear
+                showSearch
                 variant="filled"
-                value={sinkConfig.primaryKey || ''}
-                placeholder="多个字段使用英文逗号分隔"
-                onChange={(event) =>
-                  onSinkChange({ primaryKey: event.target.value })
+                value={splitPrimaryKeys(sinkConfig.primaryKey)}
+                loading={primaryKeyLoading}
+                disabled={!targetReady}
+                options={primaryKeyOptions.map((option) => ({
+                  label: option.description
+                    ? `${option.label} · ${option.description}`
+                    : option.label,
+                  value: option.value,
+                }))}
+                placeholder={
+                  primaryKeyLoading
+                    ? '正在加载字段'
+                    : primaryKeyOptions.length > 0
+                      ? '请选择一个或多个主键字段'
+                      : '请先选择来源或目标表'
+                }
+                optionFilterProp="label"
+                className="w-full"
+                onChange={(primaryKeys: string[]) =>
+                  onSinkChange({ primaryKey: primaryKeys.join(',') })
                 }
               />
             </div>
