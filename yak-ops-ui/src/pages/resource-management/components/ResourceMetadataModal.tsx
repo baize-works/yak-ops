@@ -54,14 +54,19 @@ const ResourceMetadataModal = ({
             { max: 255, message: '资源名称不能超过 255 个字符' },
           ]}
         >
-          <Input autoFocus />
+          <Input autoFocus variant="filled" />
         </Form.Item>
         <Form.Item
           label="描述"
           name="description"
           rules={[{ max: 512, message: '描述不能超过 512 个字符' }]}
         >
-          <Input.TextArea rows={4} showCount maxLength={512} />
+          <Input.TextArea
+            variant="filled"
+            rows={4}
+            showCount
+            maxLength={512}
+          />
         </Form.Item>
       </Form>
     </Modal>
