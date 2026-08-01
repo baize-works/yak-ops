@@ -101,7 +101,9 @@ export default function MultiTableConfigSection({
   const selectedTables = useMemo(
     () =>
       Array.isArray(sourceConfig.tables)
-        ? sourceConfig.tables.filter(Boolean).map(String)
+        ? Array.from(
+            new Set(sourceConfig.tables.filter(Boolean).map(String)),
+          )
         : [],
     [sourceConfig.tables],
   );
@@ -206,7 +208,7 @@ export default function MultiTableConfigSection({
             />
 
             <div className="mt-1.5 text-[11px] leading-5 text-[#98a2b3]">
-              可与已选表同时使用，运行时会合并匹配结果并自动去重。
+              可选；用于按表名规则批量匹配来源表。
             </div>
           </div>
         </EndpointPanel>
