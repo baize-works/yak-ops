@@ -1,0 +1,65 @@
+name: Offline Sync Chinese Docs and Lombok
+
+on:
+  push:
+    branches:
+      - agent/offline-sync-docs-lombok
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    if: ${{ !contains(github.event.head_commit.message, '[offline-docs-applied]') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Update Java documentation and Lombok usage
+        run: python tools/refactor_offline_sync_docs.py
+
+      - name: Verify source changes
+        run: |
+          git diff --check
+          python tools/refactor_offline_sync_docs.py
+          git diff --check
+
+      - name: Compile offline-sync module
+        run: >-
+          mvn -B
+          -pl yak-ops-business/yak-ops-business-sync/yak-ops-business-sync-offline
+          -am
+          -DskipTests
+          compile
+
+      - name: Commit generated source changes
+        run: |
+          if git diff --quiet; then
+            echo "No source changes generated"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            yak-ops-business/yak-ops-business-sync/yak-ops-business-sync-offline/src/main/java \
+            yak-ops-common/src/main/java/io/yak/ops/common/bean/dto/sync/offline \
+            yak-ops-common/src/main/java/io/yak/ops/common/bean/po/sync/offline \
+            yak-ops-common/src/main/java/io/yak/ops/common/bean/vo/sync/offline
+          git commit -m "refactor(offline-sync): standardize Chinese docs and Lombok [offline-docs-applied]"
+          git push origin HEAD:agent/offline-sync-docs-lombok
