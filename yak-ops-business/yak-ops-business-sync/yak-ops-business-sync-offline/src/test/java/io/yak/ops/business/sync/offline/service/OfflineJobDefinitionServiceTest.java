@@ -1,6 +1,7 @@
 package io.yak.ops.business.sync.offline.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -73,7 +74,7 @@ class OfflineJobDefinitionServiceTest {
         JOB_NAME,
         null,
         "GUIDE_SINGLE",
-        "{"id":1001}",
+        "{\"id\":1001}",
         "MYSQL",
         "MYSQL");
 
@@ -93,7 +94,7 @@ class OfflineJobDefinitionServiceTest {
     assertEquals("GUIDE_SINGLE", saved.getMode());
     assertEquals("OFFLINE", saved.getReleaseState());
     assertEquals(0, saved.getVersion());
-    assertEquals(null, saved.getCurrentVersionId());
+    assertNull(saved.getCurrentVersionId());
     verify(catalogRepository, never()).saveVersion(
         anyLong(), anyInt(), anyString(), anyString(), anyString());
   }
