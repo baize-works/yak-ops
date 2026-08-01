@@ -73,6 +73,11 @@ WHERE version_record.job_spec_json IS NOT NULL
   AND definition.sink_datasource_id IS NOT NULL
   AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(version_record.job_spec_json, '$.sink.connectorId'))) = 'jdbc';
 
+UPDATE yak_offline_job_version
+SET config_digest = SHA2(job_spec_json, 256)
+WHERE job_spec_json IS NOT NULL
+  AND JSON_VALID(job_spec_json);
+
 UPDATE yak_offline_job_execution
 SET submitted_config = JSON_REMOVE(
         submitted_config,
