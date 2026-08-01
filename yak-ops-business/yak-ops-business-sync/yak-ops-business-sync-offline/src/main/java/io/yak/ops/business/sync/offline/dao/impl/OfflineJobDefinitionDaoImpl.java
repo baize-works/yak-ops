@@ -8,6 +8,7 @@ import io.yak.ops.business.sync.offline.dao.OfflineJobDefinitionDao;
 import io.yak.ops.business.sync.offline.dao.mapper.OfflineJobDefinitionMapper;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionQueryDTO;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
+import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,9 @@ import org.springframework.util.StringUtils;
 @Repository
 @RequiredArgsConstructor
 public class OfflineJobDefinitionDaoImpl implements OfflineJobDefinitionDao {
+
+  private static final List<String> ACTIVE_STATUSES =
+      List.of("CREATED", "SUBMITTED", "QUEUED", "RUNNING");
 
   private final OfflineJobDefinitionMapper mapper;
 
@@ -64,7 +68,12 @@ public class OfflineJobDefinitionDaoImpl implements OfflineJobDefinitionDao {
       query.eq(OfflineJobDefinitionPO::getId, condition.getId());
     }
     if (StringUtils.hasText(condition.getStatus())) {
-      query.eq(OfflineJobDefinitionPO::getLastJobStatus, normalizeStatus(condition.getStatus()));
+      String status = normalizeStatus(condition.getStatus());
+      if ("RUNNING".equals(status)) {
+        query.in(OfflineJobDefinitionPO::getLastJobStatus, ACTIVE_STATUSES);
+      } else {
+        query.eq(OfflineJobDefinitionPO::getLastJobStatus, status);
+      }
     }
     addLike(query, OfflineJobDefinitionPO::getSourceType, condition.getSourceType());
     addLike(query, OfflineJobDefinitionPO::getSinkType, condition.getSinkType());
