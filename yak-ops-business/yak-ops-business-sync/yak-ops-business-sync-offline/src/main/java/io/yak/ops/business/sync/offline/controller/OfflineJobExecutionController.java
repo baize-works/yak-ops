@@ -5,6 +5,7 @@ import io.yak.framework.common.PagingResult;
 import io.yak.framework.common.Result;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
+import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpNodeResponse;
 import io.yak.ops.business.sync.offline.service.OfflineJobExecutionService;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineBatchOperationDTO;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobExecutionQueryDTO;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 离线同步执行、实例与历史 executor 兼容接口。 */
+/** 离线执行命令和执行历史查询接口。 */
 @ConditionalOnOfflineSyncEnabled
 @RestController
 public class OfflineJobExecutionController {
@@ -35,8 +36,8 @@ public class OfflineJobExecutionController {
   }
 
   @GetMapping({"/api/v1/job/batch-execution/health", "/api/v1/executor/health"})
-  public Result<JsonNode> health() {
-    return Result.success(linkUpClient.health());
+  public Result<LinkUpNodeResponse> health() {
+    return Result.success(linkUpClient.node());
   }
 
   @GetMapping({"/api/v1/job/batch-execution/execute", "/api/v1/executor/execute"})
@@ -57,6 +58,11 @@ public class OfflineJobExecutionController {
   @PostMapping("/api/v1/job/batch-execution/{jobInstanceId}/cancel")
   public Result<OfflineJobExecutionVO> cancelByPath(@PathVariable Long jobInstanceId) {
     return Result.success(service.cancel(jobInstanceId));
+  }
+
+  @PostMapping("/api/v1/job/batch-execution/{jobInstanceId}/retry")
+  public Result<OfflineJobExecutionVO> retry(@PathVariable Long jobInstanceId) {
+    return Result.success(service.retry(jobInstanceId));
   }
 
   @PostMapping({"/api/v1/job/batch-execution/batch-execute", "/api/v1/executor/batch-execute"})

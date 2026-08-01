@@ -1,29 +1,90 @@
-# Yak Ops Offline Sync
+# Yak Ops Offline Sync Control Plane
 
-该模块负责 Yak Ops 离线同步任务的完整后端闭环：
+该模块把 Yak Ops 定位为 **离线同步控制面**，把 Link-Up 定位为 **单节点离线同步 Worker**。两者只处理有明确开始和结束的批量同步，不引入 CDC、流式 Deployment、Checkpoint、Savepoint、暂停恢复等实时语义。
 
-- 持久化单表、多表和脚本模式任务定义；
-- 保存前端可编辑 JSON，同时生成可提交给 Link-Up 的 HOCON；
-- 对外提供任务分页、详情、上线、下线、删除、运行、停止和实例查询接口；
-- 通过 Link-Up REST API 提交 Source → Sink 作业，并同步作业状态与指标；
-- 保留历史 `/api/v1/executor` 和日志查询路径，兼容现有前端页面。
+## 职责边界
 
-## 配置
+Yak Ops 负责：
 
-```yaml
-yak:
-  sync:
-    offline:
-      enabled: true
-      engine:
-        enabled: true
-        base-url: http://127.0.0.1:18080
-        connect-timeout: 10s
-        request-timeout: 30s
-      datasource:
-        url: jdbc:mariadb://127.0.0.1:3306/yak_security
-        username: root
-        password: 123456
+- 保存任务定义和不可变任务版本；
+- 保存 Cron 调度与重试策略；
+- 创建并持久化执行历史；
+- 选择并记录 Link-Up Worker；
+- 生成 `externalExecutionId` 和 `idempotencyKey`；
+- 后台持续对账 Link-Up 作业状态；
+- 汇总执行指标、状态事件和日志；
+- 判定 `LOST`、创建重试实例并产生告警事件。
+
+Link-Up 负责：
+
+- 接收一次离线同步作业；
+- 排队、运行、取消并返回最终结果；
+- 暴露 Worker 身份、状态、指标、Pipeline 和 Task 信息。
+
+## 核心组件
+
+```text
+OfflineJobDefinitionService       当前定义、上线下线和版本目录
+OfflineDefinitionSupport          定义序列化、HOCON 生成和展示映射
+OfflineExecutionOrchestrator      执行命令、幂等提交和状态持久化
+OfflineExecutionReadService       执行历史、指标和日志读模型
+OfflineJobExecutionService        Controller 使用的执行门面
+OfflineWorkerRegistry             单 Worker 心跳、身份校验和选择
+OfflineExecutionReconciler        后台状态对账、LOST 判定和重试派发
+OfflineScheduleDispatcher         持久化 Cron 调度派发
+OfflineAlertPublisher             告警持久化和应用事件发布
+
+OfflineDefinitionCatalogRepository 不可变任务版本
+OfflineScheduleRepository          调度与重试策略
+OfflineNodeRepository              Worker 节点和心跳
+OfflineExecutionControlRepository  执行事件、重试扫描和告警记录
 ```
 
-前端只调用 Yak Ops 接口，不直接保存或暴露 Link-Up 服务地址。执行时，后端读取数据源模块中的连接参数，生成 Link-Up JDBC Source/Sink HOCON 后提交到 `POST /api/v1/jobs`。
+## Link-Up 协议
+
+Yak Ops 使用 Link-Up 单节点离线 Worker 协议：
+
+```http
+GET    /api/v1/node
+POST   /api/v1/jobs
+GET    /api/v1/jobs/{jobId}
+GET    /api/v1/jobs/external/{externalExecutionId}
+DELETE /api/v1/jobs/{jobId}
+```
+
+提交体：
+
+```json
+{
+  "externalExecutionId": "yak-offline-execution-10086",
+  "idempotencyKey": "0a20a977-34fa-4bc8-8f84-4f8ef6d89e9f",
+  "definitionVersion": 3,
+  "hocon": "job { ... }"
+}
+```
+
+执行状态严格映射为：
+
+```text
+CREATED -> SUBMITTED -> QUEUED -> RUNNING
+                                      |-> SUCCEEDED
+                                      |-> FAILED
+                                      |-> CANCELED
+                                      `-> LOST
+```
+
+## 数据模型
+
+Flyway V2 增加：
+
+- `yak_offline_job_version`
+- `yak_offline_schedule`
+- `yak_offline_engine_node`
+- `yak_offline_execution_event`
+- `yak_offline_alert_event`
+
+并扩展 `yak_offline_job_execution`，保存定义版本、节点、幂等标识、状态版本、重试关系和最近对账时间。
+
+## 告警扩展
+
+`OfflineAlertPublisher` 先把告警写入 `yak_offline_alert_event`，再发布 `OfflineExecutionAlertEvent`。邮件、Webhook、企业微信等渠道只需订阅该事件并更新投递状态，不需要侵入离线执行编排。

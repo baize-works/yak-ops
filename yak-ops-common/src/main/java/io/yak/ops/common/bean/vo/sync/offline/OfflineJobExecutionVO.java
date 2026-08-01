@@ -14,8 +14,18 @@ public class OfflineJobExecutionVO {
 
   private Long id;
   private Long jobDefinitionId;
+  private Long definitionVersionId;
+  private Integer definitionVersion;
+  private String engineNodeId;
   private String engineJobId;
+  private String externalExecutionId;
+  private String workerInstanceId;
   private String status;
+  private Long stateVersion;
+  private Integer attemptNo;
+  private String triggerType;
+  private Long retryFromExecutionId;
+  private Boolean cancellationRequested;
   private String errorMessage;
   private long sourceRecordCount;
   private long sinkSuccessRecordCount;
@@ -26,5 +36,7 @@ public class OfflineJobExecutionVO {
   private String createTime;
   private String startTime;
   private String endTime;
+  private String nextRetryTime;
+  private String lastSyncTime;
   private String updateTime;
 }

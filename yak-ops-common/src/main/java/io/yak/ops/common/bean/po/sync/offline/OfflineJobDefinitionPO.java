@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.ToString;
 
-/** 离线同步任务定义持久化对象。 */
+/** 离线同步任务定义读模型；不可变版本保存在 yak_offline_job_version。 */
 @Data
 @TableName("yak_offline_job_definition")
 public class OfflineJobDefinitionPO {
@@ -33,31 +33,26 @@ public class OfflineJobDefinitionPO {
 
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String sourceType;
-
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String sinkType;
-
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private Long sourceDatasourceId;
-
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private Long sinkDatasourceId;
-
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String sourceTable;
-
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String sinkTable;
 
   @ToString.Exclude
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String scheduleJson;
-
   @ToString.Exclude
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String envJson;
 
   private Integer version;
+  private Long currentVersionId;
   private Long lastExecutionId;
   private String lastEngineJobId;
   private String lastJobStatus;
