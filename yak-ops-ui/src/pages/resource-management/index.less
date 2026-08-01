@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 
   h1 {
     margin: 0;
@@ -25,36 +25,51 @@
   p {
     display: none;
   }
+
+  .ant-space {
+    gap: 8px !important;
+  }
+
+  .ant-btn {
+    height: 32px;
+  }
 }
 
 .resource-overview {
   display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 0.8fr)) minmax(280px, 1.4fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
 
 .resource-overview-card {
   display: flex;
-  min-height: 58px;
+  min-width: 0;
+  min-height: 70px;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
+  gap: 12px;
+  padding: 12px 16px;
   border: 1px solid #f0f0f0;
   background: #fafbfc;
   box-shadow: none;
 
   > span {
     display: inline-flex;
-    width: 30px;
-    height: 30px;
-    flex: 0 0 30px;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
     align-items: center;
     justify-content: center;
     border: 0;
     border-radius: 7px;
-    color: var(--ant-color-primary, #ff4d4f);
-    background: var(--ant-color-primary-bg, #fff1f0);
+    color: rgba(22, 24, 35, 0.58);
+    background: #f2f3f5;
+  }
+
+  &:nth-child(1) > span,
+  &:nth-child(3) > span {
+    color: #fe2c55;
+    background: rgba(254, 44, 85, 0.06);
   }
 
   > div {
@@ -64,14 +79,20 @@
   small {
     display: block;
     margin-bottom: 2px;
-    color: #667085;
+    color: rgba(22, 24, 35, 0.45);
     font-size: 11px;
+    line-height: 18px;
   }
 
   strong {
-    color: #344054;
-    font-size: 16px;
+    display: block;
+    overflow: hidden;
+    color: #161823;
+    font-size: 18px;
     font-weight: 600;
+    line-height: 24px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -81,18 +102,22 @@
 
 .resource-plugin-list {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   gap: 5px;
 
   .ant-tag {
+    height: 22px;
     margin: 0;
-    color: #475467;
-    background: #f2f4f7;
+    padding-inline: 7px;
+    color: rgba(22, 24, 35, 0.58);
+    line-height: 22px;
+    background: #f2f3f5;
   }
 
   .ant-tag.is-active {
-    color: var(--ant-color-primary, #ff4d4f);
-    background: var(--ant-color-primary-bg, #fff1f0);
+    color: #fe2c55;
+    background: rgba(254, 44, 85, 0.06);
   }
 }
 
@@ -500,10 +525,6 @@
     flex-direction: column;
   }
 
-  .resource-overview {
-    grid-template-columns: 1fr;
-  }
-
   .resource-workbench {
     grid-template-columns: 1fr;
   }
@@ -524,6 +545,12 @@
   }
 
   .resource-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .resource-overview {
     grid-template-columns: 1fr;
   }
 }
