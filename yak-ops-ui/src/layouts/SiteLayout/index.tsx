@@ -219,45 +219,36 @@ function BrandLogo({ compact }: { compact: boolean }) {
     <button
       type="button"
       aria-label="返回数据源管理"
-      style={{ marginTop: 12, marginBottom: 6 }}
       onClick={() => history.push("/data-source")}
       className={[
-        "flex h-12 w-full items-center border-0 ",
-        "transition-[padding] duration-200",
+        "mt-3 mb-1.5 flex h-12 w-full items-center border-0 bg-transparent",
+        "transition-all duration-200",
         compact ? "justify-center px-0" : "justify-start px-5",
       ].join(" ")}
     >
-      <span
-        className="
-          flex h-8 w-8 shrink-0 items-center
-          justify-center rounded-[7px] bg-[#161823]
-          text-[15px] font-bold text-white
-        "
-      >
-        Y
-      </span>
-
-      {!compact && (
-        <span className="ml-2.5 min-w-0 text-left">
-          <span
+      {compact ? (
+        <span className="relative block h-9 w-9 shrink-0 overflow-hidden">
+          <img
+            src="/logo.png"
+            alt="Yak Ops"
+            draggable={false}
             className="
-              block truncate text-[15px] font-bold
-              leading-5 text-[#161823]
+              absolute left-[-3px] top-1/2
+              h-9 max-w-none -translate-y-1/2
+              select-none object-contain
             "
-          >
-            Yak Ops
-          </span>
-
-          <span
-            className="
-              mt-[-1px] block truncate text-[9px]
-              font-medium uppercase tracking-[0.08em]
-              text-[rgba(22,24,35,0.42)]
-            "
-          >
-            Control Center
-          </span>
+          />
         </span>
+      ) : (
+        <img
+          src="/logo.png"
+          alt="Yak Ops 一体化数字平台"
+          draggable={false}
+          className="
+            block h-8 w-auto max-w-full
+            select-none object-contain object-left
+          "
+        />
       )}
     </button>
   );
