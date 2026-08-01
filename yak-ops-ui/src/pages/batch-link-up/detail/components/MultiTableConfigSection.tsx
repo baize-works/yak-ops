@@ -2,8 +2,15 @@ import {
   DatabaseOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
-import { Input, Select, Switch } from 'antd';
-import type { ReactNode } from 'react';
+import {
+  Empty,
+  Input,
+  Select,
+  Spin,
+  Switch,
+  Transfer,
+} from 'antd';
+import { useMemo, type ReactNode } from 'react';
 
 import EditorSection from './EditorSection';
 
@@ -21,8 +28,13 @@ interface MultiTableConfigSectionProps {
 interface EndpointPanelProps {
   icon: ReactNode;
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
+}
+
+interface TableTransferItem {
+  key: string;
+  title: string;
 }
 
 function EndpointPanel({
@@ -38,13 +50,16 @@ function EndpointPanel({
           {icon}
         </span>
 
-        <div>
+        <div className="min-w-0">
           <div className="text-[14px] font-semibold text-[#182230]">
             {title}
           </div>
-          <div className="mt-0.5 text-[11px] leading-5 text-[#667085]">
-            {description}
-          </div>
+
+          {description ? (
+            <div className="mt-0.5 text-[11px] leading-5 text-[#667085]">
+              {description}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -83,42 +98,96 @@ export default function MultiTableConfigSection({
   const tableNamingRule =
     sinkConfig.tableNamingRule || 'same_name';
 
+  const selectedTables = useMemo(
+    () =>
+      Array.isArray(sourceConfig.tables)
+        ? sourceConfig.tables.filter(Boolean).map(String)
+        : [],
+    [sourceConfig.tables],
+  );
+
+  const transferDataSource = useMemo<TableTransferItem[]>(
+    () =>
+      Array.from(new Set([...sourceTables, ...selectedTables])).map(
+        (table) => ({
+          key: table,
+          title: table,
+        }),
+      ),
+    [selectedTables, sourceTables],
+  );
+
   return (
-    <EditorSection
-      title="多表同步配置"
-    >
+    <EditorSection title="多表同步配置">
       <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
         <EndpointPanel
           icon={<DatabaseOutlined />}
           title="Source 来源配置"
-          description="选择一张或多张来源表，也可以通过表名规则批量匹配。"
+          description="从来源数据源中批量选择需要同步的数据表。"
         >
           <div>
-            <FieldLabel required>来源表</FieldLabel>
-            <Select
-              mode="tags"
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div className="text-[12px] font-medium text-[#475467]">
+                来源表
+                <span className="ml-1 text-[var(--yak-brand-color)]">
+                  *
+                </span>
+              </div>
+
+              <span className="text-[11px] text-[#98a2b3]">
+                已选择 {selectedTables.length} 张表
+              </span>
+            </div>
+
+            <Transfer<TableTransferItem>
+              dataSource={transferDataSource}
+              targetKeys={selectedTables}
+              disabled={!sourceReady || sourceLoading}
               showSearch
-              variant="filled"
-              disabled={!sourceReady}
-              value={sourceConfig.tables || []}
-              options={sourceTables.map((table) => ({
-                label: table,
-                value: table,
-              }))}
-              loading={sourceLoading}
-              placeholder={
-                sourceReady
-                  ? '请选择一张或多张来源表'
-                  : '请先选择来源数据源'
+              showSelectAll
+              operations={['添加', '移除']}
+              titles={[
+                `可选表 (${sourceTables.length})`,
+                `已选表 (${selectedTables.length})`,
+              ]}
+              listStyle={{
+                width: 'calc(50% - 28px)',
+                height: 320,
+              }}
+              locale={{
+                itemUnit: '项',
+                itemsUnit: '项',
+                searchPlaceholder: '搜索表名',
+                notFoundContent: sourceLoading ? (
+                  <Spin size="small" />
+                ) : sourceReady ? (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description="暂无数据表"
+                  />
+                ) : (
+                  '请先选择来源数据源'
+                ),
+              }}
+              filterOption={(inputValue, item) =>
+                item.title
+                  .toLowerCase()
+                  .includes(inputValue.trim().toLowerCase())
               }
-              optionFilterProp="label"
+              render={(item) => (
+                <span className="block truncate" title={item.title}>
+                  {item.title}
+                </span>
+              )}
               className="w-full"
-              onChange={(tables) =>
+              onChange={(targetKeys) => {
+                const tables = targetKeys.map(String);
+
                 onSourceChange({
                   tables,
-                  table: tables?.[0] || '',
-                })
-              }
+                  table: tables[0] || '',
+                });
+              }}
             />
           </div>
 
@@ -135,6 +204,10 @@ export default function MultiTableConfigSection({
                 })
               }
             />
+
+            <div className="mt-1.5 text-[11px] leading-5 text-[#98a2b3]">
+              可与已选表同时使用，运行时会合并匹配结果并自动去重。
+            </div>
           </div>
         </EndpointPanel>
 
