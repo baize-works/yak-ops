@@ -14,7 +14,6 @@ import {
   Space,
   Table,
   Tag,
-  Tooltip,
   Typography,
   type MenuProps,
   type TableColumnsType,
@@ -72,7 +71,7 @@ const typeOptions = [
   { label: 'Python 脚本', value: 'PYTHON' },
 ];
 
-const DataDevelopmentPage = () => {
+const DataDevelopmentWorkbenchPage = () => {
   const [form] = Form.useForm<CreateTaskValues>();
   const [tasks, setTasks] = useState<DevelopmentTask[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
@@ -116,7 +115,6 @@ const DataDevelopmentPage = () => {
   };
 
   const handleCreate = (values: CreateTaskValues) => {
-    const now = dayjs().format('YYYY-MM-DD HH:mm:ss');
     const task: DevelopmentTask = {
       id: `DEV-${Date.now().toString().slice(-8)}`,
       name: values.name.trim(),
@@ -126,7 +124,7 @@ const DataDevelopmentPage = () => {
       description: values.description?.trim(),
       status: 'DRAFT',
       owner: '当前用户',
-      updatedAt: now,
+      updatedAt: dayjs().format('YYYY-MM-DD HH:mm:ss'),
     };
 
     setTasks((current) => [task, ...current]);
@@ -212,7 +210,11 @@ const DataDevelopmentPage = () => {
           onClick={() => handleAction(task, 'open')}
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[7px] bg-[rgba(254,44,85,0.06)] text-[#fe2c55]">
-            {task.type === 'SQL' ? <Braces size={18} /> : <FileCode2 size={18} />}
+            {task.type === 'SQL' ? (
+              <Braces size={18} />
+            ) : (
+              <FileCode2 size={18} />
+            )}
           </span>
           <span className="flex min-w-0 flex-col gap-0.5">
             <strong className="truncate text-[13px] font-medium text-[#161823]">
@@ -231,7 +233,9 @@ const DataDevelopmentPage = () => {
       key: 'type',
       width: 110,
       render: (value: DevelopmentTaskType) => (
-        <Tag bordered={false}>{value === 'SQL' ? 'SQL 脚本' : 'Python'}</Tag>
+        <Tag bordered={false}>
+          {value === 'SQL' ? 'SQL 脚本' : 'Python'}
+        </Tag>
       ),
     },
     {
@@ -257,8 +261,8 @@ const DataDevelopmentPage = () => {
           bordered={false}
           className={
             value === 'PUBLISHED'
-              ? '!text-[#fe2c55] !bg-[rgba(254,44,85,0.06)]'
-              : '!text-[rgba(22,24,35,0.58)] !bg-[#f2f3f5]'
+              ? '!bg-[rgba(254,44,85,0.06)] !text-[#fe2c55]'
+              : '!bg-[#f2f3f5] !text-[rgba(22,24,35,0.58)]'
           }
         >
           {value === 'PUBLISHED' ? '已发布' : '草稿'}
@@ -309,7 +313,7 @@ const DataDevelopmentPage = () => {
     <ConfigProvider theme={BRAND_THEME}>
       <div className="min-h-[calc(100vh-48px)] bg-white px-5 pb-5 pt-4 text-[#161823]">
         <header className="flex min-h-11 items-center justify-between gap-4">
-          <h1 className="m-0 text-[17px] font-semibold leading-6">数据开发</h1>
+          <h1 className="m-0 text-[17px] font-semibold leading-6">工作台</h1>
           <Button
             type="primary"
             icon={<Plus size={16} />}
@@ -325,7 +329,9 @@ const DataDevelopmentPage = () => {
               <FileText size={19} />
             </span>
             <div>
-              <Text type="secondary" className="!text-[11px]">开发任务</Text>
+              <Text type="secondary" className="!text-[11px]">
+                开发任务
+              </Text>
               <div className="mt-0.5 text-lg font-semibold">{summary.total}</div>
             </div>
           </div>
@@ -334,7 +340,9 @@ const DataDevelopmentPage = () => {
               <Clock3 size={19} />
             </span>
             <div>
-              <Text type="secondary" className="!text-[11px]">草稿</Text>
+              <Text type="secondary" className="!text-[11px]">
+                草稿
+              </Text>
               <div className="mt-0.5 text-lg font-semibold">{summary.draft}</div>
             </div>
           </div>
@@ -343,8 +351,12 @@ const DataDevelopmentPage = () => {
               <CircleCheck size={19} />
             </span>
             <div>
-              <Text type="secondary" className="!text-[11px]">已发布</Text>
-              <div className="mt-0.5 text-lg font-semibold">{summary.published}</div>
+              <Text type="secondary" className="!text-[11px]">
+                已发布
+              </Text>
+              <div className="mt-0.5 text-lg font-semibold">
+                {summary.published}
+              </div>
             </div>
           </div>
           <div className="flex min-h-[70px] items-center gap-3 border border-[#f0f0f0] bg-[#fafbfc] px-4 py-3">
@@ -352,14 +364,16 @@ const DataDevelopmentPage = () => {
               <Braces size={19} />
             </span>
             <div>
-              <Text type="secondary" className="!text-[11px]">支持引擎</Text>
+              <Text type="secondary" className="!text-[11px]">
+                支持引擎
+              </Text>
               <div className="mt-0.5 text-lg font-semibold">4</div>
             </div>
           </div>
         </section>
 
         <section className="mt-3 border border-[#e4e7ec] bg-white">
-          <div className="flex min-h-[54px] items-center justify-between gap-4 border-b border-[#eaecf0] px-3 py-2 max-[900px]:items-stretch max-[900px]:flex-col">
+          <div className="flex min-h-[54px] items-center justify-between gap-4 border-b border-[#eaecf0] px-3 py-2 max-[900px]:flex-col max-[900px]:items-stretch">
             <Segmented
               value={statusFilter}
               options={[
@@ -401,7 +415,13 @@ const DataDevelopmentPage = () => {
             locale={{
               emptyText: (
                 <Empty
-                  image={<YakOpsEmpty width={220} height={174} primaryColor={BRAND_COLOR} />}
+                  image={
+                    <YakOpsEmpty
+                      width={220}
+                      height={174}
+                      primaryColor={BRAND_COLOR}
+                    />
+                  }
                   description={
                     keyword || statusFilter !== 'ALL' || engineFilter
                       ? '没有匹配的数据开发任务'
@@ -491,4 +511,4 @@ const DataDevelopmentPage = () => {
   );
 };
 
-export default DataDevelopmentPage;
+export default DataDevelopmentWorkbenchPage;
