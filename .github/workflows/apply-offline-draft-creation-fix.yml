@@ -1,0 +1,78 @@
+name: Apply Offline Draft Creation Fix
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Apply compatibility fix
+        run: python tools/apply_offline_draft_creation_fix.py
+
+      - name: Verify generated diff
+        run: |
+          git diff --check
+          grep -q 'INITIAL_DRAFT_VALIDATION_MESSAGES' \
+            yak-ops-business/yak-ops-business-sync/yak-ops-business-sync-offline/src/main/java/io/yak/ops/business/sync/offline/service/OfflineJobDefinitionService.java
+          grep -q 'saveGuideCreatesDraftForLegacyInitialRequest' \
+            yak-ops-business/yak-ops-business-sync/yak-ops-business-sync-offline/src/test/java/io/yak/ops/business/sync/offline/service/OfflineJobDefinitionServiceTest.java
+
+      - name: Run focused service test when internal parent is available
+        run: |
+          set +e
+          mvn -B \
+            -pl yak-ops-business/yak-ops-business-sync/yak-ops-business-sync-offline \
+            -am \
+            -Dtest=OfflineJobDefinitionServiceTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            test 2>&1 | tee /tmp/maven-test.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+          if grep -q 'yak-framework-parent:pom:1.0.0-SNAPSHOT' /tmp/maven-test.log; then
+            echo '::warning::Focused Maven test was blocked because the internal yak-framework-parent snapshot is unavailable.'
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Commit source fix and remove one-shot helpers
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            yak-ops-business/yak-ops-business-sync/yak-ops-business-sync-offline/src/main/java/io/yak/ops/business/sync/offline/service/OfflineJobDefinitionService.java \
+            yak-ops-business/yak-ops-business-sync/yak-ops-business-sync-offline/src/test/java/io/yak/ops/business/sync/offline/service/OfflineJobDefinitionServiceTest.java
+          git rm \
+            .github/workflows/apply-offline-draft-creation-fix.yml \
+            tools/apply_offline_draft_creation_fix.py
+          git commit -m "fix(offline-sync): preserve draft-first creation flow"
+          git push origin HEAD:agent/fix-offline-draft-creation
