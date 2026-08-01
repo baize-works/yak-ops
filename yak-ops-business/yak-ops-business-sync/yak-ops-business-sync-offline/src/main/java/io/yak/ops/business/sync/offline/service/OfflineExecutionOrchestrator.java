@@ -75,6 +75,8 @@ public class OfflineExecutionOrchestrator {
       throw new IllegalStateException("任务已有运行中的执行实例，不能重复提交");
     }
     DefinitionVersion version = definitionService.requireCurrentVersion(definition);
+    String jobSpecJson = definitionService.resolveJobSpec(version);
+    JsonNode jobSpec = readJobSpec(jobSpecJson);
     NodeRecord node = workerRegistry.selectNode();
 
     LocalDateTime now = LocalDateTime.now();
@@ -92,7 +94,7 @@ public class OfflineExecutionOrchestrator {
     execution.setCancellationRequested(false);
     execution.setRetryCreated(false);
     execution.setConfigDigest(version.getConfigDigest());
-    execution.setSubmittedConfig(version.getHoconConfig());
+    execution.setSubmittedConfig(jobSpecJson);
     execution.setSourceRecordCount(0L);
     execution.setSinkSuccessRecordCount(0L);
     execution.setSourceReadBytes(0L);
@@ -109,20 +111,18 @@ public class OfflineExecutionOrchestrator {
     record(execution, null, execution.getStatus(), "CREATED", "Yak Ops 已创建执行实例", null);
 
     try {
-      transition(execution, OfflineExecutionStatus.SUBMITTED, "SUBMITTING", "正在提交 Link-Up", null);
+      transition(execution, OfflineExecutionStatus.SUBMITTED, "SUBMITTING", "正在提交 Link-Up JobSpec", null);
       LinkUpJobResponse response = linkUpClient.submit(
           execution.getExternalExecutionId(), execution.getIdempotencyKey(),
-          version.getVersionNo(), version.getHoconConfig());
+          version.getVersionNo(), jobSpec);
       applySnapshot(execution, response, "SUBMITTED");
       return execution;
     } catch (LinkUpRequestException exception) {
-      boolean retryable = exception.getStatusCode() == 429
-          || exception.getStatusCode() >= 500;
+      boolean retryable = exception.getStatusCode() == 429 || exception.getStatusCode() >= 500;
       markTerminal(execution, OfflineExecutionStatus.FAILED,
           exception.getCode() + "：" + exception.getMessage(), null, retryable);
       throw exception;
     } catch (RuntimeException exception) {
-      // 网络中断时不能断言 Link-Up 未接收，保留 SUBMITTED 交给 externalExecutionId 对账。
       execution.setErrorMessage(exception.getMessage());
       execution.setLastSyncTime(LocalDateTime.now());
       execution.setUpdateTime(LocalDateTime.now());
@@ -159,9 +159,7 @@ public class OfflineExecutionOrchestrator {
 
   public void applySnapshot(
       OfflineJobExecutionPO execution, LinkUpJobResponse response, String eventType) {
-    if (execution == null || response == null) {
-      return;
-    }
+    if (execution == null || response == null) return;
     String previousStatus = execution.getStatus();
     OfflineExecutionStatus nextStatus = StringUtils.hasText(response.getStatus())
         ? OfflineExecutionStatus.parse(response.getStatus())
@@ -180,8 +178,7 @@ public class OfflineExecutionOrchestrator {
     execution.setSinkSuccessRecordCount(number(metrics, "sinkSuccessRecordCount", 0L));
     execution.setSourceReadBytes(number(metrics, "sourceReadBytes", 0L));
     execution.setSinkWrittenBytes(number(metrics, "sinkWrittenBytes", 0L));
-    execution.setQps(decimal(metrics, "sourceAverageQps",
-        decimal(metrics, "sinkAverageQps", 0D)));
+    execution.setQps(decimal(metrics, "sourceAverageQps", decimal(metrics, "sinkAverageQps", 0D)));
     execution.setDurationMillis(value(response.getDurationMillis(), 0L));
     execution.setStartTime(time(response.getStartTimeMillis()));
     execution.setEndTime(time(response.getEndTimeMillis()));
@@ -208,15 +205,12 @@ public class OfflineExecutionOrchestrator {
       throw new IllegalArgumentException("任务实例 ID 不合法");
     }
     OfflineJobExecutionPO execution = executionDao.selectById(executionId);
-    if (execution == null) {
-      throw new IllegalArgumentException("离线同步任务实例不存在：" + executionId);
-    }
+    if (execution == null) throw new IllegalArgumentException("离线同步任务实例不存在：" + executionId);
     return execution;
   }
 
-  private void markTerminal(
-      OfflineJobExecutionPO execution, OfflineExecutionStatus status, String message,
-      String payload, boolean retryable) {
+  private void markTerminal(OfflineJobExecutionPO execution, OfflineExecutionStatus status,
+      String message, String payload, boolean retryable) {
     String previousStatus = execution.getStatus();
     execution.setStatus(status.name());
     execution.setStateVersion(value(execution.getStateVersion(), 0L) + 1L);
@@ -233,9 +227,7 @@ public class OfflineExecutionOrchestrator {
 
   private void updateDefinition(OfflineJobExecutionPO execution, OfflineExecutionStatus status) {
     OfflineJobDefinitionPO definition = definitionDao.selectById(execution.getJobDefinitionId());
-    if (definition == null) {
-      return;
-    }
+    if (definition == null) return;
     definition.setLastExecutionId(execution.getId());
     definition.setLastEngineJobId(execution.getEngineJobId());
     definition.setLastJobStatus(status.name());
@@ -264,38 +256,39 @@ public class OfflineExecutionOrchestrator {
   private void configureRetry(
       OfflineJobExecutionPO execution, OfflineExecutionStatus status, boolean retryable) {
     execution.setNextRetryTime(null);
-    if (!retryable
-        || (status != OfflineExecutionStatus.FAILED && status != OfflineExecutionStatus.LOST)) {
-      return;
-    }
+    if (!retryable || (status != OfflineExecutionStatus.FAILED && status != OfflineExecutionStatus.LOST)) return;
     ScheduleRecord schedule = scheduleRepository.findSchedule(execution.getJobDefinitionId());
     int maxAttempts = schedule == null
         ? properties.getControl().getDefaultMaxAttempts() : schedule.getRetryMaxAttempts();
     int backoff = schedule == null
-        ? properties.getControl().getDefaultRetryBackoffSeconds()
-        : schedule.getRetryBackoffSeconds();
+        ? properties.getControl().getDefaultRetryBackoffSeconds() : schedule.getRetryBackoffSeconds();
     if (value(execution.getAttemptNo(), 1) < Math.max(1, maxAttempts)) {
       execution.setNextRetryTime(LocalDateTime.now().plusSeconds(Math.max(1, backoff)));
     }
   }
 
   private boolean retryable(LinkUpJobResponse response, OfflineExecutionStatus status) {
-    if (status == OfflineExecutionStatus.LOST) {
-      return true;
-    }
-    if (status != OfflineExecutionStatus.FAILED) {
-      return false;
-    }
+    if (status == OfflineExecutionStatus.LOST) return true;
+    if (status != OfflineExecutionStatus.FAILED) return false;
     String code = response == null ? null : response.getErrorCode();
-    if (!StringUtils.hasText(code)) {
-      return true;
-    }
+    if (!StringUtils.hasText(code)) return true;
     String normalized = code.toUpperCase(java.util.Locale.ROOT);
-    return !(normalized.contains("CONFIG")
-        || normalized.contains("VALIDATION")
-        || normalized.contains("IDEMPOTENCY")
-        || normalized.contains("BAD_REQUEST")
+    return !(normalized.contains("CONFIG") || normalized.contains("VALIDATION")
+        || normalized.contains("IDEMPOTENCY") || normalized.contains("BAD_REQUEST")
         || normalized.contains("UNSUPPORTED"));
+  }
+
+  private JsonNode readJobSpec(String value) {
+    if (!StringUtils.hasText(value)) throw new IllegalStateException("任务版本缺少 Link-Up JobSpec");
+    try {
+      JsonNode jobSpec = objectMapper.readTree(value);
+      if (jobSpec == null || !jobSpec.isObject()) {
+        throw new IllegalStateException("任务版本中的 Link-Up JobSpec 不是 JSON 对象");
+      }
+      return jobSpec;
+    } catch (JsonProcessingException exception) {
+      throw new IllegalStateException("任务版本中的 Link-Up JobSpec 已损坏", exception);
+    }
   }
 
   private void record(OfflineJobExecutionPO execution, String from, String to,
@@ -314,9 +307,8 @@ public class OfflineExecutionOrchestrator {
   }
 
   private String write(Object value) {
-    try {
-      return objectMapper.writeValueAsString(value);
-    } catch (JsonProcessingException exception) {
+    try { return objectMapper.writeValueAsString(value); }
+    catch (JsonProcessingException exception) {
       throw new IllegalStateException("序列化 Link-Up 执行快照失败", exception);
     }
   }
@@ -336,10 +328,7 @@ public class OfflineExecutionOrchestrator {
         : LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
   }
 
-  private String first(String value, String fallback) {
-    return StringUtils.hasText(value) ? value : fallback;
-  }
-
+  private String first(String value, String fallback) { return StringUtils.hasText(value) ? value : fallback; }
   private String text(String value) { return StringUtils.hasText(value) ? value : "离线任务执行失败"; }
   private int value(Integer value, int fallback) { return value == null ? fallback : value; }
   private long value(Long value, long fallback) { return value == null ? fallback : value; }

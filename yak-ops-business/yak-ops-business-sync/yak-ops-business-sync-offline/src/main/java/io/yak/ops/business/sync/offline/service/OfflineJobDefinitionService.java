@@ -24,8 +24,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
-/** 离线同步任务定义目录：保存当前定义、不可变版本和调度策略。 */
+/** Offline job definition catalog with immutable structured JobSpec versions. */
 @ConditionalOnOfflineSyncEnabled
 @Service
 public class OfflineJobDefinitionService {
@@ -53,9 +54,7 @@ public class OfflineJobDefinitionService {
   public Long nextId() {
     long floor = System.currentTimeMillis() * 1000L;
     long candidate = idSequence.updateAndGet(current -> Math.max(current + 1L, floor));
-    while (definitionDao.selectById(candidate) != null) {
-      candidate = idSequence.incrementAndGet();
-    }
+    while (definitionDao.selectById(candidate) != null) candidate = idSequence.incrementAndGet();
     return candidate;
   }
 
@@ -73,21 +72,20 @@ public class OfflineJobDefinitionService {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + prepared.getJobName());
     }
 
-    int version = existing == null || existing.getVersion() == null
-        ? 1 : existing.getVersion() + 1;
+    int version = existing == null || existing.getVersion() == null ? 1 : existing.getVersion() + 1;
     LocalDateTime now = LocalDateTime.now();
-    OfflineJobDefinitionPO definition = existing == null
-        ? new OfflineJobDefinitionPO() : existing;
+    OfflineJobDefinitionPO definition = existing == null ? new OfflineJobDefinitionPO() : existing;
     definition.setId(id);
     definition.setJobName(prepared.getJobName());
     definition.setJobDesc(prepared.getJobDesc());
     definition.setMode(prepared.getMode());
     definition.setDefinitionJson(prepared.getDefinitionJson());
-    definition.setHoconConfig(prepared.getHocon());
-    definition.setSourceType(type(prepared.getSource()));
-    definition.setSinkType(type(prepared.getSink()));
-    definition.setSourceDatasourceId(prepared.getSource().getId());
-    definition.setSinkDatasourceId(prepared.getSink().getId());
+    definition.setJobSpecJson(prepared.getJobSpecJson());
+    definition.setHoconConfig(null);
+    definition.setSourceType(displayType(prepared.getSource(), prepared.getSourceConnectorId()));
+    definition.setSinkType(displayType(prepared.getSink(), prepared.getSinkConnectorId()));
+    definition.setSourceDatasourceId(id(prepared.getSource()));
+    definition.setSinkDatasourceId(id(prepared.getSink()));
     definition.setSourceTable(prepared.getSourceTable());
     definition.setSinkTable(prepared.getSinkTable());
     definition.setScheduleJson(support.writeNullable(prepared.getRequest().get("schedule")));
@@ -96,38 +94,35 @@ public class OfflineJobDefinitionService {
     definition.setReleaseState(existing == null ? "OFFLINE" : existing.getReleaseState());
     definition.setCreateTime(existing == null ? now : existing.getCreateTime());
     definition.setUpdateTime(now);
-    if (existing == null) {
-      definitionDao.insert(definition);
-    } else {
-      definitionDao.updateById(definition);
-    }
+    if (existing == null) definitionDao.insert(definition); else definitionDao.updateById(definition);
 
     Long versionId = catalogRepository.saveVersion(
-        id, version, prepared.getDefinitionJson(), prepared.getHocon(), prepared.getDigest());
+        id, version, prepared.getDefinitionJson(), prepared.getJobSpecJson(), prepared.getDigest());
     definition.setCurrentVersionId(versionId);
     definitionDao.updateById(definition);
     scheduleRepository.saveSchedule(id, prepared.getRequest().get("schedule"));
     return id;
   }
 
+  /** Existing preview endpoint now returns structured JSON JobSpec instead of HOCON text. */
   public String buildGuideConfig(OfflineJobDefinitionDTO requestDTO) {
-    return support.buildHocon(requestDTO);
+    return support.buildJobSpec(requestDTO);
   }
 
-  public OfflineJobDefinitionVO get(Long id) {
-    return toVO(require(id));
+  public String resolveJobSpec(DefinitionVersion version) {
+    if (version == null) throw new IllegalArgumentException("任务版本不能为空");
+    return StringUtils.hasText(version.getJobSpecJson())
+        ? version.getJobSpecJson()
+        : support.buildJobSpec(version.getDefinitionJson());
   }
 
-  public JsonNode getEditDetail(Long id) {
-    return support.editDetail(require(id));
-  }
+  public OfflineJobDefinitionVO get(Long id) { return toVO(require(id)); }
+  public JsonNode getEditDetail(Long id) { return support.editDetail(require(id)); }
 
   public PagingData<OfflineJobDefinitionVO> page(OfflineJobDefinitionQueryDTO queryDTO) {
     IPage<OfflineJobDefinitionPO> page = definitionDao.selectPage(queryDTO);
     List<OfflineJobDefinitionVO> records = new ArrayList<>(page.getRecords().size());
-    for (OfflineJobDefinitionPO definition : page.getRecords()) {
-      records.add(toVO(definition));
-    }
+    for (OfflineJobDefinitionPO definition : page.getRecords()) records.add(toVO(definition));
     return new PagingData<>(records, page);
   }
 
@@ -157,29 +152,21 @@ public class OfflineJobDefinitionService {
     if ("ONLINE".equalsIgnoreCase(definition.getReleaseState())) {
       throw new IllegalStateException("已上线任务不能删除，请先下线");
     }
-    if (executionRepository.hasActiveExecution(id)) {
-      throw new IllegalStateException("运行中的任务不能删除");
-    }
+    if (executionRepository.hasActiveExecution(id)) throw new IllegalStateException("运行中的任务不能删除");
     return definitionDao.deleteById(id);
   }
 
   public OfflineJobDefinitionPO require(Long id) {
-    if (id == null || id <= 0L) {
-      throw new IllegalArgumentException("任务定义 ID 不合法");
-    }
+    if (id == null || id <= 0L) throw new IllegalArgumentException("任务定义 ID 不合法");
     OfflineJobDefinitionPO definition = definitionDao.selectById(id);
-    if (definition == null) {
-      throw new IllegalArgumentException("离线同步任务不存在：" + id);
-    }
+    if (definition == null) throw new IllegalArgumentException("离线同步任务不存在：" + id);
     return definition;
   }
 
   public DefinitionVersion requireCurrentVersion(OfflineJobDefinitionPO definition) {
     DefinitionVersion version = catalogRepository.findCurrentVersion(
         definition.getId(), definition.getCurrentVersionId());
-    if (version == null) {
-      throw new IllegalStateException("任务没有可执行的定义版本");
-    }
+    if (version == null) throw new IllegalStateException("任务没有可执行的定义版本");
     return version;
   }
 
@@ -190,6 +177,7 @@ public class OfflineJobDefinitionService {
       Map<String, Object> item = new LinkedHashMap<>();
       item.put("id", version.getId());
       item.put("version", version.getVersionNo());
+      item.put("format", StringUtils.hasText(version.getJobSpecJson()) ? "JOB_SPEC" : "LEGACY_DERIVED");
       item.put("configDigest", version.getConfigDigest());
       item.put("createTime", version.getCreateTime());
       result.add(item);
@@ -199,8 +187,7 @@ public class OfflineJobDefinitionService {
 
   private OfflineJobDefinitionVO toVO(OfflineJobDefinitionPO definition) {
     ScheduleRecord schedule = scheduleRepository.findSchedule(definition.getId());
-    return support.toVO(
-        definition,
+    return support.toVO(definition,
         schedule == null ? null : schedule.getCronExpression(),
         schedule != null && schedule.isEnabled(),
         schedule == null ? null : schedule.getLastFireTime(),
@@ -208,9 +195,7 @@ public class OfflineJobDefinitionService {
   }
 
   private void ensureEditable(OfflineJobDefinitionPO existing) {
-    if (existing == null) {
-      return;
-    }
+    if (existing == null) return;
     if ("ONLINE".equalsIgnoreCase(existing.getReleaseState())) {
       throw new IllegalStateException("已上线任务不能修改，请先下线");
     }
@@ -220,7 +205,15 @@ public class OfflineJobDefinitionService {
     }
   }
 
-  private String type(io.yak.ops.common.bean.po.datasource.DataSourcePO source) {
-    return source.getDbType() == null ? null : source.getDbType().name();
+  private Long id(io.yak.ops.common.bean.po.datasource.DataSourcePO source) {
+    return source == null ? null : source.getId();
+  }
+
+  private String displayType(
+      io.yak.ops.common.bean.po.datasource.DataSourcePO source,
+      String connectorId) {
+    return source != null && source.getDbType() != null
+        ? source.getDbType().name()
+        : connectorId;
   }
 }

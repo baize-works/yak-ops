@@ -38,38 +38,26 @@ public class LinkUpClient {
     this.properties = properties;
   }
 
-  public LinkUpNodeResponse node() {
-    return get("/api/v1/node", LinkUpNodeResponse.class);
-  }
-
-  /** 兼容旧健康检查调用，返回更完整的 Worker 节点信息。 */
-  public LinkUpNodeResponse health() {
-    return node();
-  }
-
-  /** 兼容旧调用；控制面正式执行必须显式传入幂等标识。 */
-  @Deprecated
-  public LinkUpJobResponse submit(String hocon) {
-    String token = java.util.UUID.randomUUID().toString();
-    return submit("legacy-" + token, token, 1, hocon);
-  }
+  public LinkUpNodeResponse node() { return get("/api/v1/node", LinkUpNodeResponse.class); }
+  public LinkUpNodeResponse health() { return node(); }
 
   public LinkUpJobResponse submit(
       String externalExecutionId,
       String idempotencyKey,
       int definitionVersion,
-      String hocon) {
+      JsonNode jobSpec) {
     requireEnabled();
     if (!StringUtils.hasText(externalExecutionId)
         || !StringUtils.hasText(idempotencyKey)
-        || !StringUtils.hasText(hocon)) {
-      throw new IllegalArgumentException("Link-Up 提交参数不完整");
+        || jobSpec == null
+        || !jobSpec.isObject()) {
+      throw new IllegalArgumentException("Link-Up JobSpec 提交参数不完整");
     }
     LinkUpSubmitRequest body = new LinkUpSubmitRequest();
     body.setExternalExecutionId(externalExecutionId.trim());
     body.setIdempotencyKey(idempotencyKey.trim());
     body.setDefinitionVersion(definitionVersion);
-    body.setHocon(hocon);
+    body.setJobSpec(jobSpec);
     HttpRequest request = HttpRequest.newBuilder(uri("/api/v1/jobs"))
         .timeout(properties.getEngine().getRequestTimeout())
         .header("Content-Type", "application/json;charset=UTF-8")
@@ -84,9 +72,7 @@ public class LinkUpClient {
   }
 
   public LinkUpJobResponse findByExternalExecutionId(String externalExecutionId) {
-    return get(
-        "/api/v1/jobs/external/" + encode(externalExecutionId),
-        LinkUpJobResponse.class);
+    return get("/api/v1/jobs/external/" + encode(externalExecutionId), LinkUpJobResponse.class);
   }
 
   public LinkUpJobResponse cancel(String engineJobId) {
@@ -94,8 +80,7 @@ public class LinkUpClient {
     HttpRequest request = HttpRequest.newBuilder(uri("/api/v1/jobs/" + encode(engineJobId)))
         .timeout(properties.getEngine().getRequestTimeout())
         .header("Accept", "application/json")
-        .DELETE()
-        .build();
+        .DELETE().build();
     return send(request, LinkUpJobResponse.class);
   }
 
@@ -116,8 +101,7 @@ public class LinkUpClient {
     HttpRequest request = HttpRequest.newBuilder(uri(path))
         .timeout(properties.getEngine().getRequestTimeout())
         .header("Accept", "application/json")
-        .GET()
-        .build();
+        .GET().build();
     return send(request, type);
   }
 
@@ -137,17 +121,14 @@ public class LinkUpClient {
       Thread.currentThread().interrupt();
       throw new IllegalStateException("Link-Up 请求被中断", exception);
     } catch (IOException exception) {
-      throw new IllegalStateException(
-          "无法连接 Link-Up Worker：" + properties.getEngine().getBaseUrl(), exception);
+      throw new IllegalStateException("无法连接 Link-Up Worker：" + properties.getEngine().getBaseUrl(), exception);
     }
   }
 
   private <T> T read(String body, Class<T> type) {
     try {
       if (!StringUtils.hasText(body)) {
-        if (JsonNode.class.equals(type)) {
-          return type.cast(objectMapper.createObjectNode());
-        }
+        if (JsonNode.class.equals(type)) return type.cast(objectMapper.createObjectNode());
         return type.getDeclaredConstructor().newInstance();
       }
       return objectMapper.readValue(body, type);
@@ -157,43 +138,32 @@ public class LinkUpClient {
   }
 
   private String write(Object value) {
-    try {
-      return objectMapper.writeValueAsString(value);
-    } catch (JsonProcessingException exception) {
-      throw new IllegalStateException("序列化 Link-Up 提交协议失败", exception);
+    try { return objectMapper.writeValueAsString(value); }
+    catch (JsonProcessingException exception) {
+      throw new IllegalStateException("序列化 Link-Up JobSpec 提交协议失败", exception);
     }
   }
 
   private String errorMessage(JsonNode body, String fallback) {
     String message = body.path("message").asText(null);
-    if (!StringUtils.hasText(message)) {
-      message = body.path("error").asText(null);
-    }
+    if (!StringUtils.hasText(message)) message = body.path("error").asText(null);
     return StringUtils.hasText(message) ? message : fallback;
   }
 
   private URI uri(String path) {
     String baseUrl = properties.getEngine().getBaseUrl();
-    if (!StringUtils.hasText(baseUrl)) {
-      throw new IllegalStateException("yak.sync.offline.engine.base-url 不能为空");
-    }
-    String normalized = baseUrl.endsWith("/")
-        ? baseUrl.substring(0, baseUrl.length() - 1)
-        : baseUrl;
+    if (!StringUtils.hasText(baseUrl)) throw new IllegalStateException("yak.sync.offline.engine.base-url 不能为空");
+    String normalized = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
     return URI.create(normalized + path);
   }
 
   private String encode(String value) {
-    if (!StringUtils.hasText(value)) {
-      throw new IllegalArgumentException("Link-Up 标识不能为空");
-    }
+    if (!StringUtils.hasText(value)) throw new IllegalArgumentException("Link-Up 标识不能为空");
     return URLEncoder.encode(value.trim(), StandardCharsets.UTF_8).replace("+", "%20");
   }
 
   private void requireEnabled() {
-    if (!properties.getEngine().isEnabled()) {
-      throw new IllegalStateException("Link-Up 引擎对接已关闭");
-    }
+    if (!properties.getEngine().isEnabled()) throw new IllegalStateException("Link-Up 引擎对接已关闭");
   }
 
   @Data
@@ -203,7 +173,7 @@ public class LinkUpClient {
     private String externalExecutionId;
     private String idempotencyKey;
     private Integer definitionVersion;
-    private String hocon;
+    private JsonNode jobSpec;
   }
 
   @Data
@@ -256,13 +226,9 @@ public class LinkUpClient {
   public static final class LinkUpRequestException extends RuntimeException {
     private final int statusCode;
     private final String code;
-
     public LinkUpRequestException(int statusCode, String code, String message) {
-      super(message);
-      this.statusCode = statusCode;
-      this.code = code;
+      super(message); this.statusCode = statusCode; this.code = code;
     }
-
     public int getStatusCode() { return statusCode; }
     public String getCode() { return code; }
   }

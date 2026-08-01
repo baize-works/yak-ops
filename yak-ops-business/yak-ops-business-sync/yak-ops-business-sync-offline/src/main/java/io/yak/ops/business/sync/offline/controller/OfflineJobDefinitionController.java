@@ -31,16 +31,19 @@ public class OfflineJobDefinitionController {
   }
 
   @GetMapping("/get-unique-id")
-  public Result<Long> nextId() {
-    return Result.success(service.nextId());
-  }
+  public Result<Long> nextId() { return Result.success(service.nextId()); }
 
   @PostMapping({"/guide-single/saveOrUpdate", "/guide-multi/saveOrUpdate"})
   public Result<Long> saveGuide(@RequestBody OfflineJobDefinitionDTO requestDTO) {
     return Result.success(service.saveGuide(requestDTO));
   }
 
-  @PostMapping({"/guide-single/build-config", "/guide-multi/build-config", "/buildHoconConfig"})
+  @PostMapping({
+      "/guide-single/build-config",
+      "/guide-multi/build-config",
+      "/build-job-spec",
+      "/buildHoconConfig"
+  })
   public Result<String> buildGuideConfig(@RequestBody OfflineJobDefinitionDTO requestDTO) {
     return Result.success(service.buildGuideConfig(requestDTO));
   }
@@ -62,17 +65,11 @@ public class OfflineJobDefinitionController {
   }
 
   @PutMapping("/{id}/online")
-  public Result<Boolean> online(@PathVariable Long id) {
-    return Result.success(service.online(id));
-  }
+  public Result<Boolean> online(@PathVariable Long id) { return Result.success(service.online(id)); }
 
   @PutMapping("/{id}/offline")
-  public Result<Boolean> offline(@PathVariable Long id) {
-    return Result.success(service.offline(id));
-  }
+  public Result<Boolean> offline(@PathVariable Long id) { return Result.success(service.offline(id)); }
 
   @DeleteMapping("/{id}")
-  public Result<Boolean> delete(@PathVariable Long id) {
-    return Result.success(service.delete(id));
-  }
+  public Result<Boolean> delete(@PathVariable Long id) { return Result.success(service.delete(id)); }
 }

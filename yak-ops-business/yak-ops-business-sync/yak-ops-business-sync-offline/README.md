@@ -6,7 +6,9 @@
 
 Yak Ops 负责：
 
-- 保存任务定义和不可变任务版本；
+- 保存前端可编辑任务定义和不可变 JobSpec 版本；
+- 根据 Connector Form Schema 收集 Connector options；
+- 解析数据源引用并在服务端注入连接参数和敏感信息；
 - 保存 Cron 调度与重试策略；
 - 创建并持久化执行历史；
 - 选择并记录 Link-Up Worker；
@@ -17,74 +19,60 @@ Yak Ops 负责：
 
 Link-Up 负责：
 
-- 接收一次离线同步作业；
+- 接收结构化 `JobSpec`；
+- 将 Connector ID、options 和 runtime 编译为内部 `JobDefinition`；
+- 执行 Connector 最终校验；
 - 排队、运行、取消并返回最终结果；
 - 暴露 Worker 身份、状态、指标、Pipeline 和 Task 信息。
 
 ## 核心组件
 
 ```text
-OfflineJobDefinitionService       当前定义、上线下线和版本目录
-OfflineDefinitionSupport          定义序列化、HOCON 生成和展示映射
-OfflineExecutionOrchestrator      执行命令、幂等提交和状态持久化
-OfflineExecutionReadService       执行历史、指标和日志读模型
-OfflineJobExecutionService        Controller 使用的执行门面
-OfflineWorkerRegistry             单 Worker 心跳、身份校验和选择
-OfflineExecutionReconciler        后台状态对账、LOST 判定和重试派发
-OfflineScheduleDispatcher         持久化 Cron 调度派发
-OfflineAlertPublisher             告警持久化和应用事件发布
-
-OfflineDefinitionCatalogRepository 不可变任务版本
-OfflineScheduleRepository          调度与重试策略
-OfflineNodeRepository              Worker 节点和心跳
-OfflineExecutionControlRepository  执行事件、重试扫描和告警记录
+LinkUpJobSpecFactory              编辑模型与数据源引用 -> 结构化 JobSpec
+OfflineDefinitionSupport         定义序列化、JobSpec 生成和展示映射
+OfflineJobDefinitionService      当前定义、上线下线和不可变版本目录
+OfflineExecutionOrchestrator     JobSpec 提交、幂等命令和状态持久化
+OfflineExecutionReadService      执行历史、指标和日志读模型
+OfflineJobExecutionService       Controller 使用的执行门面
+OfflineWorkerRegistry            单 Worker 心跳、身份校验和选择
+OfflineExecutionReconciler       后台状态对账、LOST 判定和重试派发
+OfflineScheduleDispatcher        持久化 Cron 调度派发
+OfflineAlertPublisher            告警持久化和应用事件发布
 ```
 
-## Link-Up 协议
+`LinkUpHoconBuilder` 已移除。新增 Connector 时只需让 Form Schema 产生对应 `connectorOptions`；公共 JobSpec 协议不需要增加 Doris、HTTP、文件等专用序列化分支。JDBC 当前仍由 `LinkUpJobSpecFactory` 负责将 Yak Ops 数据源 ID 解析为运行时连接 options。
 
-Yak Ops 使用 Link-Up 单节点离线 Worker 协议：
+## Link-Up 提交协议
 
 ```http
-GET    /api/v1/node
-POST   /api/v1/jobs
-GET    /api/v1/jobs/{jobId}
-GET    /api/v1/jobs/external/{externalExecutionId}
-DELETE /api/v1/jobs/{jobId}
+POST /api/v1/jobs
+Content-Type: application/json
 ```
-
-提交体：
 
 ```json
 {
   "externalExecutionId": "yak-offline-execution-10086",
   "idempotencyKey": "0a20a977-34fa-4bc8-8f84-4f8ef6d89e9f",
   "definitionVersion": 3,
-  "hocon": "job { ... }"
+  "jobSpec": {
+    "apiVersion": "link-up/v1",
+    "kind": "BatchSyncJob",
+    "name": "orders-sync",
+    "source": {"connectorId": "jdbc", "options": {}},
+    "sink": {"connectorId": "doris", "options": {}},
+    "runtime": {"batchSize": 1000, "sourceParallelism": 2}
+  }
 }
 ```
 
-执行状态严格映射为：
+Yak Ops 不再生成或提交 HOCON。`hocon_config` 数据库列只保留为历史兼容字段，新任务版本写入 `job_spec_json`。
 
-```text
-CREATED -> SUBMITTED -> QUEUED -> RUNNING
-                                      |-> SUCCEEDED
-                                      |-> FAILED
-                                      |-> CANCELED
-                                      `-> LOST
-```
+## 历史任务兼容
 
-## 数据模型
+Flyway V4：
 
-Flyway V2 增加：
+- 为当前定义和不可变版本增加 `job_spec_json`；
+- 将旧 `hocon_config` 改为可空并标记为停用；
+- 将执行快照语义改为 JobSpec JSON。
 
-- `yak_offline_job_version`
-- `yak_offline_schedule`
-- `yak_offline_engine_node`
-- `yak_offline_execution_event`
-- `yak_offline_alert_event`
-
-并扩展 `yak_offline_job_execution`，保存定义版本、节点、幂等标识、状态版本、重试关系和最近对账时间。
-
-## 告警扩展
-
-`OfflineAlertPublisher` 先把告警写入 `yak_offline_alert_event`，再发布 `OfflineExecutionAlertEvent`。邮件、Webhook、企业微信等渠道只需订阅该事件并更新投递状态，不需要侵入离线执行编排。
+历史版本没有 `job_spec_json` 时，执行器会从该版本的 `definition_json` 重新构建 JobSpec，不解析旧 HOCON，也不要求一次性迁移历史数据。
