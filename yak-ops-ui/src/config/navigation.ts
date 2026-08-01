@@ -1,4 +1,7 @@
-import { type PermissionRequirement, satisfiesPermissionRequirement } from '../utils/security/permission';
+import {
+  type PermissionRequirement,
+  satisfiesPermissionRequirement,
+} from '../utils/security/permission';
 
 export type NavigationIconKey =
   | 'home'
@@ -22,8 +25,9 @@ export type NavigationIconKey =
 /**
  * 主菜单业务区域：
  *
- * task：任务创建、数据同步和流程编排；
- * management：资源、质量及运行管理。
+ * task：任务创建、数据同步、数据开发和流程编排；
+ * management：资源、质量及运行管理；
+ * system：系统与权限管理。
  */
 export type NavigationSectionKey = 'task' | 'management' | 'system';
 
@@ -46,7 +50,8 @@ interface NavigationRouteBase {
  * inherits its parent route's requirement. There is deliberately no implicit
  * default for new root routes, so migrations cannot accidentally expose them.
  */
-export type NavigationRoute = NavigationRouteBase & (PermissionRequirement | { parentId: string; mode?: never });
+export type NavigationRoute = NavigationRouteBase &
+  (PermissionRequirement | { parentId: string; mode?: never });
 
 export interface NavigationGroup {
   id: string;
@@ -60,7 +65,13 @@ export interface NavigationGroupWithRoutes extends NavigationGroup {
   routes: NavigationRoute[];
 }
 
-const sortByOrder = <T extends { order?: number }>(left: T, right: T) => (left.order ?? 0) - (right.order ?? 0);
+const sortByOrder = <T extends { order?: number }>(left: T, right: T) =>
+  (left.order ?? 0) - (right.order ?? 0);
+
+const DATA_DEVELOPMENT_READ_PERMISSIONS = [
+  'task:batch:read',
+  'task:realtime:read',
+] as const;
 
 /**
  * 主菜单顺序：
@@ -68,11 +79,13 @@ const sortByOrder = <T extends { order?: number }>(left: T, right: T) => (left.o
  * 首页
  * ────────────────
  * 数据集成
+ * 数据开发
  * 流程编排
  * ────────────────
  * 资源管理
  * 数据质量
  * 运维中心
+ * 系统管理
  *
  * 尚未包含页面的分组不会展示。
  * 后续只需增加对应路由，菜单分组便会自动出现。
@@ -86,39 +99,46 @@ export const navigationGroups: readonly NavigationGroup[] = [
     order: 10,
   },
   {
+    id: 'development',
+    title: '数据开发',
+    iconKey: 'api',
+    section: 'task',
+    order: 20,
+  },
+  {
     id: 'workflow',
     title: '流程编排',
     iconKey: 'workflow',
     section: 'task',
-    order: 20,
+    order: 30,
   },
   {
     id: 'resources',
     title: '资源管理',
     iconKey: 'database',
     section: 'management',
-    order: 30,
+    order: 40,
   },
   {
     id: 'quality',
     title: '数据质量',
     iconKey: 'quality',
     section: 'management',
-    order: 40,
+    order: 50,
   },
   {
     id: 'operations',
     title: '运维中心',
     iconKey: 'monitor',
     section: 'management',
-    order: 50,
+    order: 60,
   },
   {
     id: 'system',
     title: '系统管理',
     iconKey: 'system',
     section: 'system',
-    order: 60,
+    order: 70,
   },
 ];
 
@@ -153,7 +173,10 @@ export const appRoutes: readonly NavigationRoute[] = [
     iconKey: 'sync',
     menuGroup: 'integration',
     order: 10,
-    quickCreateRequirement: { mode: 'one', permission: 'task:batch:create' },
+    quickCreateRequirement: {
+      mode: 'one',
+      permission: 'task:batch:create',
+    },
     quickCreateLabel: '新建离线同步',
   },
   {
@@ -188,7 +211,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'batch-link-up',
   },
-
   {
     id: 'realtime-link-up',
     mode: 'one',
@@ -199,7 +221,10 @@ export const appRoutes: readonly NavigationRoute[] = [
     iconKey: 'realtime',
     menuGroup: 'integration',
     order: 20,
-    quickCreateRequirement: { mode: 'one', permission: 'task:realtime:create' },
+    quickCreateRequirement: {
+      mode: 'one',
+      permission: 'task:realtime:create',
+    },
     quickCreateLabel: '新建实时同步',
   },
   {
@@ -219,16 +244,50 @@ export const appRoutes: readonly NavigationRoute[] = [
     parentId: 'realtime-link-up',
   },
 
+  // ---------------------------------------------------------------------------
+  // 数据开发
+  // ---------------------------------------------------------------------------
+
   {
-    id: 'data-development',
+    id: 'data-development-workbench',
     mode: 'any',
-    permissions: ['task:batch:read', 'task:realtime:read'],
+    permissions: DATA_DEVELOPMENT_READ_PERMISSIONS,
+    path: '/data-development/workbench',
+    title: '工作台',
+    component: './data-development',
+    iconKey: 'insight',
+    menuGroup: 'development',
+    order: 10,
+  },
+  {
+    id: 'data-development-instances',
+    mode: 'any',
+    permissions: DATA_DEVELOPMENT_READ_PERMISSIONS,
+    path: '/data-development/instances',
+    title: '运行实例',
+    component: './data-development/instances',
+    iconKey: 'instance',
+    menuGroup: 'development',
+    order: 20,
+  },
+  {
+    id: 'data-development-udf',
+    mode: 'any',
+    permissions: DATA_DEVELOPMENT_READ_PERMISSIONS,
+    path: '/data-development/udf',
+    title: 'UDF 函数',
+    component: './data-development/udf',
+    iconKey: 'api',
+    menuGroup: 'development',
+    order: 30,
+  },
+  {
+    id: 'data-development-legacy',
     path: '/data-development',
     title: '数据开发',
-    component: './data-development',
-    iconKey: 'api',
-    menuGroup: 'integration',
-    order: 30,
+    component: './data-development/redirect',
+    hidden: true,
+    parentId: 'data-development-workbench',
   },
 
   // ---------------------------------------------------------------------------
@@ -254,7 +313,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'workflow-project',
   },
-
   {
     id: 'workflow-management',
     mode: 'one',
@@ -265,7 +323,10 @@ export const appRoutes: readonly NavigationRoute[] = [
     iconKey: 'workflow',
     menuGroup: 'workflow',
     order: 20,
-    quickCreateRequirement: { mode: 'one', permission: 'workflow:definition:create' },
+    quickCreateRequirement: {
+      mode: 'one',
+      permission: 'workflow:definition:create',
+    },
     quickCreateLabel: '新建工作流',
   },
   {
@@ -284,7 +345,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'workflow-management',
   },
-
   {
     id: 'workflow-instance',
     mode: 'one',
@@ -349,7 +409,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'client',
   },
-
   {
     id: 'connector',
     mode: 'one',
@@ -393,7 +452,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'data-quality',
   },
-
   {
     id: 'data-quality-report',
     mode: 'one',
@@ -437,7 +495,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'metrics',
   },
-
   {
     id: 'alarm',
     mode: 'one',
@@ -584,31 +641,45 @@ export const canAccessNavigationRoute = (
 
   while (candidate && !visited.has(candidate.id)) {
     visited.add(candidate.id);
-    if (candidate.mode && !satisfiesPermissionRequirement(permissionCodes, candidate as PermissionRequirement)) {
+    if (
+      candidate.mode &&
+      !satisfiesPermissionRequirement(
+        permissionCodes,
+        candidate as PermissionRequirement,
+      )
+    ) {
       return false;
     }
-    candidate = candidate.parentId ? routeMap.get(candidate.parentId) : undefined;
+    candidate = candidate.parentId
+      ? routeMap.get(candidate.parentId)
+      : undefined;
   }
 
   return true;
 };
 
-const normalizePath = (path: string) => path.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
+const normalizePath = (path: string) =>
+  path.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
 
 const matchesRoute = (pattern: string, pathname: string) => {
   const patternParts = normalizePath(pattern).split('/').filter(Boolean);
-
   const pathParts = normalizePath(pathname).split('/').filter(Boolean);
 
   return (
     patternParts.length === pathParts.length &&
-    patternParts.every((part, index) => part.startsWith(':') || part === pathParts[index])
+    patternParts.every(
+      (part, index) => part.startsWith(':') || part === pathParts[index],
+    )
   );
 };
 
-export const getRouteMetadata = (pathname: string) => appRoutes.find((route) => matchesRoute(route.path, pathname));
+export const getRouteMetadata = (pathname: string) =>
+  appRoutes.find((route) => matchesRoute(route.path, pathname));
 
-export const getActiveNavigationId = (pathname: string, permissionCodes?: readonly string[] | null) => {
+export const getActiveNavigationId = (
+  pathname: string,
+  permissionCodes?: readonly string[] | null,
+) => {
   const route = getRouteMetadata(pathname);
 
   if (!route || !canAccessNavigationRoute(route, permissionCodes)) {
@@ -618,7 +689,10 @@ export const getActiveNavigationId = (pathname: string, permissionCodes?: readon
   return route.parentId ?? route.id;
 };
 
-export const getActiveNavigationGroupId = (pathname: string, permissionCodes?: readonly string[] | null) => {
+export const getActiveNavigationGroupId = (
+  pathname: string,
+  permissionCodes?: readonly string[] | null,
+) => {
   const activeId = getActiveNavigationId(pathname, permissionCodes);
 
   return activeId ? routeMap.get(activeId)?.menuGroup : undefined;
@@ -627,22 +701,34 @@ export const getActiveNavigationGroupId = (pathname: string, permissionCodes?: r
 /**
  * 首页等独立一级菜单。
  */
-export const getStandaloneNavigationRoutes = (permissionCodes?: readonly string[] | null) =>
+export const getStandaloneNavigationRoutes = (
+  permissionCodes?: readonly string[] | null,
+) =>
   appRoutes
-    .filter((route) => !route.hidden && !route.menuGroup && canAccessNavigationRoute(route, permissionCodes))
+    .filter(
+      (route) =>
+        !route.hidden &&
+        !route.menuGroup &&
+        canAccessNavigationRoute(route, permissionCodes),
+    )
     .sort(sortByOrder);
 
 /**
  * 分组菜单。
  */
-export const getMainNavigationGroups = (permissionCodes?: readonly string[] | null): NavigationGroupWithRoutes[] =>
+export const getMainNavigationGroups = (
+  permissionCodes?: readonly string[] | null,
+): NavigationGroupWithRoutes[] =>
   [...navigationGroups]
     .sort(sortByOrder)
     .map((group) => ({
       ...group,
       routes: appRoutes
         .filter(
-          (route) => !route.hidden && route.menuGroup === group.id && canAccessNavigationRoute(route, permissionCodes),
+          (route) =>
+            !route.hidden &&
+            route.menuGroup === group.id &&
+            canAccessNavigationRoute(route, permissionCodes),
         )
         .sort(sortByOrder),
     }))
@@ -651,13 +737,18 @@ export const getMainNavigationGroups = (permissionCodes?: readonly string[] | nu
 /**
  * 快速创建下拉菜单。
  */
-export const getQuickCreateRoutes = (permissionCodes?: readonly string[] | null) =>
+export const getQuickCreateRoutes = (
+  permissionCodes?: readonly string[] | null,
+) =>
   appRoutes
     .filter(
       (route) =>
         Boolean(route.quickCreateLabel) &&
         canAccessNavigationRoute(route, permissionCodes) &&
         (!route.quickCreateRequirement ||
-          satisfiesPermissionRequirement(permissionCodes, route.quickCreateRequirement)),
+          satisfiesPermissionRequirement(
+            permissionCodes,
+            route.quickCreateRequirement,
+          )),
     )
     .sort(sortByOrder);
