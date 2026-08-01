@@ -9,6 +9,7 @@ import {
   Space,
   Spin,
   Tag,
+  theme,
 } from 'antd';
 import dayjs from 'dayjs';
 import {
@@ -23,10 +24,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { API_SUCCESS_CODE } from '@/services/http/response';
 
-import {
-  fetchResourceContent,
-  updateResourceContent,
-} from '../service';
+import { fetchResourceContent, updateResourceContent } from '../service';
 import type { ResourceContent, ResourceItem } from '../types';
 import { formatFileSize, isDirectory, isEditableResource } from '../utils';
 
@@ -60,6 +58,7 @@ const ResourceDetailDrawer = ({
   onReplace,
   onSaved,
 }: ResourceDetailDrawerProps) => {
+  const { token } = theme.useToken();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -174,8 +173,18 @@ const ResourceDetailDrawer = ({
     <Drawer
       title={
         <div className="resource-drawer-title">
-          <span className="resource-drawer-title__icon">
-            {isDirectory(resource) ? <Folder size={18} /> : <FileCode2 size={18} />}
+          <span
+            className="resource-drawer-title__icon"
+            style={{
+              color: token.colorPrimary,
+              background: token.colorPrimaryBg,
+            }}
+          >
+            {isDirectory(resource) ? (
+              <Folder size={18} />
+            ) : (
+              <FileCode2 size={18} />
+            )}
           </span>
           <div>
             <strong>{resource?.name || '资源详情'}</strong>
@@ -274,6 +283,7 @@ const ResourceDetailDrawer = ({
                 />
               )}
               <Input.TextArea
+                variant="filled"
                 className="resource-content-editor"
                 value={content}
                 readOnly={!canUpdate}
@@ -281,7 +291,9 @@ const ResourceDetailDrawer = ({
                 onChange={(event) => setContent(event.target.value)}
               />
               <div className="resource-content-footer">
-                <span>{contentResult.lineCount || content.split('\n').length} 行</span>
+                <span>
+                  {contentResult.lineCount || content.split('\n').length} 行
+                </span>
                 <span>{new Blob([content]).size} 字节</span>
               </div>
             </Spin>

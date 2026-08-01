@@ -53,7 +53,11 @@ const CreateDirectoryModal = ({
             { max: 255, message: '文件夹名称不能超过 255 个字符' },
           ]}
         >
-          <Input autoFocus placeholder="例如：同步脚本" />
+          <Input
+            autoFocus
+            variant="filled"
+            placeholder="例如：同步脚本"
+          />
         </Form.Item>
         <Form.Item
           label="描述"
@@ -61,6 +65,7 @@ const CreateDirectoryModal = ({
           rules={[{ max: 512, message: '描述不能超过 512 个字符' }]}
         >
           <Input.TextArea
+            variant="filled"
             rows={3}
             showCount
             maxLength={512}

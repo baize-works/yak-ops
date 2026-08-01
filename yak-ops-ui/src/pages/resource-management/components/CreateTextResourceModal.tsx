@@ -65,10 +65,14 @@ const CreateTextResourceModal = ({
               { max: 255, message: '文件名称不能超过 255 个字符' },
             ]}
           >
-            <Input autoFocus placeholder="例如：job-config.yaml" />
+            <Input
+              autoFocus
+              variant="filled"
+              placeholder="例如：job-config.yaml"
+            />
           </Form.Item>
           <Form.Item label="内容类型" name="contentType">
-            <Select options={CONTENT_TYPES} />
+            <Select variant="filled" options={CONTENT_TYPES} />
           </Form.Item>
         </div>
         <Form.Item
@@ -77,6 +81,7 @@ const CreateTextResourceModal = ({
           rules={[{ required: true, message: '请输入文件内容' }]}
         >
           <Input.TextArea
+            variant="filled"
             className="resource-code-textarea"
             rows={14}
             placeholder="在这里输入文本内容"
@@ -88,6 +93,7 @@ const CreateTextResourceModal = ({
           rules={[{ max: 512, message: '描述不能超过 512 个字符' }]}
         >
           <Input.TextArea
+            variant="filled"
             rows={2}
             showCount
             maxLength={512}
