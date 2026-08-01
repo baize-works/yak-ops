@@ -15,10 +15,10 @@ class LinkUpJobSpecFactoryTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void shouldBuildJdbcJobSpecWithoutHocon() throws Exception {
+  void shouldPersistLogicalJdbcJobSpecAndResolveCredentialsAtExecution() throws Exception {
     DataSourceDao dao = mock(DataSourceDao.class);
-    when(dao.selectById(1L)).thenReturn(dataSource(1L, "source"));
-    when(dao.selectById(2L)).thenReturn(dataSource(2L, "sink"));
+    when(dao.selectById(1L)).thenReturn(dataSource(1L, "source", "source-secret"));
+    when(dao.selectById(2L)).thenReturn(dataSource(2L, "sink", "sink-secret"));
 
     JsonNode definition = mapper.readTree("""
         {
@@ -32,12 +32,17 @@ class LinkUpJobSpecFactoryTest {
           "workflow": {
             "nodes": [
               {"data": {"nodeType": "source", "config": {
+                "connectorType": "MYSQL",
                 "dataSourceId": 1,
                 "table": "sales.orders",
                 "fetchSize": 500,
-                "connectorOptions": {"partition_column": "id"}
+                "connectorOptions": {
+                  "password": "must-not-persist",
+                  "partition_column": "id"
+                }
               }}},
               {"data": {"nodeType": "sink", "config": {
+                "connectorType": "Jdbc",
                 "dataSourceId": 2,
                 "targetTableName": "warehouse.orders",
                 "writeMode": "upsert",
@@ -50,19 +55,30 @@ class LinkUpJobSpecFactoryTest {
         }
         """);
 
-    LinkUpJobSpecFactory.BuildResult result =
-        new LinkUpJobSpecFactory(dao, mapper).build(definition);
+    LinkUpJobSpecFactory factory = new LinkUpJobSpecFactory(dao, mapper);
+    LinkUpJobSpecFactory.BuildResult result = factory.build(definition);
+    JsonNode logical = result.getJobSpec();
 
-    JsonNode spec = result.getJobSpec();
-    assertThat(spec.path("apiVersion").asText()).isEqualTo("link-up/v1");
-    assertThat(spec.path("source").path("connectorId").asText()).isEqualTo("jdbc");
-    assertThat(spec.path("source").path("options").path("table_path").asText())
+    assertThat(logical.path("source").path("connectorId").asText()).isEqualTo("jdbc");
+    assertThat(logical.path("source").path("dataSourceRef").path("id").asLong()).isEqualTo(1L);
+    assertThat(logical.path("sink").path("dataSourceRef").path("id").asLong()).isEqualTo(2L);
+    assertThat(logical.path("source").path("options").path("table_path").asText())
         .isEqualTo("sales.orders");
-    assertThat(spec.path("source").path("options").path("partition_column").asText())
+    assertThat(logical.path("source").path("options").path("partition_column").asText())
         .isEqualTo("id");
-    assertThat(spec.path("sink").path("options").path("primary_keys").size()).isEqualTo(2);
-    assertThat(spec.path("runtime").path("sourceParallelism").asInt()).isEqualTo(2);
-    assertThat(result.getJobSpecJson()).doesNotContain("job.name", "source {");
+    assertThat(logical.path("sink").path("options").path("primary_keys").size()).isEqualTo(2);
+    assertThat(logical.path("runtime").path("sourceParallelism").asInt()).isEqualTo(2);
+    assertThat(result.getJobSpecJson()).doesNotContain(
+        "source-secret", "sink-secret", "must-not-persist", "jdbc:mysql");
+
+    JsonNode resolved = factory.resolveForExecution(logical);
+    assertThat(resolved.path("source").has("dataSourceRef")).isFalse();
+    assertThat(resolved.path("source").path("options").path("password").asText())
+        .isEqualTo("source-secret");
+    assertThat(resolved.path("sink").path("options").path("password").asText())
+        .isEqualTo("sink-secret");
+    assertThat(resolved.path("source").path("options").path("url").asText())
+        .startsWith("jdbc:mysql:");
   }
 
   @Test
@@ -86,22 +102,23 @@ class LinkUpJobSpecFactoryTest {
         }
         """);
 
-    JsonNode spec = new LinkUpJobSpecFactory(dao, mapper).build(definition).getJobSpec();
+    LinkUpJobSpecFactory factory = new LinkUpJobSpecFactory(dao, mapper);
+    JsonNode logical = factory.build(definition).getJobSpec();
+    JsonNode resolved = factory.resolveForExecution(logical);
 
-    assertThat(spec.path("source").path("connectorId").asText()).isEqualTo("http");
-    assertThat(spec.path("source").path("options").path("method").asText()).isEqualTo("GET");
-    assertThat(spec.path("sink").path("connectorId").asText()).isEqualTo("file");
-    assertThat(spec.path("sink").path("options").path("path").asText())
-        .isEqualTo("/data/result.json");
+    assertThat(logical.path("source").path("connectorId").asText()).isEqualTo("http");
+    assertThat(logical.path("source").path("options").path("method").asText()).isEqualTo("GET");
+    assertThat(logical.path("sink").path("connectorId").asText()).isEqualTo("file");
+    assertThat(resolved).isEqualTo(logical);
   }
 
-  private DataSourcePO dataSource(Long id, String name) {
+  private DataSourcePO dataSource(Long id, String name, String password) {
     DataSourcePO value = new DataSourcePO();
     value.setId(id);
     value.setName(name);
     value.setJdbcUrl("jdbc:mysql://127.0.0.1:3306/demo");
     value.setConnectionParams("{\"driver\":\"com.mysql.cj.jdbc.Driver\","
-        + "\"username\":\"root\",\"password\":\"secret\"}");
+        + "\"username\":\"root\",\"password\":\"" + password + "\"}");
     return value;
   }
 }

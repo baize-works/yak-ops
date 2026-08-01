@@ -9,30 +9,41 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-/** 为动态表单提供表、字段、预览和 SQL 等受控 Action。 */
+/** 为动态表单提供 Schema 声明过的只读表和字段发现 Action。 */
 @ConditionalOnOfflineSyncEnabled
 @Service
 public class ConnectorFormActionService {
 
+  private static final Set<String> SAFE_ACTIONS = Set.of("LIST_TABLES", "LIST_COLUMNS");
+
   private final ObjectProvider<DataSourceCatalogService> catalogServiceProvider;
+  private final ConnectorFormSchemaService schemaService;
 
   public ConnectorFormActionService(
-      ObjectProvider<DataSourceCatalogService> catalogServiceProvider) {
+      ObjectProvider<DataSourceCatalogService> catalogServiceProvider,
+      ConnectorFormSchemaService schemaService) {
     this.catalogServiceProvider = catalogServiceProvider;
+    this.schemaService = schemaService;
   }
 
   public ActionResult execute(String action, ActionRequest request) {
-    String normalized = action == null ? "" : action.trim().toUpperCase(Locale.ROOT);
+    String normalized = normalize(action);
+    if (!SAFE_ACTIONS.contains(normalized)) {
+      throw new IllegalArgumentException("动态表单仅允许只读元数据 Action：" + action);
+    }
+    validateSchemaContract(normalized, request);
+
     DataSourceCatalogService catalogService = catalogServiceProvider.getIfAvailable();
     if (catalogService == null) {
       throw new IllegalStateException("数据源 Catalog 服务未启用");
     }
     Long dataSourceId = requireDataSourceId(request);
-    Map<String, Object> values = request == null || request.getValues() == null
-        ? new LinkedHashMap<>() : new LinkedHashMap<>(request.getValues());
+    Map<String, Object> values = allowedRequestValues(request);
 
     return switch (normalized) {
       case "LIST_TABLES" -> filterOptions(
@@ -42,16 +53,60 @@ public class ConnectorFormActionService {
       case "LIST_COLUMNS" -> filterOptions(
           columnOptions(catalogService.listColumn(dataSourceId, values)),
           request.getKeyword());
-      case "PREVIEW" -> ActionResult.data(catalogService.preview(dataSourceId, values));
-      case "COUNT" -> ActionResult.data(catalogService.count(dataSourceId, values));
-      case "SQL_TEMPLATE" -> ActionResult.data(catalogService.buildSqlTemplate(dataSourceId, values));
-      case "RESOLVE_SQL" -> ActionResult.data(catalogService.resolveSql(dataSourceId, values));
       default -> throw new IllegalArgumentException("不支持的 Connector Form Action：" + action);
     };
   }
 
+  private void validateSchemaContract(String action, ActionRequest request) {
+    if (request == null
+        || !StringUtils.hasText(request.getConnectorId())
+        || !StringUtils.hasText(request.getRole())
+        || !StringUtils.hasText(request.getFieldKey())) {
+      throw new IllegalArgumentException("connectorId、role 和 fieldKey 不能为空");
+    }
+    ConnectorFormSchema schema = schemaService.get(
+        request.getConnectorId().trim(),
+        request.getRole().trim());
+    ConnectorFormSchema.Field field = schema.getFields().stream()
+        .filter(item -> request.getFieldKey().trim().equals(item.getKey()))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException(
+            "Form Schema 中不存在字段：" + request.getFieldKey()));
+    ConnectorFormSchema.OptionSource optionSource = field.getOptionSource();
+    if (optionSource == null || !action.equals(normalize(optionSource.getAction()))) {
+      throw new IllegalArgumentException(
+          "字段 " + field.getKey() + " 未声明 Action " + action);
+    }
+  }
+
+  private Map<String, Object> allowedRequestValues(ActionRequest request) {
+    ConnectorFormSchema schema = schemaService.get(
+        request.getConnectorId().trim(),
+        request.getRole().trim());
+    ConnectorFormSchema.Field field = schema.getFields().stream()
+        .filter(item -> request.getFieldKey().trim().equals(item.getKey()))
+        .findFirst()
+        .orElseThrow();
+    List<String> allowed = field.getOptionSource() == null
+        ? List.of()
+        : field.getOptionSource().getRequestValueKeys();
+    Map<String, Object> source = request.getValues() == null
+        ? Map.of()
+        : request.getValues();
+    if (allowed == null || allowed.isEmpty()) {
+      return new LinkedHashMap<>(source);
+    }
+    Map<String, Object> result = new LinkedHashMap<>();
+    for (String key : allowed) {
+      if (source.containsKey(key)) {
+        result.put(key, source.get(key));
+      }
+    }
+    return result;
+  }
+
   private ActionResult filterOptions(ActionResult result, String keyword) {
-    if (keyword == null || keyword.isBlank()) {
+    if (!StringUtils.hasText(keyword)) {
       return result;
     }
     String normalized = keyword.trim().toLowerCase(Locale.ROOT);
@@ -101,6 +156,10 @@ public class ConnectorFormActionService {
       throw new IllegalArgumentException("dataSourceId 不能为空");
     }
     return request.getDataSourceId();
+  }
+
+  private String normalize(String value) {
+    return value == null ? "" : value.trim().toUpperCase(Locale.ROOT).replace('-', '_');
   }
 
   public static class ActionRequest {

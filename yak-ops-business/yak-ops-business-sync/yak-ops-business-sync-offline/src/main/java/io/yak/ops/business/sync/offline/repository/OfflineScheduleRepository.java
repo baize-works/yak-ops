@@ -35,10 +35,8 @@ public class OfflineScheduleRepository {
     boolean enabled = StringUtils.hasText(cronExpression)
         && !"pause".equalsIgnoreCase(runType)
         && !"paused".equalsIgnoreCase(runType);
-    int maxAttempts = nestedInt(schedule, "retryPolicy", "maxAttempts",
-        intValue(schedule, "retryTimes", 1));
-    int backoffSeconds = nestedInt(schedule, "retryPolicy", "backoffSeconds",
-        intValue(schedule, "retryIntervalSeconds", 30));
+    int maxAttempts = maxAttempts(schedule);
+    int backoffSeconds = backoffSeconds(schedule);
     LocalDateTime nextFireTime = enabled ? next(cronExpression, LocalDateTime.now()) : null;
     String scheduleJson = schedule == null || schedule.isNull() ? null : write(schedule);
 
@@ -114,6 +112,38 @@ public class OfflineScheduleRepository {
         timestamp(schedule.getNextFireTime())) > 0;
   }
 
+  private int maxAttempts(JsonNode schedule) {
+    if (schedule == null || schedule.isNull()) {
+      return 1;
+    }
+    if (!schedule.path("autoRetry").asBoolean(true)) {
+      return 1;
+    }
+    JsonNode configured = schedule.path("retryPolicy").path("maxAttempts");
+    if (configured.canConvertToInt() && configured.asInt() > 0) {
+      return configured.asInt();
+    }
+    // retryTimes is the number of retries after the first attempt.
+    return Math.max(1, intValue(schedule, "retryTimes", 0) + 1);
+  }
+
+  private int backoffSeconds(JsonNode schedule) {
+    if (schedule == null || schedule.isNull()) {
+      return 30;
+    }
+    JsonNode configured = schedule.path("retryPolicy").path("backoffSeconds");
+    if (configured.canConvertToInt() && configured.asInt() > 0) {
+      return configured.asInt();
+    }
+    JsonNode seconds = schedule.path("retryIntervalSeconds");
+    if (seconds.canConvertToInt() && seconds.asInt() > 0) {
+      return seconds.asInt();
+    }
+    // The existing editor exposes retryInterval in minutes.
+    int minutes = intValue(schedule, "retryInterval", 1);
+    return Math.max(1, minutes) * 60;
+  }
+
   private String selectSql() {
     return "SELECT job_definition_id, cron_expression, enabled, retry_max_attempts, "
         + "retry_backoff_seconds, next_fire_time, last_fire_time, schedule_json "
@@ -150,11 +180,8 @@ public class OfflineScheduleRepository {
 
   private int intValue(JsonNode node, String field, int fallback) {
     return node == null || !node.path(field).canConvertToInt()
-        ? fallback : node.path(field).asInt(fallback);
-  }
-
-  private int nestedInt(JsonNode node, String objectField, String field, int fallback) {
-    return node == null ? fallback : intValue(node.path(objectField), field, fallback);
+        ? fallback
+        : node.path(field).asInt(fallback);
   }
 
   private LocalDateTime next(String cron, LocalDateTime after) {
@@ -186,9 +213,15 @@ public class OfflineScheduleRepository {
     private final LocalDateTime lastFireTime;
     private final String scheduleJson;
 
-    public ScheduleRecord(Long jobDefinitionId, String cronExpression, boolean enabled,
-        int retryMaxAttempts, int retryBackoffSeconds, LocalDateTime nextFireTime,
-        LocalDateTime lastFireTime, String scheduleJson) {
+    public ScheduleRecord(
+        Long jobDefinitionId,
+        String cronExpression,
+        boolean enabled,
+        int retryMaxAttempts,
+        int retryBackoffSeconds,
+        LocalDateTime nextFireTime,
+        LocalDateTime lastFireTime,
+        String scheduleJson) {
       this.jobDefinitionId = jobDefinitionId;
       this.cronExpression = cronExpression;
       this.enabled = enabled;

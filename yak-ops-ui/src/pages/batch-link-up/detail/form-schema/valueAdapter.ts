@@ -3,6 +3,7 @@ import type { ConnectorFormValues, ConnectorRole } from './types';
 const RELATIONAL_TYPES = new Set([
   'MYSQL',
   'MARIADB',
+  'POSTGRE_SQL',
   'POSTGRESQL',
   'POSTGRES',
   'ORACLE',
@@ -13,11 +14,14 @@ const RELATIONAL_TYPES = new Set([
   'CLICKHOUSE',
   'DB2',
   'HIVE',
+  'KINGBASE',
+  'DAMENG',
+  'DM',
   'JDBC',
 ]);
 
 export const connectorIdForDataSourceType = (value?: string): string => {
-  const normalized = (value || '').trim().toUpperCase();
+  const normalized = (value || '').trim().toUpperCase().replace(/-/g, '_');
   if (!normalized) return '';
   return RELATIONAL_TYPES.has(normalized) ? 'jdbc' : normalized.toLowerCase();
 };

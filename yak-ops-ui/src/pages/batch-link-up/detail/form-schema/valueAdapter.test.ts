@@ -7,6 +7,9 @@ import {
 test('maps relational datasource types to jdbc schema', () => {
   expect(connectorIdForDataSourceType('MYSQL')).toBe('jdbc');
   expect(connectorIdForDataSourceType('DORIS')).toBe('jdbc');
+  expect(connectorIdForDataSourceType('POSTGRE_SQL')).toBe('jdbc');
+  expect(connectorIdForDataSourceType('KINGBASE')).toBe('jdbc');
+  expect(connectorIdForDataSourceType('DAMENG')).toBe('jdbc');
   expect(connectorIdForDataSourceType('HTTP')).toBe('http');
 });
 

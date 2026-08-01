@@ -89,21 +89,19 @@ export interface OfflineBatchOperationResult {
 export const apiPrefix = '/api/v1/job/batch-definition';
 
 export const linkupJobDefinitionApi = {
-  /** SCRIPT 模式保存/更新。 */
-  saveOrUpdateScript: (
+  /** 创建尚未配置数据源和表的草稿任务。 */
+  createDraft: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<string | number>> => {
-    return HttpUtils.post(`${apiPrefix}/script/saveOrUpdate`, data);
+    return HttpUtils.post(`${apiPrefix}/draft`, data);
   },
 
-  /** GUIDE_SINGLE 模式保存/更新。 */
   saveOrUpdateGuideSingle: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<string | number>> => {
     return HttpUtils.post(`${apiPrefix}/guide-single/saveOrUpdate`, data);
   },
 
-  /** GUIDE_MULTI 模式保存/更新。 */
   saveOrUpdateGuideMulti: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<string | number>> => {
@@ -116,7 +114,6 @@ export const linkupJobDefinitionApi = {
     return HttpUtils.get(`${apiPrefix}/${id}`);
   },
 
-  /** 编辑页详情查询。 */
   selectEditDetail: (
     id: string | number,
   ): Promise<ApiResponse<Record<string, unknown>>> => {
@@ -131,14 +128,12 @@ export const linkupJobDefinitionApi = {
     return HttpUtils.delete(`${apiPrefix}/${id}`);
   },
 
-  /** 任务上线。 */
   online: (
     id: string | number,
   ): Promise<ApiResponse<boolean>> => {
     return HttpUtils.put(`${apiPrefix}/${id}/online`);
   },
 
-  /** 任务下线。 */
   offline: (
     id: string | number,
   ): Promise<ApiResponse<boolean>> => {
@@ -151,31 +146,22 @@ export const linkupJobDefinitionApi = {
     return HttpUtils.post(`${apiPrefix}/page`, data);
   },
 
-  /** GUIDE_SINGLE 模式预览 HOCON。 */
   buildGuideSingleConfig: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<string>> => {
     return HttpUtils.post(`${apiPrefix}/guide-single/build-config`, data);
   },
 
-  /** GUIDE_MULTI 模式预览 HOCON。 */
   buildGuideMultiConfig: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<string>> => {
     return HttpUtils.post(`${apiPrefix}/guide-multi/build-config`, data);
   },
 
-  /** SCRIPT 模式预览 HOCON。 */
-  buildScriptConfig: (
+  buildJobSpec: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<string>> => {
-    return HttpUtils.post(`${apiPrefix}/script/build-config`, data);
-  },
-
-  hocon: (
-    data: Record<string, unknown>,
-  ): Promise<ApiResponse<string>> => {
-    return HttpUtils.post(`${apiPrefix}/buildHoconConfig`, data);
+    return HttpUtils.post(`${apiPrefix}/build-job-spec`, data);
   },
 };
 
@@ -190,17 +176,13 @@ export const linkupJobExecuteApi = {
   execute: (
     jobDefineId: string | number,
   ): Promise<ApiResponse<OfflineJobExecutionVO>> => {
-    return HttpUtils.get(
-      `${executeApiPrefix}/execute?jobDefineId=${encodeURIComponent(jobDefineId)}`,
-    );
+    return HttpUtils.post(`${executeApiPrefix}/${encodeURIComponent(jobDefineId)}/execute`, {});
   },
 
   pause: (
     jobInstanceId: string | number,
   ): Promise<ApiResponse<OfflineJobExecutionVO>> => {
-    return HttpUtils.get(
-      `${executeApiPrefix}/pause?jobInstanceId=${encodeURIComponent(jobInstanceId)}`,
-    );
+    return HttpUtils.post(`${executeApiPrefix}/${encodeURIComponent(jobInstanceId)}/cancel`, {});
   },
 };
 

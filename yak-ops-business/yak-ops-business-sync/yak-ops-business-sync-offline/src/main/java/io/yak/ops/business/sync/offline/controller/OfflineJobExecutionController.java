@@ -40,23 +40,13 @@ public class OfflineJobExecutionController {
     return Result.success(linkUpClient.node());
   }
 
-  @GetMapping({"/api/v1/job/batch-execution/execute", "/api/v1/executor/execute"})
-  public Result<OfflineJobExecutionVO> execute(@RequestParam Long jobDefineId) {
-    return Result.success(service.execute(jobDefineId));
-  }
-
   @PostMapping("/api/v1/job/batch-execution/{jobDefineId}/execute")
-  public Result<OfflineJobExecutionVO> executeByPath(@PathVariable Long jobDefineId) {
+  public Result<OfflineJobExecutionVO> execute(@PathVariable Long jobDefineId) {
     return Result.success(service.execute(jobDefineId));
-  }
-
-  @GetMapping({"/api/v1/job/batch-execution/pause", "/api/v1/executor/pause"})
-  public Result<OfflineJobExecutionVO> pause(@RequestParam Long jobInstanceId) {
-    return Result.success(service.cancel(jobInstanceId));
   }
 
   @PostMapping("/api/v1/job/batch-execution/{jobInstanceId}/cancel")
-  public Result<OfflineJobExecutionVO> cancelByPath(@PathVariable Long jobInstanceId) {
+  public Result<OfflineJobExecutionVO> cancel(@PathVariable Long jobInstanceId) {
     return Result.success(service.cancel(jobInstanceId));
   }
 

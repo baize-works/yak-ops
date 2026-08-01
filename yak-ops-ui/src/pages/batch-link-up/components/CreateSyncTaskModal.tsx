@@ -3,6 +3,7 @@ import {
   DatabaseOutlined,
   TableOutlined,
 } from "@ant-design/icons";
+import { history } from "@umijs/max";
 import {
   Button,
   ConfigProvider,
@@ -41,11 +42,12 @@ import {
   type CreateSyncTaskValues,
   type SyncMode,
 } from "../detail/model";
+import { connectorIdForDataSourceType } from "../detail/form-schema/valueAdapter";
 
 interface CreateSyncTaskDrawerProps {
   open: boolean;
   onCancel: () => void;
-  onCreated: (taskId: string) => void;
+  onCreated: (taskId: string, mode: SyncMode) => void;
 }
 
 interface CreateSyncTaskFormValues extends CreateSyncTaskValues {
@@ -62,6 +64,7 @@ interface ConnectorOption {
 
 interface CreateSyncEndpoint {
   dbType: string;
+  connectorId: string;
   connectorType: string;
   pluginName: string;
 }
@@ -103,10 +106,12 @@ const resolveEndpoint = (
   options: ConnectorOption[]
 ): CreateSyncEndpoint => {
   const option = options.find((item) => item.value === dbType);
+  const connectorId = connectorIdForDataSourceType(dbType);
 
   return {
     dbType,
-    connectorType: option?.connectorType || dbType,
+    connectorId,
+    connectorType: connectorId,
     pluginName: option?.pluginName || dbType,
   };
 };
@@ -130,11 +135,13 @@ const applyConnectorSelection = (
       data: {
         ...(node?.data || {}),
         dbType: endpoint.dbType,
+        connectorId: endpoint.connectorId,
         connectorType: endpoint.connectorType,
         pluginName: endpoint.pluginName,
         config: {
           ...(node?.data?.config || {}),
           dbType: endpoint.dbType,
+          connectorId: endpoint.connectorId,
           connectorType: endpoint.connectorType,
           pluginName: endpoint.pluginName,
         },
@@ -239,7 +246,6 @@ export default function CreateSyncTaskDrawer({
       };
 
       const source = resolveEndpoint(values.sourceDbType, connectorOptions);
-
       const target = resolveEndpoint(values.targetDbType, connectorOptions);
 
       setSubmitting(true);
@@ -264,10 +270,7 @@ export default function CreateSyncTaskDrawer({
         target
       );
 
-      const saveResponse =
-        normalizedValues.mode === "GUIDE_MULTI"
-          ? await linkupJobDefinitionApi.saveOrUpdateGuideMulti(payload)
-          : await linkupJobDefinitionApi.saveOrUpdateGuideSingle(payload);
+      const saveResponse = await linkupJobDefinitionApi.createDraft(payload);
 
       if (!isApiSuccess(saveResponse)) {
         message.error(responseMessage(saveResponse, "创建同步任务失败"));
@@ -275,11 +278,16 @@ export default function CreateSyncTaskDrawer({
       }
 
       const createdId = extractSavedId(saveResponse, taskId);
+      const path =
+        normalizedValues.mode === "GUIDE_MULTI"
+          ? `/sync/batch-link-up/${createdId}/config/multi?scene=edit`
+          : `/sync/batch-link-up/${createdId}/config/single?scene=edit`;
 
       form.resetFields();
       autoJobNameRef.current = "";
-      message.success("同步任务已创建");
-      onCreated(createdId);
+      message.success("任务草稿已创建，请继续配置数据源和同步表");
+      onCreated(createdId, normalizedValues.mode);
+      history.push(path);
     } catch (error: any) {
       if (error?.errorFields) return;
 
@@ -325,7 +333,7 @@ export default function CreateSyncTaskDrawer({
               onClick={handleSubmit}
               className="!h-9 !rounded-lg !px-5 !font-medium !text-white"
             >
-              创建
+              创建并配置
             </Button>
           </div>
         }
@@ -345,21 +353,12 @@ export default function CreateSyncTaskDrawer({
           requiredMark="optional"
         >
           <div className="mb-6">
-            {/* <div className="mb-2 text-[13px] font-medium text-[#344054]">
-              同步链路
-            </div> */}
-
             <div className="grid grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)] items-end gap-3">
               <Form.Item
                 name="sourceDbType"
                 label="来源类型"
                 className="!mb-0"
-                rules={[
-                  {
-                    required: true,
-                    message: "请选择来源类型",
-                  },
-                ]}
+                rules={[{ required: true, message: "请选择来源类型" }]}
               >
                 <Select
                   showSearch
@@ -384,12 +383,7 @@ export default function CreateSyncTaskDrawer({
                 name="targetDbType"
                 label="目标类型"
                 className="!mb-0"
-                rules={[
-                  {
-                    required: true,
-                    message: "请选择目标类型",
-                  },
-                ]}
+                rules={[{ required: true, message: "请选择目标类型" }]}
               >
                 <Select
                   showSearch
@@ -412,14 +406,8 @@ export default function CreateSyncTaskDrawer({
             name="jobName"
             label="任务名称"
             rules={[
-              {
-                required: true,
-                message: "请输入任务名称",
-              },
-              {
-                max: 64,
-                message: "任务名称不能超过 64 个字符",
-              },
+              { required: true, message: "请输入任务名称" },
+              { max: 64, message: "任务名称不能超过 64 个字符" },
             ]}
           >
             <Input
@@ -434,12 +422,7 @@ export default function CreateSyncTaskDrawer({
           <Form.Item
             name="jobDesc"
             label="任务描述"
-            rules={[
-              {
-                max: 200,
-                message: "任务描述不能超过 200 个字符",
-              },
-            ]}
+            rules={[{ max: 200, message: "任务描述不能超过 200 个字符" }]}
           >
             <Input.TextArea
               rows={5}
@@ -453,12 +436,7 @@ export default function CreateSyncTaskDrawer({
           <Form.Item
             name="mode"
             label="同步类型"
-            rules={[
-              {
-                required: true,
-                message: "请选择同步类型",
-              },
-            ]}
+            rules={[{ required: true, message: "请选择同步类型" }]}
           >
             <Radio.Group className="grid w-full grid-cols-2 gap-3">
               {modeOptions.map((option) => (
