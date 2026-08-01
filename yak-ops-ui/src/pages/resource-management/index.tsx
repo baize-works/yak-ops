@@ -1,9 +1,12 @@
+import YakOpsEmpty from '@/components/YakOpsEmpty';
 import { YAK_OPS_PERMISSIONS } from '@/constants/yakOpsPermissions';
 import usePermissionAccess from '@/hooks/usePermissionAccess';
 import { API_SUCCESS_CODE } from '@/services/http/response';
+import { BRAND_COLOR, BRAND_THEME } from '@/styles/brand';
 import {
   Breadcrumb,
   Button,
+  ConfigProvider,
   Dropdown,
   Empty,
   Input,
@@ -555,242 +558,244 @@ const ResourceManagementPage = () => {
   ];
 
   return (
-    <div className="resource-page">
-      <header className="resource-header">
-        <div>
-          <h1>资源管理</h1>
-          <p>统一管理任务脚本、配置文件与运行资源，底层支持 MinIO 和 HDFS。</p>
-        </div>
-        <Space size={10} wrap>
-          {canCreate && (
-            <Button
-              icon={<FolderPlus size={16} />}
-              onClick={() => setDirectoryModalOpen(true)}
-            >
-              新建文件夹
-            </Button>
-          )}
-          {canCreate && (
-            <Button
-              icon={<FilePlus2 size={16} />}
-              onClick={() => setTextModalOpen(true)}
-            >
-              在线创建
-            </Button>
-          )}
-          {canCreate && (
-            <Button
-              type="primary"
-              loading={uploading}
-              icon={<Upload size={16} />}
-              onClick={() => uploadInputRef.current?.click()}
-            >
-              上传文件
-            </Button>
-          )}
-        </Space>
-      </header>
-
-      <section className="resource-overview">
-        <div className="resource-overview-card">
-          <span><Files size={20} /></span>
-          <div><small>文件数量</small><strong>{summary.files}</strong></div>
-        </div>
-        <div className="resource-overview-card">
-          <span><FolderTree size={20} /></span>
-          <div><small>文件夹</small><strong>{summary.directories}</strong></div>
-        </div>
-        <div className="resource-overview-card">
-          <span><HardDrive size={20} /></span>
-          <div><small>资源容量</small><strong>{formatFileSize(summary.totalBytes)}</strong></div>
-        </div>
-        <div className="resource-overview-card resource-overview-card--plugins">
-          <span><Database size={20} /></span>
+    <ConfigProvider theme={BRAND_THEME}>
+      <div className="resource-page">
+        <header className="resource-header">
           <div>
-            <small>存储插件</small>
-            <div className="resource-plugin-list">
-              {storagePlugins.length ? (
-                storagePlugins.map((plugin) => (
-                  <Tag
-                    key={plugin.type}
-                    bordered={false}
-                    className={plugin.active ? 'is-active' : ''}
-                  >
-                    {plugin.name || plugin.type}
-                    {plugin.active ? ' · 当前' : ''}
-                  </Tag>
-                ))
-              ) : (
-                <strong>-</strong>
-              )}
-            </div>
+            <h1>资源管理</h1>
+            <p>统一管理任务脚本、配置文件与运行资源，底层支持 MinIO 和 HDFS。</p>
           </div>
-        </div>
-      </section>
-
-      <section className="resource-workbench">
-        <aside className="resource-tree-panel">
-          <div className="resource-tree-panel__header">
-            <div>
-              <FolderTree size={17} />
-              <strong>目录</strong>
-            </div>
-            <Tooltip title="刷新目录">
+          <Space size={10} wrap>
+            {canCreate && (
               <Button
-                type="text"
-                size="small"
-                disabled={treeLoading}
-                icon={
-                  <RefreshCw
-                    size={15}
-                    className={treeLoading ? 'is-spinning' : ''}
-                  />
-                }
-                onClick={refresh}
-              />
-            </Tooltip>
-          </div>
-          <Spin spinning={treeLoading}>
-            <Tree
-              className="resource-directory-tree"
-              treeData={directoryTree}
-              selectedKeys={[resourceKey(selectedDirectoryId)]}
-              defaultExpandAll
-              blockNode
-              showLine={{ showLeafIcon: false }}
-              onSelect={(keys) => {
-                const selectedKey = keys[0];
-                if (selectedKey === undefined) return;
-                const resource = findResource(resourceTree, String(selectedKey));
-                navigateToDirectory(resource?.id ?? ROOT_RESOURCE_ID);
-              }}
-            />
-          </Spin>
-        </aside>
+                icon={<FolderPlus size={16} />}
+                onClick={() => setDirectoryModalOpen(true)}
+              >
+                新建文件夹
+              </Button>
+            )}
+            {canCreate && (
+              <Button
+                icon={<FilePlus2 size={16} />}
+                onClick={() => setTextModalOpen(true)}
+              >
+                在线创建
+              </Button>
+            )}
+            {canCreate && (
+              <Button
+                type="primary"
+                loading={uploading}
+                icon={<Upload size={16} />}
+                onClick={() => uploadInputRef.current?.click()}
+              >
+                上传文件
+              </Button>
+            )}
+          </Space>
+        </header>
 
-        <main className="resource-list-panel">
-          <div className="resource-list-toolbar">
+        <section className="resource-overview">
+          <div className="resource-overview-card">
+            <span><Files size={20} /></span>
+            <div><small>文件数量</small><strong>{summary.files}</strong></div>
+          </div>
+          <div className="resource-overview-card">
+            <span><FolderTree size={20} /></span>
+            <div><small>文件夹</small><strong>{summary.directories}</strong></div>
+          </div>
+          <div className="resource-overview-card">
+            <span><HardDrive size={20} /></span>
+            <div><small>资源容量</small><strong>{formatFileSize(summary.totalBytes)}</strong></div>
+          </div>
+          <div className="resource-overview-card resource-overview-card--plugins">
+            <span><Database size={20} /></span>
             <div>
-              <Breadcrumb items={breadcrumbItems} />
-              <span className="resource-list-toolbar__count">
-                {resourceList.length} 项
-              </span>
+              <small>存储插件</small>
+              <div className="resource-plugin-list">
+                {storagePlugins.length ? (
+                  storagePlugins.map((plugin) => (
+                    <Tag
+                      key={plugin.type}
+                      bordered={false}
+                      className={plugin.active ? 'is-active' : ''}
+                    >
+                      {plugin.name || plugin.type}
+                      {plugin.active ? ' · 当前' : ''}
+                    </Tag>
+                  ))
+                ) : (
+                  <strong>-</strong>
+                )}
+              </div>
             </div>
-            <Space size={8}>
-              <Input
-                className="resource-search"
-                allowClear
-                prefix={<Search size={15} />}
-                value={keyword}
-                placeholder="搜索当前目录"
-                onChange={(event) => setKeyword(event.target.value)}
-              />
-              <Tooltip title="刷新列表">
+          </div>
+        </section>
+
+        <section className="resource-workbench">
+          <aside className="resource-tree-panel">
+            <div className="resource-tree-panel__header">
+              <div>
+                <FolderTree size={17} />
+                <strong>目录</strong>
+              </div>
+              <Tooltip title="刷新目录">
                 <Button
+                  type="text"
+                  size="small"
+                  disabled={treeLoading}
                   icon={
                     <RefreshCw
                       size={15}
-                      className={listLoading ? 'is-spinning' : ''}
+                      className={treeLoading ? 'is-spinning' : ''}
                     />
                   }
-                  disabled={listLoading}
                   onClick={refresh}
                 />
               </Tooltip>
-            </Space>
-          </div>
+            </div>
+            <Spin spinning={treeLoading}>
+              <Tree
+                className="resource-directory-tree"
+                treeData={directoryTree}
+                selectedKeys={[resourceKey(selectedDirectoryId)]}
+                defaultExpandAll
+                blockNode
+                showLine={{ showLeafIcon: false }}
+                onSelect={(keys) => {
+                  const selectedKey = keys[0];
+                  if (selectedKey === undefined) return;
+                  const resource = findResource(resourceTree, String(selectedKey));
+                  navigateToDirectory(resource?.id ?? ROOT_RESOURCE_ID);
+                }}
+              />
+            </Spin>
+          </aside>
 
-          <Spin spinning={listLoading}>
-            <Table<ResourceItem>
-              className="resource-table"
-              rowKey={(record) => resourceKey(record.id)}
-              columns={columns}
-              dataSource={resourceList}
-              pagination={false}
-              scroll={{ x: 1080 }}
-              locale={{
-                emptyText: (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={
-                      debouncedKeyword
-                        ? '当前目录没有匹配的资源'
-                        : '当前文件夹为空'
+          <main className="resource-list-panel">
+            <div className="resource-list-toolbar">
+              <div>
+                <Breadcrumb items={breadcrumbItems} />
+                <span className="resource-list-toolbar__count">
+                  {resourceList.length} 项
+                </span>
+              </div>
+              <Space size={8}>
+                <Input
+                  className="resource-search"
+                  allowClear
+                  prefix={<Search size={15} />}
+                  value={keyword}
+                  placeholder="搜索当前目录"
+                  onChange={(event) => setKeyword(event.target.value)}
+                />
+                <Tooltip title="刷新列表">
+                  <Button
+                    icon={
+                      <RefreshCw
+                        size={15}
+                        className={listLoading ? 'is-spinning' : ''}
+                      />
                     }
-                  >
-                    {canCreate && !debouncedKeyword && (
-                      <Button
-                        type="primary"
-                        icon={<Upload size={15} />}
-                        onClick={() => uploadInputRef.current?.click()}
-                      >
-                        上传第一个文件
-                      </Button>
-                    )}
-                  </Empty>
-                ),
-              }}
-              onRow={(resource) => ({
-                onDoubleClick: () => openResource(resource),
-              })}
-            />
-          </Spin>
-        </main>
-      </section>
+                    disabled={listLoading}
+                    onClick={refresh}
+                  />
+                </Tooltip>
+              </Space>
+            </div>
 
-      <input
-        ref={uploadInputRef}
-        hidden
-        type="file"
-        onChange={(event) => void handleUpload(event.target.files?.[0])}
-      />
-      <input
-        ref={replaceInputRef}
-        hidden
-        type="file"
-        onChange={(event) => void handleReplaceFile(event.target.files?.[0])}
-      />
+            <Spin spinning={listLoading}>
+              <Table<ResourceItem>
+                className="resource-table"
+                rowKey={(record) => resourceKey(record.id)}
+                columns={columns}
+                dataSource={resourceList}
+                pagination={false}
+                scroll={{ x: 1080 }}
+                locale={{
+                  emptyText: (
+                    <Empty
+                      image={<YakOpsEmpty primaryColor={BRAND_COLOR} />}
+                      description={
+                        debouncedKeyword
+                          ? '当前目录没有匹配的资源'
+                          : '当前文件夹为空'
+                      }
+                    >
+                      {canCreate && !debouncedKeyword && (
+                        <Button
+                          type="primary"
+                          icon={<Upload size={15} />}
+                          onClick={() => uploadInputRef.current?.click()}
+                        >
+                          上传第一个文件
+                        </Button>
+                      )}
+                    </Empty>
+                  ),
+                }}
+                onRow={(resource) => ({
+                  onDoubleClick: () => openResource(resource),
+                })}
+              />
+            </Spin>
+          </main>
+        </section>
 
-      <CreateDirectoryModal
-        open={directoryModalOpen}
-        parentName={selectedDirectoryName}
-        saving={saving}
-        onCancel={() => setDirectoryModalOpen(false)}
-        onSubmit={handleCreateDirectory}
-      />
-      <CreateTextResourceModal
-        open={textModalOpen}
-        parentName={selectedDirectoryName}
-        saving={saving}
-        onCancel={() => setTextModalOpen(false)}
-        onSubmit={handleCreateTextResource}
-      />
-      <ResourceMetadataModal
-        open={Boolean(metadataResource)}
-        resource={metadataResource}
-        saving={saving}
-        onCancel={() => setMetadataResource(undefined)}
-        onSubmit={handleUpdateMetadata}
-      />
-      <MoveResourceModal
-        open={Boolean(movingResource)}
-        resource={movingResource}
-        directories={moveDirectoryTree}
-        saving={saving}
-        onCancel={() => setMovingResource(undefined)}
-        onSubmit={handleMoveResource}
-      />
-      <ResourceDetailDrawer
-        open={Boolean(detailResource)}
-        resource={detailResource}
-        canUpdate={canUpdate}
-        canDownload={canDownload}
-        onClose={() => setDetailResource(undefined)}
-        onDownload={handleDownload}
-        onReplace={requestReplaceFile}
-        onSaved={refresh}
-      />
-    </div>
+        <input
+          ref={uploadInputRef}
+          hidden
+          type="file"
+          onChange={(event) => void handleUpload(event.target.files?.[0])}
+        />
+        <input
+          ref={replaceInputRef}
+          hidden
+          type="file"
+          onChange={(event) => void handleReplaceFile(event.target.files?.[0])}
+        />
+
+        <CreateDirectoryModal
+          open={directoryModalOpen}
+          parentName={selectedDirectoryName}
+          saving={saving}
+          onCancel={() => setDirectoryModalOpen(false)}
+          onSubmit={handleCreateDirectory}
+        />
+        <CreateTextResourceModal
+          open={textModalOpen}
+          parentName={selectedDirectoryName}
+          saving={saving}
+          onCancel={() => setTextModalOpen(false)}
+          onSubmit={handleCreateTextResource}
+        />
+        <ResourceMetadataModal
+          open={Boolean(metadataResource)}
+          resource={metadataResource}
+          saving={saving}
+          onCancel={() => setMetadataResource(undefined)}
+          onSubmit={handleUpdateMetadata}
+        />
+        <MoveResourceModal
+          open={Boolean(movingResource)}
+          resource={movingResource}
+          directories={moveDirectoryTree}
+          saving={saving}
+          onCancel={() => setMovingResource(undefined)}
+          onSubmit={handleMoveResource}
+        />
+        <ResourceDetailDrawer
+          open={Boolean(detailResource)}
+          resource={detailResource}
+          canUpdate={canUpdate}
+          canDownload={canDownload}
+          onClose={() => setDetailResource(undefined)}
+          onDownload={handleDownload}
+          onReplace={requestReplaceFile}
+          onSaved={refresh}
+        />
+      </div>
+    </ConfigProvider>
   );
 };
 
