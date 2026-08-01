@@ -14,7 +14,11 @@ import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-/** 持久化 Cron 计划和重试策略。 */
+/**
+ * 持久化 Cron 计划和重试策略。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 public class OfflineScheduleRepository {

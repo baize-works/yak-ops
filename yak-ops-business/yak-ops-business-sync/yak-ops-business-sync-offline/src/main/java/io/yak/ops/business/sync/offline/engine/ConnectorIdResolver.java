@@ -4,7 +4,13 @@ import java.util.Locale;
 import java.util.Set;
 import org.springframework.util.StringUtils;
 
-/** Normalizes product datasource types and legacy connector labels to Link-Up connector IDs. */
+/**
+ * 数据源类型与 Link-Up Connector 标识转换工具。
+ *
+ * Normalizes product datasource types and legacy connector labels to Link-Up connector IDs.
+ *
+ * @author weifuwan
+ */
 public final class ConnectorIdResolver {
 
   private static final Set<String> JDBC_TYPES = Set.of(

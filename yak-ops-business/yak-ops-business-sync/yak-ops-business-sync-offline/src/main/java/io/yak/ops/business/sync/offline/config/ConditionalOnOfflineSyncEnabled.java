@@ -6,7 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
-/** 仅在离线同步能力开启时注册相关 Bean。 */
+/**
+ * 仅在离线同步能力开启时注册相关 Bean。
+ *
+ * @author weifuwan
+ */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @ConditionalOnProperty(

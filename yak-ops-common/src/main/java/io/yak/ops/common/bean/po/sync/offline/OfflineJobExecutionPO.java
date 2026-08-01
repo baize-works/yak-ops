@@ -7,7 +7,11 @@ import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.ToString;
 
-/** 离线同步执行历史；Yak Ops 以该记录为状态事实来源。 */
+/**
+ * 离线同步执行历史；Yak Ops 以该记录为状态事实来源。
+ *
+ * @author weifuwan
+ */
 @Data
 @TableName("yak_offline_job_execution")
 public class OfflineJobExecutionPO {

@@ -9,7 +9,11 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** 持久化单 Link-Up Worker 的身份和心跳。 */
+/**
+ * 持久化单 Link-Up Worker 的身份和心跳。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 public class OfflineNodeRepository {

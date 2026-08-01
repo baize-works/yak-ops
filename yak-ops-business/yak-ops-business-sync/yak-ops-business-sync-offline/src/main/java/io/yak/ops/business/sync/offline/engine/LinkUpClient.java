@@ -20,7 +20,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** Link-Up 单节点离线 Worker 强类型客户端。 */
+/**
+ * Link-Up 单节点离线 Worker 强类型客户端。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class LinkUpClient {

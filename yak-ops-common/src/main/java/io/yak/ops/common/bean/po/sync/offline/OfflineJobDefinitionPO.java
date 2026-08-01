@@ -9,7 +9,11 @@ import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.ToString;
 
-/** 离线同步任务定义读模型；不可变版本保存在 yak_offline_job_version。 */
+/**
+ * 离线同步任务定义读模型；不可变版本保存在 yak_offline_job_version。
+ *
+ * @author weifuwan
+ */
 @Data
 @TableName("yak_offline_job_definition")
 public class OfflineJobDefinitionPO {

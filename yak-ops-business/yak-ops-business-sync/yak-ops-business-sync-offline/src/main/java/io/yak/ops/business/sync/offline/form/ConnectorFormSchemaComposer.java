@@ -20,7 +20,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** 将 Link-Up Connector Schema 与 Yak Ops Presentation Profile 合成为 Form Schema。 */
+/**
+ * 将 Link-Up Connector Schema 与 Yak Ops Presentation Profile 合成为 Form Schema。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class ConnectorFormSchemaComposer {

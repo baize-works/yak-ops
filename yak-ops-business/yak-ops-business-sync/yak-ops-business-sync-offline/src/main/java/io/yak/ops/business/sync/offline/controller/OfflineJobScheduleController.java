@@ -13,7 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 离线同步调度表达式辅助接口。 */
+/**
+ * 离线同步调度表达式辅助接口。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @RestController
 @RequestMapping("/api/v1/job/schedule")

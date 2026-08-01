@@ -6,7 +6,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** 离线同步批量操作结果。 */
+/**
+ * 离线同步批量操作结果。
+ *
+ * @author weifuwan
+ */
 @Data
 @Builder
 @NoArgsConstructor

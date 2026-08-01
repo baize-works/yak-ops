@@ -16,12 +16,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** 执行历史、指标和日志的数据库读模型。 */
+/**
+ * 执行历史、指标和日志的数据库读模型。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
+@RequiredArgsConstructor
 public class OfflineExecutionReadService {
 
   private static final DateTimeFormatter FORMAT =
@@ -30,15 +36,6 @@ public class OfflineExecutionReadService {
   private final OfflineJobExecutionDao executionDao;
   private final OfflineExecutionControlRepository repository;
   private final LinkUpClient linkUpClient;
-
-  public OfflineExecutionReadService(
-      OfflineJobExecutionDao executionDao,
-      OfflineExecutionControlRepository repository,
-      LinkUpClient linkUpClient) {
-    this.executionDao = executionDao;
-    this.repository = repository;
-    this.linkUpClient = linkUpClient;
-  }
 
   public OfflineJobExecutionPO require(Long id) {
     if (id == null || id <= 0L) {

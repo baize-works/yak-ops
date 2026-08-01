@@ -8,19 +8,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-/** 基于 Form Schema 对任务侧 Connector 参数执行在线校验。 */
+/**
+ * 基于 Form Schema 对任务侧 Connector 参数执行在线校验。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Service
+@RequiredArgsConstructor
 public class ConnectorFormValidationService {
 
   private final ConnectorFormSchemaService schemaService;
   private final ConnectorConditionEvaluator conditionEvaluator = new ConnectorConditionEvaluator();
-
-  public ConnectorFormValidationService(ConnectorFormSchemaService schemaService) {
-    this.schemaService = schemaService;
-  }
 
   public ValidationResult validate(String connectorId, String role, ValidationRequest request) {
     ConnectorFormSchema schema = schemaService.get(connectorId, role);

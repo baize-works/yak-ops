@@ -24,7 +24,11 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 
-/** 离线同步控制面基础设施配置。 */
+/**
+ * 离线同步控制面基础设施配置。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Configuration(proxyBeanMethods = false)
 @EnableScheduling

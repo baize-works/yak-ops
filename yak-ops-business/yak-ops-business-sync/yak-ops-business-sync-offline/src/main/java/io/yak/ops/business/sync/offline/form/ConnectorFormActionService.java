@@ -10,26 +10,25 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-/** 为动态表单提供 Schema 声明过的只读表和字段发现 Action。 */
+/**
+ * 为动态表单提供 Schema 声明过的只读表和字段发现 Action。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Service
+@RequiredArgsConstructor
 public class ConnectorFormActionService {
 
   private static final Set<String> SAFE_ACTIONS = Set.of("LIST_TABLES", "LIST_COLUMNS");
 
   private final ObjectProvider<DataSourceCatalogService> catalogServiceProvider;
   private final ConnectorFormSchemaService schemaService;
-
-  public ConnectorFormActionService(
-      ObjectProvider<DataSourceCatalogService> catalogServiceProvider,
-      ConnectorFormSchemaService schemaService) {
-    this.catalogServiceProvider = catalogServiceProvider;
-    this.schemaService = schemaService;
-  }
 
   public ActionResult execute(String action, ActionRequest request) {
     String normalized = normalize(action);

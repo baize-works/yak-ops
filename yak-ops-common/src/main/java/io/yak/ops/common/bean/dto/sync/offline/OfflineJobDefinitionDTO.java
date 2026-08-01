@@ -8,7 +8,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Data;
 
-/** 离线同步任务定义入参。动态节点配置通过扩展字段原样保留。 */
+/**
+ * 离线同步任务定义入参。动态节点配置通过扩展字段原样保留。
+ *
+ * @author weifuwan
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 public class OfflineJobDefinitionDTO {

@@ -10,15 +10,21 @@ import io.yak.ops.common.bean.po.sync.offline.OfflineJobExecutionPO;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** 后台持续对账 Link-Up 实际状态，页面查询不再触发远程刷新。 */
+/**
+ * 后台持续对账 Link-Up 实际状态，页面查询不再触发远程刷新。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
+@RequiredArgsConstructor
 public class OfflineExecutionReconciler {
 
   private static final Logger LOG = LoggerFactory.getLogger(OfflineExecutionReconciler.class);
@@ -28,19 +34,6 @@ public class OfflineExecutionReconciler {
   private final OfflineJobExecutionService executionService;
   private final LinkUpClient linkUpClient;
   private final OfflineSyncProperties properties;
-
-  public OfflineExecutionReconciler(
-      OfflineExecutionControlRepository repository,
-      OfflineWorkerRegistry workerRegistry,
-      OfflineJobExecutionService executionService,
-      LinkUpClient linkUpClient,
-      OfflineSyncProperties properties) {
-    this.repository = repository;
-    this.workerRegistry = workerRegistry;
-    this.executionService = executionService;
-    this.linkUpClient = linkUpClient;
-    this.properties = properties;
-  }
 
   @Scheduled(
       initialDelayString = "${yak.sync.offline.control.reconcile-delay-millis:5000}",

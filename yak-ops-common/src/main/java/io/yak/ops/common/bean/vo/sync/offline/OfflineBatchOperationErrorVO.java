@@ -5,7 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** 离线同步批量操作失败项。 */
+/**
+ * 离线同步批量操作失败项。
+ *
+ * @author weifuwan
+ */
 @Data
 @Builder
 @NoArgsConstructor

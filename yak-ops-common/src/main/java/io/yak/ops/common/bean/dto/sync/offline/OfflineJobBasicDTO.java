@@ -8,7 +8,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Data;
 
-/** 离线同步任务基础配置。 */
+/**
+ * 离线同步任务基础配置。
+ *
+ * @author weifuwan
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 public class OfflineJobBasicDTO {
