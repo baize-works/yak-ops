@@ -1,6 +1,7 @@
 import {
   endpointNode,
   isApiSuccess,
+  responseMessage,
   type SyncEditorState,
 } from '../model';
 import { connectorFormApi } from './service';
@@ -24,8 +25,12 @@ export default async function validateEditorConnectorForms(
 ): Promise<string[]> {
   const sourceConfig = endpointNode(editor.workflow, 'source')?.data?.config || {};
   const sinkConfig = endpointNode(editor.workflow, 'sink')?.data?.config || {};
-  const sourceConnectorId = connectorIdForDataSourceType(editor.basic.sourceType);
-  const sinkConnectorId = connectorIdForDataSourceType(editor.basic.targetType);
+  const sourceConnectorId = connectorIdForDataSourceType(
+    sourceConfig.connectorId || editor.basic.sourceType,
+  );
+  const sinkConnectorId = connectorIdForDataSourceType(
+    sinkConfig.connectorId || editor.basic.targetType,
+  );
   const channel = editor.workflow.channelConfig || {};
 
   const requests: Promise<any>[] = [];
@@ -58,10 +63,14 @@ export default async function validateEditorConnectorForms(
   try {
     const responses = await Promise.all(requests);
     return responses.flatMap((response) =>
-      isApiSuccess(response) ? resultErrors(response.data) : [],
+      isApiSuccess(response)
+        ? resultErrors(response.data)
+        : [responseMessage(response, 'Connector 配置校验失败')],
     );
-  } catch {
-    // Worker 或 Schema 缓存临时不可用时，保留原有前端校验，不阻断任务保存。
-    return [];
+  } catch (error: any) {
+    return [
+      error?.message ||
+        'Connector 配置校验服务不可用，请检查 Link-Up Worker 和 Schema 缓存后重试',
+    ];
   }
 }
