@@ -2,7 +2,6 @@ package io.yak.ops.business.sync.offline.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.yak.framework.common.PagingData;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
@@ -82,13 +81,9 @@ public class OfflineExecutionReadService {
   public JsonNode tableMetrics(Long id) {
     OfflineJobExecutionPO execution = require(id);
     if (!StringUtils.hasText(execution.getEngineJobId())) {
-      return JsonNodeFactory.instance.arrayNode();
+      throw new IllegalStateException("当前执行实例尚未获得 Link-Up jobId，暂时无法查询表级指标");
     }
-    try {
-      return linkUpClient.pipelines(execution.getEngineJobId());
-    } catch (RuntimeException exception) {
-      return JsonNodeFactory.instance.arrayNode();
-    }
+    return linkUpClient.pipelines(execution.getEngineJobId());
   }
 
   public String logs(Long id) {
@@ -156,8 +151,19 @@ public class OfflineExecutionReadService {
         .build();
   }
 
-  private String format(LocalDateTime value) { return value == null ? null : value.format(FORMAT); }
-  private String text(String value) { return StringUtils.hasText(value) ? value : "-"; }
-  private long value(Long value) { return value == null ? 0L : value; }
-  private int value(Integer value) { return value == null ? 0 : value; }
+  private String format(LocalDateTime value) {
+    return value == null ? null : value.format(FORMAT);
+  }
+
+  private String text(String value) {
+    return StringUtils.hasText(value) ? value : "-";
+  }
+
+  private long value(Long value) {
+    return value == null ? 0L : value;
+  }
+
+  private int value(Integer value) {
+    return value == null ? 0 : value;
+  }
 }
