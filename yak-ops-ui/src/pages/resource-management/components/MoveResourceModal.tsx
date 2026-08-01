@@ -1,13 +1,8 @@
 import { Form, Modal, TreeSelect } from 'antd';
 import { useEffect } from 'react';
 
-import type {
-  DirectoryTreeNode,
-} from '../utils';
-import type {
-  MoveResourceFormValues,
-  ResourceItem,
-} from '../types';
+import type { MoveResourceFormValues, ResourceItem } from '../types';
+import type { DirectoryTreeNode } from '../utils';
 
 interface MoveResourceModalProps {
   open: boolean;
@@ -60,6 +55,7 @@ const MoveResourceModal = ({
           rules={[{ required: true, message: '请选择目标文件夹' }]}
         >
           <TreeSelect
+            variant="filled"
             treeData={directories}
             treeDefaultExpandAll
             showSearch
