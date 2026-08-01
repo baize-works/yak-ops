@@ -93,8 +93,8 @@ public class OfflineJobDefinitionDaoImpl implements OfflineJobDefinitionDao {
 
   private String normalizeStatus(String status) {
     String normalized = status.trim().toUpperCase(Locale.ROOT);
-    return "COMPLETED".equals(normalized) || "SUCCEEDED".equals(normalized)
-        ? "FINISHED"
+    return "COMPLETED".equals(normalized) || "FINISHED".equals(normalized)
+        ? "SUCCEEDED"
         : normalized;
   }
 }
