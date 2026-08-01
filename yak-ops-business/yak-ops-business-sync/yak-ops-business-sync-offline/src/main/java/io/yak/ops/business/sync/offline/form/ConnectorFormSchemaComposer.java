@@ -10,12 +10,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -27,12 +27,14 @@ public class ConnectorFormSchemaComposer {
 
   private final ConnectorPresentationRegistry presentationRegistry;
   private final ObjectMapper objectMapper;
+  private final ConnectorInteractionNormalizer interactionNormalizer;
 
   public ConnectorFormSchemaComposer(
       ConnectorPresentationRegistry presentationRegistry,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
     this.presentationRegistry = presentationRegistry;
     this.objectMapper = objectMapper;
+    this.interactionNormalizer = new ConnectorInteractionNormalizer(objectMapper);
   }
 
   public ConnectorFormSchema compose(ConnectorSchemaSnapshot snapshot) {
@@ -51,6 +53,7 @@ public class ConnectorFormSchemaComposer {
     result.setStale(snapshot.isStale());
     result.setSyncedAt(snapshot.getSyncedAt());
     result.setRules(schema.path("rules").deepCopy());
+    result.setInteractions(interactionNormalizer.normalize(schema.path("rules")));
     copyStrings(schema.path("capabilities"), result.getCapabilities());
 
     Map<String, ConnectorFormSchema.Group> groups = defaultGroups();
@@ -79,7 +82,8 @@ public class ConnectorFormSchemaComposer {
 
     if (profile != null) {
       for (String profileKey : profile.getFields().keySet()) {
-        boolean found = result.getFields().stream().anyMatch(field -> profileKey.equals(field.getKey()));
+        boolean found = result.getFields().stream()
+            .anyMatch(field -> profileKey.equals(field.getKey()));
         if (!found) {
           result.getWarnings().add("Presentation Profile 字段在 Link-Up Schema 中不存在：" + profileKey);
         }
@@ -123,8 +127,10 @@ public class ConnectorFormSchemaComposer {
     field.setPlaceholder(profile == null ? null : profile.getPlaceholder());
     field.setValueType(valueType);
     field.setJavaType(option.path("javaType").asText(null));
-    field.setElementType(option.path("elementType").asText(null));
-    field.setDefaultValue(hasDefault ? objectMapper.convertValue(option.get("defaultValue"), Object.class) : null);
+    field.setElementType(option.path("elementType")
+        .asText(option.path("elementJavaType").asText(null)));
+    field.setDefaultValue(hasDefault
+        ? objectMapper.convertValue(option.get("defaultValue"), Object.class) : null);
     copyObjects(option.path("allowedValues"), field.getAllowedValues());
     copyStrings(option.path("fallbackKeys"), field.getFallbackKeys());
     field.setRequired(required);
@@ -151,7 +157,49 @@ public class ConnectorFormSchemaComposer {
         ? profile.getValueSource() : inferValueSource(scope));
     field.setReadOnly(profile != null && profile.getReadOnly() != null
         ? profile.getReadOnly() : field.isHidden() || !"USER".equals(field.getValueSource()));
+    field.setDependsOn(profile == null ? inferDependsOn(field.getWidget())
+        : new ArrayList<>(profile.getDependsOn()));
+    field.setClearWhenHidden(profile != null && profile.getClearWhenHidden() != null
+        ? profile.getClearWhenHidden() : false);
+    field.setOptionSource(profile != null && profile.getOptionSource() != null
+        ? optionSource(profile.getOptionSource())
+        : inferOptionSource(field.getWidget(), field.getValueType()));
     return field;
+  }
+
+  private ConnectorFormSchema.OptionSource optionSource(
+      ConnectorPresentationProfile.OptionSourceProfile profile) {
+    ConnectorFormSchema.OptionSource result = new ConnectorFormSchema.OptionSource();
+    result.setAction(profile.getAction());
+    result.setSearchable(profile.isSearchable());
+    result.setMultiple(profile.isMultiple());
+    result.setCacheTtlMillis(profile.getCacheTtlMillis());
+    result.setRequestValueKeys(new ArrayList<>(profile.getRequestValueKeys()));
+    return result;
+  }
+
+  private ConnectorFormSchema.OptionSource inferOptionSource(String widget, String valueType) {
+    String normalized = widget == null ? "" : widget.toLowerCase(Locale.ROOT);
+    if (!List.of("table-picker", "multi-table-picker", "field-selector").contains(normalized)) {
+      return null;
+    }
+    ConnectorFormSchema.OptionSource result = new ConnectorFormSchema.OptionSource();
+    result.setAction("field-selector".equals(normalized) ? "LIST_COLUMNS" : "LIST_TABLES");
+    result.setSearchable(true);
+    result.setMultiple("multi-table-picker".equals(normalized)
+        || ("field-selector".equals(normalized) && "LIST".equalsIgnoreCase(valueType)));
+    result.setCacheTtlMillis(30_000L);
+    if ("field-selector".equals(normalized)) {
+      result.setRequestValueKeys(List.of("table_path", "query"));
+    }
+    return result;
+  }
+
+  private List<String> inferDependsOn(String widget) {
+    if ("field-selector".equalsIgnoreCase(widget)) {
+      return new ArrayList<>(List.of("table_path", "query"));
+    }
+    return new ArrayList<>();
   }
 
   private Map<String, ConnectorFormSchema.Group> defaultGroups() {
@@ -188,7 +236,8 @@ public class ConnectorFormSchemaComposer {
   }
 
   private String inferGroup(String importance, String scope) {
-    if ("DATASOURCE".equals(scope) || "SYSTEM".equals(scope) || "HIDDEN".equals(importance)) {
+    if ("DATASOURCE".equals(scope) || "SYSTEM".equals(scope)
+        || "HIDDEN".equals(importance)) {
       return "hidden";
     }
     if ("PRIMARY".equals(importance)) { return "basic"; }
@@ -203,6 +252,9 @@ public class ConnectorFormSchemaComposer {
     if ("SQL".equals(semanticType)) { return "sql-editor"; }
     if ("TABLE_PATH".equals(semanticType)) { return "table-picker"; }
     if ("TABLE_LIST".equals(semanticType)) { return "multi-table-picker"; }
+    if (List.of("COLUMN_NAME", "FIELD_NAME", "COLUMN_LIST", "PRIMARY_KEY").contains(semanticType)) {
+      return "field-selector";
+    }
     if ("FILE_PATH".equals(semanticType)) { return "file-path"; }
     if (hasChoices || "ENUM".equals(valueType)) { return "select"; }
     if ("BOOLEAN".equals(valueType)) { return "switch"; }
@@ -241,7 +293,9 @@ public class ConnectorFormSchemaComposer {
 
   private void copyObjects(JsonNode source, List<Object> target) {
     if (!source.isArray()) { return; }
-    for (JsonNode value : source) { target.add(objectMapper.convertValue(value, Object.class)); }
+    for (JsonNode value : source) {
+      target.add(objectMapper.convertValue(value, Object.class));
+    }
   }
 
   private String fingerprint(ConnectorFormSchema schema) {
@@ -254,8 +308,10 @@ public class ConnectorFormSchemaComposer {
       canonical.set("capabilities", objectMapper.valueToTree(schema.getCapabilities()));
       canonical.set("groups", objectMapper.valueToTree(schema.getGroups()));
       canonical.set("fields", objectMapper.valueToTree(schema.getFields()));
+      canonical.set("interactions", objectMapper.valueToTree(schema.getInteractions()));
       canonical.set("rules", schema.getRules());
-      byte[] payload = objectMapper.writeValueAsString(canonical).getBytes(StandardCharsets.UTF_8);
+      byte[] payload = objectMapper.writeValueAsString(canonical)
+          .getBytes(StandardCharsets.UTF_8);
       byte[] digest = MessageDigest.getInstance("SHA-256").digest(payload);
       StringBuilder result = new StringBuilder("sha256:");
       for (byte value : digest) { result.append(String.format("%02x", value & 0xff)); }

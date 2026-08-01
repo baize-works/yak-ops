@@ -19,6 +19,7 @@ public class ConnectorFormSchema {
   private List<String> capabilities = new ArrayList<>();
   private List<Group> groups = new ArrayList<>();
   private List<Field> fields = new ArrayList<>();
+  private List<Interaction> interactions = new ArrayList<>();
   private JsonNode rules;
   private List<String> warnings = new ArrayList<>();
 
@@ -46,6 +47,8 @@ public class ConnectorFormSchema {
   public void setGroups(List<Group> groups) { this.groups = groups; }
   public List<Field> getFields() { return fields; }
   public void setFields(List<Field> fields) { this.fields = fields; }
+  public List<Interaction> getInteractions() { return interactions; }
+  public void setInteractions(List<Interaction> interactions) { this.interactions = interactions; }
   public JsonNode getRules() { return rules; }
   public void setRules(JsonNode rules) { this.rules = rules; }
   public List<String> getWarnings() { return warnings; }
@@ -93,6 +96,9 @@ public class ConnectorFormSchema {
     private boolean hidden;
     private boolean readOnly;
     private String valueSource;
+    private List<String> dependsOn = new ArrayList<>();
+    private boolean clearWhenHidden;
+    private OptionSource optionSource;
 
     public String getKey() { return key; }
     public void setKey(String key) { this.key = key; }
@@ -138,5 +144,77 @@ public class ConnectorFormSchema {
     public void setReadOnly(boolean readOnly) { this.readOnly = readOnly; }
     public String getValueSource() { return valueSource; }
     public void setValueSource(String valueSource) { this.valueSource = valueSource; }
+    public List<String> getDependsOn() { return dependsOn; }
+    public void setDependsOn(List<String> dependsOn) { this.dependsOn = dependsOn; }
+    public boolean isClearWhenHidden() { return clearWhenHidden; }
+    public void setClearWhenHidden(boolean clearWhenHidden) { this.clearWhenHidden = clearWhenHidden; }
+    public OptionSource getOptionSource() { return optionSource; }
+    public void setOptionSource(OptionSource optionSource) { this.optionSource = optionSource; }
+  }
+
+  /** 远程下拉、表和字段选择器的数据来源。 */
+  public static class OptionSource {
+    private String action;
+    private boolean searchable;
+    private boolean multiple;
+    private long cacheTtlMillis = 30_000L;
+    private List<String> requestValueKeys = new ArrayList<>();
+
+    public String getAction() { return action; }
+    public void setAction(String action) { this.action = action; }
+    public boolean isSearchable() { return searchable; }
+    public void setSearchable(boolean searchable) { this.searchable = searchable; }
+    public boolean isMultiple() { return multiple; }
+    public void setMultiple(boolean multiple) { this.multiple = multiple; }
+    public long getCacheTtlMillis() { return cacheTtlMillis; }
+    public void setCacheTtlMillis(long cacheTtlMillis) { this.cacheTtlMillis = cacheTtlMillis; }
+    public List<String> getRequestValueKeys() { return requestValueKeys; }
+    public void setRequestValueKeys(List<String> requestValueKeys) { this.requestValueKeys = requestValueKeys; }
+  }
+
+  /** Link-Up 规则归一化后的前端交互。 */
+  public static class Interaction {
+    private String id;
+    private String effect;
+    private List<String> optionKeys = new ArrayList<>();
+    private Condition condition;
+    private String message;
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getEffect() { return effect; }
+    public void setEffect(String effect) { this.effect = effect; }
+    public List<String> getOptionKeys() { return optionKeys; }
+    public void setOptionKeys(List<String> optionKeys) { this.optionKeys = optionKeys; }
+    public Condition getCondition() { return condition; }
+    public void setCondition(Condition condition) { this.condition = condition; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+  }
+
+  /** 跨语言条件表达式，支持链式 AND/OR。 */
+  public static class Condition {
+    private String optionKey;
+    private String operator;
+    private Object expectedValue;
+    private String compareOptionKey;
+    private String extensionDescription;
+    private String logicalOperator;
+    private Condition next;
+
+    public String getOptionKey() { return optionKey; }
+    public void setOptionKey(String optionKey) { this.optionKey = optionKey; }
+    public String getOperator() { return operator; }
+    public void setOperator(String operator) { this.operator = operator; }
+    public Object getExpectedValue() { return expectedValue; }
+    public void setExpectedValue(Object expectedValue) { this.expectedValue = expectedValue; }
+    public String getCompareOptionKey() { return compareOptionKey; }
+    public void setCompareOptionKey(String compareOptionKey) { this.compareOptionKey = compareOptionKey; }
+    public String getExtensionDescription() { return extensionDescription; }
+    public void setExtensionDescription(String extensionDescription) { this.extensionDescription = extensionDescription; }
+    public String getLogicalOperator() { return logicalOperator; }
+    public void setLogicalOperator(String logicalOperator) { this.logicalOperator = logicalOperator; }
+    public Condition getNext() { return next; }
+    public void setNext(Condition next) { this.next = next; }
   }
 }

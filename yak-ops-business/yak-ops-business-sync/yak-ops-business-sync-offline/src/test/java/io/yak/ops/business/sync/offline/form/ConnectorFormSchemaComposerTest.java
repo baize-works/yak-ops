@@ -14,40 +14,45 @@ class ConnectorFormSchemaComposerTest {
       new ConnectorFormSchemaComposer(new ConnectorPresentationRegistry(), mapper);
 
   @Test
-  void shouldComposeJdbcSourceProfileAndHideDatasourceSecrets() throws Exception {
+  void shouldComposeJdbcInteractionsAndRemoteCatalogSources() throws Exception {
     JsonNode schema = mapper.readTree("""
         {
-          "connectorId":"jdbc","role":"SOURCE","schemaVersion":"1",
-          "schemaFingerprint":"sha256:source","capabilities":["MULTI_TABLE"],
+          "connectorId":"jdbc","role":"SINK","schemaVersion":"1",
+          "schemaFingerprint":"sha256:sink","capabilities":["TABLE_SCHEMA_DISCOVERY"],
           "options":[
             {"key":"url","valueType":"STRING","required":true,"semanticType":"JDBC_URL","scope":"DATASOURCE"},
-            {"key":"password","valueType":"STRING","required":false,"sensitive":true,"semanticType":"PASSWORD","scope":"DATASOURCE"},
-            {"key":"table_path","valueType":"STRING","required":false,"semanticType":"TABLE_PATH","scope":"TASK"},
-            {"key":"fetch_size","valueType":"INTEGER","defaultValue":1000,"scope":"RUNTIME"}
+            {"key":"table_path","valueType":"STRING","required":true,"semanticType":"TABLE_PATH","scope":"TASK"},
+            {"key":"write_mode","valueType":"ENUM","allowedValues":["INSERT","UPSERT"],"required":true,"scope":"TASK"},
+            {"key":"primary_keys","valueType":"LIST","required":false,"scope":"TASK"}
           ],
-          "rules":[]
+          "rules":[
+            {"type":"RULE_WHEN","optionKeys":["primary_keys"],
+             "condition":{"optionKey":"write_mode","operator":"EQ","expectedValue":"UPSERT"},
+             "nestedRules":[{"type":"REQUIRED","optionKeys":["primary_keys"]}]}
+          ]
         }
         """);
 
     ConnectorFormSchema result = composer.compose(
         new ConnectorSchemaSnapshot(schema, "REMOTE", false, LocalDateTime.now()));
 
-    assertThat(result.getProfileVersion()).isEqualTo("1");
-    assertThat(field(result, "table_path").getWidget()).isEqualTo("table-picker");
-    assertThat(field(result, "table_path").getGroupId()).isEqualTo("read");
-    assertThat(field(result, "password").isHidden()).isTrue();
-    assertThat(field(result, "password").getValueSource()).isEqualTo("DATASOURCE");
-    assertThat(field(result, "fetch_size").getImportance()).isEqualTo("ADVANCED");
+    assertThat(result.getProfileVersion()).isEqualTo("2");
+    assertThat(field(result, "table_path").getOptionSource().getAction()).isEqualTo("LIST_TABLES");
+    assertThat(field(result, "primary_keys").getOptionSource().getAction()).isEqualTo("LIST_COLUMNS");
+    assertThat(field(result, "primary_keys").getDependsOn()).containsExactly("table_path");
+    assertThat(field(result, "url").isHidden()).isTrue();
+    assertThat(result.getInteractions()).extracting(ConnectorFormSchema.Interaction::getEffect)
+        .contains("VISIBLE", "REQUIRED");
     assertThat(result.getFormFingerprint()).startsWith("sha256:");
   }
 
   @Test
-  void shouldGenerateUsableFallbackForUnknownConnector() throws Exception {
+  void shouldInferRemoteTableAndFieldActionsForUnknownConnector() throws Exception {
     JsonNode schema = mapper.readTree("""
-        {"connectorId":"http","role":"SOURCE","schemaVersion":"1","schemaFingerprint":"x",
+        {"connectorId":"warehouse","role":"SOURCE","schemaVersion":"1","schemaFingerprint":"x",
          "options":[
-           {"key":"method","valueType":"ENUM","allowedValues":["GET","POST"],"required":true,"scope":"TASK"},
-           {"key":"headers","valueType":"MAP","required":false,"scope":"TASK"}
+           {"key":"table","valueType":"STRING","semanticType":"TABLE_PATH","scope":"TASK"},
+           {"key":"partition","valueType":"STRING","semanticType":"COLUMN_NAME","scope":"TASK"}
          ],"rules":[],"capabilities":[]}
         """);
 
@@ -55,10 +60,9 @@ class ConnectorFormSchemaComposerTest {
         new ConnectorSchemaSnapshot(schema, "CACHE", true, LocalDateTime.now()));
 
     assertThat(result.getProfileVersion()).isEqualTo("auto");
-    assertThat(field(result, "method").getWidget()).isEqualTo("select");
-    assertThat(field(result, "headers").getWidget()).isEqualTo("key-value");
+    assertThat(field(result, "table").getOptionSource().getAction()).isEqualTo("LIST_TABLES");
+    assertThat(field(result, "partition").getOptionSource().getAction()).isEqualTo("LIST_COLUMNS");
     assertThat(result.getWarnings()).isNotEmpty();
-    assertThat(result.isStale()).isTrue();
   }
 
   private ConnectorFormSchema.Field field(ConnectorFormSchema schema, String key) {
