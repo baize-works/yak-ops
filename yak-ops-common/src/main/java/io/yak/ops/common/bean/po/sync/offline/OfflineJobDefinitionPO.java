@@ -27,6 +27,13 @@ public class OfflineJobDefinitionPO {
   private String definitionJson;
 
   @ToString.Exclude
+  @TableField(updateStrategy = FieldStrategy.ALWAYS)
+  private String jobSpecJson;
+
+  /** 历史 HOCON 快照，仅用于兼容旧数据，不再生成或提交。 */
+  @Deprecated
+  @ToString.Exclude
+  @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String hoconConfig;
 
   private String releaseState;
