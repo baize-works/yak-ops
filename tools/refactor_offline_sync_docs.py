@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 AUTHOR = "weifuwan"
+MAX_STABILIZE_PASSES = 5
 
 TARGET_ROOTS = (
     Path(
@@ -143,7 +144,6 @@ def annotation_block_start(text: str, declaration_start: int) -> int:
         if line.startswith("@"):
             cursor = previous_start
             continue
-        # 处理多行注解参数：向上查找以 @ 开头的注解首行。
         if line.endswith(")") or line.endswith("}") or line.endswith(","):
             probe = previous_start
             found = None
@@ -173,7 +173,8 @@ def preceding_javadoc(text: str, before: int) -> tuple[int, int] | None:
     match = re.search(r"/\*\*[\s\S]*?\*/[ \t\r\n]*$", prefix)
     if not match:
         return None
-    return match.start(), match.end() - len(match.group(0)) + match.group(0).rfind("*/") + 2
+    end = match.start() + match.group(0).rfind("*/") + 2
+    return match.start(), end
 
 
 def normalize_javadoc(block: str, description: str) -> str:
@@ -183,9 +184,8 @@ def normalize_javadoc(block: str, description: str) -> str:
     else:
         inner = ""
 
-    raw_lines = inner.splitlines()
     cleaned: list[str] = []
-    for raw in raw_lines:
+    for raw in inner.splitlines():
         line = re.sub(r"^\s*\*?\s?", "", raw).rstrip()
         if line.startswith("@author"):
             continue
@@ -217,24 +217,21 @@ def normalize_javadoc(block: str, description: str) -> str:
 
 
 def add_class_javadoc(text: str) -> tuple[str, str | None]:
-    top_level = None
-    for match in TYPE_PATTERN.finditer(text):
-        if not match.group("indent"):
-            top_level = match
-            break
+    top_level = next(
+        (match for match in TYPE_PATTERN.finditer(text) if not match.group("indent")),
+        None,
+    )
     if top_level is None:
         return text, None
 
     name = top_level.group("name")
-    kind = top_level.group("kind")
-    description = description_for(name, kind)
+    description = description_for(name, top_level.group("kind"))
     annotations_start = annotation_block_start(text, top_level.start())
     existing = preceding_javadoc(text, annotations_start)
 
     if existing is None:
         javadoc = normalize_javadoc("/** */", description)
-        updated = text[:annotations_start] + javadoc + "\n" + text[annotations_start:]
-        return updated, name
+        return text[:annotations_start] + javadoc + "\n" + text[annotations_start:], name
 
     start, end = existing
     updated_block = normalize_javadoc(text[start:end], description)
@@ -287,16 +284,16 @@ def add_required_args_constructor(text: str, class_name: str | None) -> tuple[st
         return text, False
 
     final_fields = re.findall(
-        r"(?m)^\s*private\s+final\s+[A-Za-z_$][\w$<>,.?\[\] ]*\s+([A-Za-z_$][\w$]*)\s*;\s*$",
+        r"(?m)^\s*private\s+final\s+[A-Za-z_$][\w$<>,.?\[\] ]*\s+"
+        r"([A-Za-z_$][\w$]*)\s*;\s*$",
         text,
     )
     if not final_fields:
         return text, False
 
-    constructor_pattern = re.compile(
-        rf"(?m)^[ \t]*public\s+{re.escape(class_name)}\s*\("
+    constructors = list(
+        re.compile(rf"(?m)^[ \t]*public\s+{re.escape(class_name)}\s*\(").finditer(text)
     )
-    constructors = list(constructor_pattern.finditer(text))
     if len(constructors) != 1:
         return text, False
 
@@ -345,22 +342,31 @@ def add_required_args_constructor(text: str, class_name: str | None) -> tuple[st
         end += 1
     if end < len(text) and text[end] == "\n":
         end += 1
-    updated = text[:start] + text[end:]
-    updated = ensure_lombok_import(updated)
+    updated = ensure_lombok_import(text[:start] + text[end:])
 
-    declaration = None
-    for match in TYPE_PATTERN.finditer(updated):
-        if not match.group("indent") and match.group("name") == class_name:
-            declaration = match
-            break
+    declaration = next(
+        (
+            match
+            for match in TYPE_PATTERN.finditer(updated)
+            if not match.group("indent") and match.group("name") == class_name
+        ),
+        None,
+    )
     if declaration is None:
         raise RuntimeError(f"未找到 {class_name} 类型声明")
-    updated = updated[:declaration.start()] + "@RequiredArgsConstructor\n" + updated[declaration.start():]
+    updated = (
+        updated[:declaration.start()]
+        + "@RequiredArgsConstructor\n"
+        + updated[declaration.start():]
+    )
     return updated, True
 
 
 def verify_file(path: Path, text: str) -> None:
-    top_level = next((m for m in TYPE_PATTERN.finditer(text) if not m.group("indent")), None)
+    top_level = next(
+        (match for match in TYPE_PATTERN.finditer(text) if not match.group("indent")),
+        None,
+    )
     if top_level is None:
         return
     annotations_start = annotation_block_start(text, top_level.start())
@@ -370,8 +376,23 @@ def verify_file(path: Path, text: str) -> None:
     block = text[existing[0]:existing[1]]
     if not CHINESE_PATTERN.search(block):
         raise RuntimeError(f"{path}: 类注释缺少中文说明")
-    if f"@author {AUTHOR}" not in block:
-        raise RuntimeError(f"{path}: 类注释缺少作者")
+    if block.count(f"@author {AUTHOR}") != 1:
+        raise RuntimeError(f"{path}: 作者标记数量不正确")
+    if text.count("@RequiredArgsConstructor") > 1:
+        raise RuntimeError(f"{path}: 重复使用 @RequiredArgsConstructor")
+
+
+def stabilize(text: str) -> tuple[str, bool]:
+    current = text
+    converted_any = False
+    for _ in range(MAX_STABILIZE_PASSES):
+        updated, class_name = add_class_javadoc(current)
+        updated, converted = add_required_args_constructor(updated, class_name)
+        converted_any = converted_any or converted
+        if updated == current:
+            return updated, converted_any
+        current = updated
+    raise RuntimeError("源码规范化在限定次数内未达到稳定状态")
 
 
 def main() -> None:
@@ -381,9 +402,11 @@ def main() -> None:
     for path in java_files():
         checked += 1
         original = path.read_text(encoding="utf-8")
-        updated, class_name = add_class_javadoc(original)
-        updated, converted = add_required_args_constructor(updated, class_name)
+        updated, converted = stabilize(original)
         verify_file(path, updated)
+        verify_again, _ = stabilize(updated)
+        if verify_again != updated:
+            raise RuntimeError(f"{path}: 源码规范化不满足幂等性")
         if updated != original:
             path.write_text(updated, encoding="utf-8")
             changed += 1
