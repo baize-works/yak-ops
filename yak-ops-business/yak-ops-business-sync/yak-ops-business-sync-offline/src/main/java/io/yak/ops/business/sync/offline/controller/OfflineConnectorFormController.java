@@ -12,6 +12,7 @@ import io.yak.ops.business.sync.offline.form.ConnectorFormValidationService.Vali
 import io.yak.ops.business.sync.offline.form.ConnectorFormValidationService.ValidationResult;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
 /**
  * Yak Ops Connector Form Schema、复杂交互与 Action 接口。
  *
@@ -35,7 +35,6 @@ public class OfflineConnectorFormController {
   private final ConnectorFormSchemaService service;
   private final ConnectorFormValidationService validationService;
   private final ConnectorFormActionService actionService;
-
 
   @GetMapping("/form-schemas")
   public Result<List<ConnectorFormSchema>> list(

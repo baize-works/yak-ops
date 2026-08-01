@@ -2,8 +2,8 @@ package io.yak.ops.business.sync.offline.form;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDateTime;
-
 import lombok.RequiredArgsConstructor;
+
 /**
  * Connector Schema 快照及其来源状态。
  *
@@ -15,7 +15,6 @@ public final class ConnectorSchemaSnapshot {
   private final String source;
   private final boolean stale;
   private final LocalDateTime syncedAt;
-
 
   public JsonNode getSchema() { return schema; }
   public String getSource() { return source; }

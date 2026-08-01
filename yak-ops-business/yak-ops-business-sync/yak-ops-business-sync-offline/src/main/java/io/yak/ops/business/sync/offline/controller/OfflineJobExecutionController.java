@@ -13,6 +13,7 @@ import io.yak.ops.common.bean.vo.sync.offline.OfflineBatchOperationVO;
 import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionDetailVO;
 import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionVO;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 离线执行命令和执行历史查询接口。
  *
@@ -33,7 +33,6 @@ public class OfflineJobExecutionController {
 
   private final OfflineJobExecutionService service;
   private final LinkUpClient linkUpClient;
-
 
   @GetMapping({"/api/v1/job/batch-execution/health", "/api/v1/executor/health"})
   public Result<LinkUpNodeResponse> health() {

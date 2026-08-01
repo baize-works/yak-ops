@@ -23,11 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 离线同步任务定义与版本管理服务。
  *
@@ -46,7 +46,6 @@ public class OfflineJobDefinitionService {
   private final OfflineExecutionControlRepository executionRepository;
   private final OfflineDefinitionSupport support;
   private final AtomicLong idSequence = new AtomicLong(System.currentTimeMillis() * 1000L);
-
 
   public Long nextId() {
     long floor = System.currentTimeMillis() * 1000L;

@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 为动态表单提供 Schema 声明过的只读表和字段发现 Action。
  *
@@ -29,7 +29,6 @@ public class ConnectorFormActionService {
 
   private final ObjectProvider<DataSourceCatalogService> catalogServiceProvider;
   private final ConnectorFormSchemaService schemaService;
-
 
   public ActionResult execute(String action, ActionRequest request) {
     String normalized = normalize(action);

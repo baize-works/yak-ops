@@ -3,9 +3,9 @@ package io.yak.ops.business.sync.offline.form;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
 /**
  * Connector Form Schema 查询与刷新门面。
  *
@@ -18,7 +18,6 @@ public class ConnectorFormSchemaService {
 
   private final ConnectorSchemaRegistry schemaRegistry;
   private final ConnectorFormSchemaComposer composer;
-
 
   public ConnectorFormSchema get(String connectorId, String role) {
     return composer.compose(schemaRegistry.get(connectorId, role));

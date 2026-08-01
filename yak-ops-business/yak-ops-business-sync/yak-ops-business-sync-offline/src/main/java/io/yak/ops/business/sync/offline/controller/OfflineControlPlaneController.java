@@ -9,12 +9,12 @@ import io.yak.ops.business.sync.offline.service.OfflineJobDefinitionService;
 import io.yak.ops.business.sync.offline.service.OfflineWorkerRegistry;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 离线同步控制面的节点、版本、事件和告警查询接口。
  *
@@ -29,7 +29,6 @@ public class OfflineControlPlaneController {
   private final OfflineWorkerRegistry workerRegistry;
   private final OfflineJobDefinitionService definitionService;
   private final OfflineExecutionControlRepository repository;
-
 
   @GetMapping("/node")
   public Result<NodeRecord> node() {

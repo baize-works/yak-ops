@@ -7,11 +7,11 @@ import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpNodeResponse;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 单 Link-Up Worker 注册、心跳和选择器。
  *
@@ -25,7 +25,6 @@ public class OfflineWorkerRegistry {
   private final LinkUpClient linkUpClient;
   private final OfflineNodeRepository repository;
   private final OfflineSyncProperties properties;
-
 
   @Scheduled(
       initialDelayString = "${yak.sync.offline.control.heartbeat-delay-millis:10000}",

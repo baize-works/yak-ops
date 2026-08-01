@@ -16,10 +16,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 执行历史、指标和日志的数据库读模型。
  *
@@ -36,7 +36,6 @@ public class OfflineExecutionReadService {
   private final OfflineJobExecutionDao executionDao;
   private final OfflineExecutionControlRepository repository;
   private final LinkUpClient linkUpClient;
-
 
   public OfflineJobExecutionPO require(Long id) {
     if (id == null || id <= 0L) {

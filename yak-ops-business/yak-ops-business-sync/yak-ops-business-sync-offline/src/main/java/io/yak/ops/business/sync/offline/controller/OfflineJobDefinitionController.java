@@ -9,6 +9,7 @@ import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionQueryDTO;
 import io.yak.ops.common.bean.vo.sync.offline.OfflineJobDefinitionVO;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 离线同步任务定义接口，仅保留单表和多表向导模式。
  *
@@ -31,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 public class OfflineJobDefinitionController {
 
   private final OfflineJobDefinitionService service;
-
 
   @GetMapping("/get-unique-id")
   public Result<Long> nextId() {

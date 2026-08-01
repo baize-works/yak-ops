@@ -14,9 +14,9 @@ import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionDetailVO;
 import io.yak.ops.common.bean.vo.sync.offline.OfflineJobExecutionVO;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
 /**
  * 离线同步执行命令与读模型门面。
  *
@@ -30,7 +30,6 @@ public class OfflineJobExecutionService {
   private final OfflineExecutionOrchestrator orchestrator;
   private final OfflineExecutionReadService readService;
   private final OfflineJobDefinitionService definitionService;
-
 
   public OfflineJobExecutionVO execute(Long definitionId) {
     return readService.toVO(orchestrator.execute(definitionId, "MANUAL", null, 1));
