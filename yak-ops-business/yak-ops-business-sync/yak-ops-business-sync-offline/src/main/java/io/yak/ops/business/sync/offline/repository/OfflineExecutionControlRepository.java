@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** 持久化执行扫描、状态事件和告警记录。 */
+/** 持久化执行扫描、并发领取、状态事件和告警记录。 */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 public class OfflineExecutionControlRepository {
@@ -22,6 +22,17 @@ public class OfflineExecutionControlRepository {
   public OfflineExecutionControlRepository(
       @Qualifier("offlineSyncDataSource") DataSource dataSource) {
     this.jdbc = new JdbcTemplate(dataSource);
+  }
+
+  /** Must be called inside the offline-sync transaction before checking active executions. */
+  public void lockDefinition(Long definitionId) {
+    Long locked = jdbc.queryForObject(
+        "SELECT id FROM yak_offline_job_definition WHERE id = ? FOR UPDATE",
+        Long.class,
+        definitionId);
+    if (locked == null) {
+      throw new IllegalArgumentException("离线同步任务不存在：" + definitionId);
+    }
   }
 
   public boolean hasActiveExecution(Long definitionId) {
