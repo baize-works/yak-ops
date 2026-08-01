@@ -3,6 +3,7 @@ import {
   DatabaseOutlined,
   TableOutlined,
 } from "@ant-design/icons";
+import { history } from "@umijs/max";
 import {
   Button,
   ConfigProvider,
@@ -277,11 +278,16 @@ export default function CreateSyncTaskDrawer({
       }
 
       const createdId = extractSavedId(saveResponse, taskId);
+      const path =
+        normalizedValues.mode === "GUIDE_MULTI"
+          ? `/sync/batch-link-up/${createdId}/config/multi?scene=edit`
+          : `/sync/batch-link-up/${createdId}/config/single?scene=edit`;
 
       form.resetFields();
       autoJobNameRef.current = "";
       message.success("任务草稿已创建，请继续配置数据源和同步表");
       onCreated(createdId, normalizedValues.mode);
+      history.push(path);
     } catch (error: any) {
       if (error?.errorFields) return;
 
