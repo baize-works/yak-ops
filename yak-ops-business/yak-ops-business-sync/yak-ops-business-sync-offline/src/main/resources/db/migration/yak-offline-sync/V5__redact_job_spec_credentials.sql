@@ -1,5 +1,7 @@
 -- Convert previously persisted resolved JobSpecs back to logical control-plane JobSpecs.
 -- Credentials are resolved from datasource references only for the outbound Link-Up request.
+-- Phase-four payloads may have used datasource types (MYSQL/ORACLE/...) as connector IDs,
+-- so this migration also normalizes all relational variants to the Link-Up connector ID "jdbc".
 
 UPDATE yak_offline_job_definition
 SET job_spec_json = JSON_SET(
@@ -11,12 +13,17 @@ SET job_spec_json = JSON_SET(
             '$.source.options.password',
             '$.source.options.schema',
             '$.source.options.properties'),
+        '$.source.connectorId',
+        'jdbc',
         '$.source.dataSourceRef.id',
         source_datasource_id)
 WHERE job_spec_json IS NOT NULL
   AND JSON_VALID(job_spec_json)
   AND source_datasource_id IS NOT NULL
-  AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(job_spec_json, '$.source.connectorId'))) = 'jdbc';
+  AND UPPER(REPLACE(JSON_UNQUOTE(JSON_EXTRACT(job_spec_json, '$.source.connectorId')), '-', '_'))
+      IN ('JDBC','MYSQL','MARIADB','POSTGRE_SQL','POSTGRESQL','POSTGRES','ORACLE',
+          'SQLSERVER','SQL_SERVER','DORIS','STARROCKS','CLICKHOUSE','DB2','HIVE',
+          'KINGBASE','DAMENG','DM');
 
 UPDATE yak_offline_job_definition
 SET job_spec_json = JSON_SET(
@@ -28,12 +35,17 @@ SET job_spec_json = JSON_SET(
             '$.sink.options.password',
             '$.sink.options.schema',
             '$.sink.options.properties'),
+        '$.sink.connectorId',
+        'jdbc',
         '$.sink.dataSourceRef.id',
         sink_datasource_id)
 WHERE job_spec_json IS NOT NULL
   AND JSON_VALID(job_spec_json)
   AND sink_datasource_id IS NOT NULL
-  AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(job_spec_json, '$.sink.connectorId'))) = 'jdbc';
+  AND UPPER(REPLACE(JSON_UNQUOTE(JSON_EXTRACT(job_spec_json, '$.sink.connectorId')), '-', '_'))
+      IN ('JDBC','MYSQL','MARIADB','POSTGRE_SQL','POSTGRESQL','POSTGRES','ORACLE',
+          'SQLSERVER','SQL_SERVER','DORIS','STARROCKS','CLICKHOUSE','DB2','HIVE',
+          'KINGBASE','DAMENG','DM');
 
 UPDATE yak_offline_job_version version_record
 JOIN yak_offline_job_definition definition
@@ -47,12 +59,17 @@ SET version_record.job_spec_json = JSON_SET(
             '$.source.options.password',
             '$.source.options.schema',
             '$.source.options.properties'),
+        '$.source.connectorId',
+        'jdbc',
         '$.source.dataSourceRef.id',
         definition.source_datasource_id)
 WHERE version_record.job_spec_json IS NOT NULL
   AND JSON_VALID(version_record.job_spec_json)
   AND definition.source_datasource_id IS NOT NULL
-  AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(version_record.job_spec_json, '$.source.connectorId'))) = 'jdbc';
+  AND UPPER(REPLACE(JSON_UNQUOTE(JSON_EXTRACT(version_record.job_spec_json, '$.source.connectorId')), '-', '_'))
+      IN ('JDBC','MYSQL','MARIADB','POSTGRE_SQL','POSTGRESQL','POSTGRES','ORACLE',
+          'SQLSERVER','SQL_SERVER','DORIS','STARROCKS','CLICKHOUSE','DB2','HIVE',
+          'KINGBASE','DAMENG','DM');
 
 UPDATE yak_offline_job_version version_record
 JOIN yak_offline_job_definition definition
@@ -66,12 +83,17 @@ SET version_record.job_spec_json = JSON_SET(
             '$.sink.options.password',
             '$.sink.options.schema',
             '$.sink.options.properties'),
+        '$.sink.connectorId',
+        'jdbc',
         '$.sink.dataSourceRef.id',
         definition.sink_datasource_id)
 WHERE version_record.job_spec_json IS NOT NULL
   AND JSON_VALID(version_record.job_spec_json)
   AND definition.sink_datasource_id IS NOT NULL
-  AND LOWER(JSON_UNQUOTE(JSON_EXTRACT(version_record.job_spec_json, '$.sink.connectorId'))) = 'jdbc';
+  AND UPPER(REPLACE(JSON_UNQUOTE(JSON_EXTRACT(version_record.job_spec_json, '$.sink.connectorId')), '-', '_'))
+      IN ('JDBC','MYSQL','MARIADB','POSTGRE_SQL','POSTGRESQL','POSTGRES','ORACLE',
+          'SQLSERVER','SQL_SERVER','DORIS','STARROCKS','CLICKHOUSE','DB2','HIVE',
+          'KINGBASE','DAMENG','DM');
 
 UPDATE yak_offline_job_version
 SET config_digest = SHA2(job_spec_json, 256)
