@@ -81,7 +81,7 @@ const iconButtonClass = [
   "text-[#667085] outline-none",
   "transition-[background-color,color,box-shadow,transform] duration-150",
   "hover:bg-[#f2f4f7] hover:text-[#344054]",
-  "focus-visible:ring-2 focus-visible:ring-[#84adff]",
+  "focus-visible:ring-2 focus-visible:ring-[var(--yak-brand-color-border)]",
   "focus-visible:ring-offset-1",
   "active:scale-[0.96]",
   "disabled:cursor-not-allowed disabled:opacity-[0.35]",
@@ -89,9 +89,9 @@ const iconButtonClass = [
 ].join(" ");
 
 const activeIconButtonClass = [
-  "bg-[#eef4ff] text-[#155eef]",
-  "shadow-[inset_0_0_0_1px_rgba(21,94,239,0.06)]",
-  "hover:bg-[#e6efff] hover:text-[#155eef]",
+  "bg-[var(--yak-brand-color-soft)] text-[var(--yak-brand-color)]",
+  "shadow-[inset_0_0_0_1px_var(--yak-brand-color-soft)]",
+  "hover:bg-[var(--yak-brand-color-soft-hover)] hover:text-[var(--yak-brand-color)]",
 ].join(" ");
 
 const getIconButtonClass = (active?: boolean) =>
@@ -102,7 +102,7 @@ const ActiveIndicator = () => (
     className={[
       "pointer-events-none absolute -left-[5px] top-1/2",
       "h-4 w-0.5 -translate-y-1/2 rounded-r-full",
-      "bg-[#155eef]",
+      "bg-[var(--yak-brand-color)]",
     ].join(" ")}
   />
 );
@@ -249,7 +249,7 @@ const CanvasOperator = ({
                 "rounded-full text-white",
                 "transition-colors duration-150",
                 nodePanelOpen
-                  ? "bg-[#155eef]"
+                  ? "bg-[var(--yak-brand-color)]"
                   : "bg-[#475467] group-hover:bg-[#344054]",
               ].join(" ")}
             >
@@ -329,14 +329,14 @@ const CanvasOperator = ({
               <div
                 className={[
                   "relative flex h-[42px] items-center",
-                  "text-[14px] font-semibold text-[#155eef]",
+                  "text-[14px] font-semibold text-[var(--yak-brand-color)]",
                 ].join(" ")}
               >
                 节点
                 <span
                   className={[
                     "absolute inset-x-0 bottom-0",
-                    "h-0.5 rounded-full bg-[#155eef]",
+                    "h-0.5 rounded-full bg-[var(--yak-brand-color)]",
                   ].join(" ")}
                 />
               </div>
@@ -359,8 +359,8 @@ const CanvasOperator = ({
                   "bg-[#fcfcfd]",
                   "shadow-[0_1px_2px_rgba(16,24,40,0.02)]",
                   "hover:border-[#b8c0cc]",
-                  "focus-within:border-[#84adff]",
-                  "focus-within:shadow-[0_0_0_3px_rgba(21,94,239,0.08)]",
+                  "focus-within:border-[var(--yak-brand-color-border)]",
+                  "focus-within:shadow-[0_0_0_3px_var(--yak-brand-color-soft-hover)]",
                   "[&_.ant-input]:bg-transparent",
                   "[&_.ant-input]:text-[13px]",
                   "[&_.ant-input::placeholder]:text-[#98a2b3]",
@@ -414,8 +414,8 @@ const CanvasOperator = ({
                               "duration-150",
                               "hover:border-[#eaecf0]",
                               "hover:bg-[#f5f7fa]",
-                              "focus-visible:border-[#b2ccff]",
-                              "focus-visible:bg-[#eef4ff]",
+                              "focus-visible:border-[var(--yak-brand-color-border)]",
+                              "focus-visible:bg-[var(--yak-brand-color-soft)]",
                               "active:scale-[0.995]",
                             ].join(" ")}
                             onClick={() => onSelectLibraryItem(item)}
@@ -448,7 +448,7 @@ const CanvasOperator = ({
                                 "transition-[opacity,transform,color]",
                                 "duration-150",
                                 "group-hover:translate-x-0",
-                                "group-hover:text-[#155eef]",
+                                "group-hover:text-[var(--yak-brand-color)]",
                                 "group-hover:opacity-100",
                               ].join(" ")}
                             />

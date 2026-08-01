@@ -1,5 +1,7 @@
+import { BRAND_CSS_VARIABLES, BRAND_THEME } from '@/styles/brand';
 import { history } from '@umijs/max';
 import {
+  ConfigProvider,
   Dropdown,
   Empty,
   Input,
@@ -235,20 +237,22 @@ const WorkflowManagementPage = () => {
       'relative inline-flex h-[46px] items-center border-0 bg-transparent px-0 text-[14px] transition-colors',
       'after:absolute after:inset-x-0 after:bottom-[-1px] after:h-[2px] after:rounded-full after:content-[""]',
       active
-        ? 'font-semibold text-[#101828] after:bg-[#ff3b6b]'
+        ? 'font-semibold text-[#101828] after:bg-[var(--yak-brand-color)]'
         : 'font-normal text-[#667085] after:bg-transparent hover:text-[#344054]',
     ].join(' ');
 
   return (
-    <div
-      className={[
-        'min-h-full bg-white px-7 pb-9 pt-6 text-[#101828]',
-        'max-lg:px-5',
-      ].join(' ')}
-    >
+    <ConfigProvider theme={BRAND_THEME}>
+      <div
+        style={BRAND_CSS_VARIABLES}
+        className={[
+          'min-h-full bg-white px-7 pb-9 pt-6 text-[#101828]',
+          'max-lg:px-5',
+        ].join(' ')}
+      >
       <header className="mb-6 flex items-start justify-between gap-5">
         <div>
-          <span className="text-[11px] font-bold tracking-[0.12em] text-[#7f56d9]">
+          <span className="text-[11px] font-bold tracking-[0.12em] text-[var(--yak-brand-color)]">
             WORKFLOW
           </span>
 
@@ -446,7 +450,7 @@ const WorkflowManagementPage = () => {
                     )
                   }
                 >
-                  <span className="mb-3.5 flex h-11 w-11 items-center justify-center rounded-xl bg-[#eeefff] text-[#5d5fef]">
+                  <span className="mb-3.5 flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--yak-brand-color-soft)] text-[var(--yak-brand-color)]">
                     <Plus size={22} />
                   </span>
 
@@ -592,7 +596,8 @@ const WorkflowManagementPage = () => {
           </div>
         )}
       </Spin>
-    </div>
+      </div>
+    </ConfigProvider>
   );
 };
 

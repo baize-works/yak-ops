@@ -125,7 +125,7 @@ const StartPanel = ({
               <span
                 className={[
                   'flex h-6 w-6 shrink-0 items-center justify-center',
-                  'rounded-md bg-[#eef4ff] text-[#155eef]',
+                  'rounded-md bg-[var(--yak-brand-color-soft)] text-[var(--yak-brand-color)]',
                 ].join(' ')}
               >
                 <Braces size={13} strokeWidth={2} />
@@ -223,9 +223,9 @@ const StartPanel = ({
               'rounded-lg border border-dashed border-[#d0d5dd]',
               'bg-[#fcfcfd] text-[#98a2b3]',
               'transition-colors duration-150',
-              'hover:border-[#84adff]',
-              'hover:bg-[#f8faff]',
-              'hover:text-[#155eef]',
+              'hover:border-[var(--yak-brand-color-border)]',
+              'hover:bg-[var(--yak-brand-color-soft)]',
+              'hover:text-[var(--yak-brand-color)]',
             ].join(' ')}
           >
             <Braces size={17} strokeWidth={1.8} />

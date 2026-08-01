@@ -4,14 +4,14 @@ export type WorkflowNodeStatus = NonNullable<WorkflowNodeData['runningStatus']>;
 
 export const nodeStatusBorderClass: Record<WorkflowNodeStatus, string> = {
   idle: 'border-transparent',
-  running: 'border-[#155eef]',
+  running: 'border-[var(--yak-brand-color)]',
   success: 'border-[#17b26a]',
   failed: 'border-[#f04438]',
 };
 
 export const nodeStatusTextClass: Record<WorkflowNodeStatus, string> = {
   idle: 'text-[#98a2b3]',
-  running: 'text-[#155eef]',
+  running: 'text-[var(--yak-brand-color)]',
   success: 'text-[#079455]',
   failed: 'text-[#d92d20]',
 };

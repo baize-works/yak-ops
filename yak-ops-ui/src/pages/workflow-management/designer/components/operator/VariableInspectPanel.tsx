@@ -92,7 +92,7 @@ const VariableInspectPanel = ({
             title="点击复制变量引用"
             className="grid min-w-[190px] grid-cols-[45px_minmax(0,1fr)] gap-x-2 gap-y-0.5 rounded-md border border-[#eaecf0] bg-white p-2 text-left hover:bg-[#fcfcfd]"
           >
-            <span className="row-span-2 self-center rounded bg-[#f1f0ff] px-1.5 py-1 text-center text-[7px] text-[#5d5fef]">
+            <span className="row-span-2 self-center rounded bg-[var(--yak-brand-color-soft)] px-1.5 py-1 text-center text-[7px] text-[var(--yak-brand-color)]">
               {row.source}
             </span>
             <strong className="text-[9px] text-[#475467]">{row.name}</strong>

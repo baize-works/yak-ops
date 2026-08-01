@@ -32,7 +32,7 @@ const QuickAddButton = ({
           'rounded-lg border border-dashed border-[#d0d5dd] bg-[#f9fafb]',
           'px-3 text-[12px] font-medium text-[#667085]',
           'transition-colors duration-150',
-          'hover:border-[#84adff] hover:bg-[#f5f8ff] hover:text-[#155eef]',
+          'hover:border-[var(--yak-brand-color-border)] hover:bg-[var(--yak-brand-color-soft)] hover:text-[var(--yak-brand-color)]',
           className,
         ].join(' ')}
         onMouseDown={(event) => event.stopPropagation()}
@@ -63,14 +63,14 @@ const QuickAddButton = ({
       <span
         className={[
           'flex items-center justify-center rounded-full border bg-white',
-          'text-[#155eef] shadow-[0_4px_12px_rgba(16,24,40,0.14)]',
+          'text-[var(--yak-brand-color)] shadow-[0_4px_12px_rgba(16,24,40,0.14)]',
           'transition-[border-color,background-color,box-shadow,transform] duration-150',
-          'group-hover/quick-add:border-[#84adff]',
-          'group-hover/quick-add:bg-[#f5f8ff]',
-          'group-hover/quick-add:shadow-[0_5px_16px_rgba(21,94,239,0.18)]',
+          'group-hover/quick-add:border-[var(--yak-brand-color-border)]',
+          'group-hover/quick-add:bg-[var(--yak-brand-color-soft)]',
+          'group-hover/quick-add:shadow-[0_5px_16px_var(--yak-brand-color-outline)]',
           'group-active/quick-add:scale-95',
           variant === 'edge'
-            ? 'h-7 w-7 border-[#b2ccff]'
+            ? 'h-7 w-7 border-[var(--yak-brand-color-border)]'
             : 'h-7 w-7 border-[#d0d5dd]',
         ].join(' ')}
       >

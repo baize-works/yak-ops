@@ -1,6 +1,7 @@
 import { API_SUCCESS_CODE } from '@/services/http/response';
+import { BRAND_CSS_VARIABLES, BRAND_THEME } from '@/styles/brand';
 import { history, useParams } from '@umijs/max';
-import { message, Modal, Spin } from 'antd';
+import { ConfigProvider, message, Modal, Spin } from 'antd';
 import { Sparkles } from 'lucide-react';
 import {
   addEdge,
@@ -1115,8 +1116,8 @@ const WorkflowDesignerContent = () => {
             <div
               className={[
                 'pointer-events-none absolute z-30 w-[224px] -translate-x-1/2 -translate-y-1/2',
-                'overflow-hidden rounded-xl border border-[#84adff] bg-white/95',
-                'shadow-[0_0_0_3px_rgba(21,94,239,0.10),0_14px_34px_rgba(16,24,40,0.16)]',
+                'overflow-hidden rounded-xl border border-[var(--yak-brand-color-border)] bg-white/95',
+                'shadow-[0_0_0_3px_var(--yak-brand-color-outline),0_14px_34px_rgba(16,24,40,0.16)]',
                 'backdrop-blur-[8px]',
               ].join(' ')}
               style={
@@ -1341,9 +1342,13 @@ const WorkflowDesignerContent = () => {
 };
 
 const WorkflowDesignerPage = () => (
-  <ReactFlowProvider>
-    <WorkflowDesignerContent />
-  </ReactFlowProvider>
+  <ConfigProvider theme={BRAND_THEME}>
+    <div style={BRAND_CSS_VARIABLES}>
+      <ReactFlowProvider>
+        <WorkflowDesignerContent />
+      </ReactFlowProvider>
+    </div>
+  </ConfigProvider>
 );
 
 export default WorkflowDesignerPage;

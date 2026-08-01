@@ -67,7 +67,7 @@ const NodePicker = ({ onSelect, allowedTypes }: NodePickerProps) => {
                       'group flex min-h-[52px] w-full items-center gap-2.5',
                       'rounded-lg border border-transparent px-2 py-2 text-left',
                       'transition-colors duration-150',
-                      'hover:border-[#d1e0ff] hover:bg-[#f5f8ff]',
+                      'hover:border-[var(--yak-brand-color-border)] hover:bg-[var(--yak-brand-color-soft)]',
                     ].join(' ')}
                     style={{ '--node-color': item.color } as CSSProperties}
                     onClick={() => onSelect(item.type)}
@@ -85,7 +85,7 @@ const NodePicker = ({ onSelect, allowedTypes }: NodePickerProps) => {
                       </span>
                     </span>
 
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#98a2b3] transition-colors group-hover:bg-white group-hover:text-[#155eef]">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#98a2b3] transition-colors group-hover:bg-white group-hover:text-[var(--yak-brand-color)]">
                       <Plus size={15} />
                     </span>
                   </button>

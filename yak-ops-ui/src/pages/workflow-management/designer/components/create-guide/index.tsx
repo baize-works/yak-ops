@@ -144,11 +144,11 @@ const WorkflowCreateGuide = () => {
                 type="button"
                 className={[
                   'relative h-[122px] w-[218px] rounded-xl border border-[#c7d2fe] bg-white p-3 text-left',
-                  'shadow-[0_4px_12px_rgba(79,70,229,0.08)] outline outline-2 outline-[#6366f1]',
+                  'shadow-[0_4px_12px_var(--yak-brand-color-soft-hover)] outline outline-2 outline-[var(--yak-brand-color)]',
                   'max-sm:w-full',
                 ].join(' ')}
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#4f46e5] text-white">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--yak-brand-color)] text-white">
                   <WorkflowIcon size={16} />
                 </span>
 
@@ -237,7 +237,7 @@ const WorkflowCreateGuide = () => {
                     className={[
                       'h-10 rounded-lg border border-transparent bg-[#f2f4f7] px-3 text-[13px]',
                       'shadow-none hover:border-[#d0d5dd] hover:bg-white',
-                      'focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]',
+                      'focus:border-[var(--yak-brand-color)] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]',
                     ].join(' ')}
                   />
                 </Form.Item>
@@ -245,7 +245,7 @@ const WorkflowCreateGuide = () => {
                 <button
                   type="button"
                   title="应用图标"
-                  className="mb-4 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#dbe4ff] bg-[#eef2ff] text-[#4f46e5]"
+                  className="mb-4 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--yak-brand-color-border)] bg-[var(--yak-brand-color-soft)] text-[var(--yak-brand-color)]"
                 >
                   <WorkflowIcon size={25} />
                 </button>
@@ -269,7 +269,7 @@ const WorkflowCreateGuide = () => {
                   className={[
                     'min-h-[86px] resize-none rounded-lg border border-transparent bg-[#f2f4f7]',
                     'px-3 py-2 text-[13px] shadow-none hover:border-[#d0d5dd] hover:bg-white',
-                    'focus:border-[#6366f1] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]',
+                    'focus:border-[var(--yak-brand-color)] focus:bg-white focus:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]',
                   ].join(' ')}
                 />
               </Form.Item>
@@ -291,7 +291,7 @@ const WorkflowCreateGuide = () => {
                     'text-[13px] font-medium text-white transition-colors',
                     createDisabled
                       ? 'cursor-not-allowed bg-[#d6d9ff] shadow-none'
-                      : 'bg-[#4f46e5] shadow-[0_5px_12px_rgba(79,70,229,0.22)] hover:bg-[#4338ca]',
+                      : 'bg-[var(--yak-brand-color)] shadow-[0_5px_12px_var(--yak-brand-color-outline)] hover:bg-[var(--yak-brand-color-hover)]',
                   ].join(' ')}
                 >
                   {saving ? '创建中...' : '创建'}
@@ -328,7 +328,7 @@ const WorkflowCreateGuide = () => {
               <div className="relative h-[448px] w-full overflow-hidden border border-[#dfe5ec] bg-white shadow-[0_12px_28px_rgba(16,24,40,0.10)]">
                 <div className="flex h-11 items-center justify-between border-b border-[#edf0f3] px-4">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#4f46e5] text-white">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--yak-brand-color)] text-white">
                       <WorkflowIcon size={13} />
                     </span>
 
@@ -346,7 +346,7 @@ const WorkflowCreateGuide = () => {
                       预览
                     </span>
 
-                    <span className="rounded-md bg-[#4f46e5] px-2 py-1 text-[9px] text-white">
+                    <span className="rounded-md bg-[var(--yak-brand-color)] px-2 py-1 text-[9px] text-white">
                       发布
                     </span>
                   </div>
@@ -364,7 +364,7 @@ const WorkflowCreateGuide = () => {
                     <div className="absolute left-[8%] top-[44%] flex items-center gap-8">
                       <div className="w-[128px] rounded-lg border border-[#c7d2fe] bg-white p-3 shadow-[0_7px_18px_rgba(16,24,40,0.08)]">
                         <div className="flex items-center gap-2">
-                          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#4f46e5] text-white">
+                          <span className="flex h-5 w-5 items-center justify-center rounded bg-[var(--yak-brand-color)] text-white">
                             <CirclePlay size={11} />
                           </span>
 
@@ -379,7 +379,7 @@ const WorkflowCreateGuide = () => {
 
                       <ArrowRight size={20} className="text-[#98a2b3]" />
 
-                      <div className="w-[138px] rounded-lg border border-[#dbe4ff] bg-white p-3 shadow-[0_7px_18px_rgba(16,24,40,0.08)]">
+                      <div className="w-[138px] rounded-lg border border-[var(--yak-brand-color-border)] bg-white p-3 shadow-[0_7px_18px_rgba(16,24,40,0.08)]">
                         <div className="flex items-center gap-2">
                           <span className="flex h-5 w-5 items-center justify-center rounded bg-[#7c3aed] text-white">
                             <Bot size={11} />

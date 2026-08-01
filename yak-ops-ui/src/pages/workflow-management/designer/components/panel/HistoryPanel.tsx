@@ -31,7 +31,7 @@ const HistoryPanel = ({ snapshots, onRestore, onClose }: HistoryPanelProps) => (
               key={snapshot.id}
               className="relative grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border border-[#e4e7ec] bg-white p-2.5"
             >
-              <span className="flex h-[29px] w-[29px] items-center justify-center rounded-lg bg-[#f1f0ff] text-[#5d5fef]">
+              <span className="flex h-[29px] w-[29px] items-center justify-center rounded-lg bg-[var(--yak-brand-color-soft)] text-[var(--yak-brand-color)]">
                 <History size={16} />
               </span>
               <div>

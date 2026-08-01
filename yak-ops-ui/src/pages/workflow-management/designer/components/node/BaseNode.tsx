@@ -57,7 +57,7 @@ const BaseNode = ({ id, data, meta, selected, children }: BaseNodeProps) => {
     <div
       className={[
         'group relative flex rounded-2xl border p-[1px] transition-[filter,opacity] duration-150',
-        selected ? 'border-[#155eef]' : 'border-transparent',
+        selected ? 'border-[var(--yak-brand-color)]' : 'border-transparent',
         data.enabled ? '' : 'opacity-60 grayscale-[0.25]',
       ]
         .filter(Boolean)
