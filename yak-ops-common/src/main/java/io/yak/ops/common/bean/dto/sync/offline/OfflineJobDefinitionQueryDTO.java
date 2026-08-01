@@ -8,7 +8,11 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import lombok.Data;
 
-/** 离线同步任务定义分页查询条件。 */
+/**
+ * 离线同步任务定义分页查询条件。
+ *
+ * @author weifuwan
+ */
 @Data
 public class OfflineJobDefinitionQueryDTO {
 

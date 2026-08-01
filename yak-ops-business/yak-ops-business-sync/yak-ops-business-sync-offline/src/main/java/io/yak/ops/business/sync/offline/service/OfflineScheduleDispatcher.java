@@ -10,9 +10,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/** 持久化 Cron 调度派发器；单 Yak Ops 节点通过条件更新领取到期计划。 */
+import lombok.RequiredArgsConstructor;
+/**
+ * 持久化 Cron 调度派发器；单 Yak Ops 节点通过条件更新领取到期计划。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
+@RequiredArgsConstructor
 public class OfflineScheduleDispatcher {
 
   private static final Logger LOG = LoggerFactory.getLogger(OfflineScheduleDispatcher.class);
@@ -21,14 +27,6 @@ public class OfflineScheduleDispatcher {
   private final OfflineJobExecutionService executionService;
   private final OfflineSyncProperties properties;
 
-  public OfflineScheduleDispatcher(
-      OfflineScheduleRepository repository,
-      OfflineJobExecutionService executionService,
-      OfflineSyncProperties properties) {
-    this.repository = repository;
-    this.executionService = executionService;
-    this.properties = properties;
-  }
 
   @Scheduled(
       initialDelayString = "${yak.sync.offline.control.schedule-delay-millis:5000}",

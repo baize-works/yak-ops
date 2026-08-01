@@ -26,7 +26,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** 离线任务命令编排和状态持久化。 */
+/**
+ * 离线任务命令编排和状态持久化。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class OfflineExecutionOrchestrator {

@@ -16,23 +16,21 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
-/** 离线同步执行命令与读模型门面。 */
+import lombok.RequiredArgsConstructor;
+/**
+ * 离线同步执行命令与读模型门面。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Service
+@RequiredArgsConstructor
 public class OfflineJobExecutionService {
 
   private final OfflineExecutionOrchestrator orchestrator;
   private final OfflineExecutionReadService readService;
   private final OfflineJobDefinitionService definitionService;
 
-  public OfflineJobExecutionService(
-      OfflineExecutionOrchestrator orchestrator,
-      OfflineExecutionReadService readService,
-      OfflineJobDefinitionService definitionService) {
-    this.orchestrator = orchestrator;
-    this.readService = readService;
-    this.definitionService = definitionService;
-  }
 
   public OfflineJobExecutionVO execute(Long definitionId) {
     return readService.toVO(orchestrator.execute(definitionId, "MANUAL", null, 1));

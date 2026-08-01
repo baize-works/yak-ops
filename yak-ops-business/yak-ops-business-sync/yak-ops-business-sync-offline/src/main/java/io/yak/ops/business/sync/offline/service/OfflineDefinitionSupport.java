@@ -28,7 +28,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** Task definition serialization, structured JobSpec generation and view mapping. */
+/**
+ * 离线同步任务定义序列化与转换支持组件。
+ *
+ * Task definition serialization, structured JobSpec generation and view mapping.
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class OfflineDefinitionSupport {

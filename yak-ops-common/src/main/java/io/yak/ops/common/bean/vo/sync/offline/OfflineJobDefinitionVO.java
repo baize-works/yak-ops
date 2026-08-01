@@ -5,7 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** 离线同步任务定义展示对象。 */
+/**
+ * 离线同步任务定义展示对象。
+ *
+ * @author weifuwan
+ */
 @Data
 @Builder
 @NoArgsConstructor

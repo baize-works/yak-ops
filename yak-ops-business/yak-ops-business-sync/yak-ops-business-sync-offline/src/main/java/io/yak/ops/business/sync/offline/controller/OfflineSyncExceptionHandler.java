@@ -12,7 +12,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** 离线同步接口异常转换。 */
+/**
+ * 离线同步接口异常转换。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @RestControllerAdvice(basePackages = "io.yak.ops.business.sync.offline.controller")
 public class OfflineSyncExceptionHandler {

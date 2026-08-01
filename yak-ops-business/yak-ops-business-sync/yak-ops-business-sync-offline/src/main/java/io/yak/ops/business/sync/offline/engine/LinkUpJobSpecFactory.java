@@ -21,7 +21,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** Converts the Yak Ops task editor model into Link-Up's structured JobSpec protocol. */
+/**
+ * 离线同步编辑模型与 Link-Up JobSpec 转换工厂。
+ *
+ * Converts the Yak Ops task editor model into Link-Up's structured JobSpec protocol.
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class LinkUpJobSpecFactory {

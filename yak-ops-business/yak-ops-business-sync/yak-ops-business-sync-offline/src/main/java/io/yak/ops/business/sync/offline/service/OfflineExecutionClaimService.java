@@ -13,7 +13,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Atomically claims a definition and creates one durable execution attempt. */
+/**
+ * 离线同步执行实例原子领取服务。
+ *
+ * Atomically claims a definition and creates one durable execution attempt.
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Service
 public class OfflineExecutionClaimService {

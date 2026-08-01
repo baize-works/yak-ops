@@ -5,20 +5,20 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
-/** Connector Form Schema 查询与刷新门面。 */
+import lombok.RequiredArgsConstructor;
+/**
+ * Connector Form Schema 查询与刷新门面。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Service
+@RequiredArgsConstructor
 public class ConnectorFormSchemaService {
 
   private final ConnectorSchemaRegistry schemaRegistry;
   private final ConnectorFormSchemaComposer composer;
 
-  public ConnectorFormSchemaService(
-      ConnectorSchemaRegistry schemaRegistry,
-      ConnectorFormSchemaComposer composer) {
-    this.schemaRegistry = schemaRegistry;
-    this.composer = composer;
-  }
 
   public ConnectorFormSchema get(String connectorId, String role) {
     return composer.compose(schemaRegistry.get(connectorId, role));

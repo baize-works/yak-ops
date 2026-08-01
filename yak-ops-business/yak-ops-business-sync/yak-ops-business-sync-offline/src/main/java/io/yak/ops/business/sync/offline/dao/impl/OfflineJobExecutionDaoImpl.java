@@ -13,7 +13,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
-/** 基于 MyBatis-Plus 的离线同步任务实例数据访问实现。 */
+/**
+ * 基于 MyBatis-Plus 的离线同步任务实例数据访问实现。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 @RequiredArgsConstructor

@@ -7,7 +7,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Yak Ops 对 Connector Schema 的产品展示覆盖，不参与执行合法性判断。 */
+/**
+ * Yak Ops 对 Connector Schema 的产品展示覆盖，不参与执行合法性判断。
+ *
+ * @author weifuwan
+ */
 public final class ConnectorPresentationProfile {
 
   private final String connectorId;

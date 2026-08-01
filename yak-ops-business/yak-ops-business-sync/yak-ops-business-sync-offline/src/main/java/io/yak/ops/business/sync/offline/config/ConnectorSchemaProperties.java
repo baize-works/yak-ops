@@ -3,7 +3,11 @@ package io.yak.ops.business.sync.offline.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-/** Link-Up Connector Schema 同步与缓存配置。 */
+/**
+ * Link-Up Connector Schema 同步与缓存配置。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 @ConfigurationProperties(prefix = "yak.sync.offline.schema")

@@ -18,17 +18,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 离线同步任务定义接口，仅保留单表和多表向导模式。 */
+import lombok.RequiredArgsConstructor;
+/**
+ * 离线同步任务定义接口，仅保留单表和多表向导模式。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @RestController
 @RequestMapping("/api/v1/job/batch-definition")
+@RequiredArgsConstructor
 public class OfflineJobDefinitionController {
 
   private final OfflineJobDefinitionService service;
 
-  public OfflineJobDefinitionController(OfflineJobDefinitionService service) {
-    this.service = service;
-  }
 
   @GetMapping("/get-unique-id")
   public Result<Long> nextId() {

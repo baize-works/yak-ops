@@ -9,7 +9,11 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-/** Yak Ops 后端和前端遵循的条件求值语义。 */
+/**
+ * Yak Ops 后端和前端遵循的条件求值语义。
+ *
+ * @author weifuwan
+ */
 public final class ConnectorConditionEvaluator {
 
   public boolean evaluate(ConnectorFormSchema.Condition condition, Map<String, Object> values) {

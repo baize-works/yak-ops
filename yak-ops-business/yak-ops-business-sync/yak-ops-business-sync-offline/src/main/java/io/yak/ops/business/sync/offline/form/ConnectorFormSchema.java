@@ -5,7 +5,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Yak Ops 前端可直接消费的 Connector Form Schema。 */
+/**
+ * Yak Ops 前端可直接消费的 Connector Form Schema。
+ *
+ * @author weifuwan
+ */
 public class ConnectorFormSchema {
   private String connectorId;
   private String role;

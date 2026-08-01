@@ -12,7 +12,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** 持久化执行扫描、并发领取、状态事件和告警记录。 */
+/**
+ * 持久化执行扫描、并发领取、状态事件和告警记录。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 public class OfflineExecutionControlRepository {

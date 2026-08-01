@@ -8,7 +8,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
-/** 将离线任务异常持久化并发布为应用事件，告警渠道可独立订阅。 */
+/**
+ * 将离线任务异常持久化并发布为应用事件，告警渠道可独立订阅。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class OfflineAlertPublisher {

@@ -4,7 +4,11 @@ import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Set;
 
-/** Yak Ops 对 Link-Up 离线作业状态的稳定映射。 */
+/**
+ * Yak Ops 对 Link-Up 离线作业状态的稳定映射。
+ *
+ * @author weifuwan
+ */
 public enum OfflineExecutionStatus {
   CREATED,
   SUBMITTED,

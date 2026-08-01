@@ -7,14 +7,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** 将 Link-Up Rule 协议转换为前端稳定的交互模型。 */
+import lombok.RequiredArgsConstructor;
+/**
+ * 将 Link-Up Rule 协议转换为前端稳定的交互模型。
+ *
+ * @author weifuwan
+ */
+@RequiredArgsConstructor
 public final class ConnectorInteractionNormalizer {
 
   private final ObjectMapper objectMapper;
 
-  public ConnectorInteractionNormalizer(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
-  }
 
   public List<ConnectorFormSchema.Interaction> normalize(JsonNode rules) {
     List<ConnectorFormSchema.Interaction> result = new ArrayList<>();

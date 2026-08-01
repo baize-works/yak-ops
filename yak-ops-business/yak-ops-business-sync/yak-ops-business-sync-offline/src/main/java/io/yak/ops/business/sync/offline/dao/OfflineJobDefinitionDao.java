@@ -4,7 +4,11 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionQueryDTO;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
 
-/** 离线同步任务定义数据访问接口。 */
+/**
+ * 离线同步任务定义数据访问接口。
+ *
+ * @author weifuwan
+ */
 public interface OfflineJobDefinitionDao {
 
   OfflineJobDefinitionPO selectById(Long id);

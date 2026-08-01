@@ -6,7 +6,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** 离线同步任务实例详情。 */
+/**
+ * 离线同步任务实例详情。
+ *
+ * @author weifuwan
+ */
 @Data
 @Builder
 @NoArgsConstructor

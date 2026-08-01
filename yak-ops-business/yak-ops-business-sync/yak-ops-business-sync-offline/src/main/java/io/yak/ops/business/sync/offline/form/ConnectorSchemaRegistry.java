@@ -25,7 +25,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** 拉取、持久化并缓存 Link-Up Connector Schema。 */
+/**
+ * 拉取、持久化并缓存 Link-Up Connector Schema。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 @DependsOn("offlineSyncFlyway")

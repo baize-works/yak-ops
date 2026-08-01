@@ -14,7 +14,11 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-/** 持久化不可变离线任务版本。 */
+/**
+ * 持久化不可变离线任务版本。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 public class OfflineDefinitionCatalogRepository {

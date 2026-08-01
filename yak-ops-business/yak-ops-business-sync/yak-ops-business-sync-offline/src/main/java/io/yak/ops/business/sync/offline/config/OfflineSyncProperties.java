@@ -3,7 +3,11 @@ package io.yak.ops.business.sync.offline.config;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** 离线同步控制面、持久化和单 Link-Up Worker 配置。 */
+/**
+ * 离线同步控制面、持久化和单 Link-Up Worker 配置。
+ *
+ * @author weifuwan
+ */
 @ConfigurationProperties(prefix = "yak.sync.offline")
 public class OfflineSyncProperties {
 

@@ -20,20 +20,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 离线执行命令和执行历史查询接口。 */
+import lombok.RequiredArgsConstructor;
+/**
+ * 离线执行命令和执行历史查询接口。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @RestController
+@RequiredArgsConstructor
 public class OfflineJobExecutionController {
 
   private final OfflineJobExecutionService service;
   private final LinkUpClient linkUpClient;
 
-  public OfflineJobExecutionController(
-      OfflineJobExecutionService service,
-      LinkUpClient linkUpClient) {
-    this.service = service;
-    this.linkUpClient = linkUpClient;
-  }
 
   @GetMapping({"/api/v1/job/batch-execution/health", "/api/v1/executor/health"})
   public Result<LinkUpNodeResponse> health() {

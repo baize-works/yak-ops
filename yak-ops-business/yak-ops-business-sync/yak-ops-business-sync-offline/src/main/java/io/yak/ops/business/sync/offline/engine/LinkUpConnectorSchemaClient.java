@@ -16,7 +16,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-/** Link-Up Connector Schema 只读客户端。 */
+/**
+ * Link-Up Connector Schema 只读客户端。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class LinkUpConnectorSchemaClient {

@@ -10,7 +10,11 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** 持久化 Link-Up Connector Schema 快照，Worker 暂时离线时仍可编辑任务。 */
+/**
+ * 持久化 Link-Up Connector Schema 快照，Worker 暂时离线时仍可编辑任务。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 public class OfflineConnectorSchemaRepository {

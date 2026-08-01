@@ -27,9 +27,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-/** Offline job definition catalog with draft records and immutable structured JobSpec versions. */
+import lombok.RequiredArgsConstructor;
+/**
+ * 离线同步任务定义与版本管理服务。
+ *
+ * Offline job definition catalog with draft records and immutable structured JobSpec versions.
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Service
+@RequiredArgsConstructor
 public class OfflineJobDefinitionService {
 
   private final OfflineJobDefinitionDao definitionDao;
@@ -39,18 +47,6 @@ public class OfflineJobDefinitionService {
   private final OfflineDefinitionSupport support;
   private final AtomicLong idSequence = new AtomicLong(System.currentTimeMillis() * 1000L);
 
-  public OfflineJobDefinitionService(
-      OfflineJobDefinitionDao definitionDao,
-      OfflineDefinitionCatalogRepository catalogRepository,
-      OfflineScheduleRepository scheduleRepository,
-      OfflineExecutionControlRepository executionRepository,
-      OfflineDefinitionSupport support) {
-    this.definitionDao = definitionDao;
-    this.catalogRepository = catalogRepository;
-    this.scheduleRepository = scheduleRepository;
-    this.executionRepository = executionRepository;
-    this.support = support;
-  }
 
   public Long nextId() {
     long floor = System.currentTimeMillis() * 1000L;

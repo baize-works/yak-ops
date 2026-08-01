@@ -14,24 +14,22 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 离线同步控制面的节点、版本、事件和告警查询接口。 */
+import lombok.RequiredArgsConstructor;
+/**
+ * 离线同步控制面的节点、版本、事件和告警查询接口。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @RestController
 @RequestMapping("/api/v1/job/batch-control")
+@RequiredArgsConstructor
 public class OfflineControlPlaneController {
 
   private final OfflineWorkerRegistry workerRegistry;
   private final OfflineJobDefinitionService definitionService;
   private final OfflineExecutionControlRepository repository;
 
-  public OfflineControlPlaneController(
-      OfflineWorkerRegistry workerRegistry,
-      OfflineJobDefinitionService definitionService,
-      OfflineExecutionControlRepository repository) {
-    this.workerRegistry = workerRegistry;
-    this.definitionService = definitionService;
-    this.repository = repository;
-  }
 
   @GetMapping("/node")
   public Result<NodeRecord> node() {

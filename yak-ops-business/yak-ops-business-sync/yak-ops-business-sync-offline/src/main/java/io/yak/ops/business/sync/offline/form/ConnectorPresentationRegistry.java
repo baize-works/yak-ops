@@ -8,7 +8,11 @@ import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
-/** 内置 Presentation Profile；未知 Connector 自动回退到通用推导。 */
+/**
+ * 内置 Presentation Profile；未知 Connector 自动回退到通用推导。
+ *
+ * @author weifuwan
+ */
 @ConditionalOnOfflineSyncEnabled
 @Component
 public class ConnectorPresentationRegistry {

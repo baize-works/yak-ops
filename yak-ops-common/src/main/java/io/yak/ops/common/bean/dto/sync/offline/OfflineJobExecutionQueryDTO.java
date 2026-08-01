@@ -5,7 +5,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
 
-/** 离线同步任务实例分页查询条件。 */
+/**
+ * 离线同步任务实例分页查询条件。
+ *
+ * @author weifuwan
+ */
 @Data
 public class OfflineJobExecutionQueryDTO {
 
