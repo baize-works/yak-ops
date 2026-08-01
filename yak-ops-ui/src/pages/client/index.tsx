@@ -29,6 +29,7 @@ import {
 import type { LinkupClient, LinkupClientMetrics } from './api';
 import AddClientModal from './components/AddClientModal';
 import { useClientPageState } from './hooks/useClientPageState';
+import YakOpsEmpty from '@/components/YakOpsEmpty';
 
 type ClientStatusFilter = 'all' | 'online' | 'warning' | 'offline';
 
@@ -38,7 +39,7 @@ interface StatusTab {
 }
 
 const statusTabs: StatusTab[] = [
-  { key: 'all', label: '全部客户端' },
+  { key: 'all', label: '全部' },
   { key: 'online', label: '在线' },
   { key: 'warning', label: '异常' },
   { key: 'offline', label: '离线' },
@@ -323,136 +324,150 @@ const ClientPage = () => {
   }, [clients, keyword, statusFilter]);
 
   return (
-    <ConfigProvider theme={BRAND_THEME}>
-      <div className="min-h-[calc(100vh-48px)] bg-[#f7f7f8] px-5 py-5 lg:px-6">
-        <div className="mx-auto w-full max-w-[1680px]">
-          <div className="flex flex-col gap-4 border-b border-[#e8e9ec] pb-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="m-0 text-[22px] font-semibold leading-8 text-[#161823]">客户端管理</h1>
-              <div className="mt-1 text-[13px] leading-6 text-[#8a8f99]">
-                管理 Link-Up 客户端连接、健康状态与运行指标。
-              </div>
-            </div>
+    <ConfigProvider
+  theme={{
+    ...BRAND_THEME,
+    token: {
+      ...BRAND_THEME.token,
+      colorPrimary: '#fe2c55',
+      borderRadius: 6,
+    },
+  }}
+>
+  <div className="min-h-[calc(100vh-64px)] bg-[#ffffff]">
+    <div className="w-full px-5 pt-5 lg:px-10" style={{marginTop: 12}}>
+      {/* 页面标题和搜索 */}
+      <div className="flex min-h-[38px] items-start justify-between gap-4">
+        <h1 className="m-0 text-[22px] font-semibold leading-9 text-[#1f2329]">
+          客户端管理
+        </h1>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                allowClear
-                variant="filled"
-                value={keyword}
-                prefix={<SearchOutlined className="text-[#98a2b3]" />}
-                placeholder="搜索客户端"
-                className="!h-9 !w-[240px]"
-                onChange={(event) => setKeyword(event.target.value)}
-              />
+        <div className="flex items-center gap-2">
+          <Input
+            allowClear
+            variant="filled"
+            value={keyword}
+            prefix={
+              <SearchOutlined className="text-[14px] text-[#a4a7ad]" />
+            }
+            placeholder="搜索客户端"
+            
+            onChange={(event) => setKeyword(event.target.value)}
+          />
 
-              <Tooltip title="刷新客户端列表">
-                <Button
-                  icon={<ReloadOutlined spin={loading} />}
-                  className="!h-9 !w-9 !px-0"
-                  onClick={() => loadClients()}
-                />
-              </Tooltip>
+          <Tooltip title="刷新客户端列表">
+            <Button
+              type="text"
+              icon={<ReloadOutlined spin={loading} />}
+              className="!h-9 !w-9 !bg-[#ededee] !px-0 hover:!bg-[#e7e7e9]"
+              onClick={() => loadClients()}
+            />
+          </Tooltip>
 
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                className="!h-9 !px-4"
-                onClick={handleOpenCreate}
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            className="!h-9 !border-[#fe2c55] !bg-[#fe2c55] !px-4 hover:!border-[#e9284c] hover:!bg-[#e9284c]"
+            onClick={handleOpenCreate}
+          >
+            新增客户端
+          </Button>
+        </div>
+      </div>
+
+      {/* 状态筛选 */}
+      <div className="flex h-[56px] items-end justify-between border-b border-[#dedfe3]" style={{overflow: "hidden"}}>
+        <div className="flex h-full min-w-0 items-end gap-7 ">
+          {statusTabs.map((tab) => {
+            const active = tab.key === statusFilter;
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                className={[
+                  'relative h-full shrink-0 border-0 bg-transparent px-1',
+                  'text-[14px] transition-colors duration-200',
+                  active
+                    ? 'font-semibold text-[#1f2329]'
+                    : 'font-normal text-[#555b65] hover:text-[#1f2329]',
+                ].join(' ')}
+                onClick={() => setStatusFilter(tab.key)}
               >
-                新增客户端
-              </Button>
-            </div>
-          </div>
+                {tab.label}
 
-          <div className="flex flex-col gap-3 border-b border-[#e8e9ec] lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-center gap-6 overflow-x-auto">
-              {statusTabs.map((tab) => {
-                const active = tab.key === statusFilter;
-
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    className={[
-                      'relative h-12 shrink-0 border-0 bg-transparent px-0 text-[13px] transition-colors',
-                      active ? 'font-semibold text-[#161823]' : 'font-normal text-[#667085] hover:text-[#161823]',
-                    ].join(' ')}
-                    onClick={() => setStatusFilter(tab.key)}
-                  >
-                    <span>{tab.label}</span>
-                    <span className="ml-1.5 text-[12px] text-[#98a2b3]">{statusCounts[tab.key]}</span>
-                    {active ? (
-                      <span
-                        className="absolute inset-x-0 bottom-0 h-0.5"
-                        style={{ background: BRAND_COLOR }}
-                      />
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="pb-3 text-[12px] text-[#8a8f99] lg:pb-0">
-              共 <span className="font-semibold text-[#344054]">{filteredClients.length}</span> 个客户端
-            </div>
-          </div>
-
-          <div className="py-4">
-            {loading && !clients.length ? (
-              <div className="space-y-3">
-                {[0, 1, 2].map((item) => (
-                  <div key={item} className="rounded-[10px] border border-[#eceef2] bg-white p-5">
-                    <Skeleton active avatar paragraph={{ rows: 3 }} />
-                  </div>
-                ))}
-              </div>
-            ) : filteredClients.length ? (
-              <div className="space-y-3">
-                {filteredClients.map((client) => {
-                  const id = Number(client.id);
-
-                  return (
-                    <ClientRow
-                      key={client.id ?? client.clientName}
-                      client={client}
-                      metrics={id ? metricsByClientId[id] : undefined}
-                      metricsLoading={id ? metricsLoadingIds.has(id) : false}
-                      deleting={deleteLoadingId === client.id}
-                      onRefreshMetrics={loadClientMetrics}
-                      onEdit={handleOpenEdit}
-                      onDelete={handleDeleteClient}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex min-h-[420px] items-center justify-center rounded-[10px] border border-dashed border-[#dfe2e7] bg-white">
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={keyword || statusFilter !== 'all' ? '没有匹配的客户端' : '还没有客户端'}
-                >
-                  {!keyword && statusFilter === 'all' ? (
-                    <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-                      新增客户端
-                    </Button>
-                  ) : null}
-                </Empty>
-              </div>
-            )}
-          </div>
+                {active ? (
+                  <span className="absolute inset-x-0 bottom-[-1px] h-[3px] bg-[#fe2c55]" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
 
-        <AddClientModal
-          open={openAddModal}
-          form={form}
-          mode={editingClient ? 'edit' : 'create'}
-          initialValues={editingClient}
-          confirmLoading={confirmLoading}
-          onCancel={handleCancelModal}
-          onSubmit={handleSaveClient}
-        />
+        <div className="shrink-0 pb-[17px] text-[14px] text-[#6b7075]">
+          共{' '}
+          <span className="font-medium text-[#6b7075]">
+            {filteredClients.length}
+          </span>{' '}
+          个客户端
+        </div>
       </div>
-    </ConfigProvider>
+
+      {/* 客户端内容 */}
+      <div className="py-4">
+        {loading && !clients.length ? (
+          <div className="space-y-3">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="border border-[#e8e9ec] bg-white p-5"
+              >
+                <Skeleton active avatar paragraph={{ rows: 3 }} />
+              </div>
+            ))}
+          </div>
+        ) : filteredClients.length ? (
+          <div className="space-y-3">
+            {filteredClients.map((client) => {
+              const id = Number(client.id);
+
+              return (
+                <ClientRow
+                  key={client.id ?? client.clientName}
+                  client={client}
+                  metrics={
+                    id ? metricsByClientId[id] : undefined
+                  }
+                  metricsLoading={
+                    id ? metricsLoadingIds.has(id) : false
+                  }
+                  deleting={deleteLoadingId === client.id}
+                  onRefreshMetrics={loadClientMetrics}
+                  onEdit={handleOpenEdit}
+                  onDelete={handleDeleteClient}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex min-h-[420px] items-center justify-center  bg-white">
+            <YakOpsEmpty />
+          </div>
+        )}
+      </div>
+    </div>
+
+    <AddClientModal
+      open={openAddModal}
+      form={form}
+      mode={editingClient ? 'edit' : 'create'}
+      initialValues={editingClient}
+      confirmLoading={confirmLoading}
+      onCancel={handleCancelModal}
+      onSubmit={handleSaveClient}
+    />
+  </div>
+</ConfigProvider>
   );
 };
 
