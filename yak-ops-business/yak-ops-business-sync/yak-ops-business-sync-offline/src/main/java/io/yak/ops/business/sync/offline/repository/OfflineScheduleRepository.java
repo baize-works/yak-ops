@@ -75,6 +75,24 @@ public class OfflineScheduleRepository {
     }
   }
 
+  public List<ScheduleRecord> findPendingSchedules(int limit) {
+    return jdbc.query(
+        selectSql() + " WHERE enabled = 1 AND next_fire_time IS NULL "
+            + "AND cron_expression IS NOT NULL ORDER BY update_time ASC LIMIT ?",
+        (resultSet, rowNum) -> map(resultSet),
+        Math.max(1, limit));
+  }
+
+  public void initializeNextFireTime(ScheduleRecord schedule, LocalDateTime now) {
+    LocalDateTime nextFireTime = next(schedule.getCronExpression(), now);
+    jdbc.update(
+        "UPDATE yak_offline_schedule SET next_fire_time = ?, update_time = ? "
+            + "WHERE job_definition_id = ? AND enabled = 1 AND next_fire_time IS NULL",
+        timestamp(nextFireTime),
+        Timestamp.valueOf(LocalDateTime.now()),
+        schedule.getJobDefinitionId());
+  }
+
   public List<ScheduleRecord> findDueSchedules(LocalDateTime now, int limit) {
     return jdbc.query(
         selectSql() + " WHERE enabled = 1 AND next_fire_time IS NOT NULL "

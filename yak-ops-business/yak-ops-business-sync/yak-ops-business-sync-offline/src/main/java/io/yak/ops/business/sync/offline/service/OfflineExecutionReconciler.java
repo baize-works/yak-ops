@@ -93,9 +93,9 @@ public class OfflineExecutionReconciler {
   }
 
   private void retry(OfflineJobExecutionPO execution) {
-    repository.markRetryCreated(execution.getId());
     try {
       executionService.retryFrom(execution);
+      repository.markRetryCreated(execution.getId());
     } catch (RuntimeException exception) {
       LOG.warn("Offline execution retry failed, executionId={}", execution.getId(), exception);
     }

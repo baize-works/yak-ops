@@ -36,6 +36,9 @@ public class OfflineScheduleDispatcher {
   public void dispatch() {
     LocalDateTime fireTime = LocalDateTime.now();
     int limit = Math.max(1, properties.getControl().getScanBatchSize());
+    for (ScheduleRecord schedule : repository.findPendingSchedules(limit)) {
+      repository.initializeNextFireTime(schedule, fireTime);
+    }
     for (ScheduleRecord schedule : repository.findDueSchedules(fireTime, limit)) {
       if (!repository.claimSchedule(schedule, fireTime)) {
         continue;

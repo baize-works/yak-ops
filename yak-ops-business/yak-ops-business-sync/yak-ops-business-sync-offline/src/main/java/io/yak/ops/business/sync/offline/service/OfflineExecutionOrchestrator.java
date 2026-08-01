@@ -116,8 +116,10 @@ public class OfflineExecutionOrchestrator {
       applySnapshot(execution, response, "SUBMITTED");
       return execution;
     } catch (LinkUpRequestException exception) {
+      boolean retryable = exception.getStatusCode() == 429
+          || exception.getStatusCode() >= 500;
       markTerminal(execution, OfflineExecutionStatus.FAILED,
-          exception.getCode() + "：" + exception.getMessage(), null);
+          exception.getCode() + "：" + exception.getMessage(), null, retryable);
       throw exception;
     } catch (RuntimeException exception) {
       // 网络中断时不能断言 Link-Up 未接收，保留 SUBMITTED 交给 externalExecutionId 对账。
@@ -185,7 +187,7 @@ public class OfflineExecutionOrchestrator {
     execution.setEndTime(time(response.getEndTimeMillis()));
     execution.setLastSyncTime(LocalDateTime.now());
     execution.setUpdateTime(LocalDateTime.now());
-    configureRetry(execution, nextStatus);
+    configureRetry(execution, nextStatus, retryable(response, nextStatus));
     executionDao.updateById(execution);
     updateDefinition(execution, nextStatus);
     if (!nextStatus.name().equals(previousStatus)) {
@@ -197,7 +199,7 @@ public class OfflineExecutionOrchestrator {
 
   public void markLost(OfflineJobExecutionPO execution, String message) {
     if (execution != null && OfflineExecutionStatus.isActive(execution.getStatus())) {
-      markTerminal(execution, OfflineExecutionStatus.LOST, message, null);
+      markTerminal(execution, OfflineExecutionStatus.LOST, message, null, true);
     }
   }
 
@@ -213,7 +215,8 @@ public class OfflineExecutionOrchestrator {
   }
 
   private void markTerminal(
-      OfflineJobExecutionPO execution, OfflineExecutionStatus status, String message, String payload) {
+      OfflineJobExecutionPO execution, OfflineExecutionStatus status, String message,
+      String payload, boolean retryable) {
     String previousStatus = execution.getStatus();
     execution.setStatus(status.name());
     execution.setStateVersion(value(execution.getStateVersion(), 0L) + 1L);
@@ -221,7 +224,7 @@ public class OfflineExecutionOrchestrator {
     execution.setEndTime(LocalDateTime.now());
     execution.setLastSyncTime(LocalDateTime.now());
     execution.setUpdateTime(LocalDateTime.now());
-    configureRetry(execution, status);
+    configureRetry(execution, status, retryable);
     executionDao.updateById(execution);
     updateDefinition(execution, status);
     record(execution, previousStatus, status.name(), status.name(), message, payload);
@@ -258,9 +261,11 @@ public class OfflineExecutionOrchestrator {
     record(execution, previous, target.name(), eventType, message, payload);
   }
 
-  private void configureRetry(OfflineJobExecutionPO execution, OfflineExecutionStatus status) {
+  private void configureRetry(
+      OfflineJobExecutionPO execution, OfflineExecutionStatus status, boolean retryable) {
     execution.setNextRetryTime(null);
-    if (status != OfflineExecutionStatus.FAILED && status != OfflineExecutionStatus.LOST) {
+    if (!retryable
+        || (status != OfflineExecutionStatus.FAILED && status != OfflineExecutionStatus.LOST)) {
       return;
     }
     ScheduleRecord schedule = scheduleRepository.findSchedule(execution.getJobDefinitionId());
@@ -272,6 +277,25 @@ public class OfflineExecutionOrchestrator {
     if (value(execution.getAttemptNo(), 1) < Math.max(1, maxAttempts)) {
       execution.setNextRetryTime(LocalDateTime.now().plusSeconds(Math.max(1, backoff)));
     }
+  }
+
+  private boolean retryable(LinkUpJobResponse response, OfflineExecutionStatus status) {
+    if (status == OfflineExecutionStatus.LOST) {
+      return true;
+    }
+    if (status != OfflineExecutionStatus.FAILED) {
+      return false;
+    }
+    String code = response == null ? null : response.getErrorCode();
+    if (!StringUtils.hasText(code)) {
+      return true;
+    }
+    String normalized = code.toUpperCase(java.util.Locale.ROOT);
+    return !(normalized.contains("CONFIG")
+        || normalized.contains("VALIDATION")
+        || normalized.contains("IDEMPOTENCY")
+        || normalized.contains("BAD_REQUEST")
+        || normalized.contains("UNSUPPORTED"));
   }
 
   private void record(OfflineJobExecutionPO execution, String from, String to,

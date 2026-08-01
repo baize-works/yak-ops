@@ -56,6 +56,29 @@ CREATE TABLE IF NOT EXISTS yak_offline_schedule (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='离线同步持久化调度配置';
 
+INSERT IGNORE INTO yak_offline_schedule
+    (job_definition_id, cron_expression, enabled, retry_max_attempts,
+     retry_backoff_seconds, next_fire_time, schedule_json, create_time, update_time)
+SELECT id,
+       NULLIF(JSON_UNQUOTE(JSON_EXTRACT(schedule_json, '$.cronExpression')), 'null'),
+       CASE
+         WHEN LOWER(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(schedule_json, '$.scheduleRunType')), 'pause'))
+              IN ('pause', 'paused') THEN 0
+         WHEN JSON_UNQUOTE(JSON_EXTRACT(schedule_json, '$.cronExpression')) IS NULL THEN 0
+         ELSE 1
+       END,
+       GREATEST(1, COALESCE(JSON_EXTRACT(schedule_json, '$.retryPolicy.maxAttempts'),
+                            JSON_EXTRACT(schedule_json, '$.retryTimes'), 1)),
+       GREATEST(1, COALESCE(JSON_EXTRACT(schedule_json, '$.retryPolicy.backoffSeconds'),
+                            JSON_EXTRACT(schedule_json, '$.retryIntervalSeconds'), 30)),
+       NULL,
+       schedule_json,
+       create_time,
+       update_time
+FROM yak_offline_job_definition
+WHERE schedule_json IS NOT NULL
+  AND JSON_VALID(schedule_json);
+
 CREATE TABLE IF NOT EXISTS yak_offline_engine_node (
     node_id VARCHAR(128) NOT NULL COMMENT '稳定节点 ID',
     node_name VARCHAR(200) NOT NULL COMMENT '节点名称',
