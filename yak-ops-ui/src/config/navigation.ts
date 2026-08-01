@@ -219,6 +219,18 @@ export const appRoutes: readonly NavigationRoute[] = [
     parentId: 'realtime-link-up',
   },
 
+  {
+    id: 'data-development',
+    mode: 'any',
+    permissions: ['task:batch:read', 'task:realtime:read'],
+    path: '/data-development',
+    title: '数据开发',
+    component: './data-development',
+    iconKey: 'api',
+    menuGroup: 'integration',
+    order: 30,
+  },
+
   // ---------------------------------------------------------------------------
   // 流程编排
   // ---------------------------------------------------------------------------
