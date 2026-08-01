@@ -1,9 +1,6 @@
 name: Offline Sync Chinese Docs and Lombok
 
 on:
-  push:
-    branches:
-      - agent/offline-sync-docs-lombok
   pull_request:
     branches:
       - main
@@ -17,9 +14,6 @@ permissions:
 
 jobs:
   refactor:
-    if: >-
-      github.event_name == 'pull_request' ||
-      !contains(github.event.head_commit.message, '[offline-docs-applied]')
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: ${{ github.head_ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -42,13 +36,17 @@ jobs:
           cache: maven
 
       - name: Update Java documentation and Lombok usage
-        run: python tools/refactor_offline_sync_docs.py | tee /tmp/refactor-first.log
+        run: |
+          python tools/refactor_offline_sync_docs.py | tee /tmp/refactor-first.log
+          python tools/cleanup_offline_sync_format.py | tee /tmp/format-first.log
 
       - name: Verify source changes and idempotency
         run: |
           git diff --check
           python tools/refactor_offline_sync_docs.py | tee /tmp/refactor-second.log
+          python tools/cleanup_offline_sync_format.py | tee /tmp/format-second.log
           grep -q 'changed=0' /tmp/refactor-second.log
+          grep -q 'changed=0' /tmp/format-second.log
           git diff --check
 
       - name: Compile offline-sync module when dependencies are available
@@ -83,5 +81,7 @@ jobs:
             yak-ops-common/src/main/java/io/yak/ops/common/bean/dto/sync/offline \
             yak-ops-common/src/main/java/io/yak/ops/common/bean/po/sync/offline \
             yak-ops-common/src/main/java/io/yak/ops/common/bean/vo/sync/offline
-          git commit -m "refactor(offline-sync): standardize Chinese docs and Lombok [offline-docs-applied]"
+          git commit -m "style(offline-sync): tidy generated documentation formatting [offline-docs-applied]"
+          git fetch origin agent/offline-sync-docs-lombok
+          git rebase origin/agent/offline-sync-docs-lombok
           git push origin HEAD:agent/offline-sync-docs-lombok
