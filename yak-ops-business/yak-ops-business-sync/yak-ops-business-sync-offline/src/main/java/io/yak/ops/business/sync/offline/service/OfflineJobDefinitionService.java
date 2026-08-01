@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,10 @@ import org.springframework.util.StringUtils;
 @Service
 @RequiredArgsConstructor
 public class OfflineJobDefinitionService {
+
+  private static final Set<String> INITIAL_DRAFT_VALIDATION_MESSAGES = Set.of(
+      "请选择来源数据源",
+      "请选择目标数据源");
 
   private final OfflineJobDefinitionDao definitionDao;
   private final OfflineDefinitionCatalogRepository catalogRepository;
@@ -118,7 +123,15 @@ public class OfflineJobDefinitionService {
     }
     OfflineJobDefinitionPO existing = definitionDao.selectById(id);
     ensureEditable(existing);
-    PreparedDefinition prepared = support.prepare(requestDTO);
+    PreparedDefinition prepared;
+    try {
+      prepared = support.prepare(requestDTO);
+    } catch (IllegalArgumentException exception) {
+      if (existing == null && isInitialDraftValidation(exception)) {
+        return saveDraft(requestDTO);
+      }
+      throw exception;
+    }
     if (definitionDao.existsByName(prepared.getJobName(), id)) {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + prepared.getJobName());
     }
@@ -302,6 +315,11 @@ public class OfflineJobDefinitionService {
         || executionRepository.hasActiveExecution(existing.getId())) {
       throw new IllegalStateException("运行中的任务不能修改");
     }
+  }
+
+  private boolean isInitialDraftValidation(IllegalArgumentException exception) {
+    return exception != null
+        && INITIAL_DRAFT_VALIDATION_MESSAGES.contains(exception.getMessage());
   }
 
   private Long id(io.yak.ops.common.bean.po.datasource.DataSourcePO source) {
