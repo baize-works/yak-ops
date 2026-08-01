@@ -25,19 +25,17 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * 离线同步控制面基础设施配置。 */
- * @ConditionalOnOfflineSyncEnabled
- * @Configuration(proxyBeanMethods = false)
- * @EnableScheduling
- * @EnableConfigurationProperties(OfflineSyncProperties.class)
- * @MapperScan(
- * basePackages = "io.yak.ops.business.sync.offline.dao.mapper",
- * sqlSessionFactoryRef = "offlineSyncSqlSessionFactory")
- * /**
- * 离线同步模块基础配置。
+ * 离线同步控制面基础设施配置。
  *
  * @author weifuwan
  */
+@ConditionalOnOfflineSyncEnabled
+@Configuration(proxyBeanMethods = false)
+@EnableScheduling
+@EnableConfigurationProperties(OfflineSyncProperties.class)
+@MapperScan(
+    basePackages = "io.yak.ops.business.sync.offline.dao.mapper",
+    sqlSessionFactoryRef = "offlineSyncSqlSessionFactory")
 public class OfflineSyncConfiguration {
 
   @Bean(name = "offlineSyncDataSource", destroyMethod = "close")
