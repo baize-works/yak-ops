@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS yak_offline_job_version (
   COMMENT='离线同步不可变任务版本';
 
 ALTER TABLE yak_offline_job_definition
-    ADD COLUMN IF NOT EXISTS current_version_id BIGINT NULL COMMENT '当前任务版本 ID' AFTER version;
+    ADD COLUMN current_version_id BIGINT NULL COMMENT '当前任务版本 ID' AFTER version;
 
 INSERT IGNORE INTO yak_offline_job_version
     (job_definition_id, version_no, definition_json, hocon_config, config_digest, create_time)
@@ -100,26 +100,26 @@ CREATE TABLE IF NOT EXISTS yak_offline_engine_node (
   COMMENT='离线同步 Link-Up Worker 节点';
 
 ALTER TABLE yak_offline_job_execution
-    ADD COLUMN IF NOT EXISTS definition_version_id BIGINT NULL COMMENT '任务版本 ID' AFTER job_definition_id,
-    ADD COLUMN IF NOT EXISTS definition_version INT NOT NULL DEFAULT 1 COMMENT '任务版本号' AFTER definition_version_id,
-    ADD COLUMN IF NOT EXISTS engine_node_id VARCHAR(128) NULL COMMENT '执行节点 ID' AFTER definition_version,
-    ADD COLUMN IF NOT EXISTS external_execution_id VARCHAR(128) NULL COMMENT 'Yak Ops 全局执行标识' AFTER engine_job_id,
-    ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(128) NULL COMMENT 'Link-Up 幂等键' AFTER external_execution_id,
-    ADD COLUMN IF NOT EXISTS worker_instance_id VARCHAR(128) NULL COMMENT 'Link-Up 进程实例 ID' AFTER idempotency_key,
-    ADD COLUMN IF NOT EXISTS state_version BIGINT NOT NULL DEFAULT 1 COMMENT '状态版本' AFTER status,
-    ADD COLUMN IF NOT EXISTS attempt_no INT NOT NULL DEFAULT 1 COMMENT '尝试序号' AFTER state_version,
-    ADD COLUMN IF NOT EXISTS trigger_type VARCHAR(16) NOT NULL DEFAULT 'MANUAL' COMMENT 'MANUAL/SCHEDULE/RETRY' AFTER attempt_no,
-    ADD COLUMN IF NOT EXISTS retry_from_execution_id BIGINT NULL COMMENT '重试来源实例 ID' AFTER trigger_type,
-    ADD COLUMN IF NOT EXISTS cancellation_requested TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否请求取消' AFTER retry_from_execution_id,
-    ADD COLUMN IF NOT EXISTS retry_created TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已创建重试实例' AFTER cancellation_requested,
-    ADD COLUMN IF NOT EXISTS next_retry_time DATETIME(3) NULL COMMENT '下次重试时间' AFTER retry_created,
-    ADD COLUMN IF NOT EXISTS config_digest CHAR(64) NULL COMMENT '提交配置摘要' AFTER next_retry_time,
-    ADD COLUMN IF NOT EXISTS last_sync_time DATETIME(3) NULL COMMENT '最近与 Link-Up 对账时间' AFTER end_time,
-    ADD UNIQUE INDEX IF NOT EXISTS uk_yak_offline_external_execution (external_execution_id),
-    ADD UNIQUE INDEX IF NOT EXISTS uk_yak_offline_idempotency (idempotency_key),
-    ADD INDEX IF NOT EXISTS idx_yak_offline_execution_active (status, last_sync_time),
-    ADD INDEX IF NOT EXISTS idx_yak_offline_execution_retry (retry_created, next_retry_time),
-    ADD INDEX IF NOT EXISTS idx_yak_offline_execution_node (engine_node_id, worker_instance_id);
+    ADD COLUMN definition_version_id BIGINT NULL COMMENT '任务版本 ID' AFTER job_definition_id,
+    ADD COLUMN definition_version INT NOT NULL DEFAULT 1 COMMENT '任务版本号' AFTER definition_version_id,
+    ADD COLUMN engine_node_id VARCHAR(128) NULL COMMENT '执行节点 ID' AFTER definition_version,
+    ADD COLUMN external_execution_id VARCHAR(128) NULL COMMENT 'Yak Ops 全局执行标识' AFTER engine_job_id,
+    ADD COLUMN idempotency_key VARCHAR(128) NULL COMMENT 'Link-Up 幂等键' AFTER external_execution_id,
+    ADD COLUMN worker_instance_id VARCHAR(128) NULL COMMENT 'Link-Up 进程实例 ID' AFTER idempotency_key,
+    ADD COLUMN state_version BIGINT NOT NULL DEFAULT 1 COMMENT '状态版本' AFTER status,
+    ADD COLUMN attempt_no INT NOT NULL DEFAULT 1 COMMENT '尝试序号' AFTER state_version,
+    ADD COLUMN trigger_type VARCHAR(16) NOT NULL DEFAULT 'MANUAL' COMMENT 'MANUAL/SCHEDULE/RETRY' AFTER attempt_no,
+    ADD COLUMN retry_from_execution_id BIGINT NULL COMMENT '重试来源实例 ID' AFTER trigger_type,
+    ADD COLUMN cancellation_requested TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否请求取消' AFTER retry_from_execution_id,
+    ADD COLUMN retry_created TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已创建重试实例' AFTER cancellation_requested,
+    ADD COLUMN next_retry_time DATETIME(3) NULL COMMENT '下次重试时间' AFTER retry_created,
+    ADD COLUMN config_digest CHAR(64) NULL COMMENT '提交配置摘要' AFTER next_retry_time,
+    ADD COLUMN last_sync_time DATETIME(3) NULL COMMENT '最近与 Link-Up 对账时间' AFTER end_time,
+    ADD UNIQUE INDEX uk_yak_offline_external_execution (external_execution_id),
+    ADD UNIQUE INDEX uk_yak_offline_idempotency (idempotency_key),
+    ADD INDEX idx_yak_offline_execution_active (status, last_sync_time),
+    ADD INDEX idx_yak_offline_execution_retry (retry_created, next_retry_time),
+    ADD INDEX idx_yak_offline_execution_node (engine_node_id, worker_instance_id);
 
 CREATE TABLE IF NOT EXISTS yak_offline_execution_event (
     id BIGINT NOT NULL AUTO_INCREMENT,
