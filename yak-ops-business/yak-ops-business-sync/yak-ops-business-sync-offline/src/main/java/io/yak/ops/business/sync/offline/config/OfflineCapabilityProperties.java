@@ -3,7 +3,7 @@ package io.yak.ops.business.sync.offline.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-/** Link-Up Worker Connector 能力采集与调度配置。 */
+/** Link-Up Worker Connector 能力采集、可达性预检与调度配置。 */
 @ConditionalOnOfflineSyncEnabled
 @Component
 @ConfigurationProperties(prefix = "yak.sync.offline.capability")
@@ -26,6 +26,21 @@ public class OfflineCapabilityProperties {
 
   /** 单个 Worker 能力快照的目标刷新周期。 */
   private long workerRefreshMillis = 300_000L;
+
+  /** 是否启用 Worker 视角的数据源连通性预检。 */
+  private boolean reachabilityEnabled = true;
+
+  /** 预检未通过或 Worker 不支持 preflight 时是否拒绝调度。 */
+  private boolean reachabilityRequired = true;
+
+  /** 成功预检结果的最大复用时间。 */
+  private long reachabilityMaxStaleMillis = 60_000L;
+
+  /** 单次运行最多探测的 Worker 数量，避免错误配置造成请求风暴。 */
+  private int reachabilityMaxWorkers = 50;
+
+  /** 预检历史缓存保留时间。 */
+  private long reachabilityRetentionMillis = 86_400_000L;
 
   public boolean isEnabled() {
     return enabled;
@@ -73,5 +88,45 @@ public class OfflineCapabilityProperties {
 
   public void setWorkerRefreshMillis(long workerRefreshMillis) {
     this.workerRefreshMillis = workerRefreshMillis;
+  }
+
+  public boolean isReachabilityEnabled() {
+    return reachabilityEnabled;
+  }
+
+  public void setReachabilityEnabled(boolean reachabilityEnabled) {
+    this.reachabilityEnabled = reachabilityEnabled;
+  }
+
+  public boolean isReachabilityRequired() {
+    return reachabilityRequired;
+  }
+
+  public void setReachabilityRequired(boolean reachabilityRequired) {
+    this.reachabilityRequired = reachabilityRequired;
+  }
+
+  public long getReachabilityMaxStaleMillis() {
+    return reachabilityMaxStaleMillis;
+  }
+
+  public void setReachabilityMaxStaleMillis(long reachabilityMaxStaleMillis) {
+    this.reachabilityMaxStaleMillis = reachabilityMaxStaleMillis;
+  }
+
+  public int getReachabilityMaxWorkers() {
+    return reachabilityMaxWorkers;
+  }
+
+  public void setReachabilityMaxWorkers(int reachabilityMaxWorkers) {
+    this.reachabilityMaxWorkers = reachabilityMaxWorkers;
+  }
+
+  public long getReachabilityRetentionMillis() {
+    return reachabilityRetentionMillis;
+  }
+
+  public void setReachabilityRetentionMillis(long reachabilityRetentionMillis) {
+    this.reachabilityRetentionMillis = reachabilityRetentionMillis;
   }
 }
