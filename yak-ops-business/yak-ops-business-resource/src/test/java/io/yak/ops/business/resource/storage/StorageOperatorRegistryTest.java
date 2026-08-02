@@ -15,16 +15,24 @@ import org.junit.jupiter.api.Test;
 class StorageOperatorRegistryTest {
 
   @Test
-  void resolvesConfiguredDefaultAndListsInstalledPlugins() {
+  void resolvesLocalAsConfiguredDefaultAndListsInstalledPlugins() {
     ResourceProperties properties = new ResourceProperties();
+    StorageOperator local = new StubOperator(ResourceStorageType.LOCAL, "本地存储");
     StorageOperator minio = new StubOperator(ResourceStorageType.MINIO, "MinIO");
-    StorageOperatorRegistry registry = new StorageOperatorRegistry(List.of(minio), properties);
+    StorageOperatorRegistry registry =
+        new StorageOperatorRegistry(List.of(local, minio), properties);
 
-    assertThat(registry.require(null)).isSameAs(minio);
-    assertThat(registry.list()).singleElement().satisfies(plugin -> {
-      assertThat(plugin.getType()).isEqualTo(ResourceStorageType.MINIO);
-      assertThat(plugin.isActive()).isTrue();
-    });
+    assertThat(registry.require(null)).isSameAs(local);
+    assertThat(registry.list())
+        .extracting(
+            plugin -> plugin.getType(),
+            plugin -> plugin.getName(),
+            plugin -> plugin.isActive())
+        .containsExactly(
+            org.assertj.core.groups.Tuple.tuple(
+                ResourceStorageType.LOCAL, "本地存储", true),
+            org.assertj.core.groups.Tuple.tuple(
+                ResourceStorageType.MINIO, "MinIO", false));
   }
 
   @Test
