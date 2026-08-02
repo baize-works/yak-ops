@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.yak.ops.business.resource.config.ResourceProperties;
 import io.yak.ops.business.resource.exception.ResourceException;
+import io.yak.ops.common.bean.vo.resource.ResourceStoragePluginVO;
 import io.yak.ops.common.enums.resource.ResourceStorageType;
 import io.yak.ops.spi.storage.StorageObjectMetadata;
 import io.yak.ops.spi.storage.StorageOperator;
@@ -23,16 +24,14 @@ class StorageOperatorRegistryTest {
         new StorageOperatorRegistry(List.of(local, minio), properties);
 
     assertThat(registry.require(null)).isSameAs(local);
-    assertThat(registry.list())
-        .extracting(
-            plugin -> plugin.getType(),
-            plugin -> plugin.getName(),
-            plugin -> plugin.isActive())
-        .containsExactly(
-            org.assertj.core.groups.Tuple.tuple(
-                ResourceStorageType.LOCAL, "本地存储", true),
-            org.assertj.core.groups.Tuple.tuple(
-                ResourceStorageType.MINIO, "MinIO", false));
+
+    List<ResourceStoragePluginVO> plugins = registry.list();
+    assertThat(plugins).hasSize(2);
+    assertThat(plugins.get(0).getType()).isEqualTo(ResourceStorageType.LOCAL);
+    assertThat(plugins.get(0).getName()).isEqualTo("本地存储");
+    assertThat(plugins.get(0).isActive()).isTrue();
+    assertThat(plugins.get(1).getType()).isEqualTo(ResourceStorageType.MINIO);
+    assertThat(plugins.get(1).isActive()).isFalse();
   }
 
   @Test
