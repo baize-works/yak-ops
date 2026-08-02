@@ -18,6 +18,11 @@
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-plugin-storage-local</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
             <artifactId>yak-ops-plugin-storage-minio</artifactId>
         </dependency>
         <dependency>
