@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -60,6 +61,19 @@ public class OfflineCapabilityMatcher {
     }
 
     JsonNode snapshot = read(node.getConnectorSchemasJson(), "Worker Connector 能力快照");
+    String snapshotInstanceId = snapshot.path("workerInstanceId").asText(null);
+    if (StringUtils.hasText(snapshotInstanceId)
+        && StringUtils.hasText(node.getWorkerInstanceId())
+        && !snapshotInstanceId.equals(node.getWorkerInstanceId())) {
+      return MatchResult.reject("Connector 能力快照属于旧 Worker 进程");
+    }
+    String snapshotEngineVersion = snapshot.path("engineVersion").asText(null);
+    if (StringUtils.hasText(snapshotEngineVersion)
+        && StringUtils.hasText(node.getEngineVersion())
+        && !snapshotEngineVersion.equals(node.getEngineVersion())) {
+      return MatchResult.reject("Connector 能力快照属于旧引擎版本");
+    }
+
     Map<String, JsonNode> available = index(snapshot.path("connectors"));
     ArrayNode matched = objectMapper.createArrayNode();
     List<String> descriptions = new ArrayList<>();
@@ -86,7 +100,7 @@ public class OfflineCapabilityMatcher {
 
       Set<String> actualCapabilities = values(connector.path("capabilities"));
       Set<String> requiredCapabilities = values(requirement.path("capabilities"));
-      Set<String> missing = new HashSet<>(requiredCapabilities);
+      Set<String> missing = new TreeSet<>(requiredCapabilities);
       missing.removeAll(actualCapabilities);
       if (!missing.isEmpty()) {
         return MatchResult.reject(
@@ -105,6 +119,8 @@ public class OfflineCapabilityMatcher {
     }
 
     ObjectNode assigned = objectMapper.createObjectNode();
+    assigned.put("workerInstanceId", node.getWorkerInstanceId());
+    assigned.put("engineVersion", node.getEngineVersion());
     assigned.put("capabilityDigest", node.getCapabilityDigest());
     assigned.put("capabilitySyncedAt", node.getCapabilitySyncedAt().toString());
     assigned.set("connectors", matched);
