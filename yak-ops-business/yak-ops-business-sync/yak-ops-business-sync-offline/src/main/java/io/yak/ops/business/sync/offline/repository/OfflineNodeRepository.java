@@ -18,7 +18,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * Link-Up Worker 注册信息、调度状态和心跳持久化。
+ * Link-Up Worker 注册信息、调度状态、心跳和能力快照持久化。
  *
  * @author weifuwan
  */
@@ -31,7 +31,8 @@ public class OfflineNodeRepository {
           + "weight, labels_json, worker_instance_id, engine_version, started_at_millis, "
           + "offline_only, status, max_concurrent_jobs, max_queued_jobs, running_jobs, "
           + "queued_jobs, last_heartbeat_time, last_success_time, consecutive_failures, "
-          + "last_error_message, create_time, update_time";
+          + "last_error_message, capability_status, capability_digest, connector_schemas_json, "
+          + "capability_synced_at, capability_error_message, create_time, update_time";
 
   private final JdbcTemplate jdbc;
   private final RowMapper<NodeRecord> rowMapper = this::map;
@@ -40,7 +41,7 @@ public class OfflineNodeRepository {
     this.jdbc = new JdbcTemplate(dataSource);
   }
 
-  /** 创建或覆盖配置来源的默认 Worker。 */
+  /** 创建或覆盖配置来源的默认 Worker；已有能力快照不会被心跳登记覆盖。 */
   public void upsert(NodeRecord node) {
     LocalDateTime now = LocalDateTime.now();
     jdbc.update(
@@ -49,8 +50,9 @@ public class OfflineNodeRepository {
             + "weight, labels_json, worker_instance_id, engine_version, started_at_millis, "
             + "offline_only, status, max_concurrent_jobs, max_queued_jobs, running_jobs, "
             + "queued_jobs, last_heartbeat_time, last_success_time, consecutive_failures, "
-            + "last_error_message, create_time, update_time) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            + "last_error_message, capability_status, capability_digest, connector_schemas_json, "
+            + "capability_synced_at, capability_error_message, create_time, update_time) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             + "ON DUPLICATE KEY UPDATE "
             + "node_name = VALUES(node_name), base_url = VALUES(base_url), "
             + "registration_mode = VALUES(registration_mode), enabled = VALUES(enabled), "
@@ -70,7 +72,10 @@ public class OfflineNodeRepository {
         bool(node.getOfflineOnly()), node.getStatus(), node.getMaxConcurrentJobs(),
         node.getMaxQueuedJobs(), node.getRunningJobs(), node.getQueuedJobs(),
         timestamp(node.getLastHeartbeatTime()), timestamp(node.getLastSuccessTime()),
-        node.getConsecutiveFailures(), node.getLastErrorMessage(), timestamp(now), timestamp(now));
+        node.getConsecutiveFailures(), node.getLastErrorMessage(),
+        text(node.getCapabilityStatus(), "UNKNOWN"), node.getCapabilityDigest(),
+        node.getConnectorSchemasJson(), timestamp(node.getCapabilitySyncedAt()),
+        node.getCapabilityErrorMessage(), timestamp(now), timestamp(now));
   }
 
   /** 更新用户可编辑的 Worker 定义，并同步本次验证得到的运行信息。 */
@@ -116,6 +121,36 @@ public class OfflineNodeRepository {
         timestamp(LocalDateTime.now()), message, timestamp(LocalDateTime.now()), nodeId);
   }
 
+  public void updateCapabilitySuccess(
+      String nodeId,
+      String digest,
+      String connectorSchemasJson,
+      LocalDateTime syncedAt) {
+    LocalDateTime now = syncedAt == null ? LocalDateTime.now() : syncedAt;
+    jdbc.update(
+        "UPDATE yak_offline_engine_node SET capability_status = 'READY', capability_digest = ?, "
+            + "connector_schemas_json = ?, capability_synced_at = ?, "
+            + "capability_error_message = NULL, update_time = ? WHERE node_id = ?",
+        digest, connectorSchemasJson, timestamp(now), timestamp(LocalDateTime.now()), nodeId);
+  }
+
+  /** 保留最后一次成功快照，只更新错误状态，便于诊断和短时容错。 */
+  public void updateCapabilityFailure(String nodeId, String message) {
+    jdbc.update(
+        "UPDATE yak_offline_engine_node SET capability_status = 'ERROR', "
+            + "capability_error_message = ?, update_time = ? WHERE node_id = ?",
+        message, timestamp(LocalDateTime.now()), nodeId);
+  }
+
+  public void resetCapabilities(String nodeId) {
+    jdbc.update(
+        "UPDATE yak_offline_engine_node SET capability_status = 'UNKNOWN', "
+            + "capability_digest = NULL, connector_schemas_json = NULL, "
+            + "capability_synced_at = NULL, capability_error_message = NULL, update_time = ? "
+            + "WHERE node_id = ?",
+        timestamp(LocalDateTime.now()), nodeId);
+  }
+
   public boolean updateSchedulingStatus(String nodeId, String status, boolean enabled) {
     return jdbc.update(
         "UPDATE yak_offline_engine_node SET scheduling_status = ?, enabled = ?, update_time = ? "
@@ -152,9 +187,7 @@ public class OfflineNodeRepository {
         rowMapper);
   }
 
-  /**
-   * 调度事务内按稳定顺序锁定全部 Worker 行，防止多个任务并发使用相同负载快照。
-   */
+  /** 调度事务内按稳定顺序锁定全部 Worker 行。 */
   public List<NodeRecord> listAllForScheduling() {
     return jdbc.query(
         "SELECT " + SELECT_COLUMNS + " FROM yak_offline_engine_node "
@@ -166,6 +199,14 @@ public class OfflineNodeRepository {
     return jdbc.query(
         "SELECT " + SELECT_COLUMNS + " FROM yak_offline_engine_node "
             + "WHERE enabled = 1 AND scheduling_status <> 'DISABLED' "
+            + "ORDER BY node_id ASC",
+        rowMapper);
+  }
+
+  public List<NodeRecord> listCapabilityRefreshTargets() {
+    return jdbc.query(
+        "SELECT " + SELECT_COLUMNS + " FROM yak_offline_engine_node "
+            + "WHERE enabled = 1 AND status = 'UP' AND scheduling_status <> 'DISABLED' "
             + "ORDER BY node_id ASC",
         rowMapper);
   }
@@ -197,9 +238,18 @@ public class OfflineNodeRepository {
         .lastSuccessTime(localDateTime(rs.getTimestamp("last_success_time")))
         .consecutiveFailures(rs.getInt("consecutive_failures"))
         .lastErrorMessage(rs.getString("last_error_message"))
+        .capabilityStatus(rs.getString("capability_status"))
+        .capabilityDigest(rs.getString("capability_digest"))
+        .connectorSchemasJson(rs.getString("connector_schemas_json"))
+        .capabilitySyncedAt(localDateTime(rs.getTimestamp("capability_synced_at")))
+        .capabilityErrorMessage(rs.getString("capability_error_message"))
         .createTime(localDateTime(rs.getTimestamp("create_time")))
         .updateTime(localDateTime(rs.getTimestamp("update_time")))
         .build();
+  }
+
+  private String text(String value, String fallback) {
+    return value == null || value.isBlank() ? fallback : value;
   }
 
   private int bool(Boolean value) {
@@ -241,6 +291,11 @@ public class OfflineNodeRepository {
     private LocalDateTime lastSuccessTime;
     private Integer consecutiveFailures;
     private String lastErrorMessage;
+    private String capabilityStatus;
+    private String capabilityDigest;
+    private String connectorSchemasJson;
+    private LocalDateTime capabilitySyncedAt;
+    private String capabilityErrorMessage;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
   }
