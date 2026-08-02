@@ -3,9 +3,11 @@ package io.yak.ops.business.sync.offline.service;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
 import io.yak.ops.business.sync.offline.domain.OfflineExecutionStatus;
+import io.yak.ops.business.sync.offline.repository.OfflineDefinitionCatalogRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineDefinitionCatalogRepository.DefinitionVersion;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
+import io.yak.ops.business.sync.offline.worker.OfflineCapabilityRequirementResolver;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler.Assignment;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
@@ -14,11 +16,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * 离线同步执行实例原子领取服务。
  *
- * Atomically claims a definition, selects one Worker and creates one durable execution attempt.
+ * Atomically claims a definition, selects one capability-compatible Worker and creates one
+ * durable execution attempt.
  *
  * @author weifuwan
  */
@@ -29,16 +33,22 @@ public class OfflineExecutionClaimService {
   private final OfflineJobDefinitionService definitionService;
   private final OfflineJobExecutionDao executionDao;
   private final OfflineExecutionControlRepository executionRepository;
+  private final OfflineDefinitionCatalogRepository catalogRepository;
+  private final OfflineCapabilityRequirementResolver capabilityResolver;
   private final OfflineWorkerScheduler workerScheduler;
 
   public OfflineExecutionClaimService(
       OfflineJobDefinitionService definitionService,
       OfflineJobExecutionDao executionDao,
       OfflineExecutionControlRepository executionRepository,
+      OfflineDefinitionCatalogRepository catalogRepository,
+      OfflineCapabilityRequirementResolver capabilityResolver,
       OfflineWorkerScheduler workerScheduler) {
     this.definitionService = definitionService;
     this.executionDao = executionDao;
     this.executionRepository = executionRepository;
+    this.catalogRepository = catalogRepository;
+    this.capabilityResolver = capabilityResolver;
     this.workerScheduler = workerScheduler;
   }
 
@@ -58,9 +68,20 @@ public class OfflineExecutionClaimService {
     }
 
     DefinitionVersion version = definitionService.requireCurrentVersion(definition);
-    Assignment assignment = workerScheduler.select(definition);
-    NodeRecord node = assignment.getNode();
     String logicalJobSpecJson = definitionService.resolveLogicalJobSpec(version);
+    String capabilityRequirementsJson = StringUtils.hasText(version.getCapabilityRequirementsJson())
+        ? version.getCapabilityRequirementsJson()
+        : StringUtils.hasText(definition.getCapabilityRequirementsJson())
+            ? definition.getCapabilityRequirementsJson()
+            : capabilityResolver.resolve(logicalJobSpecJson);
+    if (!StringUtils.hasText(version.getCapabilityRequirementsJson())) {
+      catalogRepository.backfillCapabilityRequirements(
+          definition.getId(), version.getId(), capabilityRequirementsJson);
+      definition.setCapabilityRequirementsJson(capabilityRequirementsJson);
+    }
+
+    Assignment assignment = workerScheduler.select(definition, capabilityRequirementsJson);
+    NodeRecord node = assignment.getNode();
     LocalDateTime now = LocalDateTime.now();
     OfflineJobExecutionPO execution = new OfflineJobExecutionPO();
     execution.setJobDefinitionId(definitionId);
@@ -73,6 +94,8 @@ public class OfflineExecutionClaimService {
     execution.setAssignmentScore(assignment.getScore());
     execution.setAssignmentReason(assignment.getReason());
     execution.setAssignmentCandidatesJson(assignment.getCandidatesJson());
+    execution.setRequiredCapabilitiesJson(capabilityRequirementsJson);
+    execution.setAssignedCapabilitiesJson(assignment.getAssignedCapabilitiesJson());
     execution.setStatus(OfflineExecutionStatus.CREATED.name());
     execution.setStateVersion(1L);
     execution.setAttemptNo(Math.max(1, attemptNo));
