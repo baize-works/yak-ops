@@ -166,6 +166,8 @@ public class OfflineExecutionControlRepository {
     execution.setAssignmentScore(nullableDouble(resultSet, "assignment_score"));
     execution.setAssignmentReason(resultSet.getString("assignment_reason"));
     execution.setAssignmentCandidatesJson(resultSet.getString("assignment_candidates_json"));
+    execution.setRequiredCapabilitiesJson(resultSet.getString("required_capabilities_json"));
+    execution.setAssignedCapabilitiesJson(resultSet.getString("assigned_capabilities_json"));
     execution.setStatus(resultSet.getString("status"));
     execution.setStateVersion(resultSet.getLong("state_version"));
     execution.setAttemptNo(resultSet.getInt("attempt_no"));
