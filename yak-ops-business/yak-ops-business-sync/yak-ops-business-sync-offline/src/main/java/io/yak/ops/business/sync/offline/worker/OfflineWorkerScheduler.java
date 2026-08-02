@@ -10,6 +10,7 @@ import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlReposi
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import io.yak.ops.business.sync.offline.service.OfflineWorkerRegistry;
+import io.yak.ops.business.sync.offline.worker.OfflineCapabilityMatcher.MatchResult;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import org.springframework.util.StringUtils;
 /**
  * 离线任务 Worker 选择器。
  *
- * <p>先执行健康、调度状态、心跳新鲜度、标签和容量硬过滤，再按即时并发余量、
+ * <p>先执行健康、调度状态、心跳、标签、Connector 能力和容量硬过滤，再按即时并发余量、
  * 总容量余量和管理权重计算可解释得分。调度事务会锁定 Worker 行，并将 Yak Ops
  * 已创建的活跃执行叠加到 Worker 心跳负载中，避免并发提交使用同一份旧快照。
  *
@@ -47,6 +48,7 @@ public class OfflineWorkerScheduler {
   private final OfflineNodeRepository repository;
   private final OfflineExecutionControlRepository executionRepository;
   private final OfflineWorkerRegistry registry;
+  private final OfflineCapabilityMatcher capabilityMatcher;
   private final OfflineSyncProperties properties;
   private final ObjectMapper objectMapper;
 
@@ -54,11 +56,13 @@ public class OfflineWorkerScheduler {
       OfflineNodeRepository repository,
       OfflineExecutionControlRepository executionRepository,
       OfflineWorkerRegistry registry,
+      OfflineCapabilityMatcher capabilityMatcher,
       OfflineSyncProperties properties,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
     this.repository = repository;
     this.executionRepository = executionRepository;
     this.registry = registry;
+    this.capabilityMatcher = capabilityMatcher;
     this.properties = properties;
     this.objectMapper = objectMapper;
   }
@@ -107,32 +111,40 @@ public class OfflineWorkerScheduler {
     return readLabels(labelsJson);
   }
 
-  /** 必须在 offline-sync 事务内调用。 */
+  /** 兼容旧调用，优先使用定义中已回填的能力要求。 */
   public Assignment select(OfflineJobDefinitionPO definition) {
+    return select(definition, definition == null ? null : definition.getCapabilityRequirementsJson());
+  }
+
+  /** 必须在 offline-sync 事务内调用。 */
+  public Assignment select(
+      OfflineJobDefinitionPO definition,
+      String capabilityRequirementsJson) {
     try {
       registry.ensureConfiguredWorker();
     } catch (RuntimeException exception) {
-      // 默认配置错误不能阻断已登记手工 Worker 的调度。
       LOG.warn("初始化默认 Link-Up Worker 失败，继续评估已登记节点：{}", exception.getMessage());
     }
     PolicyProjection policy = projection(definition);
     List<NodeRecord> nodes = repository.listAllForScheduling();
     Map<String, Integer> activeExecutions = executionRepository.countActiveExecutionsByNode();
     if ("MANUAL".equals(policy.getMode())) {
-      return selectManual(policy, nodes, activeExecutions);
+      return selectManual(policy, nodes, activeExecutions, capabilityRequirementsJson);
     }
-    return selectAuto(policy, nodes, activeExecutions);
+    return selectAuto(policy, nodes, activeExecutions, capabilityRequirementsJson);
   }
 
   private Assignment selectManual(
       PolicyProjection policy,
       List<NodeRecord> nodes,
-      Map<String, Integer> activeExecutions) {
+      Map<String, Integer> activeExecutions,
+      String capabilityRequirementsJson) {
     List<Candidate> candidates = nodes.stream()
         .map(node -> evaluate(
             node,
             policy.getRequiredLabels(),
-            activeExecutions.getOrDefault(node.getNodeId(), 0)))
+            activeExecutions.getOrDefault(node.getNodeId(), 0),
+            capabilityRequirementsJson))
         .collect(Collectors.toList());
     Candidate selected = candidates.stream()
         .filter(candidate -> Objects.equals(
@@ -150,19 +162,21 @@ public class OfflineWorkerScheduler {
         selected,
         "MANUAL",
         "手动指定 Worker " + selected.getNode().getNodeName()
-            + "（" + selected.getNode().getNodeId() + "）",
+            + "（" + selected.getNode().getNodeId() + "）；" + selected.getCapabilityReason(),
         candidates);
   }
 
   private Assignment selectAuto(
       PolicyProjection policy,
       List<NodeRecord> nodes,
-      Map<String, Integer> activeExecutions) {
+      Map<String, Integer> activeExecutions,
+      String capabilityRequirementsJson) {
     List<Candidate> candidates = nodes.stream()
         .map(node -> evaluate(
             node,
             policy.getRequiredLabels(),
-            activeExecutions.getOrDefault(node.getNodeId(), 0)))
+            activeExecutions.getOrDefault(node.getNodeId(), 0),
+            capabilityRequirementsJson))
         .collect(Collectors.toList());
     List<Candidate> eligible = candidates.stream()
         .filter(Candidate::isEligible)
@@ -174,19 +188,20 @@ public class OfflineWorkerScheduler {
           .map(candidate -> candidate.getNode().getNodeId() + "=" + candidate.getRejectionReason())
           .collect(Collectors.joining("；"));
       throw new IllegalStateException(
-          "没有可调度的 Link-Up Worker"
+          "没有能力兼容且可调度的 Link-Up Worker"
               + (StringUtils.hasText(rejected) ? "：" + rejected : ""));
     }
     Candidate selected = eligible.get(0);
     selected.setSelected(true);
     String reason = String.format(
         Locale.ROOT,
-        "AUTO 评分 %.3f：即时并发余量 %.1f%%，总容量余量 %.1f%%，权重 %d，控制面活跃 %d；候选 %d/%d",
+        "AUTO 评分 %.3f：即时并发余量 %.1f%%，总容量余量 %.1f%%，权重 %d，控制面活跃 %d；%s；候选 %d/%d",
         selected.getScore(),
         selected.getRunningHeadroom() * 100D,
         selected.getTotalHeadroom() * 100D,
         value(selected.getNode().getWeight(), 100),
         selected.getControlPlaneActive(),
+        selected.getCapabilityReason(),
         eligible.size(),
         candidates.size());
     return assignment(selected, "AUTO", reason, candidates);
@@ -202,13 +217,15 @@ public class OfflineWorkerScheduler {
         mode,
         selected.getScore(),
         reason,
-        writeCandidates(candidates));
+        writeCandidates(candidates),
+        selected.getAssignedCapabilitiesJson());
   }
 
   private Candidate evaluate(
       NodeRecord node,
       Map<String, String> requiredLabels,
-      int controlPlaneActive) {
+      int controlPlaneActive,
+      String capabilityRequirementsJson) {
     Candidate candidate = new Candidate(node);
     candidate.setControlPlaneActive(Math.max(0, controlPlaneActive));
     if (!Boolean.TRUE.equals(node.getEnabled())) {
@@ -232,6 +249,13 @@ public class OfflineWorkerScheduler {
         return candidate.reject(
             "缺少标签 " + required.getKey() + "=" + required.getValue());
       }
+    }
+
+    MatchResult capability = capabilityMatcher.match(node, capabilityRequirementsJson);
+    candidate.setCapabilityReason(capability.getReason());
+    candidate.setAssignedCapabilitiesJson(capability.getAssignedCapabilitiesJson());
+    if (!capability.isMatched()) {
+      return candidate.reject("能力不匹配：" + capability.getReason());
     }
 
     int maxRunning = Math.max(1, value(node.getMaxConcurrentJobs(), 1));
@@ -305,6 +329,10 @@ public class OfflineWorkerScheduler {
       item.put("maxConcurrentJobs", value(node.getMaxConcurrentJobs(), 1));
       item.put("maxQueuedJobs", value(node.getMaxQueuedJobs(), 0));
       item.put("labels", candidate.getNodeLabels());
+      item.put("capabilityStatus", node.getCapabilityStatus());
+      item.put("capabilityDigest", node.getCapabilityDigest());
+      item.put("capabilitySyncedAt", node.getCapabilitySyncedAt());
+      item.put("capabilityMatch", candidate.getCapabilityReason());
       snapshot.add(item);
     }
     try {
@@ -409,18 +437,21 @@ public class OfflineWorkerScheduler {
     private final double score;
     private final String reason;
     private final String candidatesJson;
+    private final String assignedCapabilitiesJson;
 
     public Assignment(
         NodeRecord node,
         String mode,
         double score,
         String reason,
-        String candidatesJson) {
+        String candidatesJson,
+        String assignedCapabilitiesJson) {
       this.node = node;
       this.mode = mode;
       this.score = score;
       this.reason = reason;
       this.candidatesJson = candidatesJson;
+      this.assignedCapabilitiesJson = assignedCapabilitiesJson;
     }
 
     public NodeRecord getNode() { return node; }
@@ -428,6 +459,7 @@ public class OfflineWorkerScheduler {
     public double getScore() { return score; }
     public String getReason() { return reason; }
     public String getCandidatesJson() { return candidatesJson; }
+    public String getAssignedCapabilitiesJson() { return assignedCapabilitiesJson; }
   }
 
   private static final class Candidate {
@@ -442,6 +474,8 @@ public class OfflineWorkerScheduler {
     private int controlPlaneActive;
     private int effectiveRunning;
     private int effectiveQueued;
+    private String capabilityReason;
+    private String assignedCapabilitiesJson;
 
     private Candidate(NodeRecord node) {
       this.node = node;
@@ -480,5 +514,9 @@ public class OfflineWorkerScheduler {
     private void setEffectiveRunning(int value) { this.effectiveRunning = value; }
     private int getEffectiveQueued() { return effectiveQueued; }
     private void setEffectiveQueued(int value) { this.effectiveQueued = value; }
+    private String getCapabilityReason() { return capabilityReason; }
+    private void setCapabilityReason(String value) { this.capabilityReason = value; }
+    private String getAssignedCapabilitiesJson() { return assignedCapabilitiesJson; }
+    private void setAssignedCapabilitiesJson(String value) { this.assignedCapabilitiesJson = value; }
   }
 }
