@@ -1,9 +1,8 @@
 package io.yak.ops.business.sync.offline.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -18,7 +17,7 @@ import org.mockito.ArgumentCaptor;
 class OfflineWorkerRegistryTest {
 
   @Test
-  void registersConfiguredWorkerWithoutOverwritingManagedState() {
+  void registersConfiguredWorkerWithInitialManagedDefaults() {
     LinkUpWorkerProbeClient probeClient = mock(LinkUpWorkerProbeClient.class);
     OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
     OfflineSyncProperties properties = properties();
@@ -27,9 +26,9 @@ class OfflineWorkerRegistryTest {
         .nodeName("Link-Up Offline Worker")
         .baseUrl("http://127.0.0.1:18080")
         .registrationMode("CONFIG")
-        .enabled(false)
-        .schedulingStatus("DISABLED")
-        .weight(180)
+        .enabled(true)
+        .schedulingStatus("ENABLED")
+        .weight(100)
         .status("DOWN")
         .build();
 
@@ -50,6 +49,31 @@ class OfflineWorkerRegistryTest {
   }
 
   @Test
+  void preservesDisabledStateOfExistingConfiguredWorker() {
+    LinkUpWorkerProbeClient probeClient = mock(LinkUpWorkerProbeClient.class);
+    OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
+    OfflineSyncProperties properties = properties();
+    NodeRecord existing = NodeRecord.builder()
+        .nodeId("link-up-node-1")
+        .nodeName("Link-Up Offline Worker")
+        .baseUrl("http://127.0.0.1:18080")
+        .registrationMode("CONFIG")
+        .enabled(false)
+        .schedulingStatus("DISABLED")
+        .build();
+
+    when(probeClient.normalizeBaseUrl("http://127.0.0.1:18080"))
+        .thenReturn("http://127.0.0.1:18080");
+    when(repository.find("link-up-node-1")).thenReturn(existing);
+
+    OfflineWorkerRegistry registry =
+        new OfflineWorkerRegistry(probeClient, repository, properties);
+
+    assertThat(registry.ensureConfiguredWorker()).isSameAs(existing);
+    verify(repository, never()).upsert(existing);
+  }
+
+  @Test
   void keepsHeartbeatLoopRunningWhenDefaultConfigurationIsInvalid() {
     LinkUpWorkerProbeClient probeClient = mock(LinkUpWorkerProbeClient.class);
     OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
@@ -65,8 +89,8 @@ class OfflineWorkerRegistryTest {
     when(probeClient.normalizeBaseUrl(properties.getEngine().getBaseUrl()))
         .thenThrow(new IllegalArgumentException("bad default url"));
     when(repository.listHeartbeatTargets()).thenReturn(List.of(manual));
-    doThrow(new IllegalStateException("manual worker down"))
-        .when(probeClient).node(manual.getBaseUrl());
+    when(probeClient.node(manual.getBaseUrl()))
+        .thenThrow(new IllegalStateException("manual worker down"));
 
     OfflineWorkerRegistry registry =
         new OfflineWorkerRegistry(probeClient, repository, properties);
