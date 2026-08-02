@@ -23,7 +23,7 @@ class OfflineWorkerControllerContractTest {
     assertThat(root.value()).containsExactly("/api/v1/offline/workers");
 
     assertPost("verify", new Class<?>[] {VerifyRequest.class}, "/verify");
-    assertPost("create", new Class<?>[] {CreateRequest.class}, "");
+    assertPost("create", new Class<?>[] {CreateRequest.class}, null);
     assertPut("update", new Class<?>[] {String.class, UpdateRequest.class}, "/{nodeId}");
     assertGet("detail", new Class<?>[] {String.class}, "/{nodeId}");
     assertPost("page", new Class<?>[] {QueryRequest.class}, "/page");
@@ -38,7 +38,12 @@ class OfflineWorkerControllerContractTest {
 
   private void assertPost(String name, Class<?>[] parameters, String path) throws Exception {
     Method method = OfflineWorkerController.class.getMethod(name, parameters);
-    assertThat(method.getAnnotation(PostMapping.class).value()).containsExactly(path);
+    String[] paths = method.getAnnotation(PostMapping.class).value();
+    if (path == null) {
+      assertThat(paths).isEmpty();
+    } else {
+      assertThat(paths).containsExactly(path);
+    }
   }
 
   private void assertPut(String name, Class<?>[] parameters, String path) throws Exception {
