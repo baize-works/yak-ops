@@ -41,7 +41,8 @@ class OfflineWorkerSchedulerTest {
     assertThat(assignment.getCandidatesJson())
         .contains("worker-idle")
         .contains("worker-busy")
-        .contains("缺少标签 region=south");
+        .contains("缺少标签 region=south")
+        .contains("\"selected\":true");
   }
 
   @Test
@@ -65,6 +66,27 @@ class OfflineWorkerSchedulerTest {
   }
 
   @Test
+  void manualModeMarksSelectedWorkerInAuditSnapshot() {
+    OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
+    OfflineWorkerRegistry registry = mock(OfflineWorkerRegistry.class);
+    OfflineWorkerScheduler scheduler = scheduler(repository, registry);
+
+    NodeRecord selected = worker(
+        "worker-manual", "{}", 0, 4, 0, 4, 100);
+    NodeRecord spare = worker(
+        "worker-spare", "{}", 0, 8, 0, 8, 1000);
+    when(repository.listAll()).thenReturn(List.of(selected, spare));
+
+    Assignment assignment = scheduler.select(
+        definition("MANUAL", "worker-manual", "{}"));
+
+    assertThat(assignment.getNode().getNodeId()).isEqualTo("worker-manual");
+    assertThat(assignment.getCandidatesJson())
+        .contains("\"nodeId\":\"worker-manual\"")
+        .contains("\"selected\":true");
+  }
+
+  @Test
   void rejectsStaleWorkerEvenWhenItReportsUp() {
     OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
     OfflineWorkerRegistry registry = mock(OfflineWorkerRegistry.class);
@@ -77,6 +99,22 @@ class OfflineWorkerSchedulerTest {
     assertThatThrownBy(() -> scheduler.select(definition("AUTO", null, "{}")))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("节点心跳已过期");
+  }
+
+  @Test
+  void invalidDefaultConfigurationDoesNotBlockManualWorkers() {
+    OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
+    OfflineWorkerRegistry registry = mock(OfflineWorkerRegistry.class);
+    OfflineWorkerScheduler scheduler = scheduler(repository, registry);
+
+    NodeRecord manual = worker("worker-manual", "{}", 0, 4, 0, 4, 100);
+    when(registry.ensureConfiguredWorker())
+        .thenThrow(new IllegalArgumentException("bad default worker url"));
+    when(repository.listAll()).thenReturn(List.of(manual));
+
+    Assignment assignment = scheduler.select(definition("AUTO", null, "{}"));
+
+    assertThat(assignment.getNode().getNodeId()).isEqualTo("worker-manual");
   }
 
   private OfflineWorkerScheduler scheduler(
