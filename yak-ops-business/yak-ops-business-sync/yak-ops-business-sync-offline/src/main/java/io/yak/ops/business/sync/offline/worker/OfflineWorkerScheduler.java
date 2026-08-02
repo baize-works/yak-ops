@@ -20,6 +20,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -37,6 +39,7 @@ import org.springframework.util.StringUtils;
 @Component
 public class OfflineWorkerScheduler {
 
+  private static final Logger LOG = LoggerFactory.getLogger(OfflineWorkerScheduler.class);
   private static final TypeReference<Map<String, String>> LABELS_TYPE =
       new TypeReference<Map<String, String>>() { };
 
@@ -101,7 +104,12 @@ public class OfflineWorkerScheduler {
   }
 
   public Assignment select(OfflineJobDefinitionPO definition) {
-    registry.ensureConfiguredWorker();
+    try {
+      registry.ensureConfiguredWorker();
+    } catch (RuntimeException exception) {
+      // 默认配置错误不能阻断已登记手工 Worker 的调度。
+      LOG.warn("初始化默认 Link-Up Worker 失败，继续评估已登记节点：{}", exception.getMessage());
+    }
     PolicyProjection policy = projection(definition);
     List<NodeRecord> nodes = repository.listAll();
     if ("MANUAL".equals(policy.getMode())) {
