@@ -13,6 +13,7 @@ import io.yak.ops.business.sync.offline.repository.OfflineScheduleRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineScheduleRepository.ScheduleRecord;
 import io.yak.ops.business.sync.offline.service.OfflineDefinitionSupport.DraftDefinition;
 import io.yak.ops.business.sync.offline.service.OfflineDefinitionSupport.PreparedDefinition;
+import io.yak.ops.business.sync.offline.worker.OfflineCapabilityRequirementResolver;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler.PolicyProjection;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
@@ -53,6 +54,7 @@ public class OfflineJobDefinitionService {
   private final OfflineExecutionControlRepository executionRepository;
   private final OfflineDefinitionSupport support;
   private final OfflineWorkerScheduler workerScheduler;
+  private final OfflineCapabilityRequirementResolver capabilityResolver;
   private final AtomicLong idSequence = new AtomicLong(System.currentTimeMillis() * 1000L);
 
   public Long nextId() {
@@ -105,6 +107,7 @@ public class OfflineJobDefinitionService {
     definition.setScheduleJson(support.writeNullable(draft.getRequest().get("schedule")));
     definition.setEnvJson(support.writeNullable(draft.getRequest().get("env")));
     applyWorkerPolicy(definition, policy);
+    definition.setCapabilityRequirementsJson(null);
     definition.setVersion(0);
     definition.setCurrentVersionId(null);
     definition.setCreateTime(existing == null ? now : existing.getCreateTime());
@@ -138,6 +141,7 @@ public class OfflineJobDefinitionService {
       throw exception;
     }
     PolicyProjection policy = workerScheduler.normalize(prepared.getRequest().get("worker"));
+    String capabilityRequirementsJson = capabilityResolver.resolve(prepared.getJobSpecJson());
     if (definitionDao.existsByName(prepared.getJobName(), id)) {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + prepared.getJobName());
     }
@@ -166,6 +170,7 @@ public class OfflineJobDefinitionService {
     definition.setScheduleJson(support.writeNullable(prepared.getRequest().get("schedule")));
     definition.setEnvJson(support.writeNullable(prepared.getRequest().get("env")));
     applyWorkerPolicy(definition, policy);
+    definition.setCapabilityRequirementsJson(capabilityRequirementsJson);
     definition.setVersion(version);
     definition.setReleaseState(existing == null ? "OFFLINE" : existing.getReleaseState());
     definition.setCreateTime(existing == null ? now : existing.getCreateTime());
@@ -181,7 +186,8 @@ public class OfflineJobDefinitionService {
         version,
         prepared.getDefinitionJson(),
         prepared.getJobSpecJson(),
-        prepared.getDigest());
+        prepared.getDigest(),
+        capabilityRequirementsJson);
     definition.setCurrentVersionId(versionId);
     definitionDao.updateById(definition);
     scheduleRepository.saveSchedule(id, prepared.getRequest().get("schedule"));
@@ -296,6 +302,7 @@ public class OfflineJobDefinitionService {
           "format",
           StringUtils.hasText(version.getJobSpecJson()) ? "JOB_SPEC" : "LEGACY_DERIVED");
       item.put("configDigest", version.getConfigDigest());
+      item.put("capabilityRequirements", version.getCapabilityRequirementsJson());
       item.put("createTime", version.getCreateTime());
       result.add(item);
     }
