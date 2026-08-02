@@ -1,6 +1,10 @@
 export type ResourceId = number | string;
 export type ResourceNodeType = 'DIRECTORY' | 'FILE';
-export type ResourceStorageType = 'MINIO' | 'HDFS' | string;
+export type ResourceStorageType =
+  | 'LOCAL'
+  | 'MINIO'
+  | 'HDFS'
+  | (string & {});
 
 export interface CommonApiResponse<T> {
   code: number;

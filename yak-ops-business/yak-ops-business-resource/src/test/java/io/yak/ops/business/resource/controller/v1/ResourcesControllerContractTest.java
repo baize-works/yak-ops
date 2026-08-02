@@ -6,6 +6,7 @@ import io.yak.framework.security.web.RequiresPermission;
 import io.yak.ops.common.constant.resource.ResourcePermissionCode;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 class ResourcesControllerContractTest {
@@ -17,9 +18,12 @@ class ResourcesControllerContractTest {
     Method download = ResourcesController.class.getMethod(
         "download", Long.class, jakarta.servlet.http.HttpServletResponse.class);
     RequiresPermission downloadPermission = download.getAnnotation(RequiresPermission.class);
+    Method storagePlugins = ResourcesController.class.getMethod("storagePlugins");
+    GetMapping storagePluginsMapping = storagePlugins.getAnnotation(GetMapping.class);
 
     assertThat(mapping.value()).containsExactly("/api/v1/resources");
     assertThat(read.value()).isEqualTo(ResourcePermissionCode.READ);
     assertThat(downloadPermission.value()).isEqualTo(ResourcePermissionCode.DOWNLOAD);
+    assertThat(storagePluginsMapping.value()).containsExactly("/storage-plugins");
   }
 }

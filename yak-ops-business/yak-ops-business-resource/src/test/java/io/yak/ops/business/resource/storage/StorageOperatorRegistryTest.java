@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.yak.ops.business.resource.config.ResourceProperties;
 import io.yak.ops.business.resource.exception.ResourceException;
+import io.yak.ops.common.bean.vo.resource.ResourceStoragePluginVO;
 import io.yak.ops.common.enums.resource.ResourceStorageType;
 import io.yak.ops.spi.storage.StorageObjectMetadata;
 import io.yak.ops.spi.storage.StorageOperator;
@@ -15,16 +16,22 @@ import org.junit.jupiter.api.Test;
 class StorageOperatorRegistryTest {
 
   @Test
-  void resolvesConfiguredDefaultAndListsInstalledPlugins() {
+  void resolvesLocalAsConfiguredDefaultAndListsInstalledPlugins() {
     ResourceProperties properties = new ResourceProperties();
+    StorageOperator local = new StubOperator(ResourceStorageType.LOCAL, "本地存储");
     StorageOperator minio = new StubOperator(ResourceStorageType.MINIO, "MinIO");
-    StorageOperatorRegistry registry = new StorageOperatorRegistry(List.of(minio), properties);
+    StorageOperatorRegistry registry =
+        new StorageOperatorRegistry(List.of(local, minio), properties);
 
-    assertThat(registry.require(null)).isSameAs(minio);
-    assertThat(registry.list()).singleElement().satisfies(plugin -> {
-      assertThat(plugin.getType()).isEqualTo(ResourceStorageType.MINIO);
-      assertThat(plugin.isActive()).isTrue();
-    });
+    assertThat(registry.require(null)).isSameAs(local);
+
+    List<ResourceStoragePluginVO> plugins = registry.list();
+    assertThat(plugins).hasSize(2);
+    assertThat(plugins.get(0).getType()).isEqualTo(ResourceStorageType.LOCAL);
+    assertThat(plugins.get(0).getName()).isEqualTo("本地存储");
+    assertThat(plugins.get(0).isActive()).isTrue();
+    assertThat(plugins.get(1).getType()).isEqualTo(ResourceStorageType.MINIO);
+    assertThat(plugins.get(1).isActive()).isFalse();
   }
 
   @Test
