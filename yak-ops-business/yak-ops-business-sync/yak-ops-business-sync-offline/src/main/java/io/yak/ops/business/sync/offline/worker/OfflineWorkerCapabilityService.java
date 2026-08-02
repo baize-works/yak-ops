@@ -111,7 +111,9 @@ public class OfflineWorkerCapabilityService {
     worker.setCapabilityErrorMessage(capability.getErrorMessage());
     worker.setConnectors(capability.getConnectors());
     worker.setConnectorCount(capability.getConnectors().size());
-    worker.setAvailable(Boolean.TRUE.equals(worker.getAvailable()) && Boolean.TRUE.equals(capability.getFresh()));
+    worker.setAvailable(
+        Boolean.TRUE.equals(worker.getAvailable())
+            && Boolean.TRUE.equals(capability.getFresh()));
     return worker;
   }
 
@@ -126,7 +128,9 @@ public class OfflineWorkerCapabilityService {
     CapabilityView capability = view(node);
     option.setCapabilityStatus(capability.getStatus());
     option.setConnectorCount(capability.getConnectors().size());
-    option.setAvailable(Boolean.TRUE.equals(option.getAvailable()) && Boolean.TRUE.equals(capability.getFresh()));
+    option.setAvailable(
+        Boolean.TRUE.equals(option.getAvailable())
+            && Boolean.TRUE.equals(capability.getFresh()));
     return option;
   }
 
@@ -139,6 +143,9 @@ public class OfflineWorkerCapabilityService {
   }
 
   public boolean isFresh(NodeRecord node) {
+    if (!properties.isEnabled()) {
+      return true;
+    }
     if (node == null
         || !"READY".equalsIgnoreCase(node.getCapabilityStatus())
         || node.getCapabilitySyncedAt() == null
@@ -160,8 +167,10 @@ public class OfflineWorkerCapabilityService {
       JsonNode response = schemaClient.list(node.getBaseUrl());
       ObjectNode snapshot = snapshot(node, response);
       String json = write(snapshot);
+      // 能力摘要只反映规范化 Connector 能力，不受进程 instanceId 重启噪声影响。
+      String capabilityDigest = digest(write(snapshot.path("connectors")));
       repository.updateCapabilitySuccess(
-          node.getNodeId(), digest(json), json, LocalDateTime.now());
+          node.getNodeId(), capabilityDigest, json, LocalDateTime.now());
     } catch (RuntimeException exception) {
       repository.updateCapabilityFailure(node.getNodeId(), concise(exception));
       throw exception;
@@ -253,7 +262,9 @@ public class OfflineWorkerCapabilityService {
     }
     return CapabilityView.builder()
         .nodeId(node == null ? null : node.getNodeId())
-        .status(node == null ? "UNKNOWN" : node.getCapabilityStatus())
+        .status(!properties.isEnabled()
+            ? "DISABLED"
+            : node == null ? "UNKNOWN" : node.getCapabilityStatus())
         .digest(node == null ? null : node.getCapabilityDigest())
         .syncedAt(node == null ? null : node.getCapabilitySyncedAt())
         .errorMessage(node == null ? null : node.getCapabilityErrorMessage())
