@@ -19,6 +19,8 @@ import org.springframework.util.StringUtils;
 /**
  * Link-Up Connector Schema 只读客户端。
  *
+ * <p>既支持默认 Worker，也支持按已登记 Worker 地址查询，用于多 Worker 能力快照。
+ *
  * @author weifuwan
  */
 @ConditionalOnOfflineSyncEnabled
@@ -39,23 +41,38 @@ public class LinkUpConnectorSchemaClient {
   }
 
   public JsonNode list() {
-    return get("/api/v1/connectors");
+    return list(properties.getEngine().getBaseUrl());
   }
 
-  public JsonNode list(String role) {
-    return get("/api/v1/connectors?role=" + encodeRole(role));
+  public JsonNode list(String baseUrl) {
+    return get(baseUrl, "/api/v1/connectors");
+  }
+
+  public JsonNode listByRole(String role) {
+    return listByRole(properties.getEngine().getBaseUrl(), role);
+  }
+
+  public JsonNode listByRole(String baseUrl, String role) {
+    return get(baseUrl, "/api/v1/connectors?role=" + encodeRole(role));
   }
 
   public JsonNode get(String connectorId, String role) {
+    return get(properties.getEngine().getBaseUrl(), connectorId, role);
+  }
+
+  public JsonNode get(String baseUrl, String connectorId, String role) {
     if (!StringUtils.hasText(connectorId)) {
       throw new IllegalArgumentException("connectorId 不能为空");
     }
-    return get("/api/v1/connectors/" + encode(connectorId) + "/schema?role=" + encodeRole(role));
+    return get(
+        baseUrl,
+        "/api/v1/connectors/" + encode(connectorId) + "/schema?role=" + encodeRole(role));
   }
 
-  private JsonNode get(String path) {
+  private JsonNode get(String baseUrl, String path) {
     requireEnabled();
-    HttpRequest request = HttpRequest.newBuilder(uri(path))
+    String normalized = normalizeBaseUrl(baseUrl);
+    HttpRequest request = HttpRequest.newBuilder(URI.create(normalized + path))
         .timeout(properties.getEngine().getRequestTimeout())
         .header("Accept", "application/json")
         .GET()
@@ -75,8 +92,7 @@ public class LinkUpConnectorSchemaClient {
       Thread.currentThread().interrupt();
       throw new IllegalStateException("Link-Up Connector Schema 请求被中断", exception);
     } catch (IOException exception) {
-      throw new IllegalStateException(
-          "无法连接 Link-Up Worker：" + properties.getEngine().getBaseUrl(), exception);
+      throw new IllegalStateException("无法连接 Link-Up Worker：" + normalized, exception);
     }
   }
 
@@ -99,15 +115,25 @@ public class LinkUpConnectorSchemaClient {
     return StringUtils.hasText(message) ? message : fallback;
   }
 
-  private URI uri(String path) {
-    String baseUrl = properties.getEngine().getBaseUrl();
-    if (!StringUtils.hasText(baseUrl)) {
-      throw new IllegalStateException("yak.sync.offline.engine.base-url 不能为空");
+  private String normalizeBaseUrl(String value) {
+    if (!StringUtils.hasText(value)) {
+      throw new IllegalStateException("Link-Up Worker 地址不能为空");
     }
-    String normalized = baseUrl.endsWith("/")
-        ? baseUrl.substring(0, baseUrl.length() - 1)
-        : baseUrl;
-    return URI.create(normalized + path);
+    String normalized = value.trim();
+    while (normalized.endsWith("/")) {
+      normalized = normalized.substring(0, normalized.length() - 1);
+    }
+    URI uri;
+    try {
+      uri = URI.create(normalized);
+    } catch (IllegalArgumentException exception) {
+      throw new IllegalArgumentException("Link-Up Worker 地址不合法：" + value, exception);
+    }
+    if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+        || !StringUtils.hasText(uri.getHost())) {
+      throw new IllegalArgumentException("Link-Up Worker 地址必须是有效的 HTTP/HTTPS 地址");
+    }
+    return normalized;
   }
 
   private String encode(String value) {
