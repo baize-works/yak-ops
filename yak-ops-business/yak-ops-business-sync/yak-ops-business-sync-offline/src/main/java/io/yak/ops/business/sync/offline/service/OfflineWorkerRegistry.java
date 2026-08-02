@@ -18,8 +18,7 @@ import org.springframework.util.StringUtils;
 /**
  * Link-Up Worker 注册表、定时心跳和默认节点选择器。
  *
- * <p>本阶段只扩展节点管理闭环。任务执行仍优先使用
- * {@code yak.sync.offline.engine.node-id} 指定的默认 Worker。
+ * <p>任务执行由多 Worker 调度器选择节点；本组件继续负责默认配置节点的登记和全部节点心跳。
  *
  * @author weifuwan
  */
@@ -110,6 +109,9 @@ public class OfflineWorkerRegistry {
       return existing;
     }
 
+    boolean addressChanged = existing != null
+        && StringUtils.hasText(existing.getBaseUrl())
+        && !baseUrl.equals(existing.getBaseUrl());
     LocalDateTime now = LocalDateTime.now();
     NodeRecord configured = existing == null ? NodeRecord.builder().build() : existing;
     configured.setNodeId(nodeId);
@@ -136,6 +138,10 @@ public class OfflineWorkerRegistry {
         ? now : configured.getCreateTime());
     configured.setUpdateTime(now);
     repository.upsert(configured);
+    if (addressChanged) {
+      // 新地址必须重新证明 Connector 能力，不能沿用原地址的 READY 快照。
+      repository.resetCapabilities(nodeId);
+    }
     return repository.find(nodeId);
   }
 
