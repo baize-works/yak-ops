@@ -73,6 +73,7 @@ export default function WorkerSchedulingSection({
   const selectOptions = useMemo(
     () => workers.map((worker) => ({
       value: worker.value,
+      title: worker.label,
       label: (
         <div className="flex min-w-0 items-center justify-between gap-3">
           <span className="truncate">{worker.label}</span>
@@ -168,7 +169,7 @@ export default function WorkerSchedulingSection({
               value={editor.worker.nodeId}
               loading={loading}
               options={selectOptions}
-              optionFilterProp="label"
+              optionFilterProp="title"
               placeholder="请选择 Link-Up Worker"
               className="w-full"
               onDropdownVisibleChange={(open) => {
@@ -207,7 +208,7 @@ export default function WorkerSchedulingSection({
         <EditorField label="Worker 标签约束">
           <div className="space-y-2">
             {editor.worker.requiredLabels.map((label, index) => (
-              <Space.Compact key={`${index}-${label.key}`} block>
+              <Space.Compact key={index} block>
                 <Input
                   variant="filled"
                   value={label.key}
