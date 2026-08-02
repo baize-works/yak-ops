@@ -23,7 +23,6 @@ import {
 } from 'antd';
 import dayjs from 'dayjs';
 import {
-  Cloud,
   Database,
   Download,
   File,
@@ -55,6 +54,7 @@ import CreateTextResourceModal from './components/CreateTextResourceModal';
 import MoveResourceModal from './components/MoveResourceModal';
 import ResourceDetailDrawer from './components/ResourceDetailDrawer';
 import ResourceMetadataModal from './components/ResourceMetadataModal';
+import StorageTypeLabel from './components/StorageTypeLabel';
 import './index.less';
 import {
   createDirectory,
@@ -481,12 +481,7 @@ const ResourceManagementPage = () => {
       dataIndex: 'storageType',
       key: 'storageType',
       width: 120,
-      render: (value) => (
-        <span className="resource-storage-cell">
-          <Cloud size={14} />
-          {String(value || '-')}
-        </span>
-      ),
+      render: (value) => <StorageTypeLabel type={value} />,
     },
     {
       title: '版本',
@@ -563,7 +558,9 @@ const ResourceManagementPage = () => {
         <header className="resource-header">
           <div>
             <h1>资源管理</h1>
-            <p>统一管理任务脚本、配置文件与运行资源，底层支持 MinIO 和 HDFS。</p>
+            <p>
+              默认使用内置 Local 文件存储，也可按部署需要切换 MinIO 或 HDFS。
+            </p>
           </div>
           <Space size={10} wrap>
             {canCreate && (
