@@ -13,7 +13,6 @@ import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpJobResponse;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpRequestException;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpTransportException;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
-import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import io.yak.ops.business.sync.offline.repository.OfflineScheduleRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineScheduleRepository.ScheduleRecord;
 import io.yak.ops.business.sync.offline.service.OfflineExecutionClaimService.ClaimResult;
@@ -41,7 +40,6 @@ public class OfflineExecutionOrchestrator {
   private final OfflineJobExecutionDao executionDao;
   private final OfflineExecutionControlRepository executionRepository;
   private final OfflineScheduleRepository scheduleRepository;
-  private final OfflineWorkerRegistry workerRegistry;
   private final OfflineAlertPublisher alertPublisher;
   private final LinkUpClient linkUpClient;
   private final OfflineSyncProperties properties;
@@ -54,7 +52,6 @@ public class OfflineExecutionOrchestrator {
       OfflineJobExecutionDao executionDao,
       OfflineExecutionControlRepository executionRepository,
       OfflineScheduleRepository scheduleRepository,
-      OfflineWorkerRegistry workerRegistry,
       OfflineAlertPublisher alertPublisher,
       LinkUpClient linkUpClient,
       OfflineSyncProperties properties,
@@ -65,7 +62,6 @@ public class OfflineExecutionOrchestrator {
     this.executionDao = executionDao;
     this.executionRepository = executionRepository;
     this.scheduleRepository = scheduleRepository;
-    this.workerRegistry = workerRegistry;
     this.alertPublisher = alertPublisher;
     this.linkUpClient = linkUpClient;
     this.properties = properties;
@@ -77,15 +73,19 @@ public class OfflineExecutionOrchestrator {
       String triggerType,
       Long retryFromExecutionId,
       int attemptNo) {
-    NodeRecord node = workerRegistry.selectNode();
     ClaimResult claim = claimService.claim(
         definitionId,
         triggerType,
         retryFromExecutionId,
-        attemptNo,
-        node);
+        attemptNo);
     OfflineJobExecutionPO execution = claim.getExecution();
-    record(execution, null, execution.getStatus(), "CREATED", "Yak Ops 已创建执行实例", null);
+    record(
+        execution,
+        null,
+        execution.getStatus(),
+        "WORKER_ASSIGNED",
+        execution.getAssignmentReason(),
+        execution.getAssignmentCandidatesJson());
 
     try {
       String resolvedJobSpecJson = definitionService.resolveExecutionJobSpec(claim.getVersion());
@@ -94,9 +94,10 @@ public class OfflineExecutionOrchestrator {
           execution,
           OfflineExecutionStatus.SUBMITTED,
           "SUBMITTING",
-          "正在提交 Link-Up JobSpec",
+          "正在向 " + execution.getEngineNodeId() + " 提交 Link-Up JobSpec",
           null);
       LinkUpJobResponse response = linkUpClient.submit(
+          baseUrl(execution),
           execution.getExternalExecutionId(),
           execution.getIdempotencyKey(),
           claim.getVersion().getVersionNo(),
@@ -114,7 +115,7 @@ public class OfflineExecutionOrchestrator {
       throw exception;
     } catch (LinkUpTransportException exception) {
       if (exception.isUncertain()) {
-        // The Worker may have accepted the idempotent request. Reconcile by externalExecutionId.
+        // The assigned Worker may have accepted the idempotent request. Never fail over here.
         execution.setErrorMessage(exception.getMessage());
         execution.setLastSyncTime(LocalDateTime.now());
         execution.setUpdateTime(LocalDateTime.now());
@@ -175,7 +176,7 @@ public class OfflineExecutionOrchestrator {
     if (StringUtils.hasText(execution.getEngineJobId())) {
       applySnapshot(
           execution,
-          linkUpClient.cancel(execution.getEngineJobId()),
+          linkUpClient.cancel(baseUrl(execution), execution.getEngineJobId()),
           "CANCEL_ACCEPTED");
     }
     return execution;
@@ -187,6 +188,13 @@ public class OfflineExecutionOrchestrator {
       String eventType) {
     if (execution == null || response == null) {
       return;
+    }
+    if (StringUtils.hasText(response.getWorkerNodeId())
+        && StringUtils.hasText(execution.getEngineNodeId())
+        && !execution.getEngineNodeId().equals(response.getWorkerNodeId())) {
+      throw new IllegalStateException(
+          "Link-Up 返回的 workerNodeId 与执行分配不一致，分配="
+              + execution.getEngineNodeId() + "，实际=" + response.getWorkerNodeId());
     }
     String previousStatus = execution.getStatus();
     OfflineExecutionStatus nextStatus = StringUtils.hasText(response.getStatus())
@@ -393,6 +401,12 @@ public class OfflineExecutionOrchestrator {
         && properties.getControl().isAlertOnLost()) {
       alertPublisher.publish(execution, "LOST", text(execution.getErrorMessage()));
     }
+  }
+
+  private String baseUrl(OfflineJobExecutionPO execution) {
+    return StringUtils.hasText(execution.getEngineNodeBaseUrl())
+        ? execution.getEngineNodeBaseUrl()
+        : properties.getEngine().getBaseUrl();
   }
 
   private String write(Object value) {
