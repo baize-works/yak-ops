@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.yak.ops.business.sync.offline.config.OfflineSyncProperties;
+import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpNodeResponse;
 import io.yak.ops.business.sync.offline.engine.LinkUpWorkerProbeClient;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
@@ -71,6 +72,79 @@ class OfflineWorkerRegistryTest {
 
     assertThat(registry.ensureConfiguredWorker()).isSameAs(existing);
     verify(repository, never()).upsert(existing);
+  }
+
+  @Test
+  void resetsCapabilitiesWhenConfiguredWorkerAddressChanges() {
+    LinkUpWorkerProbeClient probeClient = mock(LinkUpWorkerProbeClient.class);
+    OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
+    OfflineSyncProperties properties = properties();
+    properties.getEngine().setBaseUrl("http://127.0.0.1:28080");
+    NodeRecord existing = NodeRecord.builder()
+        .nodeId("link-up-node-1")
+        .nodeName("Link-Up Offline Worker")
+        .baseUrl("http://127.0.0.1:18080")
+        .registrationMode("CONFIG")
+        .enabled(true)
+        .schedulingStatus("ENABLED")
+        .capabilityStatus("READY")
+        .build();
+    NodeRecord persisted = NodeRecord.builder()
+        .nodeId("link-up-node-1")
+        .baseUrl("http://127.0.0.1:28080")
+        .capabilityStatus("UNKNOWN")
+        .build();
+
+    when(probeClient.normalizeBaseUrl("http://127.0.0.1:28080"))
+        .thenReturn("http://127.0.0.1:28080");
+    when(repository.find("link-up-node-1")).thenReturn(existing, persisted);
+
+    OfflineWorkerRegistry registry =
+        new OfflineWorkerRegistry(probeClient, repository, properties);
+    NodeRecord result = registry.ensureConfiguredWorker();
+
+    verify(repository).resetCapabilities("link-up-node-1");
+    assertThat(result).isSameAs(persisted);
+  }
+
+  @Test
+  void resetsCapabilitiesWhenWorkerProcessChanges() {
+    LinkUpWorkerProbeClient probeClient = mock(LinkUpWorkerProbeClient.class);
+    OfflineNodeRepository repository = mock(OfflineNodeRepository.class);
+    OfflineSyncProperties properties = properties();
+    NodeRecord existing = NodeRecord.builder()
+        .nodeId("link-up-node-1")
+        .nodeName("Link-Up Offline Worker")
+        .baseUrl("http://127.0.0.1:18080")
+        .workerInstanceId("instance-old")
+        .engineVersion("1.0.0")
+        .build();
+    NodeRecord refreshed = NodeRecord.builder()
+        .nodeId("link-up-node-1")
+        .workerInstanceId("instance-new")
+        .engineVersion("1.0.0")
+        .capabilityStatus("UNKNOWN")
+        .build();
+    LinkUpNodeResponse response = new LinkUpNodeResponse();
+    response.setNodeId("link-up-node-1");
+    response.setNodeName("Link-Up Offline Worker");
+    response.setInstanceId("instance-new");
+    response.setVersion("1.0.0");
+    response.setOfflineOnly(true);
+    response.setMaxConcurrentJobs(4);
+    response.setMaxQueuedJobs(4);
+    response.setRunningJobs(0);
+    response.setQueuedJobs(0);
+
+    when(repository.find("link-up-node-1")).thenReturn(existing, refreshed);
+    when(probeClient.node(existing.getBaseUrl())).thenReturn(response);
+
+    OfflineWorkerRegistry registry =
+        new OfflineWorkerRegistry(probeClient, repository, properties);
+    NodeRecord result = registry.refresh("link-up-node-1", true);
+
+    verify(repository).resetCapabilities("link-up-node-1");
+    assertThat(result).isSameAs(refreshed);
   }
 
   @Test
