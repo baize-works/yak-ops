@@ -62,6 +62,13 @@ public class OfflineJobDefinitionPO {
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String envJson;
 
+  private String workerSelectMode;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS)
+  private String workerNodeId;
+  @ToString.Exclude
+  @TableField(updateStrategy = FieldStrategy.ALWAYS)
+  private String workerRequiredLabelsJson;
+
   private Integer version;
   private Long currentVersionId;
   private Long lastExecutionId;
