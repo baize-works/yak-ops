@@ -154,6 +154,28 @@ public class OfflineDefinitionCatalogRepository {
     private final String capabilityRequirementsJson;
     private final LocalDateTime createTime;
 
+    /** 兼容第三阶段之前的直接构造调用。 */
+    public DefinitionVersion(
+        Long id,
+        Long jobDefinitionId,
+        int versionNo,
+        String definitionJson,
+        String jobSpecJson,
+        String legacyHoconConfig,
+        String configDigest,
+        LocalDateTime createTime) {
+      this(
+          id,
+          jobDefinitionId,
+          versionNo,
+          definitionJson,
+          jobSpecJson,
+          legacyHoconConfig,
+          configDigest,
+          null,
+          createTime);
+    }
+
     public DefinitionVersion(
         Long id,
         Long jobDefinitionId,
