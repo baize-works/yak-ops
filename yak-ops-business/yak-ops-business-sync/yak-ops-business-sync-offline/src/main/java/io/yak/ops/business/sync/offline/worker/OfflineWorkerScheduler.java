@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.config.OfflineSyncProperties;
+import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import io.yak.ops.business.sync.offline.service.OfflineWorkerRegistry;
@@ -30,8 +31,8 @@ import org.springframework.util.StringUtils;
  * 离线任务 Worker 选择器。
  *
  * <p>先执行健康、调度状态、心跳新鲜度、标签和容量硬过滤，再按即时并发余量、
- * 总容量余量和管理权重计算可解释得分。选择过程只读取控制面快照，不在数据库事务中
- * 发起远程请求。
+ * 总容量余量和管理权重计算可解释得分。调度事务会锁定 Worker 行，并将 Yak Ops
+ * 已创建的活跃执行叠加到 Worker 心跳负载中，避免并发提交使用同一份旧快照。
  *
  * @author weifuwan
  */
@@ -44,16 +45,19 @@ public class OfflineWorkerScheduler {
       new TypeReference<Map<String, String>>() { };
 
   private final OfflineNodeRepository repository;
+  private final OfflineExecutionControlRepository executionRepository;
   private final OfflineWorkerRegistry registry;
   private final OfflineSyncProperties properties;
   private final ObjectMapper objectMapper;
 
   public OfflineWorkerScheduler(
       OfflineNodeRepository repository,
+      OfflineExecutionControlRepository executionRepository,
       OfflineWorkerRegistry registry,
       OfflineSyncProperties properties,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
     this.repository = repository;
+    this.executionRepository = executionRepository;
     this.registry = registry;
     this.properties = properties;
     this.objectMapper = objectMapper;
@@ -103,6 +107,7 @@ public class OfflineWorkerScheduler {
     return readLabels(labelsJson);
   }
 
+  /** 必须在 offline-sync 事务内调用。 */
   public Assignment select(OfflineJobDefinitionPO definition) {
     try {
       registry.ensureConfiguredWorker();
@@ -111,16 +116,23 @@ public class OfflineWorkerScheduler {
       LOG.warn("初始化默认 Link-Up Worker 失败，继续评估已登记节点：{}", exception.getMessage());
     }
     PolicyProjection policy = projection(definition);
-    List<NodeRecord> nodes = repository.listAll();
+    List<NodeRecord> nodes = repository.listAllForScheduling();
+    Map<String, Integer> activeExecutions = executionRepository.countActiveExecutionsByNode();
     if ("MANUAL".equals(policy.getMode())) {
-      return selectManual(policy, nodes);
+      return selectManual(policy, nodes, activeExecutions);
     }
-    return selectAuto(policy, nodes);
+    return selectAuto(policy, nodes, activeExecutions);
   }
 
-  private Assignment selectManual(PolicyProjection policy, List<NodeRecord> nodes) {
+  private Assignment selectManual(
+      PolicyProjection policy,
+      List<NodeRecord> nodes,
+      Map<String, Integer> activeExecutions) {
     List<Candidate> candidates = nodes.stream()
-        .map(node -> evaluate(node, policy.getRequiredLabels()))
+        .map(node -> evaluate(
+            node,
+            policy.getRequiredLabels(),
+            activeExecutions.getOrDefault(node.getNodeId(), 0)))
         .collect(Collectors.toList());
     Candidate selected = candidates.stream()
         .filter(candidate -> Objects.equals(
@@ -142,9 +154,15 @@ public class OfflineWorkerScheduler {
         candidates);
   }
 
-  private Assignment selectAuto(PolicyProjection policy, List<NodeRecord> nodes) {
+  private Assignment selectAuto(
+      PolicyProjection policy,
+      List<NodeRecord> nodes,
+      Map<String, Integer> activeExecutions) {
     List<Candidate> candidates = nodes.stream()
-        .map(node -> evaluate(node, policy.getRequiredLabels()))
+        .map(node -> evaluate(
+            node,
+            policy.getRequiredLabels(),
+            activeExecutions.getOrDefault(node.getNodeId(), 0)))
         .collect(Collectors.toList());
     List<Candidate> eligible = candidates.stream()
         .filter(Candidate::isEligible)
@@ -163,11 +181,12 @@ public class OfflineWorkerScheduler {
     selected.setSelected(true);
     String reason = String.format(
         Locale.ROOT,
-        "AUTO 评分 %.3f：即时并发余量 %.1f%%，总容量余量 %.1f%%，权重 %d；候选 %d/%d",
+        "AUTO 评分 %.3f：即时并发余量 %.1f%%，总容量余量 %.1f%%，权重 %d，控制面活跃 %d；候选 %d/%d",
         selected.getScore(),
         selected.getRunningHeadroom() * 100D,
         selected.getTotalHeadroom() * 100D,
         value(selected.getNode().getWeight(), 100),
+        selected.getControlPlaneActive(),
         eligible.size(),
         candidates.size());
     return assignment(selected, "AUTO", reason, candidates);
@@ -186,8 +205,12 @@ public class OfflineWorkerScheduler {
         writeCandidates(candidates));
   }
 
-  private Candidate evaluate(NodeRecord node, Map<String, String> requiredLabels) {
+  private Candidate evaluate(
+      NodeRecord node,
+      Map<String, String> requiredLabels,
+      int controlPlaneActive) {
     Candidate candidate = new Candidate(node);
+    candidate.setControlPlaneActive(Math.max(0, controlPlaneActive));
     if (!Boolean.TRUE.equals(node.getEnabled())) {
       return candidate.reject("节点已禁用");
     }
@@ -213,15 +236,23 @@ public class OfflineWorkerScheduler {
 
     int maxRunning = Math.max(1, value(node.getMaxConcurrentJobs(), 1));
     int maxQueued = Math.max(0, value(node.getMaxQueuedJobs(), 0));
-    int running = Math.max(0, value(node.getRunningJobs(), 0));
-    int queued = Math.max(0, value(node.getQueuedJobs(), 0));
-    if (running >= maxRunning && queued >= maxQueued) {
+    int reportedRunning = Math.max(0, value(node.getRunningJobs(), 0));
+    int reportedQueued = Math.max(0, value(node.getQueuedJobs(), 0));
+    int effectiveRunning = Math.max(
+        reportedRunning,
+        Math.min(controlPlaneActive, maxRunning));
+    int effectiveQueued = Math.max(
+        reportedQueued,
+        Math.max(0, controlPlaneActive - maxRunning));
+    candidate.setEffectiveRunning(effectiveRunning);
+    candidate.setEffectiveQueued(effectiveQueued);
+    if (effectiveRunning >= maxRunning && effectiveQueued >= maxQueued) {
       return candidate.reject("并发和等待队列均已满");
     }
 
     int totalCapacity = Math.max(1, maxRunning + maxQueued);
-    int active = Math.max(0, running + queued);
-    double runningHeadroom = clamp((double) (maxRunning - running) / maxRunning);
+    int active = Math.max(0, effectiveRunning + effectiveQueued);
+    double runningHeadroom = clamp((double) (maxRunning - effectiveRunning) / maxRunning);
     double totalHeadroom = clamp((double) (totalCapacity - active) / totalCapacity);
     double weightScore = clamp((double) value(node.getWeight(), 100) / 1000D);
     double score = runningHeadroom * 55D + totalHeadroom * 35D + weightScore * 10D;
@@ -231,8 +262,8 @@ public class OfflineWorkerScheduler {
 
   private Comparator<Candidate> candidateComparator() {
     return Comparator.comparingDouble(Candidate::getScore).reversed()
-        .thenComparingInt(candidate -> value(candidate.getNode().getQueuedJobs(), 0))
-        .thenComparingInt(candidate -> value(candidate.getNode().getRunningJobs(), 0))
+        .thenComparingInt(Candidate::getEffectiveQueued)
+        .thenComparingInt(Candidate::getEffectiveRunning)
         .thenComparing(
             Comparator.comparingInt(
                 (Candidate candidate) -> value(candidate.getNode().getWeight(), 100))
@@ -266,9 +297,12 @@ public class OfflineWorkerScheduler {
       item.put("score", candidate.getScore());
       item.put("reason", candidate.getRejectionReason());
       item.put("weight", value(node.getWeight(), 100));
-      item.put("runningJobs", value(node.getRunningJobs(), 0));
+      item.put("reportedRunningJobs", value(node.getRunningJobs(), 0));
+      item.put("reportedQueuedJobs", value(node.getQueuedJobs(), 0));
+      item.put("controlPlaneActive", candidate.getControlPlaneActive());
+      item.put("effectiveRunningJobs", candidate.getEffectiveRunning());
+      item.put("effectiveQueuedJobs", candidate.getEffectiveQueued());
       item.put("maxConcurrentJobs", value(node.getMaxConcurrentJobs(), 1));
-      item.put("queuedJobs", value(node.getQueuedJobs(), 0));
       item.put("maxQueuedJobs", value(node.getMaxQueuedJobs(), 0));
       item.put("labels", candidate.getNodeLabels());
       snapshot.add(item);
@@ -405,6 +439,9 @@ public class OfflineWorkerScheduler {
     private double totalHeadroom;
     private String rejectionReason;
     private Map<String, String> nodeLabels = Collections.emptyMap();
+    private int controlPlaneActive;
+    private int effectiveRunning;
+    private int effectiveQueued;
 
     private Candidate(NodeRecord node) {
       this.node = node;
@@ -437,5 +474,11 @@ public class OfflineWorkerScheduler {
     private double getTotalHeadroom() { return totalHeadroom; }
     private String getRejectionReason() { return rejectionReason; }
     private Map<String, String> getNodeLabels() { return nodeLabels; }
+    private int getControlPlaneActive() { return controlPlaneActive; }
+    private void setControlPlaneActive(int value) { this.controlPlaneActive = value; }
+    private int getEffectiveRunning() { return effectiveRunning; }
+    private void setEffectiveRunning(int value) { this.effectiveRunning = value; }
+    private int getEffectiveQueued() { return effectiveQueued; }
+    private void setEffectiveQueued(int value) { this.effectiveQueued = value; }
   }
 }
