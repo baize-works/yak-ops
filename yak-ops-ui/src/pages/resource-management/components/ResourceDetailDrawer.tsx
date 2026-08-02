@@ -27,6 +27,7 @@ import { API_SUCCESS_CODE } from '@/services/http/response';
 import { fetchResourceContent, updateResourceContent } from '../service';
 import type { ResourceContent, ResourceItem } from '../types';
 import { formatFileSize, isDirectory, isEditableResource } from '../utils';
+import { getResourceStorageLabel } from './StorageTypeLabel';
 
 interface ResourceDetailDrawerProps {
   open: boolean;
@@ -108,7 +109,7 @@ const ResourceDetailDrawer = ({
       {
         key: 'storage',
         label: '存储类型',
-        children: resource?.storageType || '-',
+        children: getResourceStorageLabel(resource?.storageType),
       },
       {
         key: 'size',
@@ -225,7 +226,9 @@ const ResourceDetailDrawer = ({
       <section className="resource-detail-section">
         <div className="resource-detail-section__heading">
           <h3>资源信息</h3>
-          <Tag bordered={false}>{resource?.storageType || 'UNKNOWN'}</Tag>
+          <Tag bordered={false}>
+            {getResourceStorageLabel(resource?.storageType)}
+          </Tag>
         </div>
         <Descriptions
           size="small"
