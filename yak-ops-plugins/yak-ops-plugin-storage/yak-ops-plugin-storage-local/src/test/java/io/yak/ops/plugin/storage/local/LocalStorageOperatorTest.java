@@ -109,13 +109,16 @@ class LocalStorageOperatorTest {
   }
 
   @Test
-  void shouldRejectUnsafePaths() {
+  void shouldRejectUnsafeAndReservedPaths() {
     assertThatThrownBy(() -> operator.exists("../outside.txt"))
         .isInstanceOf(StoragePluginException.class)
         .hasMessageContaining("上级目录");
     assertThatThrownBy(() -> operator.exists("folder/./file.txt"))
         .isInstanceOf(StoragePluginException.class)
         .hasMessageContaining("当前或上级目录");
+    assertThatThrownBy(() -> operator.exists(".yak-storage/staging/file.tmp"))
+        .isInstanceOf(StoragePluginException.class)
+        .hasMessageContaining("内部保留目录");
     assertThatThrownBy(() -> operator.move("missing", "target", false))
         .isInstanceOf(StoragePluginException.class)
         .hasMessageContaining("不存在");
