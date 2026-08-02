@@ -48,7 +48,9 @@ yak-ops-plugin-storage
 
 ## 存储配置
 
-默认启用内置 Local 存储，不再要求部署 MinIO 或 HDFS。通过 `yak.resource.storage.type` 选择当前根目录使用的存储类型。
+默认活动存储改为内置 Local，因此启动和使用资源管理不再要求部署 MinIO 或 HDFS。MinIO 插件继续保持启用，以兼容数据库中已有的 `MINIO` 类型资源；只有实际访问 MinIO 资源时才需要对应服务可用。
+
+通过 `yak.resource.storage.type` 选择当前根目录使用的存储类型。
 
 ```yaml
 yak:
@@ -61,7 +63,7 @@ yak:
         base-directory: ./data/resources
         checksum-enabled: true
       minio:
-        enabled: false
+        enabled: true
         endpoint: http://127.0.0.1:9000
         access-key: minioadmin
         secret-key: minioadmin
