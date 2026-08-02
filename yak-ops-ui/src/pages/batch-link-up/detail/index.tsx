@@ -100,7 +100,6 @@ export default function BatchLinkUpDetailPage() {
   const [editor, setEditor] = useState<SyncEditorState | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [connectorFormErrors, setConnectorFormErrors] = useState<string[]>([]);
   const [dataSourceLoading, setDataSourceLoading] = useState(false);
   const [dataSources, setDataSources] = useState<DataSourceRecord[]>([]);
 
@@ -143,7 +142,6 @@ export default function BatchLinkUpDetailPage() {
       }
 
       setEditor(normalizeEditDetail(response.data, taskId));
-      setConnectorFormErrors([]);
     } catch (error: any) {
       message.error(error?.message || '获取同步任务失败');
       setEditor(null);
@@ -199,11 +197,6 @@ export default function BatchLinkUpDetailPage() {
       return;
     }
 
-    if (connectorFormErrors.length > 0) {
-      message.warning(connectorFormErrors[0]);
-      return;
-    }
-
     const remoteErrors = await validateEditorConnectorForms(editor);
     if (remoteErrors.length > 0) {
       message.warning(remoteErrors[0]);
@@ -254,7 +247,6 @@ export default function BatchLinkUpDetailPage() {
                 dataSources={dataSources}
                 dataSourceLoading={dataSourceLoading}
                 onChange={setEditor}
-                onValidationChange={setConnectorFormErrors}
               />
             </main>
 
