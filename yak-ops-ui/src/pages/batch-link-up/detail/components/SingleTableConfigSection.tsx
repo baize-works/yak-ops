@@ -25,6 +25,8 @@ interface SingleTableConfigSectionProps {
   primaryKeyLoading: boolean;
   sourceReady: boolean;
   targetReady: boolean;
+  sourceExtraParameters: ReactNode;
+  sinkExtraParameters: ReactNode;
   onSourceChange: (patch: Record<string, any>) => void;
   onSinkChange: (patch: Record<string, any>) => void;
 }
@@ -37,14 +39,14 @@ interface EndpointPanelProps {
 
 function EndpointPanel({ icon, title, children }: EndpointPanelProps) {
   return (
-    <div className="rounded-xl border border-[#ebecef] bg-[#fcfcfd] p-5">
-      <div className="flex items-start gap-3">
+    <div className="rounded-xl border border-[#e8eaee] bg-[#fcfcfd] p-5">
+      <div className="flex items-center gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--yak-brand-color-soft-hover)] text-[var(--yak-brand-color)]">
           {icon}
         </span>
         <div className="text-[14px] font-semibold text-[#182230]">{title}</div>
       </div>
-      <div className="mt-5 space-y-5">{children}</div>
+      <div className="mt-5 space-y-4">{children}</div>
     </div>
   );
 }
@@ -75,12 +77,14 @@ export default function SingleTableConfigSection({
   primaryKeyLoading,
   sourceReady,
   targetReady,
+  sourceExtraParameters,
+  sinkExtraParameters,
   onSourceChange,
   onSinkChange,
 }: SingleTableConfigSectionProps) {
   return (
     <EditorSection title="单表同步配置">
-      <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
+      <div className="grid grid-cols-2 items-start gap-5 max-lg:grid-cols-1">
         <EndpointPanel icon={<DatabaseOutlined />} title="Source 来源配置">
           <div>
             <FieldLabel>读取方式</FieldLabel>
@@ -130,6 +134,8 @@ export default function SingleTableConfigSection({
               />
             </div>
           )}
+
+          {sourceExtraParameters}
         </EndpointPanel>
 
         <EndpointPanel icon={<ExportOutlined />} title="Sink 目标配置">
@@ -229,6 +235,8 @@ export default function SingleTableConfigSection({
               />
             </div>
           ) : null}
+
+          {sinkExtraParameters}
         </EndpointPanel>
       </div>
     </EditorSection>

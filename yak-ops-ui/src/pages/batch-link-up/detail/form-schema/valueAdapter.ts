@@ -163,3 +163,56 @@ export const applySchemaValue = (
   }
   return patch;
 };
+
+export const removeSchemaValue = (
+  config: Record<string, any>,
+  role: ConnectorRole,
+  key: string,
+): Record<string, any> => {
+  const connectorOptions = {
+    ...(config.connectorOptions || {}),
+  };
+  delete connectorOptions[key];
+
+  const patch: Record<string, any> = { connectorOptions };
+
+  if (role === 'SOURCE') {
+    const mapping: Record<string, string> = {
+      table_path: 'table',
+      table_list: 'tables',
+      query: 'sql',
+      where_condition: 'whereCondition',
+      fetch_size: 'fetchSize',
+      partition_column: 'partitionColumn',
+      partition_num: 'partitionNum',
+      partition_lower_bound: 'partitionLowerBound',
+      partition_upper_bound: 'partitionUpperBound',
+      split_planning_mode: 'splitPlanningMode',
+      statistics_query_timeout: 'statisticsQueryTimeout',
+      sample_size: 'sampleSize',
+      allow_statistics_fallback: 'allowStatisticsFallback',
+      null_partition_single_split: 'nullPartitionSingleSplit',
+      multi_table_failure_policy: 'multiTableFailurePolicy',
+      int_type_narrowing: 'intTypeNarrowing',
+    };
+    patch[mapping[key] || snakeToCamel(key)] = undefined;
+    return patch;
+  }
+
+  const mapping: Record<string, string> = {
+    custom_sql: 'sql',
+    batch_size: 'batchSize',
+    prepared_statement_cache_size: 'preparedStatementCacheSize',
+    query_timeout_sec: 'queryTimeoutSec',
+    max_retries: 'maxRetries',
+    dirty_data_policy: 'dirtyDataPolicy',
+    dirty_data_output_type: 'dirtyDataOutputType',
+    dirty_data_output_path: 'dirtyDataOutputPath',
+    dirty_data_max_samples: 'dirtyDataMaxSamples',
+    dirty_data_max_count: 'dirtyDataMaxCount',
+    dirty_data_max_percentage: 'dirtyDataMaxPercentage',
+    create_primary_key: 'createPrimaryKey',
+  };
+  patch[mapping[key] || snakeToCamel(key)] = undefined;
+  return patch;
+};

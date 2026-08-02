@@ -21,6 +21,8 @@ interface MultiTableConfigSectionProps {
   sourceLoading: boolean;
   sourceReady: boolean;
   targetReady: boolean;
+  sourceExtraParameters: ReactNode;
+  sinkExtraParameters: ReactNode;
   onSourceChange: (patch: Record<string, any>) => void;
   onSinkChange: (patch: Record<string, any>) => void;
 }
@@ -44,7 +46,7 @@ function EndpointPanel({
   children,
 }: EndpointPanelProps) {
   return (
-    <div className="rounded-xl border border-[#ebecef] bg-[#fcfcfd] p-5">
+    <div className="rounded-xl border border-[#e8eaee] bg-[#fcfcfd] p-5">
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--yak-brand-color-soft-hover)] text-[var(--yak-brand-color)]">
           {icon}
@@ -63,7 +65,7 @@ function EndpointPanel({
         </div>
       </div>
 
-      <div className="mt-5 space-y-5">{children}</div>
+      <div className="mt-5 space-y-4">{children}</div>
     </div>
   );
 }
@@ -92,6 +94,8 @@ export default function MultiTableConfigSection({
   sourceLoading,
   sourceReady,
   targetReady,
+  sourceExtraParameters,
+  sinkExtraParameters,
   onSourceChange,
   onSinkChange,
 }: MultiTableConfigSectionProps) {
@@ -121,7 +125,7 @@ export default function MultiTableConfigSection({
 
   return (
     <EditorSection title="多表同步配置">
-      <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
+      <div className="grid grid-cols-2 items-start gap-5 max-lg:grid-cols-1">
         <EndpointPanel
           icon={<DatabaseOutlined />}
           title="Source 来源配置"
@@ -211,6 +215,8 @@ export default function MultiTableConfigSection({
               可选；用于按表名规则批量匹配来源表。
             </div>
           </div>
+
+          {sourceExtraParameters}
         </EndpointPanel>
 
         <EndpointPanel
@@ -306,6 +312,8 @@ export default function MultiTableConfigSection({
               />
             </div>
           ) : null}
+
+          {sinkExtraParameters}
         </EndpointPanel>
       </div>
     </EditorSection>

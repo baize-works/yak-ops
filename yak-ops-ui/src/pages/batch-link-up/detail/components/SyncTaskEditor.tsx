@@ -1,5 +1,8 @@
 import type { DataSourceRecord } from '@/pages/data-source/types';
 
+import {
+  connectorIdForDataSourceType,
+} from '../form-schema/valueAdapter';
 import useDataSourceColumns from '../hooks/useDataSourceColumns';
 import useDataSourceTables from '../hooks/useDataSourceTables';
 import {
@@ -8,7 +11,7 @@ import {
   type SyncEditorState,
 } from '../model';
 import ChannelConfigSection from './ChannelConfigSection';
-import ConnectorSchemaConfigSection from './ConnectorSchemaConfigSection';
+import ConnectorExtraParams from './ConnectorExtraParams';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
@@ -18,15 +21,31 @@ interface SyncTaskEditorProps {
   dataSources: DataSourceRecord[];
   dataSourceLoading: boolean;
   onChange: (value: SyncEditorState) => void;
-  onValidationChange?: (errors: string[]) => void;
 }
+
+const SOURCE_MANAGED_KEYS = [
+  'table_path',
+  'table_list',
+  'query',
+];
+
+const SINK_MANAGED_KEYS = [
+  'table_path',
+  'schema_save_mode',
+  'data_save_mode',
+  'write_mode',
+  'primary_keys',
+  'batch_size',
+];
+
+const hasOwn = (value: Record<string, any>, key: string) =>
+  Object.prototype.hasOwnProperty.call(value, key);
 
 export default function SyncTaskEditor({
   editor,
   dataSources,
   dataSourceLoading,
   onChange,
-  onValidationChange,
 }: SyncTaskEditorProps) {
   const sourceNode = endpointNode(editor.workflow, 'source');
   const sinkNode = endpointNode(editor.workflow, 'sink');
@@ -62,21 +81,62 @@ export default function SyncTaskEditor({
   };
 
   const updateSink = (patch: Record<string, any>) => {
-    onChange(updateEndpointConfig(editor, 'sink', patch));
+    let nextEditor = updateEndpointConfig(editor, 'sink', patch);
+    const channelPatch: Record<string, any> = {};
+
+    if (hasOwn(patch, 'dirtyDataPolicy')) {
+      channelPatch.dirtyDataPolicy =
+        patch.dirtyDataPolicy === 'SKIP' ? 'skip' : 'stop';
+    }
+    if (hasOwn(patch, 'dirtyDataMaxCount')) {
+      channelPatch.dirtyDataLimit = Number(
+        patch.dirtyDataMaxCount || 0,
+      );
+    }
+
+    if (Object.keys(channelPatch).length > 0) {
+      nextEditor = {
+        ...nextEditor,
+        workflow: {
+          ...nextEditor.workflow,
+          channelConfig: {
+            ...(nextEditor.workflow.channelConfig || {}),
+            ...channelPatch,
+          },
+        },
+      };
+    }
+
+    onChange(nextEditor);
   };
 
-  const updateChannel = (patch: Record<string, any>) => {
-    onChange({
-      ...editor,
-      workflow: {
-        ...editor.workflow,
-        channelConfig: {
-          ...(editor.workflow.channelConfig || {}),
-          ...patch,
-        },
-      },
-    });
-  };
+  const sourceConnectorId = connectorIdForDataSourceType(
+    sourceConfig.connectorId || editor.basic.sourceType,
+  );
+  const sinkConnectorId = connectorIdForDataSourceType(
+    sinkConfig.connectorId || editor.basic.targetType,
+  );
+
+  const sourceExtraParameters = (
+    <ConnectorExtraParams
+      connectorId={sourceConnectorId}
+      role="SOURCE"
+      dataSourceId={sourceId}
+      config={sourceConfig}
+      excludeKeys={SOURCE_MANAGED_KEYS}
+      onChange={updateSource}
+    />
+  );
+  const sinkExtraParameters = (
+    <ConnectorExtraParams
+      connectorId={sinkConnectorId}
+      role="SINK"
+      dataSourceId={targetId}
+      config={sinkConfig}
+      excludeKeys={SINK_MANAGED_KEYS}
+      onChange={updateSink}
+    />
+  );
 
   return (
     <div className="space-y-5">
@@ -95,6 +155,8 @@ export default function SyncTaskEditor({
           sourceLoading={sourceCatalog.loading}
           sourceReady={Boolean(sourceId)}
           targetReady={Boolean(targetId)}
+          sourceExtraParameters={sourceExtraParameters}
+          sinkExtraParameters={sinkExtraParameters}
           onSourceChange={updateSource}
           onSinkChange={updateSink}
         />
@@ -110,20 +172,12 @@ export default function SyncTaskEditor({
           primaryKeyLoading={primaryKeyCatalog.loading}
           sourceReady={Boolean(sourceId)}
           targetReady={Boolean(targetId)}
+          sourceExtraParameters={sourceExtraParameters}
+          sinkExtraParameters={sinkExtraParameters}
           onSourceChange={updateSource}
           onSinkChange={updateSink}
         />
       )}
-
-      <ConnectorSchemaConfigSection
-        editor={editor}
-        sourceConfig={sourceConfig}
-        sinkConfig={sinkConfig}
-        onSourceChange={updateSource}
-        onSinkChange={updateSink}
-        onChannelChange={updateChannel}
-        onValidationChange={onValidationChange}
-      />
 
       <ChannelConfigSection
         editor={editor}

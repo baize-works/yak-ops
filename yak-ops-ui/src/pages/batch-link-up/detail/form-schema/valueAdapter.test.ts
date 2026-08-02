@@ -1,6 +1,7 @@
 import {
   applySchemaValue,
   connectorIdForDataSourceType,
+  removeSchemaValue,
   toSchemaValues,
 } from './valueAdapter';
 
@@ -29,4 +30,21 @@ test('keeps native connector options and legacy fields aligned', () => {
   );
   expect(values.table_path).toBe('orders');
   expect(values.fetch_size).toBe(2000);
+});
+
+test('removes connector option and clears its legacy projection', () => {
+  const patch = removeSchemaValue(
+    {
+      fetchSize: 2000,
+      connectorOptions: {
+        fetch_size: 2000,
+        partition_num: 4,
+      },
+    },
+    'SOURCE',
+    'fetch_size',
+  );
+
+  expect(patch.connectorOptions).toEqual({ partition_num: 4 });
+  expect(patch.fetchSize).toBeUndefined();
 });
