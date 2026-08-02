@@ -98,14 +98,15 @@ public class OfflineWorkerRegistry {
       return null;
     }
     String nodeId = engine.getNodeId().trim();
-    String nodeName = StringUtils.hasText(engine.getNodeName())
+    String configuredNodeName = StringUtils.hasText(engine.getNodeName())
         ? engine.getNodeName().trim() : nodeId;
     String baseUrl = probeClient.normalizeBaseUrl(engine.getBaseUrl());
     NodeRecord existing = repository.find(nodeId);
+    String nodeName = existing != null && StringUtils.hasText(existing.getNodeName())
+        ? existing.getNodeName() : configuredNodeName;
     if (existing != null
         && "CONFIG".equalsIgnoreCase(existing.getRegistrationMode())
-        && baseUrl.equals(existing.getBaseUrl())
-        && nodeName.equals(existing.getNodeName())) {
+        && baseUrl.equals(existing.getBaseUrl())) {
       return existing;
     }
 
