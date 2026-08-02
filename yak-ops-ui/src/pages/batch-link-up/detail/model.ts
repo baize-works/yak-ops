@@ -3,6 +3,18 @@ import { API_SUCCESS_CODE } from '@/services/http/response';
 
 export type SyncMode = 'GUIDE_SINGLE' | 'GUIDE_MULTI';
 export type EndpointKind = 'source' | 'sink';
+export type WorkerSelectMode = 'AUTO' | 'MANUAL';
+
+export interface WorkerLabelRequirement {
+  key: string;
+  value: string;
+}
+
+export interface WorkerSelectionConfig {
+  mode: WorkerSelectMode;
+  nodeId?: string;
+  requiredLabels: WorkerLabelRequirement[];
+}
 
 export interface ScheduleParam {
   name: string;
@@ -76,6 +88,7 @@ export interface SyncEditorState {
   workflow: SyncWorkflow;
   schedule: ScheduleConfig;
   env: EnvConfig;
+  worker: WorkerSelectionConfig;
   state?: Record<string, any>;
 }
 
@@ -121,6 +134,12 @@ export const DEFAULT_SCHEDULE_CONFIG: ScheduleConfig = {
 export const DEFAULT_ENV_CONFIG: EnvConfig = {
   jobMode: 'BATCH',
   parallelism: 1,
+};
+
+export const DEFAULT_WORKER_SELECTION: WorkerSelectionConfig = {
+  mode: 'AUTO',
+  nodeId: undefined,
+  requiredLabels: [],
 };
 
 export const isApiSuccess = (response: any): boolean =>
@@ -260,6 +279,7 @@ export const buildCreatePayload = (
     workflow: buildDirectWorkflow(taskId),
     schedule: DEFAULT_SCHEDULE_CONFIG,
     env: DEFAULT_ENV_CONFIG,
+    worker: DEFAULT_WORKER_SELECTION,
   };
 };
 
@@ -285,6 +305,22 @@ const mergeSchedule = (
     ...(schedule?.weeklyValue || {}),
   },
 });
+
+const normalizeRequiredLabels = (
+  value?: Record<string, unknown> | WorkerLabelRequirement[],
+): WorkerLabelRequirement[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => ({
+      key: String(item?.key || ''),
+      value: String(item?.value || ''),
+    }));
+  }
+
+  return Object.entries(value || {}).map(([key, labelValue]) => ({
+    key,
+    value: String(labelValue ?? ''),
+  }));
+};
 
 export const normalizeEditDetail = (
   raw: any,
@@ -317,6 +353,9 @@ export const normalizeEditDetail = (
           },
         }
       : buildDirectWorkflow(id);
+
+  const workerRaw = raw?.worker || {};
+  const workerMode = String(workerRaw?.mode || 'AUTO').toUpperCase() as WorkerSelectMode;
 
   return {
     id,
@@ -355,6 +394,11 @@ export const normalizeEditDetail = (
       ...DEFAULT_ENV_CONFIG,
       ...(raw?.env || {}),
       jobMode: 'BATCH',
+    },
+    worker: {
+      mode: workerMode === 'MANUAL' ? 'MANUAL' : 'AUTO',
+      nodeId: workerRaw?.nodeId ? String(workerRaw.nodeId) : undefined,
+      requiredLabels: normalizeRequiredLabels(workerRaw?.requiredLabels),
     },
     state: raw?.state,
   };
@@ -506,6 +550,15 @@ export const updateEndpointConfig = (
   };
 };
 
+const requiredLabelsRecord = (
+  labels: WorkerLabelRequirement[],
+): Record<string, string> =>
+  labels.reduce<Record<string, string>>((result, item) => {
+    const key = item.key.trim();
+    if (key) result[key] = item.value.trim();
+    return result;
+  }, {});
+
 export const buildSavePayload = (
   editor: SyncEditorState,
 ) => ({
@@ -518,4 +571,11 @@ export const buildSavePayload = (
   workflow: editor.workflow,
   schedule: editor.schedule,
   env: editor.env,
+  worker: {
+    mode: editor.worker.mode,
+    nodeId: editor.worker.mode === 'MANUAL'
+      ? editor.worker.nodeId
+      : undefined,
+    requiredLabels: requiredLabelsRecord(editor.worker.requiredLabels),
+  },
 });

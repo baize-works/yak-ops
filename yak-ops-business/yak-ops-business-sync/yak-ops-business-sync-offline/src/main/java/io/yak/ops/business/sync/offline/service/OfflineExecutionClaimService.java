@@ -6,6 +6,8 @@ import io.yak.ops.business.sync.offline.domain.OfflineExecutionStatus;
 import io.yak.ops.business.sync.offline.repository.OfflineDefinitionCatalogRepository.DefinitionVersion;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler.Assignment;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobExecutionPO;
 import java.time.LocalDateTime;
@@ -16,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 离线同步执行实例原子领取服务。
  *
- * Atomically claims a definition and creates one durable execution attempt.
+ * Atomically claims a definition, selects one Worker and creates one durable execution attempt.
  *
  * @author weifuwan
  */
@@ -27,14 +29,17 @@ public class OfflineExecutionClaimService {
   private final OfflineJobDefinitionService definitionService;
   private final OfflineJobExecutionDao executionDao;
   private final OfflineExecutionControlRepository executionRepository;
+  private final OfflineWorkerScheduler workerScheduler;
 
   public OfflineExecutionClaimService(
       OfflineJobDefinitionService definitionService,
       OfflineJobExecutionDao executionDao,
-      OfflineExecutionControlRepository executionRepository) {
+      OfflineExecutionControlRepository executionRepository,
+      OfflineWorkerScheduler workerScheduler) {
     this.definitionService = definitionService;
     this.executionDao = executionDao;
     this.executionRepository = executionRepository;
+    this.workerScheduler = workerScheduler;
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
@@ -42,11 +47,7 @@ public class OfflineExecutionClaimService {
       Long definitionId,
       String triggerType,
       Long retryFromExecutionId,
-      int attemptNo,
-      NodeRecord node) {
-    if (node == null) {
-      throw new IllegalArgumentException("Link-Up Worker 节点不能为空");
-    }
+      int attemptNo) {
     executionRepository.lockDefinition(definitionId);
     OfflineJobDefinitionPO definition = definitionService.require(definitionId);
     if (!"ONLINE".equalsIgnoreCase(definition.getReleaseState())) {
@@ -57,6 +58,8 @@ public class OfflineExecutionClaimService {
     }
 
     DefinitionVersion version = definitionService.requireCurrentVersion(definition);
+    Assignment assignment = workerScheduler.select(definition);
+    NodeRecord node = assignment.getNode();
     String logicalJobSpecJson = definitionService.resolveLogicalJobSpec(version);
     LocalDateTime now = LocalDateTime.now();
     OfflineJobExecutionPO execution = new OfflineJobExecutionPO();
@@ -64,7 +67,12 @@ public class OfflineExecutionClaimService {
     execution.setDefinitionVersionId(version.getId());
     execution.setDefinitionVersion(version.getVersionNo());
     execution.setEngineNodeId(node.getNodeId());
+    execution.setEngineNodeBaseUrl(node.getBaseUrl());
     execution.setWorkerInstanceId(node.getWorkerInstanceId());
+    execution.setAssignmentMode(assignment.getMode());
+    execution.setAssignmentScore(assignment.getScore());
+    execution.setAssignmentReason(assignment.getReason());
+    execution.setAssignmentCandidatesJson(assignment.getCandidatesJson());
     execution.setStatus(OfflineExecutionStatus.CREATED.name());
     execution.setStateVersion(1L);
     execution.setAttemptNo(Math.max(1, attemptNo));
@@ -92,7 +100,7 @@ public class OfflineExecutionClaimService {
     if (!executionDao.updateById(execution)) {
       throw new IllegalStateException("初始化离线同步执行标识失败");
     }
-    return new ClaimResult(definition, version, logicalJobSpecJson, execution);
+    return new ClaimResult(definition, version, logicalJobSpecJson, execution, assignment);
   }
 
   public static final class ClaimResult {
@@ -100,21 +108,25 @@ public class OfflineExecutionClaimService {
     private final DefinitionVersion version;
     private final String logicalJobSpecJson;
     private final OfflineJobExecutionPO execution;
+    private final Assignment assignment;
 
     public ClaimResult(
         OfflineJobDefinitionPO definition,
         DefinitionVersion version,
         String logicalJobSpecJson,
-        OfflineJobExecutionPO execution) {
+        OfflineJobExecutionPO execution,
+        Assignment assignment) {
       this.definition = definition;
       this.version = version;
       this.logicalJobSpecJson = logicalJobSpecJson;
       this.execution = execution;
+      this.assignment = assignment;
     }
 
     public OfflineJobDefinitionPO getDefinition() { return definition; }
     public DefinitionVersion getVersion() { return version; }
     public String getLogicalJobSpecJson() { return logicalJobSpecJson; }
     public OfflineJobExecutionPO getExecution() { return execution; }
+    public Assignment getAssignment() { return assignment; }
   }
 }

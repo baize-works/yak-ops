@@ -1,5 +1,6 @@
 package io.yak.ops.common.bean.vo.sync.offline;
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,6 +31,10 @@ public class OfflineJobDefinitionVO {
   private String sinkDatasourceName;
   private String sourceTable;
   private String sinkTable;
+  private String workerSelectMode;
+  private String workerNodeId;
+  private String workerNodeName;
+  private Map<String, String> workerRequiredLabels;
   private String lastJobStatus;
   private String lastErrorMessage;
   private Long instanceId;

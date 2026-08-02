@@ -5,6 +5,7 @@ import io.yak.ops.common.bean.po.sync.offline.OfflineJobExecutionPO;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -46,6 +47,26 @@ public class OfflineExecutionControlRepository {
         Integer.class,
         definitionId);
     return count != null && count > 0;
+  }
+
+  /**
+   * 返回 Yak Ops 已创建但尚未结束的执行数，用于弥补 Worker 心跳负载的时间差。
+   *
+   * <p>该查询使用 FOR UPDATE 当前读，避免 MySQL REPEATABLE READ 继续读取领取事务
+   * 建立时的旧快照。调用方必须先按固定顺序锁定 Worker 行。
+   */
+  public Map<String, Integer> countActiveExecutionsByNode() {
+    Map<String, Integer> result = new LinkedHashMap<>();
+    jdbc.query(
+        "SELECT engine_node_id FROM yak_offline_job_execution "
+            + "WHERE engine_node_id IS NOT NULL "
+            + "AND status IN ('CREATED','SUBMITTED','QUEUED','RUNNING') "
+            + "ORDER BY id ASC FOR UPDATE",
+        resultSet -> {
+          String nodeId = resultSet.getString("engine_node_id");
+          result.merge(nodeId, 1, Integer::sum);
+        });
+    return result;
   }
 
   public List<OfflineJobExecutionPO> findActiveExecutions(int limit) {
@@ -136,10 +157,15 @@ public class OfflineExecutionControlRepository {
     execution.setDefinitionVersionId(nullableLong(resultSet, "definition_version_id"));
     execution.setDefinitionVersion(resultSet.getInt("definition_version"));
     execution.setEngineNodeId(resultSet.getString("engine_node_id"));
+    execution.setEngineNodeBaseUrl(resultSet.getString("engine_node_base_url"));
     execution.setEngineJobId(resultSet.getString("engine_job_id"));
     execution.setExternalExecutionId(resultSet.getString("external_execution_id"));
     execution.setIdempotencyKey(resultSet.getString("idempotency_key"));
     execution.setWorkerInstanceId(resultSet.getString("worker_instance_id"));
+    execution.setAssignmentMode(resultSet.getString("assignment_mode"));
+    execution.setAssignmentScore(nullableDouble(resultSet, "assignment_score"));
+    execution.setAssignmentReason(resultSet.getString("assignment_reason"));
+    execution.setAssignmentCandidatesJson(resultSet.getString("assignment_candidates_json"));
     execution.setStatus(resultSet.getString("status"));
     execution.setStateVersion(resultSet.getLong("state_version"));
     execution.setAttemptNo(resultSet.getInt("attempt_no"));
@@ -169,6 +195,12 @@ public class OfflineExecutionControlRepository {
   private Long nullableLong(java.sql.ResultSet resultSet, String column)
       throws java.sql.SQLException {
     long value = resultSet.getLong(column);
+    return resultSet.wasNull() ? null : value;
+  }
+
+  private Double nullableDouble(java.sql.ResultSet resultSet, String column)
+      throws java.sql.SQLException {
+    double value = resultSet.getDouble(column);
     return resultSet.wasNull() ? null : value;
   }
 

@@ -42,6 +42,10 @@ export interface OfflineJobDefinitionVO extends LinkupJobDefinition {
   sinkDatasourceName?: string;
   sourceTable?: string;
   sinkTable?: string;
+  workerSelectMode?: 'AUTO' | 'MANUAL';
+  workerNodeId?: string;
+  workerNodeName?: string;
+  workerRequiredLabels?: Record<string, string>;
   lastJobStatus?: string;
   lastErrorMessage?: string;
   instanceId?: string | number;
@@ -60,7 +64,14 @@ export interface OfflineJobDefinitionVO extends LinkupJobDefinition {
 export interface OfflineJobExecutionVO {
   id: string | number;
   jobDefinitionId: string | number;
+  engineNodeId?: string;
+  engineNodeBaseUrl?: string;
   engineJobId?: string;
+  externalExecutionId?: string;
+  workerInstanceId?: string;
+  assignmentMode?: 'AUTO' | 'MANUAL';
+  assignmentScore?: number;
+  assignmentReason?: string;
   status?: string;
   errorMessage?: string;
   sourceRecordCount: number;

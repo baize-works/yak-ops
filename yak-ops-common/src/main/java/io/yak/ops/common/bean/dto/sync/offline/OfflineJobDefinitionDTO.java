@@ -26,6 +26,10 @@ public class OfflineJobDefinitionDTO {
   private JsonNode mapping;
   private JsonNode schedule;
   private JsonNode env;
+
+  /** Worker 选择策略：mode、nodeId 和 requiredLabels。 */
+  private JsonNode worker;
+
   private String hoconConfig;
   private String jobDefinitionInfo;
   private String script;

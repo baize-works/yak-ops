@@ -152,6 +152,16 @@ public class OfflineNodeRepository {
         rowMapper);
   }
 
+  /**
+   * 调度事务内按稳定顺序锁定全部 Worker 行，防止多个任务并发使用相同负载快照。
+   */
+  public List<NodeRecord> listAllForScheduling() {
+    return jdbc.query(
+        "SELECT " + SELECT_COLUMNS + " FROM yak_offline_engine_node "
+            + "ORDER BY node_id ASC FOR UPDATE",
+        rowMapper);
+  }
+
   public List<NodeRecord> listHeartbeatTargets() {
     return jdbc.query(
         "SELECT " + SELECT_COLUMNS + " FROM yak_offline_engine_node "

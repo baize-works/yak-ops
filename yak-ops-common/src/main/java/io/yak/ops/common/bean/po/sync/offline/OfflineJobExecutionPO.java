@@ -22,10 +22,18 @@ public class OfflineJobExecutionPO {
   private Long definitionVersionId;
   private Integer definitionVersion;
   private String engineNodeId;
+  private String engineNodeBaseUrl;
   private String engineJobId;
   private String externalExecutionId;
   private String idempotencyKey;
   private String workerInstanceId;
+  private String assignmentMode;
+  private Double assignmentScore;
+  private String assignmentReason;
+
+  @ToString.Exclude
+  private String assignmentCandidatesJson;
+
   private String status;
   private Long stateVersion;
   private Integer attemptNo;

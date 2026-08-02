@@ -33,6 +33,22 @@ const validateTaskConfig = (
     return '请输入任务名称';
   }
 
+  if (editor.worker.mode === 'MANUAL' && !editor.worker.nodeId) {
+    return '指定节点模式需要选择执行 Worker';
+  }
+
+  const workerLabelKeys = new Set<string>();
+  for (const label of editor.worker.requiredLabels) {
+    const key = label.key.trim();
+    if (!key) {
+      return 'Worker 标签约束的标签名不能为空';
+    }
+    if (workerLabelKeys.has(key)) {
+      return `Worker 标签约束存在重复标签：${key}`;
+    }
+    workerLabelKeys.add(key);
+  }
+
   if (!editor.basic.sourceDataSourceId) {
     return '请选择来源数据源';
   }

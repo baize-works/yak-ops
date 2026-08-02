@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.yak.framework.common.PagingData;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
+import io.yak.ops.business.sync.offline.config.OfflineSyncProperties;
 import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
@@ -36,6 +37,7 @@ public class OfflineExecutionReadService {
   private final OfflineJobExecutionDao executionDao;
   private final OfflineExecutionControlRepository repository;
   private final LinkUpClient linkUpClient;
+  private final OfflineSyncProperties properties;
 
   public OfflineJobExecutionPO require(Long id) {
     if (id == null || id <= 0L) {
@@ -80,7 +82,7 @@ public class OfflineExecutionReadService {
     if (!StringUtils.hasText(execution.getEngineJobId())) {
       throw new IllegalStateException("当前执行实例尚未获得 Link-Up jobId，暂时无法查询表级指标");
     }
-    return linkUpClient.pipelines(execution.getEngineJobId());
+    return linkUpClient.pipelines(baseUrl(execution), execution.getEngineJobId());
   }
 
   public String logs(Long id) {
@@ -92,7 +94,11 @@ public class OfflineExecutionReadService {
         .append("definitionVersion: ").append(value(execution.getDefinitionVersion())).append('\n')
         .append("externalExecutionId: ").append(text(execution.getExternalExecutionId())).append('\n')
         .append("engineNodeId: ").append(text(execution.getEngineNodeId())).append('\n')
+        .append("engineNodeBaseUrl: ").append(text(execution.getEngineNodeBaseUrl())).append('\n')
         .append("workerInstanceId: ").append(text(execution.getWorkerInstanceId())).append('\n')
+        .append("assignmentMode: ").append(text(execution.getAssignmentMode())).append('\n')
+        .append("assignmentScore: ").append(decimal(execution.getAssignmentScore())).append('\n')
+        .append("assignmentReason: ").append(text(execution.getAssignmentReason())).append('\n')
         .append("engineJobId: ").append(text(execution.getEngineJobId())).append('\n')
         .append("status: ").append(text(execution.getStatus())).append('\n')
         .append("attemptNo: ").append(value(execution.getAttemptNo())).append('\n')
@@ -123,9 +129,13 @@ public class OfflineExecutionReadService {
         .definitionVersionId(execution.getDefinitionVersionId())
         .definitionVersion(execution.getDefinitionVersion())
         .engineNodeId(execution.getEngineNodeId())
+        .engineNodeBaseUrl(execution.getEngineNodeBaseUrl())
         .engineJobId(execution.getEngineJobId())
         .externalExecutionId(execution.getExternalExecutionId())
         .workerInstanceId(execution.getWorkerInstanceId())
+        .assignmentMode(execution.getAssignmentMode())
+        .assignmentScore(execution.getAssignmentScore())
+        .assignmentReason(execution.getAssignmentReason())
         .stateVersion(value(execution.getStateVersion()))
         .attemptNo(value(execution.getAttemptNo()))
         .triggerType(execution.getTriggerType())
@@ -148,12 +158,22 @@ public class OfflineExecutionReadService {
         .build();
   }
 
+  private String baseUrl(OfflineJobExecutionPO execution) {
+    return StringUtils.hasText(execution.getEngineNodeBaseUrl())
+        ? execution.getEngineNodeBaseUrl()
+        : properties.getEngine().getBaseUrl();
+  }
+
   private String format(LocalDateTime value) {
     return value == null ? null : value.format(FORMAT);
   }
 
   private String text(String value) {
     return StringUtils.hasText(value) ? value : "-";
+  }
+
+  private String decimal(Double value) {
+    return value == null ? "-" : String.format(java.util.Locale.ROOT, "%.3f", value);
   }
 
   private long value(Long value) {

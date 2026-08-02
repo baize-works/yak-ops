@@ -5,6 +5,7 @@ import io.yak.ops.business.sync.offline.config.OfflineSyncProperties;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpJobResponse;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
+import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobExecutionPO;
 import java.time.Duration;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * 后台持续对账 Link-Up 实际状态，页面查询不再触发远程刷新。
+ * 后台持续对账每个执行实例固化的 Link-Up Worker，页面查询不再触发远程刷新。
  *
  * @author weifuwan
  */
@@ -30,7 +31,7 @@ public class OfflineExecutionReconciler {
   private static final Logger LOG = LoggerFactory.getLogger(OfflineExecutionReconciler.class);
 
   private final OfflineExecutionControlRepository repository;
-  private final OfflineWorkerRegistry workerRegistry;
+  private final OfflineNodeRepository nodeRepository;
   private final OfflineJobExecutionService executionService;
   private final LinkUpClient linkUpClient;
   private final OfflineSyncProperties properties;
@@ -40,31 +41,36 @@ public class OfflineExecutionReconciler {
       fixedDelayString = "${yak.sync.offline.control.reconcile-delay-millis:5000}")
   public void reconcile() {
     int limit = Math.max(1, properties.getControl().getScanBatchSize());
-    NodeRecord node = workerRegistry.currentNode();
     List<OfflineJobExecutionPO> executions = repository.findActiveExecutions(limit);
     for (OfflineJobExecutionPO execution : executions) {
-      reconcileExecution(execution, node);
+      reconcileExecution(execution);
     }
     for (OfflineJobExecutionPO execution : repository.findRetryCandidates(LocalDateTime.now(), limit)) {
       retry(execution);
     }
   }
 
-  private void reconcileExecution(OfflineJobExecutionPO execution, NodeRecord node) {
+  private void reconcileExecution(OfflineJobExecutionPO execution) {
     try {
-      if (node != null && "UP".equalsIgnoreCase(node.getStatus())
+      NodeRecord node = StringUtils.hasText(execution.getEngineNodeId())
+          ? nodeRepository.find(execution.getEngineNodeId())
+          : null;
+      if (node != null && sameRoute(execution, node)
+          && "UP".equalsIgnoreCase(node.getStatus())
           && StringUtils.hasText(execution.getWorkerInstanceId())
           && StringUtils.hasText(node.getWorkerInstanceId())
           && !execution.getWorkerInstanceId().equals(node.getWorkerInstanceId())) {
         executionService.markLost(
             execution,
-            "Link-Up Worker instanceId 已变化，原执行结果无法继续确认");
+            "Link-Up Worker " + execution.getEngineNodeId()
+                + " 的 instanceId 已变化，原执行结果无法继续确认");
         return;
       }
 
+      String baseUrl = baseUrl(execution, node);
       LinkUpJobResponse response = StringUtils.hasText(execution.getEngineJobId())
-          ? linkUpClient.getJob(execution.getEngineJobId())
-          : linkUpClient.findByExternalExecutionId(execution.getExternalExecutionId());
+          ? linkUpClient.getJob(baseUrl, execution.getEngineJobId())
+          : linkUpClient.findByExternalExecutionId(baseUrl, execution.getExternalExecutionId());
       executionService.applySnapshot(execution, response, "RECONCILED");
 
       if (Boolean.TRUE.equals(execution.getCancellationRequested())
@@ -73,12 +79,15 @@ public class OfflineExecutionReconciler {
           && isActive(response.getStatus())) {
         executionService.applySnapshot(
             execution,
-            linkUpClient.cancel(execution.getEngineJobId()),
+            linkUpClient.cancel(baseUrl, execution.getEngineJobId()),
             "CANCEL_RECONCILED");
       }
     } catch (RuntimeException exception) {
       if (isPastLostDeadline(execution)) {
-        executionService.markLost(execution, "Link-Up 状态对账超时：" + exception.getMessage());
+        executionService.markLost(
+            execution,
+            "Link-Up Worker " + execution.getEngineNodeId()
+                + " 状态对账超时：" + exception.getMessage());
       } else {
         LOG.debug("Offline execution reconcile failed, executionId={}", execution.getId(), exception);
       }
@@ -92,6 +101,35 @@ public class OfflineExecutionReconciler {
     } catch (RuntimeException exception) {
       LOG.warn("Offline execution retry failed, executionId={}", execution.getId(), exception);
     }
+  }
+
+  private boolean sameRoute(OfflineJobExecutionPO execution, NodeRecord node) {
+    if (!StringUtils.hasText(execution.getEngineNodeBaseUrl())) {
+      // 历史执行没有地址快照，沿用原 nodeId/instanceId 判定。
+      return true;
+    }
+    return normalize(execution.getEngineNodeBaseUrl()).equals(normalize(node.getBaseUrl()));
+  }
+
+  private String baseUrl(OfflineJobExecutionPO execution, NodeRecord node) {
+    if (StringUtils.hasText(execution.getEngineNodeBaseUrl())) {
+      return execution.getEngineNodeBaseUrl();
+    }
+    if (node != null && StringUtils.hasText(node.getBaseUrl())) {
+      return node.getBaseUrl();
+    }
+    return properties.getEngine().getBaseUrl();
+  }
+
+  private String normalize(String value) {
+    if (!StringUtils.hasText(value)) {
+      return "";
+    }
+    String normalized = value.trim();
+    while (normalized.endsWith("/")) {
+      normalized = normalized.substring(0, normalized.length() - 1);
+    }
+    return normalized;
   }
 
   private boolean isPastLostDeadline(OfflineJobExecutionPO execution) {
