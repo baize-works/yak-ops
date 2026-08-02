@@ -2,6 +2,7 @@ package io.yak.ops.business.sync.offline.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.yak.framework.common.PagingData;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.config.OfflineSyncProperties;
@@ -62,11 +63,14 @@ public class OfflineExecutionReadService {
   public OfflineJobExecutionDetailVO detail(Long id) {
     OfflineJobExecutionPO execution = require(id);
     OfflineJobExecutionDetailVO detail = OfflineJobExecutionDetailVO.builder()
-        .execution(toVO(execution)).build();
+        .execution(toVO(execution))
+        .requiredCapabilities(parse(execution.getRequiredCapabilitiesJson()))
+        .assignedCapabilities(parse(execution.getAssignedCapabilitiesJson()))
+        .assignmentCandidates(parse(execution.getAssignmentCandidatesJson()))
+        .build();
     if (StringUtils.hasText(execution.getEngineSnapshotJson())) {
       try {
-        JsonNode snapshot = new com.fasterxml.jackson.databind.ObjectMapper()
-            .readTree(execution.getEngineSnapshotJson());
+        JsonNode snapshot = new ObjectMapper().readTree(execution.getEngineSnapshotJson());
         detail.setJob(snapshot);
         detail.setPipelines(snapshot.path("pipelines"));
         detail.setMetrics(snapshot.path("metrics"));
@@ -99,6 +103,10 @@ public class OfflineExecutionReadService {
         .append("assignmentMode: ").append(text(execution.getAssignmentMode())).append('\n')
         .append("assignmentScore: ").append(decimal(execution.getAssignmentScore())).append('\n')
         .append("assignmentReason: ").append(text(execution.getAssignmentReason())).append('\n')
+        .append("requiredCapabilities: ")
+        .append(text(execution.getRequiredCapabilitiesJson())).append('\n')
+        .append("assignedCapabilities: ")
+        .append(text(execution.getAssignedCapabilitiesJson())).append('\n')
         .append("engineJobId: ").append(text(execution.getEngineJobId())).append('\n')
         .append("status: ").append(text(execution.getStatus())).append('\n')
         .append("attemptNo: ").append(value(execution.getAttemptNo())).append('\n')
@@ -136,6 +144,8 @@ public class OfflineExecutionReadService {
         .assignmentMode(execution.getAssignmentMode())
         .assignmentScore(execution.getAssignmentScore())
         .assignmentReason(execution.getAssignmentReason())
+        .requiredCapabilitiesJson(execution.getRequiredCapabilitiesJson())
+        .assignedCapabilitiesJson(execution.getAssignedCapabilitiesJson())
         .stateVersion(value(execution.getStateVersion()))
         .attemptNo(value(execution.getAttemptNo()))
         .triggerType(execution.getTriggerType())
@@ -156,6 +166,17 @@ public class OfflineExecutionReadService {
         .lastSyncTime(format(execution.getLastSyncTime()))
         .updateTime(format(execution.getUpdateTime()))
         .build();
+  }
+
+  private JsonNode parse(String value) {
+    if (!StringUtils.hasText(value)) {
+      return null;
+    }
+    try {
+      return new ObjectMapper().readTree(value);
+    } catch (Exception ignored) {
+      return null;
+    }
   }
 
   private String baseUrl(OfflineJobExecutionPO execution) {
