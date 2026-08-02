@@ -3,13 +3,14 @@ import HttpUtils from '@/utils/HttpUtils';
 
 export const apiPrefix = '/api/v1/offline/workers';
 
+export type WorkerId = string | number;
 export type WorkerHealthStatus = 'UP' | 'DOWN' | string;
 export type WorkerSchedulingStatus = 'ENABLED' | 'DRAINING' | 'DISABLED';
 export type WorkerRegistrationMode = 'CONFIG' | 'MANUAL';
 
 export interface LinkupClient {
-  /** 兼容旧页面字段，值与 nodeId 相同。 */
-  id?: string;
+  /** 兼容旧调用方，值与 nodeId 相同。 */
+  id?: WorkerId;
   nodeId: string;
   nodeName: string;
   clientName?: string;
@@ -40,6 +41,17 @@ export interface LinkupClient {
   lastErrorMessage?: string;
   createTime?: string;
   updateTime?: string;
+
+  /** 旧客户端页面尚可能引用的兼容字段。 */
+  engineType?: string;
+  deployMode?: string;
+  protocol?: string;
+  contextPath?: string;
+  clientAddress?: string;
+  clientPort?: string | number;
+  version?: string;
+  containerId?: string;
+  remark?: string;
 }
 
 export interface LinkupClientMetrics {
@@ -87,12 +99,16 @@ export interface LinkupClientOption {
   available?: boolean;
 }
 
+const workerPath = (nodeId: WorkerId) => encodeURIComponent(String(nodeId));
+
 const normalizeWorker = (worker: LinkupClient): LinkupClient => ({
   ...worker,
   id: worker.nodeId,
   clientName: worker.nodeName,
   clientVersion: worker.engineVersion,
+  version: worker.engineVersion,
   heartbeatTime: worker.lastHeartbeatTime,
+  engineType: 'LINK_UP',
   healthStatus:
     worker.status === 'UP'
       ? worker.schedulingStatus === 'DRAINING'
@@ -105,12 +121,12 @@ const normalizePage = (
   response: ApiResponse<LinkupClientPageData>,
 ): ApiResponse<LinkupClientPageData> => ({
   ...response,
-  data: response.data
-    ? {
-        ...response.data,
-        records: (response.data.records || []).map(normalizeWorker),
-      }
-    : response.data,
+  data: {
+    records: (response.data?.records || []).map(normalizeWorker),
+    total: Number(response.data?.total || 0),
+    pageNo: Number(response.data?.pageNo || 1),
+    pageSize: Number(response.data?.pageSize || 20),
+  },
 });
 
 export const linkupClientApi = {
@@ -121,17 +137,14 @@ export const linkupClientApi = {
   },
 
   update: (
-    nodeId: string,
+    nodeId: WorkerId,
     data: LinkupClientSaveRequest,
   ): Promise<ApiResponse<LinkupClient>> => {
-    return HttpUtils.put(
-      `${apiPrefix}/${encodeURIComponent(nodeId)}`,
-      data,
-    );
+    return HttpUtils.put(`${apiPrefix}/${workerPath(nodeId)}`, data);
   },
 
   saveOrUpdate: (
-    data: LinkupClientSaveRequest & { nodeId?: string; id?: string },
+    data: LinkupClientSaveRequest & { nodeId?: string; id?: WorkerId },
   ): Promise<ApiResponse<LinkupClient>> => {
     const nodeId = data.nodeId || data.id;
     return nodeId
@@ -139,24 +152,16 @@ export const linkupClientApi = {
       : linkupClientApi.create(data);
   },
 
-  verify: (
-    baseUrl: string,
-  ): Promise<ApiResponse<LinkupClient>> => {
+  verify: (baseUrl: string): Promise<ApiResponse<LinkupClient>> => {
     return HttpUtils.post(`${apiPrefix}/verify`, { baseUrl });
   },
 
-  selectById: (
-    nodeId: string,
-  ): Promise<ApiResponse<LinkupClient>> => {
-    return HttpUtils.get(
-      `${apiPrefix}/${encodeURIComponent(nodeId)}`,
-    );
+  selectById: (nodeId: WorkerId): Promise<ApiResponse<LinkupClient>> => {
+    return HttpUtils.get(`${apiPrefix}/${workerPath(nodeId)}`);
   },
 
-  delete: (nodeId: string): Promise<ApiResponse<boolean>> => {
-    return HttpUtils.delete(
-      `${apiPrefix}/${encodeURIComponent(nodeId)}`,
-    );
+  delete: (nodeId: WorkerId): Promise<ApiResponse<boolean>> => {
+    return HttpUtils.delete(`${apiPrefix}/${workerPath(nodeId)}`);
   },
 
   page: async (
@@ -176,27 +181,22 @@ export const linkupClientApi = {
     return HttpUtils.get(`${apiPrefix}/options`);
   },
 
-  refresh: (
-    nodeId: string,
-  ): Promise<ApiResponse<LinkupClient>> => {
-    return HttpUtils.post(
-      `${apiPrefix}/${encodeURIComponent(nodeId)}/refresh`,
-      {},
-    );
+  refresh: (nodeId: WorkerId): Promise<ApiResponse<LinkupClient>> => {
+    return HttpUtils.post(`${apiPrefix}/${workerPath(nodeId)}/refresh`, {});
   },
 
   updateSchedulingStatus: (
-    nodeId: string,
+    nodeId: WorkerId,
     schedulingStatus: WorkerSchedulingStatus,
   ): Promise<ApiResponse<LinkupClient>> => {
     return HttpUtils.put(
-      `${apiPrefix}/${encodeURIComponent(nodeId)}/scheduling-status`,
+      `${apiPrefix}/${workerPath(nodeId)}/scheduling-status`,
       { schedulingStatus },
     );
   },
 
   metrics: async (
-    nodeId: string,
+    nodeId: WorkerId,
   ): Promise<ApiResponse<LinkupClientMetrics>> => {
     const response = await linkupClientApi.selectById(nodeId);
     return {
@@ -210,13 +210,13 @@ export const linkupClientApi = {
             maxQueuedJobs: response.data.maxQueuedJobs,
             loadRatio: response.data.loadRatio,
           }
-        : response.data,
+        : {},
     };
   },
 
   /** 保留旧的数据源验证代理入口，避免影响尚未迁移的调用方。 */
   verifyDatasource: (
-    clientId: string,
+    clientId: WorkerId,
     params: {
       datasourceId: number | string;
       pluginName?: string;
@@ -227,7 +227,7 @@ export const linkupClientApi = {
     },
   ) => {
     return HttpUtils.post(
-      `/api/v1/devops/client/${encodeURIComponent(clientId)}/verify-datasource`,
+      `/api/v1/devops/client/${workerPath(clientId)}/verify-datasource`,
       {
         ...params,
         timeoutMs: 15000,
