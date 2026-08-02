@@ -19,6 +19,7 @@
 
     <modules>
         <module>yak-ops-plugin-storage-api</module>
+        <module>yak-ops-plugin-storage-local</module>
         <module>yak-ops-plugin-storage-minio</module>
         <module>yak-ops-plugin-storage-hdfs</module>
         <module>yak-ops-plugin-storage-all</module>
