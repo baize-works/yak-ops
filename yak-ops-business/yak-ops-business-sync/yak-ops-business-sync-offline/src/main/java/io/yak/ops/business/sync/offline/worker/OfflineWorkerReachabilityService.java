@@ -35,7 +35,7 @@ import org.springframework.util.StringUtils;
  * 运行前从候选 Link-Up Worker 视角预检任务 Source/Sink 外部系统可达性。
  *
  * <p>实际 Connector options 只在内存和 HTTPS/HTTP 请求中使用；数据库仅保存 SHA-256 摘要、
- * 状态、耗时和脱敏错误。该服务必须在执行领取事务之前调用。
+ * 状态、耗时和脱敏错误。远程预热必须发生在执行领取事务之前；领取事务只重算摘要并读取缓存。
  *
  * @author weifuwan
  */
@@ -71,6 +71,11 @@ public class OfflineWorkerReachabilityService {
     this.objectMapper = objectMapper;
   }
 
+  /**
+   * 远程预热候选 Worker。该方法由执行门面在进入领取事务前调用。
+   *
+   * @return 不包含凭据明文的预检摘要要求
+   */
   public String preheat(Long definitionId) {
     if (!properties.isReachabilityEnabled()) {
       return emptyPlan("DISABLED");
@@ -78,18 +83,8 @@ public class OfflineWorkerReachabilityService {
 
     OfflineJobDefinitionPO definition = definitionService.require(definitionId);
     DefinitionVersion version = definitionService.requireCurrentVersion(definition);
-    String resolvedJobSpecJson = definitionService.resolveExecutionJobSpec(version);
-    JsonNode jobSpec = read(resolvedJobSpecJson, "执行 JobSpec");
-    String capabilityRequirements = StringUtils.hasText(version.getCapabilityRequirementsJson())
-        ? version.getCapabilityRequirementsJson()
-        : StringUtils.hasText(definition.getCapabilityRequirementsJson())
-            ? definition.getCapabilityRequirementsJson()
-            : capabilityResolver.resolve(definitionService.resolveLogicalJobSpec(version));
-
-    List<EndpointPlan> endpoints = List.of(
-        endpoint(jobSpec.path("source"), "SOURCE"),
-        endpoint(jobSpec.path("sink"), "SINK"));
-    String planJson = plan(endpoints, "REQUIRED");
+    PreflightPlan plan = buildPlan(definition, version);
+    String capabilityRequirements = capabilityRequirements(definition, version);
 
     List<NodeRecord> candidates = candidateNodes(definition, capabilityRequirements);
     int limit = Math.max(1, properties.getReachabilityMaxWorkers());
@@ -98,7 +93,7 @@ public class OfflineWorkerReachabilityService {
       if (processed++ >= limit) {
         break;
       }
-      for (EndpointPlan endpoint : endpoints) {
+      for (EndpointPlan endpoint : plan.endpoints) {
         refreshIfNeeded(node, endpoint);
       }
     }
@@ -106,7 +101,43 @@ public class OfflineWorkerReachabilityService {
     preflightRepository.deleteExpired(
         LocalDateTime.now().minusNanos(
             Math.max(60_000L, properties.getReachabilityRetentionMillis()) * 1_000_000L));
-    return planJson;
+    return plan.requirementsJson;
+  }
+
+  /**
+   * 只从数据库和不可变 JobSpec 计算预检摘要，不发起远程请求，可在领取事务内调用。
+   */
+  public String requirements(
+      OfflineJobDefinitionPO definition,
+      DefinitionVersion version) {
+    if (!properties.isReachabilityEnabled()) {
+      return emptyPlan("DISABLED");
+    }
+    return buildPlan(definition, version).requirementsJson;
+  }
+
+  private PreflightPlan buildPlan(
+      OfflineJobDefinitionPO definition,
+      DefinitionVersion version) {
+    if (definition == null || version == null) {
+      throw new IllegalArgumentException("任务定义和版本不能为空");
+    }
+    String resolvedJobSpecJson = definitionService.resolveExecutionJobSpec(version);
+    JsonNode jobSpec = read(resolvedJobSpecJson, "执行 JobSpec");
+    List<EndpointPlan> endpoints = List.of(
+        endpoint(jobSpec.path("source"), "SOURCE"),
+        endpoint(jobSpec.path("sink"), "SINK"));
+    return new PreflightPlan(endpoints, plan(endpoints, "REQUIRED"));
+  }
+
+  private String capabilityRequirements(
+      OfflineJobDefinitionPO definition,
+      DefinitionVersion version) {
+    return StringUtils.hasText(version.getCapabilityRequirementsJson())
+        ? version.getCapabilityRequirementsJson()
+        : StringUtils.hasText(definition.getCapabilityRequirementsJson())
+            ? definition.getCapabilityRequirementsJson()
+            : capabilityResolver.resolve(definitionService.resolveLogicalJobSpec(version));
   }
 
   private List<NodeRecord> candidateNodes(
@@ -263,6 +294,9 @@ public class OfflineWorkerReachabilityService {
   }
 
   private JsonNode read(String value, String name) {
+    if (!StringUtils.hasText(value)) {
+      throw new IllegalStateException(name + "为空");
+    }
     try {
       JsonNode parsed = objectMapper.readTree(value);
       if (parsed == null || !parsed.isObject()) {
@@ -300,6 +334,16 @@ public class OfflineWorkerReachabilityService {
         "(?i)(password|passwd|pwd)\\s*[=:]\\s*[^,;\\s]+",
         "$1=***");
     return sanitized.length() <= 2000 ? sanitized : sanitized.substring(0, 2000);
+  }
+
+  private static final class PreflightPlan {
+    private final List<EndpointPlan> endpoints;
+    private final String requirementsJson;
+
+    private PreflightPlan(List<EndpointPlan> endpoints, String requirementsJson) {
+      this.endpoints = endpoints;
+      this.requirementsJson = requirementsJson;
+    }
   }
 
   private static final class EndpointPlan {
