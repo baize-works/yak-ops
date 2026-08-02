@@ -30,7 +30,8 @@ import java.util.Objects;
 public class LocalStorageOperator implements StorageOperator {
 
   private static final int BUFFER_SIZE = 8192;
-  private static final String STAGING_DIRECTORY = ".staging";
+  private static final String INTERNAL_DIRECTORY = ".yak-storage";
+  private static final String STAGING_DIRECTORY = "staging";
 
   private final LocalStorageProperties properties;
   private final Path baseDirectory;
@@ -70,8 +71,7 @@ public class LocalStorageOperator implements StorageOperator {
 
   @Override
   public boolean exists(String path) {
-    Path target = resolve(path);
-    return Files.exists(target, LinkOption.NOFOLLOW_LINKS);
+    return Files.exists(resolve(path), LinkOption.NOFOLLOW_LINKS);
   }
 
   @Override
@@ -235,7 +235,7 @@ public class LocalStorageOperator implements StorageOperator {
   }
 
   private Path initializeStagingDirectory() {
-    Path directory = baseDirectory.resolve(STAGING_DIRECTORY).normalize();
+    Path directory = baseDirectory.resolve(INTERNAL_DIRECTORY).resolve(STAGING_DIRECTORY).normalize();
     try {
       Files.createDirectories(directory);
       ensureNoSymbolicLink(directory);
@@ -288,7 +288,12 @@ public class LocalStorageOperator implements StorageOperator {
     if (normalized.indexOf('\0') >= 0) {
       throw new StoragePluginException("存储路径不能包含空字符");
     }
-    for (String segment : normalized.split("/")) {
+
+    String[] segments = normalized.split("/");
+    if (segments.length > 0 && INTERNAL_DIRECTORY.equals(segments[0])) {
+      throw new StoragePluginException("存储路径不能使用内部保留目录：" + INTERNAL_DIRECTORY);
+    }
+    for (String segment : segments) {
       if (segment.isEmpty() || ".".equals(segment) || "..".equals(segment)) {
         throw new StoragePluginException("存储路径不能包含当前或上级目录：" + path);
       }
