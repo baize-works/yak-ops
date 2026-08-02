@@ -55,7 +55,8 @@ public class OfflineExecutionReconciler {
       NodeRecord node = StringUtils.hasText(execution.getEngineNodeId())
           ? nodeRepository.find(execution.getEngineNodeId())
           : null;
-      if (node != null && "UP".equalsIgnoreCase(node.getStatus())
+      if (node != null && sameRoute(execution, node)
+          && "UP".equalsIgnoreCase(node.getStatus())
           && StringUtils.hasText(execution.getWorkerInstanceId())
           && StringUtils.hasText(node.getWorkerInstanceId())
           && !execution.getWorkerInstanceId().equals(node.getWorkerInstanceId())) {
@@ -102,6 +103,14 @@ public class OfflineExecutionReconciler {
     }
   }
 
+  private boolean sameRoute(OfflineJobExecutionPO execution, NodeRecord node) {
+    if (!StringUtils.hasText(execution.getEngineNodeBaseUrl())) {
+      // 历史执行没有地址快照，沿用原 nodeId/instanceId 判定。
+      return true;
+    }
+    return normalize(execution.getEngineNodeBaseUrl()).equals(normalize(node.getBaseUrl()));
+  }
+
   private String baseUrl(OfflineJobExecutionPO execution, NodeRecord node) {
     if (StringUtils.hasText(execution.getEngineNodeBaseUrl())) {
       return execution.getEngineNodeBaseUrl();
@@ -110,6 +119,17 @@ public class OfflineExecutionReconciler {
       return node.getBaseUrl();
     }
     return properties.getEngine().getBaseUrl();
+  }
+
+  private String normalize(String value) {
+    if (!StringUtils.hasText(value)) {
+      return "";
+    }
+    String normalized = value.trim();
+    while (normalized.endsWith("/")) {
+      normalized = normalized.substring(0, normalized.length() - 1);
+    }
+    return normalized;
   }
 
   private boolean isPastLostDeadline(OfflineJobExecutionPO execution) {
