@@ -10,6 +10,10 @@ import io.yak.ops.business.sync.offline.config.OfflineCapabilityProperties;
 import io.yak.ops.business.sync.offline.engine.LinkUpConnectorSchemaClient;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.CapabilityView;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.ConnectorCapabilityView;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.OptionView;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.WorkerView;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -78,6 +82,52 @@ public class OfflineWorkerCapabilityService {
     }
     refresh(node, force);
     return repository.find(nodeId);
+  }
+
+  public CapabilityView refreshView(String nodeId) {
+    return view(refresh(nodeId, true));
+  }
+
+  public CapabilityView get(String nodeId) {
+    NodeRecord node = repository.find(nodeId);
+    if (node == null) {
+      throw new IllegalArgumentException("Link-Up Worker 不存在：" + nodeId);
+    }
+    return view(node);
+  }
+
+  public WorkerView enrich(WorkerView worker) {
+    if (worker == null || !StringUtils.hasText(worker.getNodeId())) {
+      return worker;
+    }
+    NodeRecord node = repository.find(worker.getNodeId());
+    if (node == null) {
+      return worker;
+    }
+    CapabilityView capability = view(node);
+    worker.setCapabilityStatus(capability.getStatus());
+    worker.setCapabilityDigest(capability.getDigest());
+    worker.setCapabilitySyncedAt(capability.getSyncedAt());
+    worker.setCapabilityErrorMessage(capability.getErrorMessage());
+    worker.setConnectors(capability.getConnectors());
+    worker.setConnectorCount(capability.getConnectors().size());
+    worker.setAvailable(Boolean.TRUE.equals(worker.getAvailable()) && Boolean.TRUE.equals(capability.getFresh()));
+    return worker;
+  }
+
+  public OptionView enrich(OptionView option) {
+    if (option == null || !StringUtils.hasText(option.getValue())) {
+      return option;
+    }
+    NodeRecord node = repository.find(option.getValue());
+    if (node == null) {
+      return option;
+    }
+    CapabilityView capability = view(node);
+    option.setCapabilityStatus(capability.getStatus());
+    option.setConnectorCount(capability.getConnectors().size());
+    option.setAvailable(Boolean.TRUE.equals(option.getAvailable()) && Boolean.TRUE.equals(capability.getFresh()));
+    return option;
   }
 
   public void refreshQuietly(String nodeId) {
@@ -172,6 +222,44 @@ public class OfflineWorkerCapabilityService {
     ArrayNode items = result.putArray("connectors");
     connectors.forEach(items::add);
     return result;
+  }
+
+  private CapabilityView view(NodeRecord node) {
+    List<ConnectorCapabilityView> connectors = new ArrayList<>();
+    if (node != null && StringUtils.hasText(node.getConnectorSchemasJson())) {
+      try {
+        JsonNode values = objectMapper.readTree(node.getConnectorSchemasJson()).path("connectors");
+        if (values.isArray()) {
+          for (JsonNode value : values) {
+            List<String> capabilities = new ArrayList<>();
+            if (value.path("capabilities").isArray()) {
+              for (JsonNode item : value.path("capabilities")) {
+                capabilities.add(item.asText());
+              }
+            }
+            connectors.add(ConnectorCapabilityView.builder()
+                .connectorId(value.path("connectorId").asText(null))
+                .role(value.path("role").asText(null))
+                .schemaVersion(value.path("schemaVersion").asText(null))
+                .schemaFingerprint(value.path("schemaFingerprint").asText(null))
+                .implementationVersion(value.path("implementationVersion").asText(null))
+                .capabilities(capabilities)
+                .build());
+          }
+        }
+      } catch (JsonProcessingException exception) {
+        LOG.warn("Worker capability snapshot is invalid, nodeId={}", node.getNodeId(), exception);
+      }
+    }
+    return CapabilityView.builder()
+        .nodeId(node == null ? null : node.getNodeId())
+        .status(node == null ? "UNKNOWN" : node.getCapabilityStatus())
+        .digest(node == null ? null : node.getCapabilityDigest())
+        .syncedAt(node == null ? null : node.getCapabilitySyncedAt())
+        .errorMessage(node == null ? null : node.getCapabilityErrorMessage())
+        .fresh(isFresh(node))
+        .connectors(connectors)
+        .build();
   }
 
   private String text(JsonNode node, String field) {
