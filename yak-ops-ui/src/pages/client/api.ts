@@ -7,6 +7,26 @@ export type WorkerId = string | number;
 export type WorkerHealthStatus = 'UP' | 'DOWN' | string;
 export type WorkerSchedulingStatus = 'ENABLED' | 'DRAINING' | 'DISABLED';
 export type WorkerRegistrationMode = 'CONFIG' | 'MANUAL';
+export type WorkerCapabilityStatus = 'UNKNOWN' | 'READY' | 'ERROR' | string;
+
+export interface ConnectorCapability {
+  connectorId: string;
+  role: 'SOURCE' | 'SINK' | string;
+  schemaVersion?: string;
+  schemaFingerprint?: string;
+  implementationVersion?: string;
+  capabilities: string[];
+}
+
+export interface WorkerCapability {
+  nodeId: string;
+  status: WorkerCapabilityStatus;
+  digest?: string;
+  syncedAt?: string;
+  errorMessage?: string;
+  fresh: boolean;
+  connectors: ConnectorCapability[];
+}
 
 export interface LinkupClient {
   /** 兼容旧调用方，值与 nodeId 相同。 */
@@ -39,6 +59,12 @@ export interface LinkupClient {
   lastSuccessTime?: string;
   consecutiveFailures: number;
   lastErrorMessage?: string;
+  capabilityStatus?: WorkerCapabilityStatus;
+  capabilityDigest?: string;
+  connectorCount?: number;
+  capabilitySyncedAt?: string;
+  capabilityErrorMessage?: string;
+  connectors?: ConnectorCapability[];
   createTime?: string;
   updateTime?: string;
 
@@ -97,6 +123,8 @@ export interface LinkupClientOption {
   queuedJobs?: number;
   maxQueuedJobs?: number;
   available?: boolean;
+  capabilityStatus?: WorkerCapabilityStatus;
+  connectorCount?: number;
 }
 
 const workerPath = (nodeId: WorkerId) => encodeURIComponent(String(nodeId));
@@ -183,6 +211,19 @@ export const linkupClientApi = {
 
   refresh: (nodeId: WorkerId): Promise<ApiResponse<LinkupClient>> => {
     return HttpUtils.post(`${apiPrefix}/${workerPath(nodeId)}/refresh`, {});
+  },
+
+  capabilities: (nodeId: WorkerId): Promise<ApiResponse<WorkerCapability>> => {
+    return HttpUtils.get(`${apiPrefix}/${workerPath(nodeId)}/capabilities`);
+  },
+
+  refreshCapabilities: (
+    nodeId: WorkerId,
+  ): Promise<ApiResponse<WorkerCapability>> => {
+    return HttpUtils.post(
+      `${apiPrefix}/${workerPath(nodeId)}/capabilities/refresh`,
+      {},
+    );
   },
 
   updateSchedulingStatus: (
