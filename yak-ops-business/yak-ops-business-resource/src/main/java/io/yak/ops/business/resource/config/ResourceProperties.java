@@ -124,7 +124,7 @@ public class ResourceProperties {
   /** 当前资源存储选择。 */
   public static class Storage {
 
-    private ResourceStorageType type = ResourceStorageType.MINIO;
+    private ResourceStorageType type = ResourceStorageType.LOCAL;
 
     public ResourceStorageType getType() {
       return type;

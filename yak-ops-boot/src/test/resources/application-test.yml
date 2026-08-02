@@ -25,6 +25,8 @@ yak:
   resource:
     enabled: false
     storage:
+      local:
+        enabled: false
       minio:
         enabled: false
       hdfs:
