@@ -13,6 +13,8 @@ import io.yak.ops.business.sync.offline.repository.OfflineScheduleRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineScheduleRepository.ScheduleRecord;
 import io.yak.ops.business.sync.offline.service.OfflineDefinitionSupport.DraftDefinition;
 import io.yak.ops.business.sync.offline.service.OfflineDefinitionSupport.PreparedDefinition;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler.PolicyProjection;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionQueryDTO;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
@@ -50,6 +52,7 @@ public class OfflineJobDefinitionService {
   private final OfflineScheduleRepository scheduleRepository;
   private final OfflineExecutionControlRepository executionRepository;
   private final OfflineDefinitionSupport support;
+  private final OfflineWorkerScheduler workerScheduler;
   private final AtomicLong idSequence = new AtomicLong(System.currentTimeMillis() * 1000L);
 
   public Long nextId() {
@@ -76,6 +79,7 @@ public class OfflineJobDefinitionService {
     }
 
     DraftDefinition draft = support.prepareDraft(requestDTO);
+    PolicyProjection policy = workerScheduler.normalize(draft.getRequest().get("worker"));
     if (definitionDao.existsByName(draft.getJobName(), id)) {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + draft.getJobName());
     }
@@ -100,6 +104,7 @@ public class OfflineJobDefinitionService {
     definition.setSinkTable(null);
     definition.setScheduleJson(support.writeNullable(draft.getRequest().get("schedule")));
     definition.setEnvJson(support.writeNullable(draft.getRequest().get("env")));
+    applyWorkerPolicy(definition, policy);
     definition.setVersion(0);
     definition.setCurrentVersionId(null);
     definition.setCreateTime(existing == null ? now : existing.getCreateTime());
@@ -132,6 +137,7 @@ public class OfflineJobDefinitionService {
       }
       throw exception;
     }
+    PolicyProjection policy = workerScheduler.normalize(prepared.getRequest().get("worker"));
     if (definitionDao.existsByName(prepared.getJobName(), id)) {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + prepared.getJobName());
     }
@@ -159,6 +165,7 @@ public class OfflineJobDefinitionService {
     definition.setSinkTable(prepared.getSinkTable());
     definition.setScheduleJson(support.writeNullable(prepared.getRequest().get("schedule")));
     definition.setEnvJson(support.writeNullable(prepared.getRequest().get("env")));
+    applyWorkerPolicy(definition, policy);
     definition.setVersion(version);
     definition.setReleaseState(existing == null ? "OFFLINE" : existing.getReleaseState());
     definition.setCreateTime(existing == null ? now : existing.getCreateTime());
@@ -226,6 +233,7 @@ public class OfflineJobDefinitionService {
   public boolean online(Long id) {
     OfflineJobDefinitionPO definition = require(id);
     requireCurrentVersion(definition);
+    workerScheduler.validateDefinition(definition);
     definition.setReleaseState("ONLINE");
     definition.setUpdateTime(LocalDateTime.now());
     return definitionDao.updateById(definition);
@@ -296,12 +304,28 @@ public class OfflineJobDefinitionService {
 
   private OfflineJobDefinitionVO toVO(OfflineJobDefinitionPO definition) {
     ScheduleRecord schedule = scheduleRepository.findSchedule(definition.getId());
-    return support.toVO(
+    OfflineJobDefinitionVO view = support.toVO(
         definition,
         schedule == null ? null : schedule.getCronExpression(),
         schedule != null && schedule.isEnabled(),
         schedule == null ? null : schedule.getLastFireTime(),
         schedule == null ? null : schedule.getNextFireTime());
+    view.setWorkerSelectMode(
+        StringUtils.hasText(definition.getWorkerSelectMode())
+            ? definition.getWorkerSelectMode() : "AUTO");
+    view.setWorkerNodeId(definition.getWorkerNodeId());
+    view.setWorkerNodeName(workerScheduler.nodeName(definition.getWorkerNodeId()));
+    view.setWorkerRequiredLabels(
+        workerScheduler.labels(definition.getWorkerRequiredLabelsJson()));
+    return view;
+  }
+
+  private void applyWorkerPolicy(
+      OfflineJobDefinitionPO definition,
+      PolicyProjection policy) {
+    definition.setWorkerSelectMode(policy.getMode());
+    definition.setWorkerNodeId(policy.getNodeId());
+    definition.setWorkerRequiredLabelsJson(policy.getRequiredLabelsJson());
   }
 
   private void ensureEditable(OfflineJobDefinitionPO existing) {
