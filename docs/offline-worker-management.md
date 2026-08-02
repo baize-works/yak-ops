@@ -101,6 +101,7 @@ GET /api/v1/node
 - `MANUAL`：严格使用指定 `nodeId`；节点不可用时直接失败，不自动切换。
 - 标签采用精确匹配，手动和自动模式都会校验。
 - 已经创建的执行实例不会因为任务策略或 Worker 地址后来发生变化而漂移。
+- 手动任务通过数据库外键引用 Worker，仍被任务定义引用的节点不能删除。
 
 ## 自动调度算法
 
@@ -118,6 +119,18 @@ GET /api/v1/node
 
 `DRAINING` 节点不会接收新任务，但原有执行仍继续在该节点对账和取消。
 
+### 有效负载
+
+Worker 心跳存在刷新间隔。为了避免多个任务并发提交时同时读取旧负载，执行领取事务会：
+
+1. 锁定当前任务定义，防止同一任务重复运行。
+2. 按 `nodeId` 固定顺序对全部 Worker 行执行 `SELECT ... FOR UPDATE`。
+3. 聚合 Yak Ops 数据库中 `CREATED / SUBMITTED / QUEUED / RUNNING` 的执行数。
+4. 将控制面活跃执行数与 Worker 上报的运行、排队数量取保守值。
+5. 选择 Worker 并在同一事务内插入执行实例，然后释放锁。
+
+因此，不同任务即使并发提交，也不会全部基于同一份旧心跳选择同一个 Worker。
+
 ### 评分
 
 通过硬过滤后计算：
@@ -130,14 +143,14 @@ score = runningHeadroom × 55
 
 其中：
 
-- `runningHeadroom`：即时运行并发余量比例
-- `totalCapacityHeadroom`：运行并发与等待队列的综合余量比例
+- `runningHeadroom`：有效运行并发余量比例
+- `totalCapacityHeadroom`：有效运行并发与等待队列的综合余量比例
 - `normalizedWeight`：管理权重归一化结果，权重范围为 `1..1000`
 
 同分时依次比较：
 
-1. 排队任务更少
-2. 运行任务更少
+1. 有效排队任务更少
+2. 有效运行任务更少
 3. 权重更高
 4. `nodeId` 字典序
 
@@ -146,6 +159,9 @@ score = runningHeadroom × 55
 - 分配模式
 - 最终得分
 - 选择原因
+- Worker 上报负载
+- 控制面活跃执行数
+- 计算后的有效负载
 - 所有候选节点及淘汰原因
 
 ## 执行路由与可靠性
@@ -180,6 +196,7 @@ Flyway V7 为任务定义增加：
 - `worker_select_mode`
 - `worker_node_id`
 - `worker_required_labels_json`
+- `worker_node_id -> yak_offline_engine_node.node_id` 外键
 
 为执行实例增加：
 
@@ -198,7 +215,7 @@ Flyway V7 为任务定义增加：
 - CDC 或流式任务调度
 - 跨 Worker 迁移正在运行的任务
 - 提交不确定时的自动故障转移
-- 资源预占或分布式容量锁
+- Worker 侧资源预占或分布式容量租约
 - 基于 Connector 能力清单的调度约束
 
-后续可以在现有调度器上增加 Connector 能力、租户配额、资源预占和更细粒度的调度审计。
+后续可以在现有调度器上增加 Connector 能力、租户配额、Worker 侧资源租约和更细粒度的调度审计。
