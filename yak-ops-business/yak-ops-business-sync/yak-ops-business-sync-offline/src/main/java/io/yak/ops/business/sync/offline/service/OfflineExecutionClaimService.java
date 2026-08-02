@@ -21,8 +21,8 @@ import org.springframework.util.StringUtils;
 /**
  * 离线同步执行实例原子领取服务。
  *
- * Atomically claims a definition, selects one capability-compatible Worker and creates one
- * durable execution attempt.
+ * Atomically claims a definition, selects one capability-compatible and reachable Worker and
+ * creates one durable execution attempt.
  *
  * @author weifuwan
  */
@@ -52,12 +52,21 @@ public class OfflineExecutionClaimService {
     this.workerScheduler = workerScheduler;
   }
 
-  @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
   public ClaimResult claim(
       Long definitionId,
       String triggerType,
       Long retryFromExecutionId,
       int attemptNo) {
+    return claim(definitionId, triggerType, retryFromExecutionId, attemptNo, null);
+  }
+
+  @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
+  public ClaimResult claim(
+      Long definitionId,
+      String triggerType,
+      Long retryFromExecutionId,
+      int attemptNo,
+      String reachabilityRequirementsJson) {
     executionRepository.lockDefinition(definitionId);
     OfflineJobDefinitionPO definition = definitionService.require(definitionId);
     if (!"ONLINE".equalsIgnoreCase(definition.getReleaseState())) {
@@ -80,7 +89,10 @@ public class OfflineExecutionClaimService {
       definition.setCapabilityRequirementsJson(capabilityRequirementsJson);
     }
 
-    Assignment assignment = workerScheduler.select(definition, capabilityRequirementsJson);
+    Assignment assignment = workerScheduler.select(
+        definition,
+        capabilityRequirementsJson,
+        reachabilityRequirementsJson);
     NodeRecord node = assignment.getNode();
     LocalDateTime now = LocalDateTime.now();
     OfflineJobExecutionPO execution = new OfflineJobExecutionPO();
@@ -96,6 +108,8 @@ public class OfflineExecutionClaimService {
     execution.setAssignmentCandidatesJson(assignment.getCandidatesJson());
     execution.setRequiredCapabilitiesJson(capabilityRequirementsJson);
     execution.setAssignedCapabilitiesJson(assignment.getAssignedCapabilitiesJson());
+    execution.setReachabilityRequirementsJson(reachabilityRequirementsJson);
+    execution.setAssignedReachabilityJson(assignment.getAssignedReachabilityJson());
     execution.setStatus(OfflineExecutionStatus.CREATED.name());
     execution.setStateVersion(1L);
     execution.setAttemptNo(Math.max(1, attemptNo));
