@@ -42,6 +42,14 @@ public class OfflineJobExecutionPO {
   @ToString.Exclude
   private String assignedCapabilitiesJson;
 
+  /** Worker 预热时生成的 Source/Sink options 摘要要求，不包含凭据明文。 */
+  @ToString.Exclude
+  private String reachabilityRequirementsJson;
+
+  /** 分配时命中的 Worker 视角可达性预检证据。 */
+  @ToString.Exclude
+  private String assignedReachabilityJson;
+
   private String status;
   private Long stateVersion;
   private Integer attemptNo;
