@@ -111,25 +111,27 @@ public class OfflineWorkerScheduler {
   }
 
   private Assignment selectManual(PolicyProjection policy, List<NodeRecord> nodes) {
-    NodeRecord selected = nodes.stream()
-        .filter(node -> Objects.equals(policy.getNodeId(), node.getNodeId()))
+    List<Candidate> candidates = nodes.stream()
+        .map(node -> evaluate(node, policy.getRequiredLabels()))
+        .collect(Collectors.toList());
+    Candidate selected = candidates.stream()
+        .filter(candidate -> Objects.equals(
+            policy.getNodeId(),
+            candidate.getNode().getNodeId()))
         .findFirst()
         .orElseThrow(() -> new IllegalStateException(
             "指定的 Link-Up Worker 不存在：" + policy.getNodeId()));
-    Candidate candidate = evaluate(selected, policy.getRequiredLabels());
-    if (!candidate.isEligible()) {
+    if (!selected.isEligible()) {
       throw new IllegalStateException(
-          "指定的 Link-Up Worker 当前不可调度：" + candidate.getRejectionReason());
+          "指定的 Link-Up Worker 当前不可调度：" + selected.getRejectionReason());
     }
-    List<Candidate> snapshot = nodes.stream()
-        .map(node -> evaluate(node, policy.getRequiredLabels()))
-        .collect(Collectors.toList());
-    candidate.setSelected(true);
+    selected.setSelected(true);
     return assignment(
-        candidate,
+        selected,
         "MANUAL",
-        "手动指定 Worker " + selected.getNodeName() + "（" + selected.getNodeId() + "）",
-        snapshot);
+        "手动指定 Worker " + selected.getNode().getNodeName()
+            + "（" + selected.getNode().getNodeId() + "）",
+        candidates);
   }
 
   private Assignment selectAuto(PolicyProjection policy, List<NodeRecord> nodes) {
@@ -146,7 +148,8 @@ public class OfflineWorkerScheduler {
           .map(candidate -> candidate.getNode().getNodeId() + "=" + candidate.getRejectionReason())
           .collect(Collectors.joining("；"));
       throw new IllegalStateException(
-          "没有可调度的 Link-Up Worker" + (StringUtils.hasText(rejected) ? "：" + rejected : ""));
+          "没有可调度的 Link-Up Worker"
+              + (StringUtils.hasText(rejected) ? "：" + rejected : ""));
     }
     Candidate selected = eligible.get(0);
     selected.setSelected(true);
@@ -223,8 +226,9 @@ public class OfflineWorkerScheduler {
         .thenComparingInt(candidate -> value(candidate.getNode().getQueuedJobs(), 0))
         .thenComparingInt(candidate -> value(candidate.getNode().getRunningJobs(), 0))
         .thenComparing(
-            candidate -> value(candidate.getNode().getWeight(), 100),
-            Comparator.reverseOrder())
+            Comparator.comparingInt(
+                (Candidate candidate) -> value(candidate.getNode().getWeight(), 100))
+                .reversed())
         .thenComparing(candidate -> candidate.getNode().getNodeId());
   }
 
@@ -237,7 +241,8 @@ public class OfflineWorkerScheduler {
         Math.max(
             properties.getControl().getHeartbeatDelayMillis() * 3L,
             properties.getControl().getLostAfterMillis()));
-    return heartbeat.isBefore(LocalDateTime.now().minusNanos(staleAfter * 1_000_000L));
+    return heartbeat.isBefore(
+        LocalDateTime.now().minusNanos(staleAfter * 1_000_000L));
   }
 
   private String writeCandidates(List<Candidate> candidates) {
@@ -296,7 +301,8 @@ public class OfflineWorkerScheduler {
 
   private String writeLabels(Map<String, String> labels) {
     try {
-      return objectMapper.writeValueAsString(labels == null ? Collections.emptyMap() : labels);
+      return objectMapper.writeValueAsString(
+          labels == null ? Collections.emptyMap() : labels);
     } catch (JsonProcessingException exception) {
       throw new IllegalStateException("序列化 Worker 标签条件失败", exception);
     }
