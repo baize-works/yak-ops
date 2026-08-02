@@ -15,6 +15,7 @@ import ConnectorExtraParams from './ConnectorExtraParams';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
+import WorkerSchedulingSection from './WorkerSchedulingSection';
 
 interface SyncTaskEditorProps {
   editor: SyncEditorState;
@@ -144,6 +145,11 @@ export default function SyncTaskEditor({
         editor={editor}
         dataSources={dataSources}
         dataSourceLoading={dataSourceLoading}
+        onChange={onChange}
+      />
+
+      <WorkerSchedulingSection
+        editor={editor}
         onChange={onChange}
       />
 
