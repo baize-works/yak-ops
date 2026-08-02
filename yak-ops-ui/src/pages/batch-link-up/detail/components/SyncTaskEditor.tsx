@@ -36,9 +36,10 @@ const SINK_MANAGED_KEYS = [
   'write_mode',
   'primary_keys',
   'batch_size',
-  'dirty_data_policy',
-  'dirty_data_max_count',
 ];
+
+const hasOwn = (value: Record<string, any>, key: string) =>
+  Object.prototype.hasOwnProperty.call(value, key);
 
 export default function SyncTaskEditor({
   editor,
@@ -80,7 +81,33 @@ export default function SyncTaskEditor({
   };
 
   const updateSink = (patch: Record<string, any>) => {
-    onChange(updateEndpointConfig(editor, 'sink', patch));
+    let nextEditor = updateEndpointConfig(editor, 'sink', patch);
+    const channelPatch: Record<string, any> = {};
+
+    if (hasOwn(patch, 'dirtyDataPolicy')) {
+      channelPatch.dirtyDataPolicy =
+        patch.dirtyDataPolicy === 'SKIP' ? 'skip' : 'stop';
+    }
+    if (hasOwn(patch, 'dirtyDataMaxCount')) {
+      channelPatch.dirtyDataLimit = Number(
+        patch.dirtyDataMaxCount || 0,
+      );
+    }
+
+    if (Object.keys(channelPatch).length > 0) {
+      nextEditor = {
+        ...nextEditor,
+        workflow: {
+          ...nextEditor.workflow,
+          channelConfig: {
+            ...(nextEditor.workflow.channelConfig || {}),
+            ...channelPatch,
+          },
+        },
+      };
+    }
+
+    onChange(nextEditor);
   };
 
   const sourceConnectorId = connectorIdForDataSourceType(
