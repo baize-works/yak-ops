@@ -34,6 +34,14 @@ public class OfflineJobExecutionPO {
   @ToString.Exclude
   private String assignmentCandidatesJson;
 
+  /** 本次执行所依据的任务 Connector 能力要求。 */
+  @ToString.Exclude
+  private String requiredCapabilitiesJson;
+
+  /** 分配时 Worker 实际匹配的 Connector 能力快照。 */
+  @ToString.Exclude
+  private String assignedCapabilitiesJson;
+
   private String status;
   private Long stateVersion;
   private Integer attemptNo;
