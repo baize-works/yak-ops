@@ -60,9 +60,11 @@ public class OfflineExecutionControlRepository {
             + "WHERE engine_node_id IS NOT NULL "
             + "AND status IN ('CREATED','SUBMITTED','QUEUED','RUNNING') "
             + "GROUP BY engine_node_id",
-        resultSet -> result.put(
-            resultSet.getString("engine_node_id"),
-            resultSet.getInt("active_count")));
+        resultSet -> {
+          result.put(
+              resultSet.getString("engine_node_id"),
+              resultSet.getInt("active_count"));
+        });
     return result;
   }
 
