@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
-import io.yak.ops.business.sync.offline.form.ConnectorSchemaRegistry;
-import io.yak.ops.business.sync.offline.form.ConnectorSchemaSnapshot;
+import io.yak.ops.business.sync.offline.repository.OfflineConnectorSchemaRepository;
+import io.yak.ops.business.sync.offline.repository.OfflineConnectorSchemaRepository.SchemaRecord;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
  * 从不可变 JobSpec 派生 Worker Connector 能力要求。
  *
  * <p>要求包含 Connector、角色、保存时使用的 Schema 指纹以及任务实际启用的执行特性。
+ * Schema 只读取 Yak Ops 已持久化的本地快照，不在任务保存或执行领取事务中回源 Worker。
  *
  * @author weifuwan
  */
@@ -26,13 +27,13 @@ import org.springframework.util.StringUtils;
 @Component
 public class OfflineCapabilityRequirementResolver {
 
-  private final ConnectorSchemaRegistry schemaRegistry;
+  private final OfflineConnectorSchemaRepository schemaRepository;
   private final ObjectMapper objectMapper;
 
   public OfflineCapabilityRequirementResolver(
-      ConnectorSchemaRegistry schemaRegistry,
+      OfflineConnectorSchemaRepository schemaRepository,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
-    this.schemaRegistry = schemaRegistry;
+    this.schemaRepository = schemaRepository;
     this.objectMapper = objectMapper;
   }
 
@@ -92,7 +93,7 @@ public class OfflineCapabilityRequirementResolver {
     ObjectNode requirement = objectMapper.createObjectNode();
     requirement.put("connectorId", connectorId);
     requirement.put("role", role);
-    JsonNode schema = schema(connectorId, role);
+    JsonNode schema = localSchema(connectorId, role);
     requirement.put("schemaVersion", schema.path("schemaVersion").asText(""));
     requirement.put("schemaFingerprint", schema.path("schemaFingerprint").asText(""));
 
@@ -101,15 +102,20 @@ public class OfflineCapabilityRequirementResolver {
     return requirement;
   }
 
-  private JsonNode schema(String connectorId, String role) {
-    try {
-      ConnectorSchemaSnapshot snapshot = schemaRegistry.get(connectorId, role);
-      return snapshot == null || snapshot.getSchema() == null
-          ? objectMapper.createObjectNode()
-          : snapshot.getSchema();
-    } catch (RuntimeException ignored) {
-      // Worker 暂时离线时仍允许保存任务；调度至少会校验 Connector 和实际特性能力。
+  private JsonNode localSchema(String connectorId, String role) {
+    SchemaRecord record = schemaRepository.find(connectorId, role);
+    if (record == null || !StringUtils.hasText(record.getSchemaJson())) {
       return objectMapper.createObjectNode();
+    }
+    try {
+      JsonNode schema = objectMapper.readTree(record.getSchemaJson());
+      return schema == null || !schema.isObject()
+          ? objectMapper.createObjectNode()
+          : schema;
+    } catch (JsonProcessingException exception) {
+      throw new IllegalStateException(
+          "本地 Connector Schema 已损坏：" + connectorId + "/" + role,
+          exception);
     }
   }
 
