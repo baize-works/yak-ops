@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -34,6 +35,7 @@ import org.springframework.util.StringUtils;
  *
  * @author weifuwan
  */
+@Slf4j
 @ConditionalOnOfflineSyncEnabled
 @Service
 public class OfflineWorkerService {
@@ -61,10 +63,11 @@ public class OfflineWorkerService {
   }
 
   public PageView page(QueryRequest request) {
-    registry.ensureConfiguredWorker();
+    ensureConfiguredWorkerQuietly();
     QueryRequest query = request == null ? new QueryRequest() : request;
     int pageNo = query.getPageNo() == null ? 1 : Math.max(1, query.getPageNo());
-    int pageSize = query.getPageSize() == null ? 20 : Math.min(500, Math.max(1, query.getPageSize()));
+    int pageSize = query.getPageSize() == null
+        ? 20 : Math.min(500, Math.max(1, query.getPageSize()));
     List<NodeRecord> filtered = repository.listAll().stream()
         .filter(node -> matches(node, query))
         .sorted(Comparator.comparing(
@@ -92,13 +95,20 @@ public class OfflineWorkerService {
     String normalized = probeClient.normalizeBaseUrl(baseUrl);
     LinkUpNodeResponse response = probeClient.node(normalized);
     validateResponse(response);
-    return view(fromResponse(response, normalized, "MANUAL", null, 100, Collections.emptyMap()));
+    return view(fromResponse(
+        response,
+        normalized,
+        "MANUAL",
+        null,
+        100,
+        Collections.emptyMap()));
   }
 
   public WorkerView create(CreateRequest request) {
     if (request == null) {
       throw new IllegalArgumentException("Worker 创建参数不能为空");
     }
+    ensureConfiguredWorkerQuietly();
     String baseUrl = probeClient.normalizeBaseUrl(request.getBaseUrl());
     LinkUpNodeResponse response = probeClient.node(baseUrl);
     validateResponse(response);
@@ -128,28 +138,39 @@ public class OfflineWorkerService {
     }
     NodeRecord existing = require(nodeId);
     String requestedUrl = probeClient.normalizeBaseUrl(request.getBaseUrl());
-    if ("CONFIG".equalsIgnoreCase(existing.getRegistrationMode())
-        && !requestedUrl.equals(existing.getBaseUrl())) {
+    boolean addressChanged = !requestedUrl.equals(existing.getBaseUrl());
+    if ("CONFIG".equalsIgnoreCase(existing.getRegistrationMode()) && addressChanged) {
       throw new IllegalStateException("默认 Worker 地址由 application.yml 管理，不能在页面修改");
     }
-    NodeRecord sameAddress = repository.findByBaseUrl(requestedUrl);
-    if (sameAddress != null && !nodeId.equals(sameAddress.getNodeId())) {
-      throw new IllegalStateException("Worker 地址已被其他节点使用：" + requestedUrl);
+
+    NodeRecord updated;
+    if (addressChanged) {
+      NodeRecord sameAddress = repository.findByBaseUrl(requestedUrl);
+      if (sameAddress != null && !nodeId.equals(sameAddress.getNodeId())) {
+        throw new IllegalStateException("Worker 地址已被其他节点使用：" + requestedUrl);
+      }
+      LinkUpNodeResponse response = probeClient.node(requestedUrl);
+      validateResponse(response);
+      if (!nodeId.equals(response.getNodeId())) {
+        throw new IllegalStateException(
+            "更新后的地址属于其他 Worker，登记=" + nodeId
+                + "，实际=" + response.getNodeId());
+      }
+      updated = fromResponse(
+          response,
+          requestedUrl,
+          existing.getRegistrationMode(),
+          displayName(request.getNodeName(), existing.getNodeName()),
+          weight(request.getWeight()),
+          request.getLabels());
+    } else {
+      // Worker 离线时仍允许维护 Yak Ops 侧的显示名称、权重和标签。
+      updated = copy(existing);
+      updated.setNodeName(displayName(request.getNodeName(), existing.getNodeName()));
+      updated.setWeight(weight(request.getWeight()));
+      updated.setLabelsJson(writeLabels(request.getLabels()));
+      updated.setUpdateTime(LocalDateTime.now());
     }
-    LinkUpNodeResponse response = probeClient.node(requestedUrl);
-    validateResponse(response);
-    if (!nodeId.equals(response.getNodeId())) {
-      throw new IllegalStateException(
-          "更新后的地址属于其他 Worker，登记=" + nodeId + "，实际=" + response.getNodeId());
-    }
-    NodeRecord updated = fromResponse(
-        response,
-        requestedUrl,
-        existing.getRegistrationMode(),
-        StringUtils.hasText(request.getNodeName())
-            ? request.getNodeName().trim() : existing.getNodeName(),
-        weight(request.getWeight()),
-        request.getLabels());
     updated.setEnabled(existing.getEnabled());
     updated.setSchedulingStatus(existing.getSchedulingStatus());
     updated.setCreateTime(existing.getCreateTime());
@@ -187,7 +208,7 @@ public class OfflineWorkerService {
   }
 
   public List<OptionView> options() {
-    registry.ensureConfiguredWorker();
+    ensureConfiguredWorkerQuietly();
     List<OptionView> options = new ArrayList<>();
     for (NodeRecord node : repository.listAll()) {
       WorkerView worker = view(node);
@@ -239,6 +260,34 @@ public class OfflineWorkerService {
         .lastErrorMessage(null)
         .createTime(now)
         .updateTime(now)
+        .build();
+  }
+
+  private NodeRecord copy(NodeRecord source) {
+    return NodeRecord.builder()
+        .nodeId(source.getNodeId())
+        .nodeName(source.getNodeName())
+        .baseUrl(source.getBaseUrl())
+        .registrationMode(source.getRegistrationMode())
+        .enabled(source.getEnabled())
+        .schedulingStatus(source.getSchedulingStatus())
+        .weight(source.getWeight())
+        .labelsJson(source.getLabelsJson())
+        .workerInstanceId(source.getWorkerInstanceId())
+        .engineVersion(source.getEngineVersion())
+        .startedAtMillis(source.getStartedAtMillis())
+        .offlineOnly(source.getOfflineOnly())
+        .status(source.getStatus())
+        .maxConcurrentJobs(source.getMaxConcurrentJobs())
+        .maxQueuedJobs(source.getMaxQueuedJobs())
+        .runningJobs(source.getRunningJobs())
+        .queuedJobs(source.getQueuedJobs())
+        .lastHeartbeatTime(source.getLastHeartbeatTime())
+        .lastSuccessTime(source.getLastSuccessTime())
+        .consecutiveFailures(source.getConsecutiveFailures())
+        .lastErrorMessage(source.getLastErrorMessage())
+        .createTime(source.getCreateTime())
+        .updateTime(source.getUpdateTime())
         .build();
   }
 
@@ -372,6 +421,19 @@ public class OfflineWorkerService {
     } catch (JsonProcessingException exception) {
       return Collections.emptyMap();
     }
+  }
+
+  private void ensureConfiguredWorkerQuietly() {
+    try {
+      registry.ensureConfiguredWorker();
+    } catch (RuntimeException exception) {
+      log.warn("默认 Link-Up Worker 配置不可用，继续返回已登记节点：{}",
+          exception.getMessage());
+    }
+  }
+
+  private String displayName(String requested, String fallback) {
+    return StringUtils.hasText(requested) ? requested.trim() : fallback;
   }
 
   private int weight(Integer value) {
