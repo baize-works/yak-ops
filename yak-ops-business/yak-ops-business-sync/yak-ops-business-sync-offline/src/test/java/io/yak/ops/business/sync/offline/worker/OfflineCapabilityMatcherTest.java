@@ -24,7 +24,9 @@ class OfflineCapabilityMatcherTest {
 
     assertThat(result.isMatched()).isTrue();
     assertThat(result.getReason()).contains("jdbc/SOURCE").contains("jdbc/SINK");
-    assertThat(result.getAssignedCapabilitiesJson()).contains("capabilityDigest");
+    assertThat(result.getAssignedCapabilitiesJson())
+        .contains("capabilityDigest")
+        .contains("instance-current");
   }
 
   @Test
@@ -70,6 +72,37 @@ class OfflineCapabilityMatcherTest {
     assertThat(result.getReason()).contains("能力快照已过期");
   }
 
+  @Test
+  void rejectsSnapshotFromPreviousWorkerProcess() {
+    OfflineCapabilityProperties properties = new OfflineCapabilityProperties();
+    OfflineCapabilityMatcher matcher = new OfflineCapabilityMatcher(properties, objectMapper);
+    NodeRecord worker = worker("sha256:source", "sha256:sink", "UPSERT");
+    worker.setConnectorSchemasJson(
+        worker.getConnectorSchemasJson().replace("instance-current", "instance-old"));
+
+    MatchResult result = matcher.match(
+        worker,
+        requirements("sha256:source", "sha256:sink", "UPSERT"));
+
+    assertThat(result.isMatched()).isFalse();
+    assertThat(result.getReason()).contains("旧 Worker 进程");
+  }
+
+  @Test
+  void disabledCapabilitySchedulingKeepsWorkerEligible() {
+    OfflineCapabilityProperties properties = new OfflineCapabilityProperties();
+    properties.setEnabled(false);
+    OfflineCapabilityMatcher matcher = new OfflineCapabilityMatcher(properties, objectMapper);
+    NodeRecord worker = NodeRecord.builder().nodeId("worker-1").build();
+
+    MatchResult result = matcher.match(
+        worker,
+        requirements("sha256:source", "sha256:sink", "UPSERT"));
+
+    assertThat(result.isMatched()).isTrue();
+    assertThat(result.getReason()).contains("已关闭");
+  }
+
   private NodeRecord worker(
       String sourceFingerprint,
       String sinkFingerprint,
@@ -81,7 +114,8 @@ class OfflineCapabilityMatcherTest {
       }
       capabilities.append('"').append(sinkCapabilities[index]).append('"');
     }
-    String snapshot = "{\"connectors\":["
+    String snapshot = "{\"workerInstanceId\":\"instance-current\","
+        + "\"engineVersion\":\"1.0.0\",\"connectors\":["
         + "{\"connectorId\":\"jdbc\",\"role\":\"SOURCE\","
         + "\"schemaVersion\":\"1\",\"schemaFingerprint\":\""
         + sourceFingerprint + "\",\"capabilities\":[\"MULTI_TABLE\",\"CUSTOM_SQL\"]},"
@@ -90,6 +124,8 @@ class OfflineCapabilityMatcherTest {
         + sinkFingerprint + "\",\"capabilities\":[" + capabilities + "]}]}";
     return NodeRecord.builder()
         .nodeId("worker-1")
+        .workerInstanceId("instance-current")
+        .engineVersion("1.0.0")
         .capabilityStatus("READY")
         .capabilityDigest("sha256:worker")
         .connectorSchemasJson(snapshot)
