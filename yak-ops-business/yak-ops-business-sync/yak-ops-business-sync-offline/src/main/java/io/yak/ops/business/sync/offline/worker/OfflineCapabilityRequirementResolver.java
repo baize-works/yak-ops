@@ -8,8 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.form.ConnectorSchemaRegistry;
 import io.yak.ops.business.sync.offline.form.ConnectorSchemaSnapshot;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
@@ -53,9 +51,8 @@ public class OfflineCapabilityRequirementResolver {
     if (jobSpec == null || !jobSpec.isObject()) {
       throw new IllegalArgumentException("JobSpec 必须是 JSON 对象");
     }
-    ObjectNode result = objectMapper.createObjectNode();
-    result.put("version", "1");
-    ArrayNode endpoints = result.putArray("endpoints");
+    ObjectNode result = emptyRequirements();
+    ArrayNode endpoints = (ArrayNode) result.path("endpoints");
     endpoints.add(endpoint(jobSpec.path("source"), "SOURCE"));
     endpoints.add(endpoint(jobSpec.path("sink"), "SINK"));
     return write(result);
@@ -63,7 +60,7 @@ public class OfflineCapabilityRequirementResolver {
 
   public JsonNode read(String value) {
     if (!StringUtils.hasText(value)) {
-      return objectMapper.createObjectNode().put("version", "1").putArray("endpoints");
+      return emptyRequirements();
     }
     try {
       JsonNode parsed = objectMapper.readTree(value);
@@ -74,6 +71,13 @@ public class OfflineCapabilityRequirementResolver {
     } catch (JsonProcessingException exception) {
       throw new IllegalStateException("能力要求 JSON 已损坏", exception);
     }
+  }
+
+  private ObjectNode emptyRequirements() {
+    ObjectNode result = objectMapper.createObjectNode();
+    result.put("version", "1");
+    result.putArray("endpoints");
+    return result;
   }
 
   private ObjectNode endpoint(JsonNode endpoint, String role) {
