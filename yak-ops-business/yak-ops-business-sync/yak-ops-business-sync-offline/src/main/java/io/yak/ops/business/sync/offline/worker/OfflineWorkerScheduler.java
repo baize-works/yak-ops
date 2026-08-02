@@ -31,9 +31,9 @@ import org.springframework.util.StringUtils;
 /**
  * 离线任务 Worker 选择器。
  *
- * <p>先执行健康、调度状态、心跳、标签、Connector 能力和容量硬过滤，再按即时并发余量、
- * 总容量余量和管理权重计算可解释得分。调度事务会锁定 Worker 行，并将 Yak Ops
- * 已创建的活跃执行叠加到 Worker 心跳负载中，避免并发提交使用同一份旧快照。
+ * <p>先执行健康、调度状态、心跳、标签、Connector 能力、Worker 视角可达性和容量硬过滤，
+ * 再按即时并发余量、总容量余量和管理权重计算可解释得分。调度事务会锁定 Worker 行，
+ * 并将 Yak Ops 已创建的活跃执行叠加到 Worker 心跳负载中，避免并发提交使用同一份旧快照。
  *
  * @author weifuwan
  */
@@ -49,6 +49,7 @@ public class OfflineWorkerScheduler {
   private final OfflineExecutionControlRepository executionRepository;
   private final OfflineWorkerRegistry registry;
   private final OfflineCapabilityMatcher capabilityMatcher;
+  private final OfflineReachabilityMatcher reachabilityMatcher;
   private final OfflineSyncProperties properties;
   private final ObjectMapper objectMapper;
 
@@ -57,12 +58,14 @@ public class OfflineWorkerScheduler {
       OfflineExecutionControlRepository executionRepository,
       OfflineWorkerRegistry registry,
       OfflineCapabilityMatcher capabilityMatcher,
+      OfflineReachabilityMatcher reachabilityMatcher,
       OfflineSyncProperties properties,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
     this.repository = repository;
     this.executionRepository = executionRepository;
     this.registry = registry;
     this.capabilityMatcher = capabilityMatcher;
+    this.reachabilityMatcher = reachabilityMatcher;
     this.properties = properties;
     this.objectMapper = objectMapper;
   }
@@ -113,13 +116,23 @@ public class OfflineWorkerScheduler {
 
   /** 兼容旧调用，优先使用定义中已回填的能力要求。 */
   public Assignment select(OfflineJobDefinitionPO definition) {
-    return select(definition, definition == null ? null : definition.getCapabilityRequirementsJson());
+    return select(
+        definition,
+        definition == null ? null : definition.getCapabilityRequirementsJson(),
+        null);
   }
 
-  /** 必须在 offline-sync 事务内调用。 */
   public Assignment select(
       OfflineJobDefinitionPO definition,
       String capabilityRequirementsJson) {
+    return select(definition, capabilityRequirementsJson, null);
+  }
+
+  /** 必须在 offline-sync 事务内调用；远程预检必须在进入该方法前完成。 */
+  public Assignment select(
+      OfflineJobDefinitionPO definition,
+      String capabilityRequirementsJson,
+      String reachabilityRequirementsJson) {
     try {
       registry.ensureConfiguredWorker();
     } catch (RuntimeException exception) {
@@ -129,22 +142,34 @@ public class OfflineWorkerScheduler {
     List<NodeRecord> nodes = repository.listAllForScheduling();
     Map<String, Integer> activeExecutions = executionRepository.countActiveExecutionsByNode();
     if ("MANUAL".equals(policy.getMode())) {
-      return selectManual(policy, nodes, activeExecutions, capabilityRequirementsJson);
+      return selectManual(
+          policy,
+          nodes,
+          activeExecutions,
+          capabilityRequirementsJson,
+          reachabilityRequirementsJson);
     }
-    return selectAuto(policy, nodes, activeExecutions, capabilityRequirementsJson);
+    return selectAuto(
+        policy,
+        nodes,
+        activeExecutions,
+        capabilityRequirementsJson,
+        reachabilityRequirementsJson);
   }
 
   private Assignment selectManual(
       PolicyProjection policy,
       List<NodeRecord> nodes,
       Map<String, Integer> activeExecutions,
-      String capabilityRequirementsJson) {
+      String capabilityRequirementsJson,
+      String reachabilityRequirementsJson) {
     List<Candidate> candidates = nodes.stream()
         .map(node -> evaluate(
             node,
             policy.getRequiredLabels(),
             activeExecutions.getOrDefault(node.getNodeId(), 0),
-            capabilityRequirementsJson))
+            capabilityRequirementsJson,
+            reachabilityRequirementsJson))
         .collect(Collectors.toList());
     Candidate selected = candidates.stream()
         .filter(candidate -> Objects.equals(
@@ -162,7 +187,8 @@ public class OfflineWorkerScheduler {
         selected,
         "MANUAL",
         "手动指定 Worker " + selected.getNode().getNodeName()
-            + "（" + selected.getNode().getNodeId() + "）；" + selected.getCapabilityReason(),
+            + "（" + selected.getNode().getNodeId() + "）；"
+            + selected.getCapabilityReason() + "；" + selected.getReachabilityReason(),
         candidates);
   }
 
@@ -170,13 +196,15 @@ public class OfflineWorkerScheduler {
       PolicyProjection policy,
       List<NodeRecord> nodes,
       Map<String, Integer> activeExecutions,
-      String capabilityRequirementsJson) {
+      String capabilityRequirementsJson,
+      String reachabilityRequirementsJson) {
     List<Candidate> candidates = nodes.stream()
         .map(node -> evaluate(
             node,
             policy.getRequiredLabels(),
             activeExecutions.getOrDefault(node.getNodeId(), 0),
-            capabilityRequirementsJson))
+            capabilityRequirementsJson,
+            reachabilityRequirementsJson))
         .collect(Collectors.toList());
     List<Candidate> eligible = candidates.stream()
         .filter(Candidate::isEligible)
@@ -188,20 +216,21 @@ public class OfflineWorkerScheduler {
           .map(candidate -> candidate.getNode().getNodeId() + "=" + candidate.getRejectionReason())
           .collect(Collectors.joining("；"));
       throw new IllegalStateException(
-          "没有能力兼容且可调度的 Link-Up Worker"
+          "没有能力兼容、数据源可达且可调度的 Link-Up Worker"
               + (StringUtils.hasText(rejected) ? "：" + rejected : ""));
     }
     Candidate selected = eligible.get(0);
     selected.setSelected(true);
     String reason = String.format(
         Locale.ROOT,
-        "AUTO 评分 %.3f：即时并发余量 %.1f%%，总容量余量 %.1f%%，权重 %d，控制面活跃 %d；%s；候选 %d/%d",
+        "AUTO 评分 %.3f：即时并发余量 %.1f%%，总容量余量 %.1f%%，权重 %d，控制面活跃 %d；%s；%s；候选 %d/%d",
         selected.getScore(),
         selected.getRunningHeadroom() * 100D,
         selected.getTotalHeadroom() * 100D,
         value(selected.getNode().getWeight(), 100),
         selected.getControlPlaneActive(),
         selected.getCapabilityReason(),
+        selected.getReachabilityReason(),
         eligible.size(),
         candidates.size());
     return assignment(selected, "AUTO", reason, candidates);
@@ -218,14 +247,16 @@ public class OfflineWorkerScheduler {
         selected.getScore(),
         reason,
         writeCandidates(candidates),
-        selected.getAssignedCapabilitiesJson());
+        selected.getAssignedCapabilitiesJson(),
+        selected.getAssignedReachabilityJson());
   }
 
   private Candidate evaluate(
       NodeRecord node,
       Map<String, String> requiredLabels,
       int controlPlaneActive,
-      String capabilityRequirementsJson) {
+      String capabilityRequirementsJson,
+      String reachabilityRequirementsJson) {
     Candidate candidate = new Candidate(node);
     candidate.setControlPlaneActive(Math.max(0, controlPlaneActive));
     if (!Boolean.TRUE.equals(node.getEnabled())) {
@@ -256,6 +287,14 @@ public class OfflineWorkerScheduler {
     candidate.setAssignedCapabilitiesJson(capability.getAssignedCapabilitiesJson());
     if (!capability.isMatched()) {
       return candidate.reject("能力不匹配：" + capability.getReason());
+    }
+
+    OfflineReachabilityMatcher.MatchResult reachability =
+        reachabilityMatcher.match(node.getNodeId(), reachabilityRequirementsJson);
+    candidate.setReachabilityReason(reachability.getReason());
+    candidate.setAssignedReachabilityJson(reachability.getAssignedReachabilityJson());
+    if (!reachability.isMatched()) {
+      return candidate.reject("数据源不可达：" + reachability.getReason());
     }
 
     int maxRunning = Math.max(1, value(node.getMaxConcurrentJobs(), 1));
@@ -333,6 +372,7 @@ public class OfflineWorkerScheduler {
       item.put("capabilityDigest", node.getCapabilityDigest());
       item.put("capabilitySyncedAt", node.getCapabilitySyncedAt());
       item.put("capabilityMatch", candidate.getCapabilityReason());
+      item.put("reachabilityMatch", candidate.getReachabilityReason());
       snapshot.add(item);
     }
     try {
@@ -438,6 +478,7 @@ public class OfflineWorkerScheduler {
     private final String reason;
     private final String candidatesJson;
     private final String assignedCapabilitiesJson;
+    private final String assignedReachabilityJson;
 
     public Assignment(
         NodeRecord node,
@@ -445,13 +486,15 @@ public class OfflineWorkerScheduler {
         double score,
         String reason,
         String candidatesJson,
-        String assignedCapabilitiesJson) {
+        String assignedCapabilitiesJson,
+        String assignedReachabilityJson) {
       this.node = node;
       this.mode = mode;
       this.score = score;
       this.reason = reason;
       this.candidatesJson = candidatesJson;
       this.assignedCapabilitiesJson = assignedCapabilitiesJson;
+      this.assignedReachabilityJson = assignedReachabilityJson;
     }
 
     public NodeRecord getNode() { return node; }
@@ -460,6 +503,7 @@ public class OfflineWorkerScheduler {
     public String getReason() { return reason; }
     public String getCandidatesJson() { return candidatesJson; }
     public String getAssignedCapabilitiesJson() { return assignedCapabilitiesJson; }
+    public String getAssignedReachabilityJson() { return assignedReachabilityJson; }
   }
 
   private static final class Candidate {
@@ -476,6 +520,8 @@ public class OfflineWorkerScheduler {
     private int effectiveQueued;
     private String capabilityReason;
     private String assignedCapabilitiesJson;
+    private String reachabilityReason;
+    private String assignedReachabilityJson;
 
     private Candidate(NodeRecord node) {
       this.node = node;
@@ -518,5 +564,9 @@ public class OfflineWorkerScheduler {
     private void setCapabilityReason(String value) { this.capabilityReason = value; }
     private String getAssignedCapabilitiesJson() { return assignedCapabilitiesJson; }
     private void setAssignedCapabilitiesJson(String value) { this.assignedCapabilitiesJson = value; }
+    private String getReachabilityReason() { return reachabilityReason; }
+    private void setReachabilityReason(String value) { this.reachabilityReason = value; }
+    private String getAssignedReachabilityJson() { return assignedReachabilityJson; }
+    private void setAssignedReachabilityJson(String value) { this.assignedReachabilityJson = value; }
   }
 }
