@@ -30,6 +30,22 @@ public class OfflineDefinitionCatalogRepository {
     this.jdbc = new JdbcTemplate(dataSource);
   }
 
+  /** 兼容现有保存链路；能力要求可在保存后或首次执行时回填。 */
+  public Long saveVersion(
+      Long definitionId,
+      int version,
+      String definitionJson,
+      String jobSpecJson,
+      String configDigest) {
+    return saveVersion(
+        definitionId,
+        version,
+        definitionJson,
+        jobSpecJson,
+        configDigest,
+        null);
+  }
+
   public Long saveVersion(
       Long definitionId,
       int version,
@@ -61,6 +77,27 @@ public class OfflineDefinitionCatalogRepository {
       throw new IllegalStateException("保存离线任务版本后未返回版本 ID");
     }
     return key.longValue();
+  }
+
+  /** 只回填派生元数据，不修改 JobSpec、配置摘要或版本号。 */
+  public void backfillCapabilityRequirements(
+      Long definitionId,
+      Long versionId,
+      String capabilityRequirementsJson) {
+    if (definitionId == null || versionId == null || capabilityRequirementsJson == null) {
+      return;
+    }
+    jdbc.update(
+        "UPDATE yak_offline_job_version SET capability_requirements_json = ? "
+            + "WHERE id = ? AND capability_requirements_json IS NULL",
+        capabilityRequirementsJson,
+        versionId);
+    jdbc.update(
+        "UPDATE yak_offline_job_definition SET capability_requirements_json = ?, update_time = ? "
+            + "WHERE id = ?",
+        capabilityRequirementsJson,
+        Timestamp.valueOf(LocalDateTime.now()),
+        definitionId);
   }
 
   public DefinitionVersion findCurrentVersion(Long definitionId, Long currentVersionId) {
