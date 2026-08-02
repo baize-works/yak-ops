@@ -51,19 +51,20 @@ public class OfflineExecutionControlRepository {
 
   /**
    * 返回 Yak Ops 已创建但尚未结束的执行数，用于弥补 Worker 心跳负载的时间差。
+   *
+   * <p>该查询使用 FOR UPDATE 当前读，避免 MySQL REPEATABLE READ 继续读取领取事务
+   * 建立时的旧快照。调用方必须先按固定顺序锁定 Worker 行。
    */
   public Map<String, Integer> countActiveExecutionsByNode() {
     Map<String, Integer> result = new LinkedHashMap<>();
     jdbc.query(
-        "SELECT engine_node_id, COUNT(1) AS active_count "
-            + "FROM yak_offline_job_execution "
+        "SELECT engine_node_id FROM yak_offline_job_execution "
             + "WHERE engine_node_id IS NOT NULL "
             + "AND status IN ('CREATED','SUBMITTED','QUEUED','RUNNING') "
-            + "GROUP BY engine_node_id",
+            + "ORDER BY id ASC FOR UPDATE",
         resultSet -> {
-          result.put(
-              resultSet.getString("engine_node_id"),
-              resultSet.getInt("active_count"));
+          String nodeId = resultSet.getString("engine_node_id");
+          result.merge(nodeId, 1, Integer::sum);
         });
     return result;
   }
