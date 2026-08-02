@@ -5,6 +5,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
+  EyeOutlined,
   LinkOutlined,
   MoreOutlined,
   PauseCircleOutlined,
@@ -13,6 +14,7 @@ import {
   SearchOutlined,
   StopOutlined,
 } from '@ant-design/icons';
+import { history } from '@umijs/max';
 import {
   Alert,
   Button,
@@ -52,6 +54,25 @@ const filters: Array<{ key: WorkerFilter; label: string }> = [
 
 const normalize = (value?: string) => value?.trim().toLowerCase() || '';
 
+const capabilityMeta = (worker: LinkupClient) => {
+  if (worker.capabilityStatus === 'READY') {
+    return {
+      label: `能力就绪${worker.connectorCount ? ` · ${worker.connectorCount}` : ''}`,
+      className: '!border-[#b2ddff] !bg-[#eff8ff] !text-[#175cd3]',
+    };
+  }
+  if (worker.capabilityStatus === 'ERROR') {
+    return {
+      label: '能力异常',
+      className: '!border-[#fedf89] !bg-[#fffaeb] !text-[#b54708]',
+    };
+  }
+  return {
+    label: '能力待同步',
+    className: '!border-[#e4e7ec] !bg-[#f8f9fb] !text-[#667085]',
+  };
+};
+
 const healthMeta = (worker: LinkupClient) => {
   if (worker.schedulingStatus === 'DISABLED') {
     return {
@@ -70,9 +91,12 @@ const healthMeta = (worker: LinkupClient) => {
     };
   }
   if (worker.status === 'UP') {
+    const unavailableReason = worker.capabilityStatus !== 'READY'
+      ? '能力未就绪'
+      : '暂不可调度';
     return {
       filter: 'online' as const,
-      label: worker.available ? '在线可用' : '队列已满',
+      label: worker.available ? '在线可用' : unavailableReason,
       dot: worker.available ? 'bg-[#12b76a]' : 'bg-[#f79009]',
       tag: worker.available
         ? '!border-[#abefc6] !bg-[#ecfdf3] !text-[#067647]'
@@ -134,6 +158,7 @@ const WorkerRow = ({
   onDelete: () => void;
 }) => {
   const meta = healthMeta(worker);
+  const capability = capabilityMeta(worker);
   const loadPercent = Math.round(Math.max(0, Math.min(1, worker.loadRatio || 0)) * 100);
   const configManaged = worker.registrationMode === 'CONFIG';
 
@@ -183,6 +208,9 @@ const WorkerRow = ({
                     {meta.label}
                   </span>
                 </Tag>
+                <Tag className={`!m-0 !rounded-md !px-2 ${capability.className}`}>
+                  {capability.label}
+                </Tag>
                 <Tag className="!m-0 !rounded-md !border-[#e4e7ec] !bg-[#f8f9fb] !text-[#667085]">
                   {configManaged ? '配置托管' : '手工注册'}
                 </Tag>
@@ -196,6 +224,7 @@ const WorkerRow = ({
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-6 text-[#98a2b3]">
                 <span>nodeId：{worker.nodeId}</span>
                 <span>最近心跳：{formatTime(worker.lastHeartbeatTime)}</span>
+                <span>能力同步：{formatTime(worker.capabilitySyncedAt)}</span>
                 <span>连续失败：{worker.consecutiveFailures || 0}</span>
               </div>
 
@@ -213,7 +242,16 @@ const WorkerRow = ({
             </div>
 
             <Space size={4} wrap>
-              <Tooltip title="立即读取 /api/v1/node">
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                onClick={() =>
+                  history.push(`/client/${encodeURIComponent(worker.nodeId)}/detail`)
+                }
+              >
+                详情
+              </Button>
+              <Tooltip title="刷新节点心跳与 Connector 能力">
                 <Button
                   type="text"
                   icon={<ReloadOutlined spin={refreshing} />}
@@ -264,6 +302,16 @@ const WorkerRow = ({
             />
           ) : null}
 
+          {worker.capabilityErrorMessage ? (
+            <Alert
+              className="mt-3"
+              type="warning"
+              showIcon
+              message="Connector 能力同步异常"
+              description={worker.capabilityErrorMessage}
+            />
+          ) : null}
+
           <div className="mt-4 flex flex-col gap-4 border-t border-[#f0f1f3] pt-4 lg:flex-row lg:items-center">
             <div className="min-w-[220px] flex-1">
               <div className="mb-1 flex items-center justify-between text-[12px] text-[#667085]">
@@ -281,6 +329,7 @@ const WorkerRow = ({
                 label="排队任务"
                 value={`${worker.queuedJobs || 0} / ${worker.maxQueuedJobs || 0}`}
               />
+              <WorkerMetric label="Connector" value={worker.connectorCount || 0} />
               <WorkerMetric label="调度权重" value={worker.weight || 100} />
               <WorkerMetric label="进程运行" value={formatUptime(worker.startedAtMillis)} />
             </div>
@@ -335,10 +384,17 @@ const ClientPage = () => {
         result.activeJobs += Number(worker.activeJobs || 0);
         result.runningCapacity += Number(worker.maxConcurrentJobs || 0);
         result.queueCapacity += Number(worker.maxQueuedJobs || 0);
+        result.connectors += Number(worker.connectorCount || 0);
         if (worker.available) result.available += 1;
         return result;
       },
-      { activeJobs: 0, runningCapacity: 0, queueCapacity: 0, available: 0 },
+      {
+        activeJobs: 0,
+        runningCapacity: 0,
+        queueCapacity: 0,
+        connectors: 0,
+        available: 0,
+      },
     );
   }, [clients]);
 
@@ -352,6 +408,7 @@ const ClientPage = () => {
         worker.nodeName,
         worker.baseUrl,
         worker.engineVersion,
+        worker.capabilityStatus,
         JSON.stringify(worker.labels || {}),
       ].some((item) => normalize(item).includes(value));
     });
@@ -367,7 +424,7 @@ const ClientPage = () => {
                 执行节点
               </h1>
               <p className="m-0 mt-1 text-[13px] leading-6 text-[#8a8f99]">
-                管理 Link-Up 离线 Worker 的注册、心跳、容量和调度状态。
+                管理 Link-Up Worker 的注册、心跳、容量、Connector 能力和调度状态。
               </p>
             </div>
             <Space size={8} wrap>
@@ -387,11 +444,11 @@ const ClientPage = () => {
           <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
             {[
               { label: '登记节点', value: total, icon: <CloudServerOutlined /> },
-              { label: '在线可用', value: summary.available, icon: <CheckCircleOutlined /> },
+              { label: '能力可用', value: summary.available, icon: <CheckCircleOutlined /> },
               { label: '活跃任务', value: summary.activeJobs, icon: <ClockCircleOutlined /> },
               {
-                label: '总容量',
-                value: `${summary.runningCapacity} + ${summary.queueCapacity}`,
+                label: 'Connector 能力',
+                value: summary.connectors,
                 icon: <ExclamationCircleOutlined />,
               },
             ].map((item) => (
@@ -430,7 +487,7 @@ const ClientPage = () => {
                 allowClear
                 variant="filled"
                 prefix={<SearchOutlined className="text-[#98a2b3]" />}
-                placeholder="搜索名称、nodeId、地址或标签"
+                placeholder="搜索名称、nodeId、地址、能力状态或标签"
                 value={keyword}
                 className="w-full lg:w-[320px]"
                 onChange={(event) => setKeyword(event.target.value)}
