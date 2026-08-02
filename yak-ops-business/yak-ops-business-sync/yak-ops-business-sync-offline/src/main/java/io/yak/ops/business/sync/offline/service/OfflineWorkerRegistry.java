@@ -8,7 +8,9 @@ import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -21,6 +23,7 @@ import org.springframework.util.StringUtils;
  *
  * @author weifuwan
  */
+@Slf4j
 @ConditionalOnOfflineSyncEnabled
 @Component
 @RequiredArgsConstructor
@@ -38,7 +41,12 @@ public class OfflineWorkerRegistry {
   }
 
   public void refreshAll() {
-    ensureConfiguredWorker();
+    try {
+      ensureConfiguredWorker();
+    } catch (RuntimeException exception) {
+      // 默认配置错误不能阻断其他手工登记 Worker 的健康检查。
+      log.warn("初始化默认 Link-Up Worker 失败：{}", message(exception));
+    }
     List<NodeRecord> targets = repository.listHeartbeatTargets();
     for (NodeRecord target : targets) {
       refresh(target, false);
@@ -89,36 +97,45 @@ public class OfflineWorkerRegistry {
         || !StringUtils.hasText(engine.getBaseUrl())) {
       return null;
     }
+    String nodeId = engine.getNodeId().trim();
+    String nodeName = StringUtils.hasText(engine.getNodeName())
+        ? engine.getNodeName().trim() : nodeId;
     String baseUrl = probeClient.normalizeBaseUrl(engine.getBaseUrl());
-    NodeRecord existing = repository.find(engine.getNodeId());
+    NodeRecord existing = repository.find(nodeId);
     if (existing != null
         && "CONFIG".equalsIgnoreCase(existing.getRegistrationMode())
         && baseUrl.equals(existing.getBaseUrl())
-        && engine.getNodeName().equals(existing.getNodeName())) {
+        && nodeName.equals(existing.getNodeName())) {
       return existing;
     }
+
     LocalDateTime now = LocalDateTime.now();
     NodeRecord configured = existing == null ? NodeRecord.builder().build() : existing;
-    configured.setNodeId(engine.getNodeId());
-    configured.setNodeName(StringUtils.hasText(engine.getNodeName())
-        ? engine.getNodeName().trim() : engine.getNodeId());
+    configured.setNodeId(nodeId);
+    configured.setNodeName(nodeName);
     configured.setBaseUrl(baseUrl);
     configured.setRegistrationMode("CONFIG");
-    configured.setEnabled(true);
-    configured.setSchedulingStatus("ENABLED");
+    // 页面设置的排空/禁用状态必须跨定时心跳保留。
+    configured.setEnabled(existing == null
+        ? true : !Boolean.FALSE.equals(existing.getEnabled()));
+    configured.setSchedulingStatus(existing == null
+        || !StringUtils.hasText(existing.getSchedulingStatus())
+            ? "ENABLED" : existing.getSchedulingStatus());
     configured.setWeight(value(configured.getWeight(), 100));
-    configured.setOfflineOnly(configured.getOfflineOnly() == null || configured.getOfflineOnly());
-    configured.setStatus(StringUtils.hasText(configured.getStatus()) ? configured.getStatus() : "DOWN");
+    configured.setOfflineOnly(configured.getOfflineOnly() == null
+        || configured.getOfflineOnly());
+    configured.setStatus(StringUtils.hasText(configured.getStatus())
+        ? configured.getStatus() : "DOWN");
     configured.setMaxConcurrentJobs(value(configured.getMaxConcurrentJobs(), 1));
     configured.setMaxQueuedJobs(value(configured.getMaxQueuedJobs(), 1));
     configured.setRunningJobs(value(configured.getRunningJobs(), 0));
     configured.setQueuedJobs(value(configured.getQueuedJobs(), 0));
     configured.setConsecutiveFailures(value(configured.getConsecutiveFailures(), 0));
-    configured.setLastHeartbeatTime(configured.getLastHeartbeatTime());
-    configured.setCreateTime(configured.getCreateTime() == null ? now : configured.getCreateTime());
+    configured.setCreateTime(configured.getCreateTime() == null
+        ? now : configured.getCreateTime());
     configured.setUpdateTime(now);
     repository.upsert(configured);
-    return repository.find(engine.getNodeId());
+    return repository.find(nodeId);
   }
 
   private NodeRecord refresh(NodeRecord node, boolean failFast) {
@@ -160,7 +177,7 @@ public class OfflineWorkerRegistry {
     if (!StringUtils.hasText(response.getNodeId())) {
       throw new IllegalStateException("Link-Up Worker 未返回稳定 nodeId");
     }
-    if (!expected.getNodeId().equals(response.getNodeId())) {
+    if (!Objects.equals(expected.getNodeId(), response.getNodeId())) {
       throw new IllegalStateException(
           "Link-Up nodeId 不匹配，登记=" + expected.getNodeId()
               + "，实际=" + response.getNodeId());
