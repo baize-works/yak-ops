@@ -121,6 +121,12 @@ public final class OfflineWorkerModels {
     private LocalDateTime lastSuccessTime;
     private Integer consecutiveFailures;
     private String lastErrorMessage;
+    private String capabilityStatus;
+    private String capabilityDigest;
+    private Integer connectorCount;
+    private LocalDateTime capabilitySyncedAt;
+    private String capabilityErrorMessage;
+    private List<ConnectorCapabilityView> connectors;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
   }
@@ -152,5 +158,36 @@ public final class OfflineWorkerModels {
     private Integer queuedJobs;
     private Integer maxQueuedJobs;
     private Boolean available;
+    private String capabilityStatus;
+    private Integer connectorCount;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class CapabilityView {
+
+    private String nodeId;
+    private String status;
+    private String digest;
+    private LocalDateTime syncedAt;
+    private String errorMessage;
+    private Boolean fresh;
+    private List<ConnectorCapabilityView> connectors;
+  }
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ConnectorCapabilityView {
+
+    private String connectorId;
+    private String role;
+    private String schemaVersion;
+    private String schemaFingerprint;
+    private String implementationVersion;
+    private List<String> capabilities;
   }
 }
