@@ -7,7 +7,10 @@ ALTER TABLE yak_offline_job_definition
         COMMENT 'MANUAL 模式指定的稳定 Worker nodeId' AFTER worker_select_mode,
     ADD COLUMN worker_required_labels_json TEXT NULL
         COMMENT 'AUTO/MANUAL 模式要求的 Worker 标签 JSON' AFTER worker_node_id,
-    ADD INDEX idx_yak_offline_definition_worker (worker_select_mode, worker_node_id);
+    ADD INDEX idx_yak_offline_definition_worker (worker_select_mode, worker_node_id),
+    ADD CONSTRAINT fk_yak_offline_definition_worker
+        FOREIGN KEY (worker_node_id) REFERENCES yak_offline_engine_node (node_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT;
 
 UPDATE yak_offline_job_definition
 SET worker_select_mode = 'AUTO'
