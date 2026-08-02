@@ -149,6 +149,7 @@ public class OfflineWorkerRegistry {
     try {
       LinkUpNodeResponse response = probeClient.node(node.getBaseUrl());
       validate(node, response);
+      boolean runtimeChanged = runtimeChanged(node, response);
       NodeRecord heartbeat = NodeRecord.builder()
           .nodeId(node.getNodeId())
           .nodeName(StringUtils.hasText(node.getNodeName())
@@ -164,6 +165,10 @@ public class OfflineWorkerRegistry {
           .lastHeartbeatTime(LocalDateTime.now())
           .build();
       repository.updateHeartbeatSuccess(heartbeat);
+      if (runtimeChanged) {
+        // 同一 nodeId 的新进程或新版本必须重新证明 Connector 能力。
+        repository.resetCapabilities(node.getNodeId());
+      }
       return repository.find(node.getNodeId());
     } catch (RuntimeException exception) {
       repository.updateHeartbeatFailure(node.getNodeId(), message(exception));
@@ -172,6 +177,16 @@ public class OfflineWorkerRegistry {
       }
       return repository.find(node.getNodeId());
     }
+  }
+
+  private boolean runtimeChanged(NodeRecord previous, LinkUpNodeResponse current) {
+    boolean instanceChanged = StringUtils.hasText(previous.getWorkerInstanceId())
+        && StringUtils.hasText(current.getInstanceId())
+        && !Objects.equals(previous.getWorkerInstanceId(), current.getInstanceId());
+    boolean versionChanged = StringUtils.hasText(previous.getEngineVersion())
+        && StringUtils.hasText(current.getVersion())
+        && !Objects.equals(previous.getEngineVersion(), current.getVersion());
+    return instanceChanged || versionChanged;
   }
 
   private void validate(NodeRecord expected, LinkUpNodeResponse response) {
