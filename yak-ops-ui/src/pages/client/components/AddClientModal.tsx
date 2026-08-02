@@ -1,232 +1,92 @@
 import {
-  ApiOutlined,
-  ClusterOutlined,
   DeleteOutlined,
+  LinkOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
 import {
+  Alert,
   Button,
-  Col,
   Drawer,
   Form,
   Input,
-  Row,
-  Segmented,
-  Select,
-  Switch,
+  InputNumber,
+  Space,
+  Tag,
   type FormInstance,
 } from 'antd';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 
-const { TextArea } = Input;
+import type { LinkupClient } from '../api';
 
-export type LinkUpClientDeployMode = 'SINGLE' | 'SEPARATED_CLUSTER';
-export type LinkUpClientProtocol = 'http' | 'https';
-
-export interface LinkUpClientEndpointDTO {
-  host?: string;
-  hostname?: string;
-  port?: string | number;
-  role?: 'MASTER' | 'WORKER';
-  priority?: number;
+export interface LinkUpWorkerLabelValue {
+  key?: string;
+  value?: string;
 }
 
-export interface LinkUpClientFormValues {
-  id?: number;
-  clientName: string;
-  engineType: string;
-  deployMode: LinkUpClientDeployMode;
-  protocol: LinkUpClientProtocol;
-  contextPath?: string;
-  clientAddress?: string;
-  clientPort?: string | number;
-  masterEndpoints?: LinkUpClientEndpointDTO[];
-  remark?: string;
-  authEnabled?: boolean;
-  username?: string;
-  password?: string;
+export interface LinkUpWorkerFormValues {
+  nodeName?: string;
+  baseUrl: string;
+  weight?: number;
+  labels?: LinkUpWorkerLabelValue[];
 }
 
 interface AddClientDrawerProps {
   open: boolean;
-  form: FormInstance<LinkUpClientFormValues>;
+  form: FormInstance<LinkUpWorkerFormValues>;
   confirmLoading?: boolean;
+  verifying?: boolean;
   mode?: 'create' | 'edit';
-  initialValues?: Partial<LinkUpClientFormValues>;
+  initialValues?: LinkupClient;
   onCancel: () => void;
   onSubmit: () => void;
+  onVerify: (baseUrl: string) => Promise<LinkupClient>;
 }
 
-const CONTROL_CLASS_NAME = '!h-9';
-
-const DEFAULT_VALUES: Partial<LinkUpClientFormValues> = {
-  engineType: 'ZETA',
-  deployMode: 'SINGLE',
-  protocol: 'http',
-  contextPath: '',
-  clientPort: 8080,
-  authEnabled: false,
-};
-
-const PROTOCOL_OPTIONS = [
-  { label: 'HTTP', value: 'http' },
-  { label: 'HTTPS', value: 'https' },
-];
-
-const DEPLOY_MODE_OPTIONS = [
-  {
-    label: (
-      <span className="flex items-center justify-center gap-2">
-        <ApiOutlined />
-        单节点
-      </span>
-    ),
-    value: 'SINGLE',
-  },
-  {
-    label: (
-      <span className="flex items-center justify-center gap-2">
-        <ClusterOutlined />
-        分离集群
-      </span>
-    ),
-    value: 'SEPARATED_CLUSTER',
-  },
-];
-
-const REMARK_PRESETS = [
-  '客户端已就绪，今天也要稳定发挥呀。',
-  '已完成基础连接配置，可用于后续任务绑定与调度。',
-  '新的客户端已接入，期待它接下来的表现。',
-  '连接成功只是开始，真正的表现还在后面。',
-];
-
-const CLIENT_NAME_PRESETS = [
-  '九阴真经',
-  '九阳神功',
-  '太玄经',
-  '易筋经',
-  '北冥神功',
-  '凌波微步',
-  '乾坤大挪移',
-  '降龙十八掌',
-  '独孤九剑',
-  '六脉神剑',
-  '黯然销魂掌',
-  '龙象般若功',
-  '吸星大法',
-  '三分归元气',
-  '一阳指',
-  '葵花宝典',
-  '辟邪剑谱',
-  '蛤蟆功',
-  '小无相功',
-  '玄冥神掌',
-  '七伤拳',
-  '睡梦罗汉拳',
-  '天山折梅手',
-];
-
-const createMasterEndpoint = (
-  priority = 1,
-): LinkUpClientEndpointDTO => ({
-  host: '',
-  port: 8080,
-  role: 'MASTER',
-  priority,
-});
-
-const pickRandom = (items: string[], previous?: string) => {
-  if (!items.length) return '';
-  if (items.length === 1) return items[0];
-
-  let result = items[Math.floor(Math.random() * items.length)];
-
-  while (result === previous) {
-    result = items[Math.floor(Math.random() * items.length)];
-  }
-
-  return result;
-};
-
-const normalizeMasterEndpoints = (
-  endpoints?: LinkUpClientEndpointDTO[],
-): LinkUpClientEndpointDTO[] => {
-  if (!endpoints?.length) {
-    return [createMasterEndpoint()];
-  }
-
-  return endpoints.map((endpoint, index) => ({
-    ...endpoint,
-    host: endpoint.host || endpoint.hostname || '',
-    port: endpoint.port ?? 8080,
-    role: 'MASTER',
-    priority: index + 1,
-  }));
+const labelsToList = (
+  labels?: Record<string, string>,
+): LinkUpWorkerLabelValue[] => {
+  return Object.entries(labels || {}).map(([key, value]) => ({ key, value }));
 };
 
 const AddClientDrawer = ({
   open,
   form,
   confirmLoading = false,
+  verifying = false,
   mode = 'create',
   initialValues,
   onCancel,
   onSubmit,
+  onVerify,
 }: AddClientDrawerProps) => {
-  const lastRemarkRef = useRef<string>();
-  const lastClientNameRef = useRef<string>();
-
+  const [verifiedWorker, setVerifiedWorker] = useState<LinkupClient>();
   const isEdit = mode === 'edit';
-
-  const deployMode = Form.useWatch('deployMode', form);
-  const authEnabled = Form.useWatch('authEnabled', form);
+  const configManaged = initialValues?.registrationMode === 'CONFIG';
 
   useEffect(() => {
     if (!open) return;
-
+    setVerifiedWorker(undefined);
     form.resetFields();
-
-    if (isEdit) {
-      const currentDeployMode =
-        initialValues?.deployMode ||
-        (initialValues?.masterEndpoints?.length
-          ? 'SEPARATED_CLUSTER'
-          : 'SINGLE');
-
-      form.setFieldsValue({
-        ...DEFAULT_VALUES,
-        ...initialValues,
-        deployMode: currentDeployMode,
-        masterEndpoints: normalizeMasterEndpoints(
-          initialValues?.masterEndpoints,
-        ),
-        authEnabled: Boolean(initialValues?.authEnabled),
-      });
-
-      return;
-    }
-
-    const clientNamePreset = pickRandom(
-      CLIENT_NAME_PRESETS,
-      lastClientNameRef.current,
-    );
-    const remark = pickRandom(REMARK_PRESETS, lastRemarkRef.current);
-
-    lastClientNameRef.current = clientNamePreset;
-    lastRemarkRef.current = remark;
-
     form.setFieldsValue({
-      ...DEFAULT_VALUES,
-      clientName: `ZETA-${clientNamePreset}`,
-      masterEndpoints: [createMasterEndpoint()],
-      remark,
+      nodeName: initialValues?.nodeName,
+      baseUrl: initialValues?.baseUrl || 'http://127.0.0.1:18080',
+      weight: initialValues?.weight || 100,
+      labels: labelsToList(initialValues?.labels),
     });
-  }, [open, isEdit, initialValues, form]);
+  }, [form, initialValues, open]);
+
+  const handleVerify = async () => {
+    const { baseUrl } = await form.validateFields(['baseUrl']);
+    const worker = await onVerify(baseUrl);
+    setVerifiedWorker(worker);
+    if (!form.getFieldValue('nodeName')) {
+      form.setFieldValue('nodeName', worker.nodeName);
+    }
+  };
 
   return (
     <Drawer
-      width={720}
+      width={640}
       open={open}
       placement="right"
       maskClosable={false}
@@ -235,343 +95,163 @@ const AddClientDrawer = ({
       title={
         <div>
           <div className="text-[17px] font-semibold text-[#1f2329]">
-            {isEdit ? '编辑客户端' : '新增客户端'}
+            {isEdit ? '编辑执行节点' : '注册执行节点'}
           </div>
-
           <div className="mt-1 text-[12px] font-normal text-[#8a8f99]">
-            配置 LinkUp Zeta REST 连接信息
+            登记一个可由 Yak Ops 管理的 Link-Up 离线 Worker
           </div>
         </div>
       }
       styles={{
-        header: {
-          padding: '18px 24px',
-          borderBottom: '1px solid #e8e9ec',
-        },
-        body: {
-          padding: '20px 24px 32px',
-          background: '#ffffff',
-        },
-        footer: {
-          padding: '14px 24px',
-          borderTop: '1px solid #e8e9ec',
-          background: '#ffffff',
-        },
+        header: { padding: '18px 24px', borderBottom: '1px solid #e8e9ec' },
+        body: { padding: '20px 24px 32px', background: '#fff' },
+        footer: { padding: '14px 24px', borderTop: '1px solid #e8e9ec' },
       }}
       footer={
         <div className="flex justify-end gap-2">
-          <Button className="!h-9" onClick={onCancel}>
-            取消
+          <Button onClick={onCancel}>取消</Button>
+          <Button
+            icon={<LinkOutlined />}
+            loading={verifying}
+            onClick={() => void handleVerify()}
+          >
+            连接验证
           </Button>
-
           <Button
             type="primary"
             loading={confirmLoading}
-            className="!h-9 !px-5"
             onClick={onSubmit}
           >
-            {isEdit ? '保存修改' : '创建客户端'}
+            {isEdit ? '保存修改' : '注册节点'}
           </Button>
         </div>
       }
     >
+      <Alert
+        className="mb-5"
+        type="info"
+        showIcon
+        message="Yak Ops 会读取 /api/v1/node 获取 nodeId、进程实例、版本和执行容量。"
+        description="节点保存后由后台定时心跳维护状态。禁用节点不会继续自动探测，排空节点不接收新任务但保留运行任务。"
+      />
+
+      {configManaged ? (
+        <Alert
+          className="mb-5"
+          type="warning"
+          showIcon
+          message="该节点来自 application.yml"
+          description="Worker 地址和稳定 nodeId 由配置文件托管；页面可调整权重、标签和调度状态。"
+        />
+      ) : null}
+
+      {verifiedWorker ? (
+        <div className="mb-5 rounded-lg border border-[#e8e9ec] bg-[#fafafa] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <strong className="text-[14px] text-[#1f2329]">连接验证成功</strong>
+            <Tag bordered={false}>{verifiedWorker.engineVersion || '未知版本'}</Tag>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 text-[12px] text-[#667085]">
+            <span>nodeId：{verifiedWorker.nodeId}</span>
+            <span>状态：{verifiedWorker.status}</span>
+            <span>并发：{verifiedWorker.maxConcurrentJobs}</span>
+            <span>队列：{verifiedWorker.maxQueuedJobs}</span>
+          </div>
+        </div>
+      ) : null}
+
       <Form
         form={form}
         layout="vertical"
         requiredMark={false}
         initialValues={{
-          ...DEFAULT_VALUES,
-          masterEndpoints: [createMasterEndpoint()],
+          baseUrl: 'http://127.0.0.1:18080',
+          weight: 100,
+          labels: [],
         }}
       >
-        <Form.Item name="id" hidden>
-          <Input />
+        <Form.Item
+          name="nodeName"
+          label="节点名称"
+          rules={[{ max: 200, message: '节点名称不能超过 200 个字符' }]}
+        >
+          <Input
+            variant="filled"
+            placeholder="例如：华南离线节点-01；留空则使用 Worker 名称"
+          />
         </Form.Item>
-
-        <Form.Item name="engineType" hidden>
-          <Input />
-        </Form.Item>
-
-        <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="clientName"
-              label="客户端名称"
-              rules={[
-                {
-                  required: true,
-                  whitespace: true,
-                  message: '请输入客户端名称',
-                },
-              ]}
-            >
-              <Input
-                variant="filled"
-                placeholder="例如：ZETA-独孤九剑"
-                className={CONTROL_CLASS_NAME}
-              />
-            </Form.Item>
-          </Col>
-
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="protocol"
-              label="访问协议"
-              rules={[
-                {
-                  required: true,
-                  message: '请选择访问协议',
-                },
-              ]}
-            >
-              <Select
-                variant="filled"
-                options={PROTOCOL_OPTIONS}
-                className={CONTROL_CLASS_NAME}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
 
         <Form.Item
-          name="deployMode"
-          label="部署模式"
+          name="baseUrl"
+          label="Worker 地址"
+          extra={configManaged ? '配置来源节点的地址请在 application.yml 中修改' : undefined}
           rules={[
+            { required: true, whitespace: true, message: '请输入 Worker 地址' },
             {
-              required: true,
-              message: '请选择部署模式',
+              pattern: /^https?:\/\/.+/i,
+              message: '地址必须以 http:// 或 https:// 开头',
             },
           ]}
         >
-          <Segmented
-            block
-            options={DEPLOY_MODE_OPTIONS}
-            className={[
-              '!bg-[#f3f3f4] !p-1',
-              '[&_.ant-segmented-item]:!min-h-9',
-              '[&_.ant-segmented-item]:!text-[#555b65]',
-              '[&_.ant-segmented-item-label]:!flex',
-              '[&_.ant-segmented-item-label]:!h-9',
-              '[&_.ant-segmented-item-label]:!items-center',
-              '[&_.ant-segmented-item-label]:!justify-center',
-              '[&_.ant-segmented-item-selected]:!text-[#1f2329]',
-              '[&_.ant-segmented-item-selected]:!shadow-none',
-            ].join(' ')}
-          />
-        </Form.Item>
-
-        <Form.Item name="contextPath" label="上下文路径">
           <Input
             variant="filled"
-            placeholder="例如：/"
-            className={CONTROL_CLASS_NAME}
+            disabled={configManaged}
+            placeholder="http://127.0.0.1:18080"
           />
         </Form.Item>
 
-        {deployMode === 'SEPARATED_CLUSTER' ? (
-          <Form.List name="masterEndpoints">
+        <Form.Item
+          name="weight"
+          label="调度权重"
+          extra="第一阶段只保存权重，自动分配将在下一阶段启用。"
+          rules={[{ required: true, message: '请输入调度权重' }]}
+        >
+          <InputNumber
+            variant="filled"
+            min={1}
+            max={1000}
+            precision={0}
+            className="!w-full"
+          />
+        </Form.Item>
+
+        <Form.Item label="节点标签">
+          <Form.List name="labels">
             {(fields, { add, remove }) => (
-              <div className="mb-6">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[14px] font-medium text-[#1f2329]">
-                    Master REST 地址
-                  </span>
-
-                  <Button
-                    type="text"
-                    icon={<PlusOutlined />}
-                    className="!h-8 !px-2"
-                    onClick={() =>
-                      add(createMasterEndpoint(fields.length + 1))
-                    }
-                  >
-                    添加
-                  </Button>
-                </div>
-
-                <div className="space-y-3">
-                  {fields.map((field, index) => (
-                    <div
-                      key={field.key}
-                      className="grid grid-cols-[minmax(0,1fr)_120px_32px] items-start gap-2"
-                    >
+              <div>
+                <div className="space-y-2">
+                  {fields.map((field) => (
+                    <Space.Compact key={field.key} block>
                       <Form.Item
-                        name={[field.name, 'host']}
-                        className="!mb-0"
-                        rules={[
-                          {
-                            required: true,
-                            whitespace: true,
-                            message: '请输入 Master 地址',
-                          },
-                        ]}
+                        name={[field.name, 'key']}
+                        noStyle
+                        rules={[{ required: true, message: '请输入标签名' }]}
                       >
-                        <Input
-                          variant="filled"
-                          placeholder={`Master ${index + 1} 地址`}
-                          className={CONTROL_CLASS_NAME}
-                        />
+                        <Input variant="filled" placeholder="region" />
                       </Form.Item>
-
-                      <Form.Item
-                        name={[field.name, 'port']}
-                        className="!mb-0"
-                        rules={[
-                          {
-                            required: true,
-                            message: '请输入端口',
-                          },
-                          {
-                            pattern: /^\d+$/,
-                            message: '端口必须为数字',
-                          },
-                        ]}
-                      >
-                        <Input
-                          variant="filled"
-                          placeholder="8080"
-                          className={CONTROL_CLASS_NAME}
-                        />
+                      <Form.Item name={[field.name, 'value']} noStyle>
+                        <Input variant="filled" placeholder="south-china" />
                       </Form.Item>
-
                       <Button
-                        type="text"
                         danger
                         icon={<DeleteOutlined />}
-                        disabled={fields.length <= 1}
-                        className="!h-9 !w-8 !px-0"
                         onClick={() => remove(field.name)}
                       />
-
-                      <Form.Item
-                        name={[field.name, 'role']}
-                        hidden
-                      >
-                        <Input />
-                      </Form.Item>
-
-                      <Form.Item
-                        name={[field.name, 'priority']}
-                        hidden
-                      >
-                        <Input />
-                      </Form.Item>
-                    </div>
+                    </Space.Compact>
                   ))}
                 </div>
+                <Button
+                  type="dashed"
+                  block
+                  className="mt-2"
+                  icon={<PlusOutlined />}
+                  onClick={() => add({ key: '', value: '' })}
+                >
+                  添加标签
+                </Button>
               </div>
             )}
           </Form.List>
-        ) : (
-          <Row gutter={16}>
-            <Col xs={24} md={16}>
-              <Form.Item
-                name="clientAddress"
-                label="客户端地址"
-                rules={[
-                  {
-                    required: true,
-                    whitespace: true,
-                    message: '请输入客户端地址',
-                  },
-                ]}
-              >
-                <Input
-                  variant="filled"
-                  placeholder="例如：192.168.1.10"
-                  className={CONTROL_CLASS_NAME}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} md={8}>
-              <Form.Item
-                name="clientPort"
-                label="端口"
-                rules={[
-                  {
-                    required: true,
-                    message: '请输入端口',
-                  },
-                  {
-                    pattern: /^\d+$/,
-                    message: '端口必须为数字',
-                  },
-                ]}
-              >
-                <Input
-                  variant="filled"
-                  placeholder="8080"
-                  className={CONTROL_CLASS_NAME}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        )}
-
-        <Form.Item
-          name="authEnabled"
-          label="Basic Auth"
-          valuePropName="checked"
-        >
-          <Switch
-            checkedChildren="开启"
-            unCheckedChildren="关闭"
-          />
-        </Form.Item>
-
-        {authEnabled ? (
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="username"
-                label="用户名"
-                rules={[
-                  {
-                    required: true,
-                    whitespace: true,
-                    message: '请输入用户名',
-                  },
-                ]}
-              >
-                <Input
-                  variant="filled"
-                  placeholder="admin"
-                  className={CONTROL_CLASS_NAME}
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="password"
-                label="密码"
-                rules={[
-                  {
-                    required: true,
-                    message: '请输入密码',
-                  },
-                ]}
-              >
-                <Input.Password
-                  variant="filled"
-                  placeholder="请输入密码"
-                  className={CONTROL_CLASS_NAME}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        ) : null}
-
-        <Form.Item name="remark" label="备注" className="!mb-0">
-          <TextArea
-            variant="filled"
-            placeholder="补充客户端用途、运行环境等信息"
-            autoSize={{
-              minRows: 3,
-              maxRows: 5,
-            }}
-          />
         </Form.Item>
       </Form>
     </Drawer>

@@ -1,264 +1,289 @@
 import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
   CloudServerOutlined,
   DeleteOutlined,
   EditOutlined,
-  EyeOutlined,
+  ExclamationCircleOutlined,
   LinkOutlined,
+  MoreOutlined,
+  PauseCircleOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
-import { history } from '@umijs/max';
 import {
+  Alert,
   Button,
   ConfigProvider,
+  Dropdown,
   Empty,
   Input,
   Popconfirm,
+  Progress,
   Skeleton,
+  Space,
   Tag,
   Tooltip,
+  type MenuProps,
 } from 'antd';
+import dayjs from 'dayjs';
 import { useMemo, useState } from 'react';
 
-import {
-  BRAND_COLOR,
-  BRAND_THEME,
-} from '@/styles/brand';
+import { BRAND_THEME } from '@/styles/brand';
 
-import type { LinkupClient, LinkupClientMetrics } from './api';
+import type {
+  LinkupClient,
+  WorkerSchedulingStatus,
+} from './api';
 import AddClientModal from './components/AddClientModal';
 import { useClientPageState } from './hooks/useClientPageState';
-import YakOpsEmpty from '@/components/YakOpsEmpty';
 
-type ClientStatusFilter = 'all' | 'online' | 'warning' | 'offline';
+type WorkerFilter = 'all' | 'online' | 'draining' | 'offline' | 'disabled';
 
-interface StatusTab {
-  key: ClientStatusFilter;
-  label: string;
-}
-
-const statusTabs: StatusTab[] = [
-  { key: 'all', label: '全部' },
-  { key: 'online', label: '在线' },
-  { key: 'warning', label: '异常' },
+const filters: Array<{ key: WorkerFilter; label: string }> = [
+  { key: 'all', label: '全部节点' },
+  { key: 'online', label: '在线可用' },
+  { key: 'draining', label: '排空中' },
   { key: 'offline', label: '离线' },
+  { key: 'disabled', label: '已禁用' },
 ];
 
-const getHealthMeta = (healthStatus?: number) => {
-  if (healthStatus === 1) {
+const normalize = (value?: string) => value?.trim().toLowerCase() || '';
+
+const healthMeta = (worker: LinkupClient) => {
+  if (worker.schedulingStatus === 'DISABLED') {
+    return {
+      filter: 'disabled' as const,
+      label: '已禁用',
+      dot: 'bg-[#98a2b3]',
+      tag: '!border-[#e4e7ec] !bg-[#f2f4f7] !text-[#667085]',
+    };
+  }
+  if (worker.status === 'UP' && worker.schedulingStatus === 'DRAINING') {
+    return {
+      filter: 'draining' as const,
+      label: '排空中',
+      dot: 'bg-[#f79009]',
+      tag: '!border-[#fedf89] !bg-[#fffaeb] !text-[#b54708]',
+    };
+  }
+  if (worker.status === 'UP') {
     return {
       filter: 'online' as const,
-      label: '在线',
-      dotClass: 'bg-emerald-500',
-      tagClass: '!border-emerald-200 !bg-emerald-50 !text-emerald-700',
-      iconClass: 'border-emerald-100 bg-emerald-50 text-emerald-600',
+      label: worker.available ? '在线可用' : '队列已满',
+      dot: worker.available ? 'bg-[#12b76a]' : 'bg-[#f79009]',
+      tag: worker.available
+        ? '!border-[#abefc6] !bg-[#ecfdf3] !text-[#067647]'
+        : '!border-[#fedf89] !bg-[#fffaeb] !text-[#b54708]',
     };
   }
-
-  if (healthStatus === 2) {
-    return {
-      filter: 'warning' as const,
-      label: '异常',
-      dotClass: 'bg-amber-500',
-      tagClass: '!border-amber-200 !bg-amber-50 !text-amber-700',
-      iconClass: 'border-amber-100 bg-amber-50 text-amber-600',
-    };
-  }
-
   return {
     filter: 'offline' as const,
     label: '离线',
-    dotClass: 'bg-rose-500',
-    tagClass: '!border-rose-200 !bg-rose-50 !text-rose-700',
-    iconClass: 'border-rose-100 bg-rose-50 text-rose-600',
+    dot: 'bg-[#f04438]',
+    tag: '!border-[#fecdca] !bg-[#fef3f2] !text-[#b42318]',
   };
 };
 
-const normalizeKeyword = (value?: string) => value?.trim().toLowerCase() || '';
+const formatTime = (value?: string) =>
+  value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '--';
 
-const formatPercent = (value?: number) => {
-  if (value === undefined || value === null || Number.isNaN(Number(value))) {
-    return '--';
-  }
-
-  return `${Math.round(Number(value) * 10) / 10}%`;
+const formatUptime = (startedAtMillis?: number) => {
+  if (!startedAtMillis) return '--';
+  const duration = Math.max(0, Date.now() - startedAtMillis);
+  const days = Math.floor(duration / 86_400_000);
+  const hours = Math.floor((duration % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((duration % 3_600_000) / 60_000);
+  return days > 0 ? `${days} 天 ${hours} 小时` : `${hours} 小时 ${minutes} 分钟`;
 };
 
-const formatNumber = (value?: number) => {
-  if (value === undefined || value === null || Number.isNaN(Number(value))) {
-    return '--';
-  }
-
-  return Number(value).toLocaleString();
-};
-
-const formatTime = (value?: string) => value || '--';
-
-const getClientAddress = (client: LinkupClient) => {
-  if (client.baseUrl) return client.baseUrl;
-
-  if (client.clientAddress) {
-    const port = (client as LinkupClient & { clientPort?: number | string })
-      .clientPort;
-    return port ? `${client.clientAddress}:${port}` : client.clientAddress;
-  }
-
-  return '--';
-};
-
-interface ClientMetricItemProps {
+const WorkerMetric = ({
+  label,
+  value,
+}: {
   label: string;
-  value: string;
-  loading?: boolean;
-}
-
-const ClientMetricItem = ({ label, value, loading }: ClientMetricItemProps) => (
-  <div className="min-w-[112px] px-4 first:pl-0">
+  value: string | number;
+}) => (
+  <div className="min-w-[118px] px-4 first:pl-0">
     <div className="text-[12px] leading-5 text-[#98a2b3]">{label}</div>
-    <div className="mt-1 min-h-6 text-[14px] font-semibold leading-6 text-[#101828]">
-      {loading ? <Skeleton.Input active size="small" className="!h-5 !w-12" /> : value}
+    <div className="mt-1 text-[14px] font-semibold leading-6 text-[#101828]">
+      {value}
     </div>
   </div>
 );
 
-interface ClientRowProps {
-  client: LinkupClient;
-  metrics?: LinkupClientMetrics;
-  metricsLoading: boolean;
-  deleting: boolean;
-  onRefreshMetrics: (id: number) => void;
-  onEdit: (client: LinkupClient) => void;
-  onDelete: (client: LinkupClient) => void;
-}
-
-const ClientRow = ({
-  client,
-  metrics,
-  metricsLoading,
+const WorkerRow = ({
+  worker,
+  refreshing,
+  statusLoading,
   deleting,
-  onRefreshMetrics,
+  onRefresh,
   onEdit,
+  onStatus,
   onDelete,
-}: ClientRowProps) => {
-  const healthMeta = getHealthMeta(client.healthStatus);
-  const clientId = Number(client.id);
+}: {
+  worker: LinkupClient;
+  refreshing: boolean;
+  statusLoading: boolean;
+  deleting: boolean;
+  onRefresh: () => void;
+  onEdit: () => void;
+  onStatus: (status: WorkerSchedulingStatus) => void;
+  onDelete: () => void;
+}) => {
+  const meta = healthMeta(worker);
+  const loadPercent = Math.round(Math.max(0, Math.min(1, worker.loadRatio || 0)) * 100);
+  const configManaged = worker.registrationMode === 'CONFIG';
+
+  const statusItems: MenuProps['items'] = [
+    {
+      key: 'ENABLED',
+      icon: <CheckCircleOutlined />,
+      label: '启用调度',
+      disabled: worker.schedulingStatus === 'ENABLED',
+    },
+    {
+      key: 'DRAINING',
+      icon: <PauseCircleOutlined />,
+      label: '排空节点',
+      disabled: worker.schedulingStatus === 'DRAINING',
+    },
+    {
+      key: 'DISABLED',
+      icon: <StopOutlined />,
+      label: '禁用节点',
+      danger: true,
+      disabled: worker.schedulingStatus === 'DISABLED',
+    },
+  ];
 
   return (
-    <article className="group overflow-hidden rounded-[10px] border border-[#eceef2] bg-white transition-all duration-200 hover:border-[#dfe3e8] hover:shadow-[0_8px_28px_rgba(16,24,40,0.04)]">
-      <div className="flex min-w-0 flex-col gap-5 p-4 lg:flex-row lg:items-stretch lg:p-5">
-        <div
-          className={[
-            'relative flex h-[108px] w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border',
-            'lg:h-[116px] lg:w-[116px]',
-            healthMeta.iconClass,
-          ].join(' ')}
-        >
+    <article className="overflow-hidden rounded-[10px] border border-[#eceef2] bg-white transition-all hover:border-[#dfe3e8] hover:shadow-[0_8px_28px_rgba(16,24,40,0.04)]">
+      <div className="flex flex-col gap-5 p-5 xl:flex-row xl:items-stretch">
+        <div className="relative flex h-[112px] w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e8e9ec] bg-[#f7f7f8] text-[#667085] xl:w-[112px]">
           <CloudServerOutlined className="text-[38px]" />
-          <span className={`absolute right-3 top-3 h-2.5 w-2.5 rounded-full ${healthMeta.dotClass}`} />
-          <span className="absolute bottom-2.5 left-3 text-[11px] font-semibold uppercase tracking-[0.08em] opacity-70">
-            {client.engineType || 'CLIENT'}
+          <span className={`absolute right-3 top-3 h-2.5 w-2.5 rounded-full ${meta.dot}`} />
+          <span className="absolute bottom-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#98a2b3]">
+            LINK-UP
           </span>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-                <h2 className="m-0 max-w-full truncate text-[16px] font-semibold leading-7 text-[#101828]">
-                  {client.clientName || '未命名客户端'}
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="m-0 truncate text-[16px] font-semibold leading-7 text-[#101828]">
+                  {worker.nodeName || worker.nodeId}
                 </h2>
-
-                <Tag className={`!m-0 !rounded-md !px-2 !text-[12px] ${healthMeta.tagClass}`}>
+                <Tag className={`!m-0 !rounded-md !px-2 ${meta.tag}`}>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className={`h-1.5 w-1.5 rounded-full ${healthMeta.dotClass}`} />
-                    {healthMeta.label}
+                    <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                    {meta.label}
                   </span>
                 </Tag>
-
-                {client.clientVersion ? (
-                  <Tag className="!m-0 !rounded-md !border-[#e4e7ec] !bg-[#f8f9fb] !px-2 !text-[12px] !text-[#667085]">
-                    v{client.clientVersion}
+                <Tag className="!m-0 !rounded-md !border-[#e4e7ec] !bg-[#f8f9fb] !text-[#667085]">
+                  {configManaged ? '配置托管' : '手工注册'}
+                </Tag>
+                {worker.engineVersion ? (
+                  <Tag className="!m-0 !rounded-md !border-[#e4e7ec] !bg-white !text-[#667085]">
+                    v{worker.engineVersion}
                   </Tag>
                 ) : null}
               </div>
 
-              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] leading-6 text-[#98a2b3]">
-                <span>客户端 ID：{client.id ?? '--'}</span>
-                <span>最近心跳：{formatTime(client.heartbeatTime)}</span>
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-6 text-[#98a2b3]">
+                <span>nodeId：{worker.nodeId}</span>
+                <span>最近心跳：{formatTime(worker.lastHeartbeatTime)}</span>
+                <span>连续失败：{worker.consecutiveFailures || 0}</span>
               </div>
 
-              <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-[13px] text-[#667085]">
-                <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-md bg-[#f7f7f8] px-2.5 py-1.5">
-                  <LinkOutlined className="shrink-0 text-[#98a2b3]" />
-                  <span className="truncate">{getClientAddress(client)}</span>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-[#667085]">
+                <span className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-[#f7f7f8] px-2.5 py-1.5">
+                  <LinkOutlined className="text-[#98a2b3]" />
+                  <span className="truncate">{worker.baseUrl}</span>
                 </span>
-                {client.remark ? <span className="truncate">{client.remark}</span> : null}
+                {Object.entries(worker.labels || {}).map(([key, value]) => (
+                  <Tag key={key} bordered={false} className="!m-0 !bg-[#f2f4f7] !text-[#667085]">
+                    {key}={value}
+                  </Tag>
+                ))}
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center gap-0.5 xl:justify-end">
-              <Button
-                type="text"
-                size="small"
-                icon={<EyeOutlined />}
-                className="!h-8 !px-2.5 !text-[#667085] hover:!bg-[#f5f5f6] hover:!text-[#101828]"
-                onClick={() => history.push(`/client/${client.id}/detail`)}
-              >
-                详情
-              </Button>
-
-              <Tooltip title="重新获取该客户端的运行指标">
+            <Space size={4} wrap>
+              <Tooltip title="立即读取 /api/v1/node">
                 <Button
                   type="text"
-                  size="small"
-                  icon={<ReloadOutlined spin={metricsLoading} />}
-                  className="!h-8 !px-2.5 !text-[#667085] hover:!bg-[#f5f5f6] hover:!text-[#101828]"
-                  disabled={!clientId}
-                  onClick={() => onRefreshMetrics(clientId)}
+                  icon={<ReloadOutlined spin={refreshing} />}
+                  loading={refreshing}
+                  onClick={onRefresh}
                 >
                   刷新
                 </Button>
               </Tooltip>
-
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                className="!h-8 !px-2.5 !text-[#667085] hover:!bg-[#f5f5f6] hover:!text-[#101828]"
-                onClick={() => onEdit(client)}
-              >
+              <Button type="text" icon={<EditOutlined />} onClick={onEdit}>
                 编辑
               </Button>
-
-              <Popconfirm
-                title="删除客户端"
-                description="删除后不可恢复，确定继续吗？"
-                okText="删除"
-                cancelText="取消"
-                okButtonProps={{ danger: true, loading: deleting }}
-                onConfirm={() => onDelete(client)}
+              <Dropdown
+                trigger={['click']}
+                menu={{
+                  items: statusItems,
+                  onClick: ({ key }) => onStatus(key as WorkerSchedulingStatus),
+                }}
               >
-                <Button
-                  danger
-                  type="text"
-                  size="small"
-                  icon={<DeleteOutlined />}
-                  loading={deleting}
-                  className="!h-8 !px-2.5"
-                >
-                  删除
+                <Button type="text" loading={statusLoading} icon={<MoreOutlined />}>
+                  状态
                 </Button>
-              </Popconfirm>
-            </div>
+              </Dropdown>
+              {!configManaged ? (
+                <Popconfirm
+                  title="删除执行节点"
+                  description="只删除 Yak Ops 中的登记信息，不会停止 Link-Up 进程。"
+                  okText="删除"
+                  cancelText="取消"
+                  okButtonProps={{ danger: true, loading: deleting }}
+                  onConfirm={onDelete}
+                >
+                  <Button danger type="text" loading={deleting} icon={<DeleteOutlined />}>
+                    删除
+                  </Button>
+                </Popconfirm>
+              ) : null}
+            </Space>
           </div>
 
-          <div className="mt-auto flex min-w-0 flex-wrap divide-x divide-[#eceef2] border-t border-[#f0f1f3] pt-3">
-            <ClientMetricItem label="CPU 使用率" value={formatPercent(metrics?.cpuUsage)} loading={metricsLoading} />
-            <ClientMetricItem label="内存使用率" value={formatPercent(metrics?.memoryUsage)} loading={metricsLoading} />
-            <ClientMetricItem label="活跃线程" value={formatNumber(metrics?.threadCount)} loading={metricsLoading} />
-            <ClientMetricItem label="运行中任务" value={formatNumber(metrics?.runningOps)} loading={metricsLoading} />
-            <ClientMetricItem label="引擎类型" value={client.engineType || '--'} />
+          {worker.lastErrorMessage ? (
+            <Alert
+              className="mt-3"
+              type="error"
+              showIcon
+              message="最近一次心跳失败"
+              description={worker.lastErrorMessage}
+            />
+          ) : null}
+
+          <div className="mt-4 flex flex-col gap-4 border-t border-[#f0f1f3] pt-4 lg:flex-row lg:items-center">
+            <div className="min-w-[220px] flex-1">
+              <div className="mb-1 flex items-center justify-between text-[12px] text-[#667085]">
+                <span>综合负载</span>
+                <span>{loadPercent}%</span>
+              </div>
+              <Progress percent={loadPercent} showInfo={false} size="small" />
+            </div>
+            <div className="flex flex-wrap divide-x divide-[#eceef2]">
+              <WorkerMetric
+                label="运行任务"
+                value={`${worker.runningJobs || 0} / ${worker.maxConcurrentJobs || 0}`}
+              />
+              <WorkerMetric
+                label="排队任务"
+                value={`${worker.queuedJobs || 0} / ${worker.maxQueuedJobs || 0}`}
+              />
+              <WorkerMetric label="调度权重" value={worker.weight || 100} />
+              <WorkerMetric label="进程运行" value={formatUptime(worker.startedAtMillis)} />
+            </div>
           </div>
         </div>
       </div>
@@ -269,205 +294,202 @@ const ClientRow = ({
 const ClientPage = () => {
   const {
     clients,
+    total,
     loading,
-    confirmLoading,
     openAddModal,
     editingClient,
+    confirmLoading,
+    verifying,
     deleteLoadingId,
-    metricsByClientId,
-    metricsLoadingIds,
+    refreshLoadingIds,
+    statusLoadingIds,
     form,
     handleOpenCreate,
     handleOpenEdit,
     handleDeleteClient,
     handleSaveClient,
     handleCancelModal,
+    handleVerifyWorker,
+    handleRefreshWorker,
+    handleChangeSchedulingStatus,
     loadClients,
-    loadClientMetrics,
   } = useClientPageState();
 
-  const [statusFilter, setStatusFilter] = useState<ClientStatusFilter>('all');
+  const [filter, setFilter] = useState<WorkerFilter>('all');
   const [keyword, setKeyword] = useState('');
 
-  const statusCounts = useMemo(() => {
+  const counts = useMemo(() => {
     return clients.reduce(
-      (result, client) => {
-        const filter = getHealthMeta(client.healthStatus).filter;
+      (result, worker) => {
         result.all += 1;
-        result[filter] += 1;
+        result[healthMeta(worker).filter] += 1;
         return result;
       },
-      { all: 0, online: 0, warning: 0, offline: 0 },
+      { all: 0, online: 0, draining: 0, offline: 0, disabled: 0 },
     );
   }, [clients]);
 
-  const filteredClients = useMemo(() => {
-    const normalizedKeyword = normalizeKeyword(keyword);
+  const summary = useMemo(() => {
+    return clients.reduce(
+      (result, worker) => {
+        result.activeJobs += Number(worker.activeJobs || 0);
+        result.runningCapacity += Number(worker.maxConcurrentJobs || 0);
+        result.queueCapacity += Number(worker.maxQueuedJobs || 0);
+        if (worker.available) result.available += 1;
+        return result;
+      },
+      { activeJobs: 0, runningCapacity: 0, queueCapacity: 0, available: 0 },
+    );
+  }, [clients]);
 
-    return clients.filter((client) => {
-      const healthFilter = getHealthMeta(client.healthStatus).filter;
-      const matchesStatus = statusFilter === 'all' || healthFilter === statusFilter;
-
-      if (!matchesStatus) return false;
-      if (!normalizedKeyword) return true;
-
+  const filtered = useMemo(() => {
+    const value = normalize(keyword);
+    return clients.filter((worker) => {
+      if (filter !== 'all' && healthMeta(worker).filter !== filter) return false;
+      if (!value) return true;
       return [
-        client.clientName,
-        client.engineType,
-        client.baseUrl,
-        client.clientAddress,
-        client.clientVersion,
-        client.remark,
-        String(client.id ?? ''),
-      ].some((item) => normalizeKeyword(item).includes(normalizedKeyword));
+        worker.nodeId,
+        worker.nodeName,
+        worker.baseUrl,
+        worker.engineVersion,
+        JSON.stringify(worker.labels || {}),
+      ].some((item) => normalize(item).includes(value));
     });
-  }, [clients, keyword, statusFilter]);
+  }, [clients, filter, keyword]);
 
   return (
-    <ConfigProvider
-  theme={{
-    ...BRAND_THEME,
-    token: {
-      ...BRAND_THEME.token,
-      colorPrimary: '#fe2c55',
-      borderRadius: 6,
-    },
-  }}
->
-  <div className="min-h-[calc(100vh-64px)] bg-[#ffffff]">
-    <div className="w-full px-5 pt-5 lg:px-10" style={{marginTop: 12}}>
-      {/* 页面标题和搜索 */}
-      <div className="flex min-h-[38px] items-start justify-between gap-4">
-        <h1 className="m-0 text-[22px] font-semibold leading-9 text-[#1f2329]">
-          客户端管理
-        </h1>
-
-        <div className="flex items-center gap-2">
-          <Input
-            allowClear
-            variant="filled"
-            value={keyword}
-            prefix={
-              <SearchOutlined className="text-[14px] text-[#a4a7ad]" />
-            }
-            placeholder="搜索客户端"
-            
-            onChange={(event) => setKeyword(event.target.value)}
-          />
-
-          <Tooltip title="刷新客户端列表">
-            <Button
-              type="text"
-              icon={<ReloadOutlined spin={loading} />}
-              className="!h-9 !w-9 !bg-[#ededee] !px-0 hover:!bg-[#e7e7e9]"
-              onClick={() => loadClients()}
-            />
-          </Tooltip>
-
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            className="!h-9 !border-[#fe2c55] !bg-[#fe2c55] !px-4 hover:!border-[#e9284c] hover:!bg-[#e9284c]"
-            onClick={handleOpenCreate}
-          >
-            新增客户端
-          </Button>
-        </div>
-      </div>
-
-      {/* 状态筛选 */}
-      <div className="flex h-[56px] items-end justify-between border-b border-[#dedfe3]" style={{overflow: "hidden"}}>
-        <div className="flex h-full min-w-0 items-end gap-7 ">
-          {statusTabs.map((tab) => {
-            const active = tab.key === statusFilter;
-
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                className={[
-                  'relative h-full shrink-0 border-0 bg-transparent px-1',
-                  'text-[14px] transition-colors duration-200',
-                  active
-                    ? 'font-semibold text-[#1f2329]'
-                    : 'font-normal text-[#555b65] hover:text-[#1f2329]',
-                ].join(' ')}
-                onClick={() => setStatusFilter(tab.key)}
+    <ConfigProvider theme={BRAND_THEME}>
+      <div className="min-h-[calc(100vh-48px)] bg-[#f7f7f8] px-5 py-5 lg:px-6">
+        <div className="mx-auto w-full max-w-[1680px]">
+          <header className="flex flex-col gap-4 border-b border-[#e8e9ec] pb-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="m-0 text-[22px] font-semibold leading-8 text-[#161823]">
+                执行节点
+              </h1>
+              <p className="m-0 mt-1 text-[13px] leading-6 text-[#8a8f99]">
+                管理 Link-Up 离线 Worker 的注册、心跳、容量和调度状态。
+              </p>
+            </div>
+            <Space size={8} wrap>
+              <Button
+                icon={<ReloadOutlined spin={loading} />}
+                disabled={loading}
+                onClick={() => void loadClients()}
               >
-                {tab.label}
+                刷新全部
+              </Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+                注册节点
+              </Button>
+            </Space>
+          </header>
 
-                {active ? (
-                  <span className="absolute inset-x-0 bottom-[-1px] h-[3px] bg-[#fe2c55]" />
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="shrink-0 pb-[17px] text-[14px] text-[#6b7075]">
-          共{' '}
-          <span className="font-medium text-[#6b7075]">
-            {filteredClients.length}
-          </span>{' '}
-          个客户端
-        </div>
-      </div>
-
-      {/* 客户端内容 */}
-      <div className="py-4">
-        {loading && !clients.length ? (
-          <div className="space-y-3">
-            {[0, 1, 2].map((item) => (
-              <div
-                key={item}
-                className="border border-[#e8e9ec] bg-white p-5"
-              >
-                <Skeleton active avatar paragraph={{ rows: 3 }} />
+          <section className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+            {[
+              { label: '登记节点', value: total, icon: <CloudServerOutlined /> },
+              { label: '在线可用', value: summary.available, icon: <CheckCircleOutlined /> },
+              { label: '活跃任务', value: summary.activeJobs, icon: <ClockCircleOutlined /> },
+              {
+                label: '总容量',
+                value: `${summary.runningCapacity} + ${summary.queueCapacity}`,
+                icon: <ExclamationCircleOutlined />,
+              },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-3 rounded-lg border border-[#eceef2] bg-white p-4">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f3f3f4] text-[17px] text-[#667085]">
+                  {item.icon}
+                </span>
+                <div>
+                  <div className="text-[12px] text-[#98a2b3]">{item.label}</div>
+                  <strong className="mt-1 block text-[20px] leading-6 text-[#101828]">{item.value}</strong>
+                </div>
               </div>
             ))}
-          </div>
-        ) : filteredClients.length ? (
-          <div className="space-y-3">
-            {filteredClients.map((client) => {
-              const id = Number(client.id);
+          </section>
 
-              return (
-                <ClientRow
-                  key={client.id ?? client.clientName}
-                  client={client}
-                  metrics={
-                    id ? metricsByClientId[id] : undefined
+          <section className="mt-4 rounded-lg border border-[#eceef2] bg-white px-4 py-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-1">
+                {filters.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={[
+                      'cursor-pointer rounded-md border-0 px-3 py-1.5 text-[13px] transition-colors',
+                      filter === item.key
+                        ? 'bg-[#161823] font-medium text-white'
+                        : 'bg-transparent text-[#667085] hover:bg-[#f5f5f6] hover:text-[#161823]',
+                    ].join(' ')}
+                    onClick={() => setFilter(item.key)}
+                  >
+                    {item.label} {counts[item.key]}
+                  </button>
+                ))}
+              </div>
+              <Input
+                allowClear
+                variant="filled"
+                prefix={<SearchOutlined className="text-[#98a2b3]" />}
+                placeholder="搜索名称、nodeId、地址或标签"
+                value={keyword}
+                className="w-full lg:w-[320px]"
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+            </div>
+          </section>
+
+          <section className="mt-3 space-y-3">
+            {loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="rounded-lg border border-[#eceef2] bg-white p-5">
+                  <Skeleton active paragraph={{ rows: 3 }} />
+                </div>
+              ))
+            ) : filtered.length ? (
+              filtered.map((worker) => (
+                <WorkerRow
+                  key={worker.nodeId}
+                  worker={worker}
+                  refreshing={refreshLoadingIds.has(worker.nodeId)}
+                  statusLoading={statusLoadingIds.has(worker.nodeId)}
+                  deleting={deleteLoadingId === worker.nodeId}
+                  onRefresh={() => void handleRefreshWorker(worker.nodeId)}
+                  onEdit={() => handleOpenEdit(worker)}
+                  onStatus={(status) =>
+                    void handleChangeSchedulingStatus(worker.nodeId, status)
                   }
-                  metricsLoading={
-                    id ? metricsLoadingIds.has(id) : false
-                  }
-                  deleting={deleteLoadingId === client.id}
-                  onRefreshMetrics={loadClientMetrics}
-                  onEdit={handleOpenEdit}
-                  onDelete={handleDeleteClient}
+                  onDelete={() => void handleDeleteClient(worker)}
                 />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex min-h-[420px] items-center justify-center  bg-white">
-            <YakOpsEmpty />
-          </div>
-        )}
-      </div>
-    </div>
+              ))
+            ) : (
+              <div className="rounded-lg border border-[#eceef2] bg-white py-20">
+                <Empty
+                  description={keyword || filter !== 'all' ? '没有匹配的执行节点' : '还没有登记 Link-Up Worker'}
+                >
+                  {!keyword && filter === 'all' ? (
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+                      注册第一个节点
+                    </Button>
+                  ) : null}
+                </Empty>
+              </div>
+            )}
+          </section>
+        </div>
 
-    <AddClientModal
-      open={openAddModal}
-      form={form}
-      mode={editingClient ? 'edit' : 'create'}
-      initialValues={editingClient}
-      confirmLoading={confirmLoading}
-      onCancel={handleCancelModal}
-      onSubmit={handleSaveClient}
-    />
-  </div>
-</ConfigProvider>
+        <AddClientModal
+          open={openAddModal}
+          form={form}
+          mode={editingClient ? 'edit' : 'create'}
+          initialValues={editingClient}
+          confirmLoading={confirmLoading}
+          verifying={verifying}
+          onCancel={handleCancelModal}
+          onSubmit={() => void handleSaveClient()}
+          onVerify={handleVerifyWorker}
+        />
+      </div>
+    </ConfigProvider>
   );
 };
 

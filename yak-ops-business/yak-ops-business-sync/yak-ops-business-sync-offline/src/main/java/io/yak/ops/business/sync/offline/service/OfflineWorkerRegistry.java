@@ -2,27 +2,34 @@ package io.yak.ops.business.sync.offline.service;
 
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.config.OfflineSyncProperties;
-import io.yak.ops.business.sync.offline.engine.LinkUpClient;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpNodeResponse;
+import io.yak.ops.business.sync.offline.engine.LinkUpWorkerProbeClient;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * 单 Link-Up Worker 注册、心跳和选择器。
+ * Link-Up Worker 注册表、定时心跳和默认节点选择器。
+ *
+ * <p>本阶段只扩展节点管理闭环。任务执行仍优先使用
+ * {@code yak.sync.offline.engine.node-id} 指定的默认 Worker。
  *
  * @author weifuwan
  */
+@Slf4j
 @ConditionalOnOfflineSyncEnabled
 @Component
 @RequiredArgsConstructor
 public class OfflineWorkerRegistry {
 
-  private final LinkUpClient linkUpClient;
+  private final LinkUpWorkerProbeClient probeClient;
   private final OfflineNodeRepository repository;
   private final OfflineSyncProperties properties;
 
@@ -30,67 +37,157 @@ public class OfflineWorkerRegistry {
       initialDelayString = "${yak.sync.offline.control.heartbeat-delay-millis:10000}",
       fixedDelayString = "${yak.sync.offline.control.heartbeat-delay-millis:10000}")
   public void heartbeat() {
-    refresh(false);
+    refreshAll();
+  }
+
+  public void refreshAll() {
+    try {
+      ensureConfiguredWorker();
+    } catch (RuntimeException exception) {
+      // 默认配置错误不能阻断其他手工登记 Worker 的健康检查。
+      log.warn("初始化默认 Link-Up Worker 失败：{}", message(exception));
+    }
+    List<NodeRecord> targets = repository.listHeartbeatTargets();
+    for (NodeRecord target : targets) {
+      refresh(target, false);
+    }
+  }
+
+  public NodeRecord refresh(String nodeId, boolean failFast) {
+    NodeRecord node = repository.find(nodeId);
+    if (node == null) {
+      throw new IllegalArgumentException("Link-Up Worker 不存在：" + nodeId);
+    }
+    return refresh(node, failFast);
   }
 
   public NodeRecord selectNode() {
-    NodeRecord node = refresh(true);
-    if (node == null || !"UP".equalsIgnoreCase(node.getStatus())) {
-      throw new IllegalStateException("Link-Up 离线 Worker 当前不可用");
+    NodeRecord configured = ensureConfiguredWorker();
+    if (configured == null) {
+      throw new IllegalStateException("未配置默认 Link-Up 离线 Worker");
     }
-    if (node.getRunningJobs() >= node.getMaxConcurrentJobs()
-        && node.getQueuedJobs() >= node.getMaxQueuedJobs()) {
-      throw new IllegalStateException("Link-Up 离线 Worker 的执行队列已满");
+    NodeRecord node = refresh(configured, true);
+    if (!Boolean.TRUE.equals(node.getEnabled())
+        || !"ENABLED".equalsIgnoreCase(node.getSchedulingStatus())) {
+      throw new IllegalStateException("默认 Link-Up Worker 已禁用或处于排空状态");
+    }
+    if (!"UP".equalsIgnoreCase(node.getStatus())) {
+      throw new IllegalStateException("默认 Link-Up Worker 当前不可用");
+    }
+    int runningJobs = value(node.getRunningJobs(), 0);
+    int queuedJobs = value(node.getQueuedJobs(), 0);
+    int maxConcurrentJobs = Math.max(1, value(node.getMaxConcurrentJobs(), 1));
+    int maxQueuedJobs = Math.max(0, value(node.getMaxQueuedJobs(), 0));
+    if (runningJobs >= maxConcurrentJobs && queuedJobs >= maxQueuedJobs) {
+      throw new IllegalStateException("默认 Link-Up Worker 的执行队列已满");
     }
     return node;
   }
 
   public NodeRecord currentNode() {
+    ensureConfiguredWorker();
     return repository.find(properties.getEngine().getNodeId());
   }
 
-  private NodeRecord refresh(boolean failFast) {
+  /** 保证 application.yml 中的默认 Worker 在管理页面可见。 */
+  public NodeRecord ensureConfiguredWorker() {
+    OfflineSyncProperties.Engine engine = properties.getEngine();
+    if (!engine.isEnabled()
+        || !StringUtils.hasText(engine.getNodeId())
+        || !StringUtils.hasText(engine.getBaseUrl())) {
+      return null;
+    }
+    String nodeId = engine.getNodeId().trim();
+    String configuredNodeName = StringUtils.hasText(engine.getNodeName())
+        ? engine.getNodeName().trim() : nodeId;
+    String baseUrl = probeClient.normalizeBaseUrl(engine.getBaseUrl());
+    NodeRecord existing = repository.find(nodeId);
+    String nodeName = existing != null && StringUtils.hasText(existing.getNodeName())
+        ? existing.getNodeName() : configuredNodeName;
+    if (existing != null
+        && "CONFIG".equalsIgnoreCase(existing.getRegistrationMode())
+        && baseUrl.equals(existing.getBaseUrl())) {
+      return existing;
+    }
+
+    LocalDateTime now = LocalDateTime.now();
+    NodeRecord configured = existing == null ? NodeRecord.builder().build() : existing;
+    configured.setNodeId(nodeId);
+    configured.setNodeName(nodeName);
+    configured.setBaseUrl(baseUrl);
+    configured.setRegistrationMode("CONFIG");
+    // 页面设置的排空/禁用状态必须跨定时心跳保留。
+    configured.setEnabled(existing == null
+        ? true : !Boolean.FALSE.equals(existing.getEnabled()));
+    configured.setSchedulingStatus(existing == null
+        || !StringUtils.hasText(existing.getSchedulingStatus())
+            ? "ENABLED" : existing.getSchedulingStatus());
+    configured.setWeight(value(configured.getWeight(), 100));
+    configured.setOfflineOnly(configured.getOfflineOnly() == null
+        || configured.getOfflineOnly());
+    configured.setStatus(StringUtils.hasText(configured.getStatus())
+        ? configured.getStatus() : "DOWN");
+    configured.setMaxConcurrentJobs(value(configured.getMaxConcurrentJobs(), 1));
+    configured.setMaxQueuedJobs(value(configured.getMaxQueuedJobs(), 1));
+    configured.setRunningJobs(value(configured.getRunningJobs(), 0));
+    configured.setQueuedJobs(value(configured.getQueuedJobs(), 0));
+    configured.setConsecutiveFailures(value(configured.getConsecutiveFailures(), 0));
+    configured.setCreateTime(configured.getCreateTime() == null
+        ? now : configured.getCreateTime());
+    configured.setUpdateTime(now);
+    repository.upsert(configured);
+    return repository.find(nodeId);
+  }
+
+  private NodeRecord refresh(NodeRecord node, boolean failFast) {
     try {
-      LinkUpNodeResponse response = linkUpClient.node();
-      if (!Boolean.TRUE.equals(response.getOfflineOnly())) {
-        throw new IllegalStateException("目标 Link-Up 节点不是离线专用 Worker");
-      }
-      String configuredNodeId = properties.getEngine().getNodeId();
-      if (StringUtils.hasText(response.getNodeId())
-          && !configuredNodeId.equals(response.getNodeId())) {
-        throw new IllegalStateException(
-            "Link-Up nodeId 不匹配，配置=" + configuredNodeId + "，实际=" + response.getNodeId());
-      }
-      NodeRecord node = new NodeRecord(
-          configuredNodeId,
-          StringUtils.hasText(response.getNodeName())
-              ? response.getNodeName() : properties.getEngine().getNodeName(),
-          properties.getEngine().getBaseUrl(),
-          response.getInstanceId(),
-          response.getVersion(),
-          response.getStatus(),
-          value(response.getMaxConcurrentJobs(), 1),
-          value(response.getMaxQueuedJobs(), 1),
-          value(response.getRunningJobs(), 0),
-          value(response.getQueuedJobs(), 0),
-          LocalDateTime.now(),
-          null);
-      repository.upsert(node);
-      return node;
+      LinkUpNodeResponse response = probeClient.node(node.getBaseUrl());
+      validate(node, response);
+      NodeRecord heartbeat = NodeRecord.builder()
+          .nodeId(node.getNodeId())
+          .nodeName(StringUtils.hasText(node.getNodeName())
+              ? node.getNodeName() : response.getNodeName())
+          .workerInstanceId(response.getInstanceId())
+          .engineVersion(response.getVersion())
+          .startedAtMillis(response.getStartedAtMillis())
+          .offlineOnly(response.getOfflineOnly())
+          .maxConcurrentJobs(value(response.getMaxConcurrentJobs(), 1))
+          .maxQueuedJobs(value(response.getMaxQueuedJobs(), 1))
+          .runningJobs(value(response.getRunningJobs(), 0))
+          .queuedJobs(value(response.getQueuedJobs(), 0))
+          .lastHeartbeatTime(LocalDateTime.now())
+          .build();
+      repository.updateHeartbeatSuccess(heartbeat);
+      return repository.find(node.getNodeId());
     } catch (RuntimeException exception) {
-      NodeRecord down = new NodeRecord(
-          properties.getEngine().getNodeId(),
-          properties.getEngine().getNodeName(),
-          properties.getEngine().getBaseUrl(),
-          currentNode() == null ? null : currentNode().getWorkerInstanceId(),
-          currentNode() == null ? null : currentNode().getEngineVersion(),
-          "DOWN", 1, 1, 0, 0, LocalDateTime.now(), exception.getMessage());
-      repository.upsert(down);
+      repository.updateHeartbeatFailure(node.getNodeId(), message(exception));
       if (failFast) {
         throw exception;
       }
-      return down;
+      return repository.find(node.getNodeId());
     }
+  }
+
+  private void validate(NodeRecord expected, LinkUpNodeResponse response) {
+    if (response == null) {
+      throw new IllegalStateException("Link-Up Worker 返回了空节点信息");
+    }
+    if (!Boolean.TRUE.equals(response.getOfflineOnly())) {
+      throw new IllegalStateException("目标 Link-Up 节点不是离线专用 Worker");
+    }
+    if (!StringUtils.hasText(response.getNodeId())) {
+      throw new IllegalStateException("Link-Up Worker 未返回稳定 nodeId");
+    }
+    if (!Objects.equals(expected.getNodeId(), response.getNodeId())) {
+      throw new IllegalStateException(
+          "Link-Up nodeId 不匹配，登记=" + expected.getNodeId()
+              + "，实际=" + response.getNodeId());
+    }
+  }
+
+  private String message(RuntimeException exception) {
+    return StringUtils.hasText(exception.getMessage())
+        ? exception.getMessage() : exception.getClass().getSimpleName();
   }
 
   private int value(Integer value, int fallback) {
