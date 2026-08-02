@@ -1,24 +1,14 @@
-# Link-Up 离线 Worker 管理与调度
+# Link-Up 离线 Worker 管理与能力调度
 
 ## 定位
 
-Yak Ops 是离线同步控制面，Link-Up Server 是可独立部署的离线执行 Worker。
+Yak Ops 是离线同步控制面，Link-Up Server 是可独立部署、可横向扩容的离线执行 Worker。
 
-Worker 管理负责：
+当前已经形成三层闭环：
 
-- 手工注册 Link-Up Worker
-- 自动登记 `application.yml` 中的默认 Worker
-- 连接验证与节点身份校验
-- 定时心跳与手工刷新
-- 版本、进程实例、并发、队列和负载展示
-- 启用、排空、禁用和删除管理
-
-多 Worker 调度负责：
-
-- 为任务配置 `AUTO` 或 `MANUAL` Worker 策略
-- 根据标签、健康状态、心跳、容量、负载和权重选择 Worker
-- 将 Worker 地址、进程实例和分配依据固化到执行实例
-- 后续提交、取消、指标查询和状态对账始终访问该执行实例的 Worker
+1. Worker 管理：注册、验证、心跳、容量、启停和排空。
+2. 多 Worker 调度：`AUTO / MANUAL`、标签、容量、权重和执行路由固化。
+3. 能力调度：逐 Worker Connector 能力快照、任务能力要求、Schema 指纹匹配和执行审计。
 
 ## Worker 状态
 
@@ -33,7 +23,13 @@ Worker 管理负责：
 - `DRAINING`：不接收新任务，保留正在运行的任务
 - `DISABLED`：不接收新任务，也不再执行定时心跳
 
-默认配置 Worker 的登记来源是 `CONFIG`，不能在页面删除或修改地址；手工节点来源是 `MANUAL`。
+能力状态：
+
+- `UNKNOWN`：尚未获取 Connector 能力
+- `READY`：已经保存可用于调度的能力快照
+- `ERROR`：最近一次同步失败；保留最后一次成功快照用于诊断，但不会参与严格能力调度
+
+只有健康、调度、容量和能力条件均满足的 Worker 才会在页面和任务节点下拉中标记为可用。
 
 ## Worker 管理 API
 
@@ -43,8 +39,6 @@ Worker 管理负责：
 /api/v1/offline/workers
 ```
 
-接口：
-
 ```http
 POST   /verify
 POST   /
@@ -53,21 +47,17 @@ GET    /{nodeId}
 POST   /page
 GET    /options
 POST   /{nodeId}/refresh
+GET    /{nodeId}/capabilities
+POST   /{nodeId}/capabilities/refresh
 PUT    /{nodeId}/scheduling-status
 DELETE /{nodeId}
 ```
 
-新增和编辑地址会请求目标 Link-Up：
-
-```http
-GET /api/v1/node
-```
-
-只有返回稳定 `nodeId` 且 `offlineOnly=true` 的节点才能登记。
+`POST /{nodeId}/refresh` 会同时刷新节点心跳和 Connector 能力；能力接口可单独查询或强制刷新能力快照。
 
 ## 任务调度策略
 
-任务定义中保存：
+自动模式：
 
 ```json
 {
@@ -81,7 +71,7 @@ GET /api/v1/node
 }
 ```
 
-手动指定节点：
+手动模式：
 
 ```json
 {
@@ -98,16 +88,99 @@ GET /api/v1/node
 规则：
 
 - `AUTO`：每次新执行或重试重新评估当前 Worker 集合。
-- `MANUAL`：严格使用指定 `nodeId`；节点不可用时直接失败，不自动切换。
+- `MANUAL`：严格使用指定 `nodeId`；节点不满足能力或运行条件时直接失败。
 - 标签采用精确匹配，手动和自动模式都会校验。
-- 已经创建的执行实例不会因为任务策略或 Worker 地址后来发生变化而漂移。
-- 手动任务通过数据库外键引用 Worker，仍被任务定义引用的节点不能删除。
+- 已创建的执行实例不会因为任务策略、Worker 地址或能力后来发生变化而漂移。
+
+## Connector 能力事实层
+
+Yak Ops 使用 Link-Up 已有协议：
+
+```http
+GET /api/v1/connectors
+GET /api/v1/connectors/{connectorId}/schema?role=SOURCE|SINK
+```
+
+每个 Worker 独立保存精简能力摘要：
+
+```json
+{
+  "nodeId": "link-up-south-01",
+  "workerInstanceId": "instance-xxx",
+  "engineVersion": "1.0.0",
+  "connectors": [
+    {
+      "connectorId": "jdbc",
+      "role": "SOURCE",
+      "schemaVersion": "1",
+      "schemaFingerprint": "sha256:...",
+      "implementationVersion": "1.0.0",
+      "capabilities": [
+        "CUSTOM_SQL",
+        "MULTI_TABLE",
+        "PARTITION_SPLIT"
+      ]
+    }
+  ]
+}
+```
+
+快照会进行规范化排序并生成 SHA-256 摘要。远程能力请求只发生在后台刷新、手工刷新或执行领取之前的预热阶段，不会发生在 Worker 行锁和任务领取事务内。
+
+默认配置：
+
+```yaml
+yak:
+  sync:
+    offline:
+      capability:
+        enabled: true
+        strict-schema-fingerprint: true
+        max-stale-millis: 900000
+        initial-delay-millis: 10000
+        refresh-delay-millis: 60000
+        worker-refresh-millis: 300000
+```
+
+## 任务能力要求
+
+Yak Ops 从不可变 JobSpec 自动派生能力要求，无需用户重复配置。
+
+固定要求：
+
+- Source Connector 与 `SOURCE` 角色
+- Sink Connector 与 `SINK` 角色
+- 保存任务版本时使用的 Schema 版本和指纹
+
+根据任务配置自动派生：
+
+| JobSpec 配置 | 所需能力 |
+|---|---|
+| Source 自定义 SQL | `CUSTOM_SQL` |
+| 多表同步 | `MULTI_TABLE` |
+| 分片字段或分片数量 | `PARTITION_SPLIT` |
+| Sink UPSERT | `UPSERT` |
+| 自动建表 | `AUTO_CREATE_TABLE` |
+| Sink 自定义 SQL | `CUSTOM_SQL` |
+| 跳过脏数据或脏数据阈值 | `DIRTY_DATA_HANDLING` |
+
+新任务版本在保存时固化能力要求。历史版本没有能力字段时，会在首次执行前从该版本的不可变 JobSpec 派生并回填，不修改 JobSpec、配置摘要或版本号。
+
+## 能力匹配
+
+调度器对每个候选 Worker 依次校验：
+
+1. 存在所需 `connectorId + role`
+2. 能力快照状态为 `READY`
+3. 快照未超过 `max-stale-millis`
+4. 严格模式下 Schema 指纹与任务版本一致
+5. Worker 声明的能力集合包含任务要求的全部能力
+
+能力不匹配属于硬过滤，不通过加权评分弥补。`MANUAL` 模式同样执行完整能力校验，不会偷偷切换到其他 Worker。
 
 ## 自动调度算法
 
-### 硬过滤
-
-候选节点必须同时满足：
+候选节点还必须满足：
 
 1. `enabled=true`
 2. `scheduling_status=ENABLED`
@@ -115,23 +188,8 @@ GET /api/v1/node
 4. `offline_only=true`
 5. 心跳未过期
 6. 满足任务要求的全部标签
-7. 运行并发和等待队列没有同时满载
-
-`DRAINING` 节点不会接收新任务，但原有执行仍继续在该节点对账和取消。
-
-### 有效负载
-
-Worker 心跳存在刷新间隔。为了避免多个任务并发提交时同时读取旧负载，执行领取事务会：
-
-1. 锁定当前任务定义，防止同一任务重复运行。
-2. 按 `nodeId` 固定顺序对全部 Worker 行执行 `SELECT ... FOR UPDATE`。
-3. 聚合 Yak Ops 数据库中 `CREATED / SUBMITTED / QUEUED / RUNNING` 的执行数。
-4. 将控制面活跃执行数与 Worker 上报的运行、排队数量取保守值。
-5. 选择 Worker 并在同一事务内插入执行实例，然后释放锁。
-
-因此，不同任务即使并发提交，也不会全部基于同一份旧心跳选择同一个 Worker。
-
-### 评分
+7. Connector 能力完全匹配
+8. 运行并发和等待队列没有同时满载
 
 通过硬过滤后计算：
 
@@ -141,30 +199,9 @@ score = runningHeadroom × 55
       + normalizedWeight × 10
 ```
 
-其中：
+执行领取事务按 `nodeId` 固定顺序锁定 Worker 行，并将数据库中的活跃执行数叠加到 Worker 心跳负载，避免并发提交基于同一份旧快照产生容量超卖。
 
-- `runningHeadroom`：有效运行并发余量比例
-- `totalCapacityHeadroom`：有效运行并发与等待队列的综合余量比例
-- `normalizedWeight`：管理权重归一化结果，权重范围为 `1..1000`
-
-同分时依次比较：
-
-1. 有效排队任务更少
-2. 有效运行任务更少
-3. 权重更高
-4. `nodeId` 字典序
-
-调度结果会记录：
-
-- 分配模式
-- 最终得分
-- 选择原因
-- Worker 上报负载
-- 控制面活跃执行数
-- 计算后的有效负载
-- 所有候选节点及淘汰原因
-
-## 执行路由与可靠性
+## 执行路由与审计
 
 执行实例固化：
 
@@ -175,47 +212,50 @@ score = runningHeadroom × 55
 - `assignment_score`
 - `assignment_reason`
 - `assignment_candidates_json`
+- `required_capabilities_json`
+- `assigned_capabilities_json`
 
-所有远程操作均使用执行实例固化的 `engine_node_base_url`：
+所有提交、取消、指标查询和后台对账都访问执行实例固化的 Worker 地址。
 
-- 提交 JobSpec
-- 根据 `jobId` 或 `externalExecutionId` 对账
-- 取消任务
-- 查询 pipeline、task 和 metrics
+实例详情可以查看：
 
-当提交发生不确定网络错误时，Yak Ops 不会立即切换到其他 Worker，因为原 Worker 可能已经接收幂等请求；控制面会继续在原 Worker 上按 `externalExecutionId` 对账。
+- 任务版本要求的 Connector、角色、Schema 指纹和执行能力
+- 最终 Worker 实际匹配的能力摘要
+- 所有候选 Worker 的能力状态、摘要、匹配结果和淘汰原因
 
-Worker 进程实例发生变化且原执行仍未结束时，控制面将该执行标记为 `LOST`。后续重试会创建新的执行实例并重新执行 Worker 调度。
+当提交发生不确定网络错误时，不会自动切换 Worker，而是在原 Worker 上继续通过幂等标识对账。
 
-## 数据模型
+## Flyway
 
-Worker 管理继续复用 `yak_offline_engine_node`。
+V7 增加多 Worker 策略和执行分配字段。
 
-Flyway V7 为任务定义增加：
+V8 增加：
 
-- `worker_select_mode`
-- `worker_node_id`
-- `worker_required_labels_json`
-- `worker_node_id -> yak_offline_engine_node.node_id` 外键
+Worker：
 
-为执行实例增加：
+- `capability_status`
+- `capability_digest`
+- `connector_schemas_json`
+- `capability_synced_at`
+- `capability_error_message`
 
-- `engine_node_base_url`
-- `assignment_mode`
-- `assignment_score`
-- `assignment_reason`
-- `assignment_candidates_json`
+任务定义与版本：
 
-历史任务默认迁移为 `AUTO`。历史执行没有 `engine_node_base_url` 时，继续兼容原默认 Worker 配置。
+- `capability_requirements_json`
+
+执行实例：
+
+- `required_capabilities_json`
+- `assigned_capabilities_json`
 
 ## 当前边界
 
-本阶段完成离线任务的多 Worker 调度，不引入：
+本阶段完成基于 Link-Up Connector Schema 的能力调度，不包含：
 
 - CDC 或流式任务调度
-- 跨 Worker 迁移正在运行的任务
-- 提交不确定时的自动故障转移
-- Worker 侧资源预占或分布式容量租约
-- 基于 Connector 能力清单的调度约束
+- 运行中任务跨 Worker 迁移
+- 提交结果不确定时自动故障转移
+- Worker 侧分布式资源租约
+- Worker 侧真实数据源网络探测
 
-后续可以在现有调度器上增加 Connector 能力、租户配额、Worker 侧资源租约和更细粒度的调度审计。
+数据中心、网络区域和专线隔离继续通过 Worker 标签约束。真正的 Worker 侧数据源可达性探测需要 Link-Up 提供安全的预检协议，不能使用 Yak Ops 自身网络连通结果代替 Worker 视角。
