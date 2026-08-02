@@ -6,8 +6,8 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.yak.ops.business.sync.offline.form.ConnectorSchemaRegistry;
-import io.yak.ops.business.sync.offline.form.ConnectorSchemaSnapshot;
+import io.yak.ops.business.sync.offline.repository.OfflineConnectorSchemaRepository;
+import io.yak.ops.business.sync.offline.repository.OfflineConnectorSchemaRepository.SchemaRecord;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
@@ -16,13 +16,13 @@ class OfflineCapabilityRequirementResolverTest {
   @Test
   void derivesConnectorFingerprintsAndExecutionFeatures() throws Exception {
     ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
-    ConnectorSchemaRegistry registry = mock(ConnectorSchemaRegistry.class);
-    when(registry.get("jdbc", "SOURCE"))
-        .thenReturn(snapshot(mapper, "SOURCE", "sha256:source"));
-    when(registry.get("jdbc", "SINK"))
-        .thenReturn(snapshot(mapper, "SINK", "sha256:sink"));
+    OfflineConnectorSchemaRepository repository = mock(OfflineConnectorSchemaRepository.class);
+    when(repository.find("jdbc", "SOURCE"))
+        .thenReturn(schemaRecord(mapper, "SOURCE", "sha256:source"));
+    when(repository.find("jdbc", "SINK"))
+        .thenReturn(schemaRecord(mapper, "SINK", "sha256:sink"));
     OfflineCapabilityRequirementResolver resolver =
-        new OfflineCapabilityRequirementResolver(registry, mapper);
+        new OfflineCapabilityRequirementResolver(repository, mapper);
 
     String jobSpec = "{"
         + "\"source\":{\"connectorId\":\"jdbc\",\"options\":{"
@@ -48,7 +48,24 @@ class OfflineCapabilityRequirementResolverTest {
         .contains("DIRTY_DATA_HANDLING");
   }
 
-  private ConnectorSchemaSnapshot snapshot(
+  @Test
+  void doesNotCallWorkerWhenLocalSchemaIsMissing() throws Exception {
+    ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
+    OfflineConnectorSchemaRepository repository = mock(OfflineConnectorSchemaRepository.class);
+    OfflineCapabilityRequirementResolver resolver =
+        new OfflineCapabilityRequirementResolver(repository, mapper);
+
+    JsonNode requirements = mapper.readTree(resolver.resolve("{"
+        + "\"source\":{\"connectorId\":\"jdbc\",\"options\":{}},"
+        + "\"sink\":{\"connectorId\":\"jdbc\",\"options\":{}}}"));
+
+    assertThat(requirements.path("endpoints").get(0).path("schemaFingerprint").asText())
+        .isEmpty();
+    assertThat(requirements.path("endpoints").get(1).path("schemaFingerprint").asText())
+        .isEmpty();
+  }
+
+  private SchemaRecord schemaRecord(
       ObjectMapper mapper,
       String role,
       String fingerprint) throws Exception {
@@ -58,6 +75,14 @@ class OfflineCapabilityRequirementResolverTest {
         + "\"schemaVersion\":\"1\","
         + "\"schemaFingerprint\":\"" + fingerprint + "\","
         + "\"options\":[]}");
-    return new ConnectorSchemaSnapshot(schema, "CACHE", false, LocalDateTime.now());
+    return new SchemaRecord(
+        "jdbc",
+        role,
+        "1",
+        fingerprint,
+        "worker-1",
+        "instance-1",
+        mapper.writeValueAsString(schema),
+        LocalDateTime.now());
   }
 }
