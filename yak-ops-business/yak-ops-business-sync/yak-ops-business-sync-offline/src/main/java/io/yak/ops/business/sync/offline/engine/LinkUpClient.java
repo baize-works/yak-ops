@@ -21,7 +21,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * Link-Up 单节点离线 Worker 强类型客户端。
+ * Link-Up 离线 Worker 强类型客户端。
+ *
+ * <p>无 baseUrl 参数的方法保留默认 Worker 兼容行为；多 Worker 调度使用显式 baseUrl
+ * 方法，确保提交、取消、查询和对账始终访问执行实例固化的节点。
  *
  * @author weifuwan
  */
@@ -43,7 +46,11 @@ public class LinkUpClient {
   }
 
   public LinkUpNodeResponse node() {
-    return get("/api/v1/node", LinkUpNodeResponse.class);
+    return node(configuredBaseUrl());
+  }
+
+  public LinkUpNodeResponse node(String baseUrl) {
+    return get(baseUrl, "/api/v1/node", LinkUpNodeResponse.class);
   }
 
   public LinkUpNodeResponse health() {
@@ -51,6 +58,20 @@ public class LinkUpClient {
   }
 
   public LinkUpJobResponse submit(
+      String externalExecutionId,
+      String idempotencyKey,
+      int definitionVersion,
+      JsonNode jobSpec) {
+    return submit(
+        configuredBaseUrl(),
+        externalExecutionId,
+        idempotencyKey,
+        definitionVersion,
+        jobSpec);
+  }
+
+  public LinkUpJobResponse submit(
+      String baseUrl,
       String externalExecutionId,
       String idempotencyKey,
       int definitionVersion,
@@ -67,58 +88,89 @@ public class LinkUpClient {
     body.setIdempotencyKey(idempotencyKey.trim());
     body.setDefinitionVersion(definitionVersion);
     body.setJobSpec(jobSpec);
-    HttpRequest request = HttpRequest.newBuilder(uri("/api/v1/jobs"))
+    String normalized = normalizeBaseUrl(baseUrl);
+    HttpRequest request = HttpRequest.newBuilder(uri(normalized, "/api/v1/jobs"))
         .timeout(properties.getEngine().getRequestTimeout())
         .header("Content-Type", "application/json;charset=UTF-8")
         .header("Accept", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(write(body), StandardCharsets.UTF_8))
         .build();
-    return send(request, LinkUpJobResponse.class);
+    return send(request, LinkUpJobResponse.class, normalized);
   }
 
   public LinkUpJobResponse getJob(String engineJobId) {
-    return get("/api/v1/jobs/" + encode(engineJobId), LinkUpJobResponse.class);
+    return getJob(configuredBaseUrl(), engineJobId);
+  }
+
+  public LinkUpJobResponse getJob(String baseUrl, String engineJobId) {
+    return get(baseUrl, "/api/v1/jobs/" + encode(engineJobId), LinkUpJobResponse.class);
   }
 
   public LinkUpJobResponse findByExternalExecutionId(String externalExecutionId) {
+    return findByExternalExecutionId(configuredBaseUrl(), externalExecutionId);
+  }
+
+  public LinkUpJobResponse findByExternalExecutionId(
+      String baseUrl,
+      String externalExecutionId) {
     return get(
+        baseUrl,
         "/api/v1/jobs/external/" + encode(externalExecutionId),
         LinkUpJobResponse.class);
   }
 
   public LinkUpJobResponse cancel(String engineJobId) {
+    return cancel(configuredBaseUrl(), engineJobId);
+  }
+
+  public LinkUpJobResponse cancel(String baseUrl, String engineJobId) {
     requireEnabled();
-    HttpRequest request = HttpRequest.newBuilder(uri("/api/v1/jobs/" + encode(engineJobId)))
+    String normalized = normalizeBaseUrl(baseUrl);
+    HttpRequest request = HttpRequest.newBuilder(
+            uri(normalized, "/api/v1/jobs/" + encode(engineJobId)))
         .timeout(properties.getEngine().getRequestTimeout())
         .header("Accept", "application/json")
         .DELETE()
         .build();
-    return send(request, LinkUpJobResponse.class);
+    return send(request, LinkUpJobResponse.class, normalized);
   }
 
   public JsonNode pipelines(String engineJobId) {
-    return get("/api/v1/jobs/" + encode(engineJobId) + "/pipelines", JsonNode.class);
+    return pipelines(configuredBaseUrl(), engineJobId);
+  }
+
+  public JsonNode pipelines(String baseUrl, String engineJobId) {
+    return get(baseUrl, "/api/v1/jobs/" + encode(engineJobId) + "/pipelines", JsonNode.class);
   }
 
   public JsonNode tasks(String engineJobId) {
-    return get("/api/v1/jobs/" + encode(engineJobId) + "/tasks", JsonNode.class);
+    return tasks(configuredBaseUrl(), engineJobId);
+  }
+
+  public JsonNode tasks(String baseUrl, String engineJobId) {
+    return get(baseUrl, "/api/v1/jobs/" + encode(engineJobId) + "/tasks", JsonNode.class);
   }
 
   public JsonNode metrics(String engineJobId) {
-    return get("/api/v1/jobs/" + encode(engineJobId) + "/metrics", JsonNode.class);
+    return metrics(configuredBaseUrl(), engineJobId);
   }
 
-  private <T> T get(String path, Class<T> type) {
+  public JsonNode metrics(String baseUrl, String engineJobId) {
+    return get(baseUrl, "/api/v1/jobs/" + encode(engineJobId) + "/metrics", JsonNode.class);
+  }
+
+  private <T> T get(String baseUrl, String path, Class<T> type) {
     requireEnabled();
-    HttpRequest request = HttpRequest.newBuilder(uri(path))
+    String normalized = normalizeBaseUrl(baseUrl);
+    HttpRequest request = HttpRequest.newBuilder(uri(normalized, path))
         .timeout(properties.getEngine().getRequestTimeout())
         .header("Accept", "application/json")
         .GET()
         .build();
-    return send(request, type);
+    return send(request, type, normalized);
   }
 
-  private <T> T send(HttpRequest request, Class<T> type) {
+  private <T> T send(HttpRequest request, Class<T> type, String baseUrl) {
     try {
       HttpResponse<String> response =
           httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
@@ -136,7 +188,7 @@ public class LinkUpClient {
     } catch (IOException exception) {
       // JDK HttpClient cannot always tell whether bytes reached the Worker. Reconcile by external ID.
       throw new LinkUpTransportException(
-          "无法确认 Link-Up Worker 是否已接收请求：" + properties.getEngine().getBaseUrl(),
+          "无法确认 Link-Up Worker 是否已接收请求：" + baseUrl,
           exception,
           true);
     }
@@ -183,19 +235,30 @@ public class LinkUpClient {
     return StringUtils.hasText(message) ? message : fallback;
   }
 
-  private URI uri(String path) {
-    String baseUrl = properties.getEngine().getBaseUrl();
-    if (!StringUtils.hasText(baseUrl)) {
-      throw new LinkUpProtocolException("yak.sync.offline.engine.base-url 不能为空");
-    }
-    String normalized = baseUrl.endsWith("/")
-        ? baseUrl.substring(0, baseUrl.length() - 1)
-        : baseUrl;
+  private String configuredBaseUrl() {
+    return normalizeBaseUrl(properties.getEngine().getBaseUrl());
+  }
+
+  private URI uri(String baseUrl, String path) {
     try {
-      return URI.create(normalized + path);
+      return URI.create(normalizeBaseUrl(baseUrl) + path);
     } catch (IllegalArgumentException exception) {
-      throw new LinkUpProtocolException("Link-Up Worker 地址不合法：" + normalized, exception);
+      throw new LinkUpProtocolException("Link-Up Worker 地址不合法：" + baseUrl, exception);
     }
+  }
+
+  private String normalizeBaseUrl(String baseUrl) {
+    if (!StringUtils.hasText(baseUrl)) {
+      throw new LinkUpProtocolException("Link-Up Worker 地址不能为空");
+    }
+    String normalized = baseUrl.trim();
+    while (normalized.endsWith("/")) {
+      normalized = normalized.substring(0, normalized.length() - 1);
+    }
+    if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+      throw new LinkUpProtocolException("Link-Up Worker 地址必须使用 HTTP 或 HTTPS：" + baseUrl);
+    }
+    return normalized;
   }
 
   private String encode(String value) {
