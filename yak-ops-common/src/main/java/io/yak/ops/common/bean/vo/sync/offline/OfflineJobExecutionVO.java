@@ -21,9 +21,13 @@ public class OfflineJobExecutionVO {
   private Long definitionVersionId;
   private Integer definitionVersion;
   private String engineNodeId;
+  private String engineNodeBaseUrl;
   private String engineJobId;
   private String externalExecutionId;
   private String workerInstanceId;
+  private String assignmentMode;
+  private Double assignmentScore;
+  private String assignmentReason;
   private String status;
   private Long stateVersion;
   private Integer attemptNo;
