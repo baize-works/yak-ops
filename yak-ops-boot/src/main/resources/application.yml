@@ -104,9 +104,13 @@ yak:
       minimum-idle: 1
       maximum-pool-size: 8
     storage:
-      type: ${YAK_RESOURCE_STORAGE_TYPE:MINIO}
+      type: ${YAK_RESOURCE_STORAGE_TYPE:LOCAL}
+      local:
+        enabled: ${YAK_RESOURCE_LOCAL_ENABLED:true}
+        base-directory: ${YAK_RESOURCE_LOCAL_BASE_DIRECTORY:./data/resources}
+        checksum-enabled: ${YAK_RESOURCE_LOCAL_CHECKSUM_ENABLED:true}
       minio:
-        enabled: ${YAK_RESOURCE_MINIO_ENABLED:true}
+        enabled: ${YAK_RESOURCE_MINIO_ENABLED:false}
         endpoint: ${YAK_RESOURCE_MINIO_ENDPOINT:http://127.0.0.1:9000}
         access-key: ${YAK_RESOURCE_MINIO_ACCESS_KEY:minioadmin}
         secret-key: ${YAK_RESOURCE_MINIO_SECRET_KEY:minioadmin}
