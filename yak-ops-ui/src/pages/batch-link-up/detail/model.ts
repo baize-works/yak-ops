@@ -94,22 +94,73 @@ const endpointFromType = (
   };
 };
 
+const serializeChannel = (channel: SyncChannel) => ({
+  parallelism: Math.max(1, Number(channel.parallelism || 1)),
+  speedLimitEnabled: Boolean(channel.speedLimitEnabled),
+  recordsPerSecond: Math.max(1, Number(channel.recordsPerSecond || 10000)),
+  dirtyDataPolicy: channel.dirtyDataPolicy === 'skip' ? 'SKIP' : 'STOP',
+  dirtyDataLimit: Math.max(0, Number(channel.dirtyDataLimit || 0)),
+});
+
+const multiDraftEndpoint = (
+  endpoint: SyncEndpoint,
+  kind: EndpointKind,
+) =>
+  kind === 'source'
+    ? {
+        connectorId: endpoint.connectorId,
+        dbType: endpoint.dbType,
+        dataSourceId: '',
+        database: '',
+        tables: [] as string[],
+        tablePattern: '',
+        options: {},
+      }
+    : {
+        connectorId: endpoint.connectorId,
+        dbType: endpoint.dbType,
+        dataSourceId: '',
+        database: '',
+        tableNamingRule: 'SAME_NAME',
+        tablePrefix: '',
+        tableSuffix: '',
+        autoCreateTable: true,
+        writeMode: 'APPEND',
+        options: {},
+      };
+
 export const buildCreatePayload = (
   taskId: string,
   values: CreateSyncTaskValues,
   source: CreateSyncEndpoint,
   sink: CreateSyncEndpoint,
-) => ({
-  id: taskId,
-  basic: {
+) => {
+  const sourceEndpoint = endpointFromType(source);
+  const sinkEndpoint = endpointFromType(sink);
+  const basic = {
     jobName: values.jobName.trim(),
     jobDesc: values.jobDesc?.trim() || '',
     mode: values.mode,
-  },
-  source: endpointFromType(source),
-  sink: endpointFromType(sink),
-  channel: DEFAULT_CHANNEL_CONFIG,
-});
+  };
+
+  if (values.mode === 'GUIDE_MULTI') {
+    return {
+      id: taskId,
+      basic,
+      source: multiDraftEndpoint(sourceEndpoint, 'source'),
+      sink: multiDraftEndpoint(sinkEndpoint, 'sink'),
+      channel: serializeChannel(DEFAULT_CHANNEL_CONFIG),
+    };
+  }
+
+  return {
+    id: taskId,
+    basic,
+    source: sourceEndpoint,
+    sink: sinkEndpoint,
+    channel: DEFAULT_CHANNEL_CONFIG,
+  };
+};
 
 const legacyEndpoint = (
   raw: any,
@@ -158,6 +209,79 @@ const legacyEndpoint = (
   };
 };
 
+const directConfig = (
+  value: Record<string, any>,
+  kind: EndpointKind,
+): Record<string, any> => {
+  const config =
+    value?.config && typeof value.config === 'object'
+      ? { ...value.config }
+      : {};
+  const options =
+    value?.options && typeof value.options === 'object'
+      ? value.options
+      : config.connectorOptions || {};
+
+  const keys = kind === 'source'
+    ? [
+        'database',
+        'readMode',
+        'table',
+        'tables',
+        'tablePattern',
+        'sql',
+        'whereCondition',
+        'fetchSize',
+      ]
+    : [
+        'database',
+        'targetMode',
+        'table',
+        'targetTableName',
+        'tableNamingRule',
+        'tablePrefix',
+        'tableSuffix',
+        'autoCreateTable',
+        'writeMode',
+        'primaryKey',
+        'batchSize',
+        'sql',
+      ];
+
+  for (const key of keys) {
+    if (value?.[key] !== undefined) {
+      config[key] = value[key];
+    }
+  }
+
+  if (typeof config.tableNamingRule === 'string') {
+    config.tableNamingRule = config.tableNamingRule.toLowerCase();
+  }
+  if (typeof config.writeMode === 'string') {
+    config.writeMode = config.writeMode.toLowerCase();
+  }
+
+  if (config.tableNameAffix && !config.tablePrefix && !config.tableSuffix) {
+    if (config.tableNamingRule === 'prefix') {
+      config.tablePrefix = config.tableNameAffix;
+    } else if (config.tableNamingRule === 'suffix') {
+      config.tableSuffix = config.tableNameAffix;
+    }
+  }
+
+  if (!config.fetchSize && options.fetch_size) {
+    config.fetchSize = Number(options.fetch_size);
+  }
+  if (!config.batchSize && options.batch_size) {
+    config.batchSize = Number(options.batch_size);
+  }
+
+  return {
+    ...config,
+    connectorOptions: options,
+  };
+};
+
 const normalizeEndpoint = (
   raw: any,
   kind: EndpointKind,
@@ -180,10 +304,7 @@ const normalizeEndpoint = (
     pluginName: String(value?.pluginName || dbType),
     dbType,
     dataSourceId: String(value?.dataSourceId || ''),
-    config:
-      value?.config && typeof value.config === 'object'
-        ? value.config
-        : {},
+    config: directConfig(value as Record<string, any>, kind),
   };
 };
 
@@ -198,6 +319,9 @@ export const normalizeEditDetail = (
   ) as SyncMode;
   const legacyChannel = raw?.workflow?.channelConfig || {};
   const channelRaw = raw?.channel || {};
+  const dirtyDataPolicy = String(
+    channelRaw?.dirtyDataPolicy || legacyChannel?.dirtyDataPolicy || 'STOP',
+  ).toUpperCase();
 
   return {
     id,
@@ -216,10 +340,7 @@ export const normalizeEditDetail = (
       parallelism: Number(
         channelRaw?.parallelism || raw?.env?.parallelism || 1,
       ),
-      dirtyDataPolicy:
-        (channelRaw?.dirtyDataPolicy || legacyChannel?.dirtyDataPolicy) === 'skip'
-          ? 'skip'
-          : 'stop',
+      dirtyDataPolicy: dirtyDataPolicy === 'SKIP' ? 'skip' : 'stop',
     },
     state: raw?.state,
   };
@@ -237,6 +358,7 @@ const resetEndpointConfig = (
   kind === 'source'
     ? {
         ...config,
+        database: '',
         table: '',
         tables: [],
         tablePattern: '',
@@ -244,6 +366,7 @@ const resetEndpointConfig = (
       }
     : {
         ...config,
+        database: '',
         table: '',
         targetTableName: '',
         sql: '',
@@ -300,16 +423,96 @@ export const updateEndpointConfig = (
   },
 });
 
+const stripDatabase = (table: unknown, database: string): string => {
+  const value = String(table || '').trim();
+  const prefix = database ? `${database}.` : '';
+  return prefix && value.startsWith(prefix)
+    ? value.slice(prefix.length)
+    : value;
+};
+
+const multiSourcePayload = (source: SyncEndpoint) => {
+  const config = source.config || {};
+  const database = String(config.database || '').trim();
+  const tables = Array.isArray(config.tables)
+    ? config.tables
+        .map((table: unknown) => stripDatabase(table, database))
+        .filter(Boolean)
+    : [];
+  const options = {
+    ...(config.connectorOptions || {}),
+  };
+
+  if (config.fetchSize) {
+    options.fetch_size = Number(config.fetchSize);
+  }
+
+  return {
+    connectorId: source.connectorId,
+    dbType: source.dbType,
+    dataSourceId: source.dataSourceId,
+    database,
+    tables,
+    tablePattern: String(config.tablePattern || '').trim(),
+    options,
+  };
+};
+
+const multiSinkPayload = (sink: SyncEndpoint) => {
+  const config = sink.config || {};
+  const tableNamingRule = String(
+    config.tableNamingRule || 'same_name',
+  ).toUpperCase();
+  const writeMode = String(config.writeMode || 'append').toUpperCase();
+  const options = {
+    ...(config.connectorOptions || {}),
+  };
+
+  if (config.batchSize) {
+    options.batch_size = Number(config.batchSize);
+  }
+
+  return {
+    connectorId: sink.connectorId,
+    dbType: sink.dbType,
+    dataSourceId: sink.dataSourceId,
+    database: String(config.database || '').trim(),
+    tableNamingRule,
+    tablePrefix: String(config.tablePrefix || ''),
+    tableSuffix: String(config.tableSuffix || ''),
+    autoCreateTable: Boolean(config.autoCreateTable),
+    writeMode,
+    ...(writeMode === 'UPSERT'
+      ? { primaryKey: String(config.primaryKey || '').trim() }
+      : {}),
+    options,
+  };
+};
+
 export const buildSavePayload = (
   editor: SyncEditorState,
-) => ({
-  id: editor.id,
-  basic: {
+) => {
+  const basic = {
     jobName: editor.basic.jobName.trim(),
     jobDesc: editor.basic.jobDesc.trim(),
     mode: editor.mode,
-  },
-  source: editor.source,
-  sink: editor.sink,
-  channel: editor.channel,
-});
+  };
+
+  if (editor.mode === 'GUIDE_MULTI') {
+    return {
+      id: editor.id,
+      basic,
+      source: multiSourcePayload(editor.source),
+      sink: multiSinkPayload(editor.sink),
+      channel: serializeChannel(editor.channel),
+    };
+  }
+
+  return {
+    id: editor.id,
+    basic,
+    source: editor.source,
+    sink: editor.sink,
+    channel: editor.channel,
+  };
+};

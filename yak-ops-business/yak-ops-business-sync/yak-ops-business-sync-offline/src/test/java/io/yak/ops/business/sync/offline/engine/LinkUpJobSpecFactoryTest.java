@@ -93,6 +93,77 @@ class LinkUpJobSpecFactoryTest {
   }
 
   @Test
+  void shouldBuildMultiTableJobSpecFromPublicPayload() throws Exception {
+    DataSourceDao dao = mock(DataSourceDao.class);
+    when(dao.selectById(1001L)).thenReturn(dataSource(1001L, "source", "source-secret"));
+    when(dao.selectById(1002L)).thenReturn(dataSource(1002L, "sink", "sink-secret"));
+
+    JsonNode definition = mapper.readTree("""
+        {
+          "basic": {
+            "jobName": "业务库批量同步",
+            "jobDesc": "",
+            "mode": "GUIDE_MULTI"
+          },
+          "source": {
+            "connectorId": "jdbc",
+            "dbType": "MYSQL",
+            "dataSourceId": "1001",
+            "database": "business",
+            "tables": ["orders", "order_item", "customer"],
+            "tablePattern": "",
+            "options": {"fetch_size": 500}
+          },
+          "sink": {
+            "connectorId": "jdbc",
+            "dbType": "MYSQL",
+            "dataSourceId": "1002",
+            "database": "ods",
+            "tableNamingRule": "SAME_NAME",
+            "tablePrefix": "",
+            "tableSuffix": "",
+            "autoCreateTable": true,
+            "writeMode": "APPEND",
+            "options": {"batch_size": 1000}
+          },
+          "channel": {
+            "parallelism": 3,
+            "speedLimitEnabled": false,
+            "recordsPerSecond": 10000,
+            "dirtyDataPolicy": "STOP",
+            "dirtyDataLimit": 0
+          }
+        }
+        """);
+
+    JsonNode buildDefinition = OfflineDefinitionModelAdapter.forJobSpec(definition, mapper);
+    LinkUpJobSpecFactory.BuildResult result =
+        new LinkUpJobSpecFactory(dao, mapper).build(buildDefinition);
+    JsonNode logical = result.getJobSpec();
+
+    assertThat(logical.path("source").path("options").path("table_list").size())
+        .isEqualTo(3);
+    assertThat(logical.path("source").path("options").path("table_list")
+        .get(0).path("table_path").asText())
+        .isEqualTo("business.orders");
+    assertThat(logical.path("source").path("options").path("fetch_size").asInt())
+        .isEqualTo(500);
+    assertThat(logical.path("sink").path("options").path("table_path").asText())
+        .isEqualTo("ods.${table_name}");
+    assertThat(logical.path("sink").path("options").path("batch_size").asInt())
+        .isEqualTo(1000);
+    assertThat(logical.path("sink").path("options").path("schema_save_mode").asText())
+        .isEqualTo("CREATE_SCHEMA_WHEN_NOT_EXIST");
+    assertThat(logical.path("sink").path("options").path("dirty_data_policy").asText())
+        .isEqualTo("FAIL_FAST");
+    assertThat(logical.path("runtime").path("pipelineParallelism").asInt())
+        .isEqualTo(3);
+    assertThat(logical.path("runtime").has("maxRecordsPerSecond")).isFalse();
+    assertThat(result.getSourceTable()).contains("business.orders", "business.customer");
+    assertThat(result.getSinkTable()).contains("ods.orders", "ods.customer");
+  }
+
+  @Test
   void shouldPassThroughFutureConnectorOptionsWithoutDedicatedBuilder() throws Exception {
     DataSourceDao dao = mock(DataSourceDao.class);
     JsonNode definition = mapper.readTree("""

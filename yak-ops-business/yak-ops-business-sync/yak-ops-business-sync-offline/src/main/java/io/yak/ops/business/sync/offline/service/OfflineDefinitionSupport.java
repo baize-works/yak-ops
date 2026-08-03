@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.yak.ops.business.datasource.dao.DataSourceDao;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.engine.LinkUpJobSpecFactory;
+import io.yak.ops.business.sync.offline.engine.OfflineDefinitionModelAdapter;
 import io.yak.ops.business.sync.offline.form.ConnectorFormValidationService;
 import io.yak.ops.business.sync.offline.form.ConnectorFormValidationService.ValidationRequest;
 import io.yak.ops.business.sync.offline.form.ConnectorFormValidationService.ValidationResult;
@@ -62,7 +63,8 @@ public class OfflineDefinitionSupport {
     JsonNode basic = request.path("basic");
     String name = requiredText(basic, "jobName", "任务名称不能为空");
     String mode = mode(basic);
-    LinkUpJobSpecFactory.BuildResult buildResult = jobSpecFactory.build(request);
+    JsonNode buildRequest = OfflineDefinitionModelAdapter.forJobSpec(request, objectMapper);
+    LinkUpJobSpecFactory.BuildResult buildResult = jobSpecFactory.build(buildRequest);
     validateEndpoint(
         buildResult.getSourceConnectorId(),
         "SOURCE",
@@ -114,7 +116,8 @@ public class OfflineDefinitionSupport {
     if (parsed == null || !parsed.isObject()) {
       throw new IllegalStateException("任务定义 JSON 已损坏");
     }
-    LinkUpJobSpecFactory.BuildResult result = jobSpecFactory.build(parsed);
+    JsonNode buildRequest = OfflineDefinitionModelAdapter.forJobSpec(parsed, objectMapper);
+    LinkUpJobSpecFactory.BuildResult result = jobSpecFactory.build(buildRequest);
     validateEndpoint(
         result.getSourceConnectorId(),
         "SOURCE",
@@ -227,18 +230,20 @@ public class OfflineDefinitionSupport {
     normalizeEndpoint(request, "source");
     normalizeEndpoint(request, "sink");
     normalizeChannel(request);
+    OfflineDefinitionModelAdapter.sanitizeForPersistence(request);
     return request;
   }
 
   private void normalizeEndpoint(ObjectNode request, String field) {
     JsonNode value = request.get(field);
     requireObject(value, field + " 配置不能为空");
-    ObjectNode endpoint = (ObjectNode) value;
-    JsonNode config = endpoint.get("config");
-    if (config == null || config.isNull()) {
-      endpoint.set("config", objectMapper.createObjectNode());
-    } else {
+    JsonNode config = value.get("config");
+    if (config != null && !config.isNull()) {
       requireObject(config, field + ".config 必须是 JSON 对象");
+    }
+    JsonNode options = value.get("options");
+    if (options != null && !options.isNull()) {
+      requireObject(options, field + ".options 必须是 JSON 对象");
     }
   }
 
@@ -254,7 +259,7 @@ public class OfflineDefinitionSupport {
     putDefault(channel, "parallelism", 1);
     putDefault(channel, "speedLimitEnabled", false);
     putDefault(channel, "recordsPerSecond", 10000L);
-    putDefault(channel, "dirtyDataPolicy", "stop");
+    putDefault(channel, "dirtyDataPolicy", "STOP");
     putDefault(channel, "dirtyDataLimit", 0L);
   }
 

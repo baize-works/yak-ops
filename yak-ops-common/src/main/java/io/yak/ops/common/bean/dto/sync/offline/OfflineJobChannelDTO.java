@@ -17,6 +17,6 @@ public class OfflineJobChannelDTO {
   private Integer parallelism = 1;
   private Boolean speedLimitEnabled = false;
   private Long recordsPerSecond = 10000L;
-  private String dirtyDataPolicy = "stop";
+  private String dirtyDataPolicy = "STOP";
   private Long dirtyDataLimit = 0L;
 }

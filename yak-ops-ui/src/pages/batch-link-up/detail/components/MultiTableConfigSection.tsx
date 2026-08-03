@@ -99,8 +99,9 @@ export default function MultiTableConfigSection({
   onSourceChange,
   onSinkChange,
 }: MultiTableConfigSectionProps) {
-  const tableNamingRule =
-    sinkConfig.tableNamingRule || 'same_name';
+  const tableNamingRule = String(
+    sinkConfig.tableNamingRule || 'same_name',
+  ).toLowerCase();
 
   const selectedTables = useMemo(
     () =>
@@ -129,8 +130,24 @@ export default function MultiTableConfigSection({
         <EndpointPanel
           icon={<DatabaseOutlined />}
           title="Source 来源配置"
-          description="从来源数据源中批量选择需要同步的数据表。"
+          description="从来源数据库中批量选择需要同步的数据表。"
         >
+          <div>
+            <FieldLabel required>来源数据库</FieldLabel>
+            <Input
+              variant="filled"
+              disabled={!sourceReady}
+              value={sourceConfig.database || ''}
+              placeholder="例如：business"
+              onChange={(event) =>
+                onSourceChange({ database: event.target.value })
+              }
+            />
+            <div className="mt-1.5 text-[11px] leading-5 text-[#98a2b3]">
+              用于补全未携带库名前缀的来源表。
+            </div>
+          </div>
+
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
               <div className="text-[12px] font-medium text-[#475467]">
@@ -186,14 +203,9 @@ export default function MultiTableConfigSection({
                 </span>
               )}
               className="w-full"
-              onChange={(targetKeys) => {
-                const tables = targetKeys.map(String);
-
-                onSourceChange({
-                  tables,
-                  table: tables[0] || '',
-                });
-              }}
+              onChange={(targetKeys) =>
+                onSourceChange({ tables: targetKeys.map(String) })
+              }
             />
           </div>
 
@@ -203,16 +215,14 @@ export default function MultiTableConfigSection({
               variant="filled"
               disabled={!sourceReady}
               value={sourceConfig.tablePattern || ''}
-              placeholder="可选，例如：ods_*"
+              placeholder="可选，例如：orders_*"
               onChange={(event) =>
-                onSourceChange({
-                  tablePattern: event.target.value,
-                })
+                onSourceChange({ tablePattern: event.target.value })
               }
             />
 
             <div className="mt-1.5 text-[11px] leading-5 text-[#98a2b3]">
-              可选；用于按表名规则批量匹配来源表。
+              用于记录筛选规则；当前仍需在上方确认实际同步表。
             </div>
           </div>
 
@@ -222,13 +232,24 @@ export default function MultiTableConfigSection({
         <EndpointPanel
           icon={<ExportOutlined />}
           title="Sink 目标配置"
-          description="统一配置目标表命名规则、建表方式和写入策略。"
+          description="统一配置目标数据库、表名规则、建表方式和写入策略。"
         >
+          <div>
+            <FieldLabel required>目标数据库</FieldLabel>
+            <Input
+              variant="filled"
+              disabled={!targetReady}
+              value={sinkConfig.database || ''}
+              placeholder="例如：ods"
+              onChange={(event) =>
+                onSinkChange({ database: event.target.value })
+              }
+            />
+          </div>
+
           <div className="flex items-center justify-between rounded-lg bg-[#f5f5f6] px-3.5 py-3">
-            <div>
-              <div className="text-[12px] font-medium text-[#475467]">
-                自动创建目标表
-              </div>
+            <div className="text-[12px] font-medium text-[#475467]">
+              自动创建目标表
             </div>
 
             <Switch
@@ -257,26 +278,31 @@ export default function MultiTableConfigSection({
             />
           </div>
 
-          {tableNamingRule !== 'same_name' ? (
+          {tableNamingRule === 'prefix' ? (
             <div>
-              <FieldLabel required>
-                {tableNamingRule === 'prefix'
-                  ? '目标表名前缀'
-                  : '目标表名后缀'}
-              </FieldLabel>
+              <FieldLabel required>目标表名前缀</FieldLabel>
               <Input
                 variant="filled"
                 disabled={!targetReady}
-                value={sinkConfig.tableNameAffix || ''}
-                placeholder={
-                  tableNamingRule === 'prefix'
-                    ? '例如：dw_'
-                    : '例如：_bak'
-                }
+                value={sinkConfig.tablePrefix || ''}
+                placeholder="例如：dw_"
                 onChange={(event) =>
-                  onSinkChange({
-                    tableNameAffix: event.target.value,
-                  })
+                  onSinkChange({ tablePrefix: event.target.value })
+                }
+              />
+            </div>
+          ) : null}
+
+          {tableNamingRule === 'suffix' ? (
+            <div>
+              <FieldLabel required>目标表名后缀</FieldLabel>
+              <Input
+                variant="filled"
+                disabled={!targetReady}
+                value={sinkConfig.tableSuffix || ''}
+                placeholder="例如：_bak"
+                onChange={(event) =>
+                  onSinkChange({ tableSuffix: event.target.value })
                 }
               />
             </div>
@@ -286,7 +312,7 @@ export default function MultiTableConfigSection({
             <FieldLabel required>写入模式</FieldLabel>
             <Select
               variant="filled"
-              value={sinkConfig.writeMode || 'append'}
+              value={String(sinkConfig.writeMode || 'append').toLowerCase()}
               options={[
                 { label: '追加写入 Append', value: 'append' },
                 { label: '覆盖写入 Overwrite', value: 'overwrite' },
@@ -299,7 +325,7 @@ export default function MultiTableConfigSection({
             />
           </div>
 
-          {sinkConfig.writeMode === 'upsert' ? (
+          {String(sinkConfig.writeMode || '').toLowerCase() === 'upsert' ? (
             <div>
               <FieldLabel required>主键字段</FieldLabel>
               <Input
