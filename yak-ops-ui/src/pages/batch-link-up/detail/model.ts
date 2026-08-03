@@ -37,6 +37,12 @@ export interface SyncMapping {
   columns: SyncColumnMapping[];
 }
 
+export interface SyncSchedule {
+  cron: string;
+  enabled: boolean;
+  retryOnFailure: boolean;
+}
+
 export interface SyncEditorState {
   id: string;
   mode: SyncMode;
@@ -45,6 +51,7 @@ export interface SyncEditorState {
   sink: SyncEndpoint;
   channel: SyncChannel;
   mapping: SyncMapping;
+  schedule: SyncSchedule;
   state?: Record<string, any>;
 }
 
@@ -70,6 +77,12 @@ export const DEFAULT_CHANNEL_CONFIG: SyncChannel = {
 
 export const DEFAULT_MAPPING_CONFIG: SyncMapping = {
   columns: [],
+};
+
+export const DEFAULT_SCHEDULE_CONFIG: SyncSchedule = {
+  cron: '',
+  enabled: false,
+  retryOnFailure: false,
 };
 
 export const isApiSuccess = (response: any): boolean =>
@@ -145,6 +158,43 @@ const serializeMapping = (mapping?: SyncMapping): SyncMapping => ({
   columns: normalizeMappingColumns(mapping?.columns),
 });
 
+const normalizeSchedule = (raw: any): SyncSchedule => {
+  const schedule =
+    raw?.schedule && typeof raw.schedule === 'object'
+      ? raw.schedule
+      : {};
+  const cron = String(
+    schedule.cron ?? schedule.cronExpression ?? '',
+  ).trim();
+  const legacyRunType = String(
+    schedule.scheduleRunType || '',
+  ).toLowerCase();
+  const enabled = schedule.enabled !== undefined
+    ? Boolean(schedule.enabled)
+    : Boolean(
+        cron &&
+          legacyRunType !== 'pause' &&
+          legacyRunType !== 'paused',
+      );
+  const retryOnFailure = schedule.retryOnFailure !== undefined
+    ? Boolean(schedule.retryOnFailure)
+    : Boolean(schedule.autoRetry);
+
+  return {
+    cron,
+    enabled,
+    retryOnFailure,
+  };
+};
+
+const serializeSchedule = (
+  schedule?: SyncSchedule,
+): SyncSchedule => ({
+  cron: String(schedule?.cron || '').trim(),
+  enabled: Boolean(schedule?.enabled),
+  retryOnFailure: Boolean(schedule?.retryOnFailure),
+});
+
 const endpointFromType = (
   endpoint?: Partial<CreateSyncEndpoint> | null,
 ): SyncEndpoint => {
@@ -218,6 +268,7 @@ export const buildCreatePayload = (
       sink: multiDraftEndpoint(sinkEndpoint, 'sink'),
       channel: serializeChannel(DEFAULT_CHANNEL_CONFIG),
       mapping: { ...DEFAULT_MAPPING_CONFIG },
+      schedule: { ...DEFAULT_SCHEDULE_CONFIG },
     };
   }
 
@@ -228,6 +279,7 @@ export const buildCreatePayload = (
     sink: sinkEndpoint,
     channel: DEFAULT_CHANNEL_CONFIG,
     mapping: { ...DEFAULT_MAPPING_CONFIG },
+    schedule: { ...DEFAULT_SCHEDULE_CONFIG },
   };
 };
 
@@ -416,6 +468,7 @@ export const normalizeEditDetail = (
       dirtyDataPolicy: dirtyDataPolicy === 'SKIP' ? 'skip' : 'stop',
     },
     mapping: normalizeMapping(raw),
+    schedule: normalizeSchedule(raw),
     state: raw?.state,
   };
 };
@@ -587,6 +640,7 @@ export const buildSavePayload = (
   const mapping = editor.mode === 'GUIDE_SINGLE'
     ? serializeMapping(editor.mapping)
     : { ...DEFAULT_MAPPING_CONFIG };
+  const schedule = serializeSchedule(editor.schedule);
 
   if (editor.mode === 'GUIDE_MULTI') {
     return {
@@ -596,6 +650,7 @@ export const buildSavePayload = (
       sink: multiSinkPayload(editor.sink),
       channel: serializeChannel(editor.channel),
       mapping,
+      schedule,
     };
   }
 
@@ -606,5 +661,6 @@ export const buildSavePayload = (
     sink: endpointSavePayload(editor.sink),
     channel: editor.channel,
     mapping,
+    schedule,
   };
 };
