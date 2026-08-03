@@ -15,7 +15,6 @@ import io.yak.ops.business.sync.offline.service.OfflineDefinitionSupport.DraftDe
 import io.yak.ops.business.sync.offline.service.OfflineDefinitionSupport.PreparedDefinition;
 import io.yak.ops.business.sync.offline.worker.OfflineCapabilityRequirementResolver;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler;
-import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler.PolicyProjection;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionQueryDTO;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
@@ -25,7 +24,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,18 +33,12 @@ import org.springframework.util.StringUtils;
 /**
  * 离线同步任务定义与版本管理服务。
  *
- * Offline job definition catalog with draft records and immutable structured JobSpec versions.
- *
  * @author weifuwan
  */
 @ConditionalOnOfflineSyncEnabled
 @Service
 @RequiredArgsConstructor
 public class OfflineJobDefinitionService {
-
-  private static final Set<String> INITIAL_DRAFT_VALIDATION_MESSAGES = Set.of(
-      "请选择来源数据源",
-      "请选择目标数据源");
 
   private final OfflineJobDefinitionDao definitionDao;
   private final OfflineDefinitionCatalogRepository catalogRepository;
@@ -69,7 +61,10 @@ public class OfflineJobDefinitionService {
   /** Creates the lightweight task shell used before datasource and table configuration. */
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
   public Long saveDraft(OfflineJobDefinitionDTO requestDTO) {
-    Long id = requestDTO == null ? null : requestDTO.getId();
+    if (requestDTO == null) {
+      throw new IllegalArgumentException("任务定义不能为空");
+    }
+    Long id = requestDTO.getId();
     if (id == null || id <= 0L) {
       id = nextId();
       requestDTO.setId(id);
@@ -81,7 +76,6 @@ public class OfflineJobDefinitionService {
     }
 
     DraftDefinition draft = support.prepareDraft(requestDTO);
-    PolicyProjection policy = workerScheduler.normalize(draft.getRequest().get("worker"));
     if (definitionDao.existsByName(draft.getJobName(), id)) {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + draft.getJobName());
     }
@@ -104,9 +98,9 @@ public class OfflineJobDefinitionService {
     definition.setSinkDatasourceId(null);
     definition.setSourceTable(null);
     definition.setSinkTable(null);
-    definition.setScheduleJson(support.writeNullable(draft.getRequest().get("schedule")));
-    definition.setEnvJson(support.writeNullable(draft.getRequest().get("env")));
-    applyWorkerPolicy(definition, policy);
+    definition.setScheduleJson(existing == null ? null : existing.getScheduleJson());
+    definition.setEnvJson(null);
+    ensureDefaultWorkerPolicy(definition);
     definition.setCapabilityRequirementsJson(null);
     definition.setVersion(0);
     definition.setCurrentVersionId(null);
@@ -118,29 +112,22 @@ public class OfflineJobDefinitionService {
     } else {
       definitionDao.updateById(definition);
     }
-    scheduleRepository.saveSchedule(id, draft.getRequest().get("schedule"));
     return id;
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
   public Long saveGuide(OfflineJobDefinitionDTO requestDTO) {
-    Long id = requestDTO == null ? null : requestDTO.getId();
+    if (requestDTO == null) {
+      throw new IllegalArgumentException("任务定义不能为空");
+    }
+    Long id = requestDTO.getId();
     if (id == null || id <= 0L) {
       id = nextId();
       requestDTO.setId(id);
     }
     OfflineJobDefinitionPO existing = definitionDao.selectById(id);
     ensureEditable(existing);
-    PreparedDefinition prepared;
-    try {
-      prepared = support.prepare(requestDTO);
-    } catch (IllegalArgumentException exception) {
-      if (existing == null && isInitialDraftValidation(exception)) {
-        return saveDraft(requestDTO);
-      }
-      throw exception;
-    }
-    PolicyProjection policy = workerScheduler.normalize(prepared.getRequest().get("worker"));
+    PreparedDefinition prepared = support.prepare(requestDTO);
     String capabilityRequirementsJson = capabilityResolver.resolve(prepared.getJobSpecJson());
     if (definitionDao.existsByName(prepared.getJobName(), id)) {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + prepared.getJobName());
@@ -167,9 +154,9 @@ public class OfflineJobDefinitionService {
     definition.setSinkDatasourceId(id(prepared.getSink()));
     definition.setSourceTable(prepared.getSourceTable());
     definition.setSinkTable(prepared.getSinkTable());
-    definition.setScheduleJson(support.writeNullable(prepared.getRequest().get("schedule")));
-    definition.setEnvJson(support.writeNullable(prepared.getRequest().get("env")));
-    applyWorkerPolicy(definition, policy);
+    definition.setScheduleJson(existing == null ? null : existing.getScheduleJson());
+    definition.setEnvJson(null);
+    ensureDefaultWorkerPolicy(definition);
     definition.setCapabilityRequirementsJson(capabilityRequirementsJson);
     definition.setVersion(version);
     definition.setReleaseState(existing == null ? "OFFLINE" : existing.getReleaseState());
@@ -190,7 +177,6 @@ public class OfflineJobDefinitionService {
         capabilityRequirementsJson);
     definition.setCurrentVersionId(versionId);
     definitionDao.updateById(definition);
-    scheduleRepository.saveSchedule(id, prepared.getRequest().get("schedule"));
     return id;
   }
 
@@ -327,12 +313,13 @@ public class OfflineJobDefinitionService {
     return view;
   }
 
-  private void applyWorkerPolicy(
-      OfflineJobDefinitionPO definition,
-      PolicyProjection policy) {
-    definition.setWorkerSelectMode(policy.getMode());
-    definition.setWorkerNodeId(policy.getNodeId());
-    definition.setWorkerRequiredLabelsJson(policy.getRequiredLabelsJson());
+  private void ensureDefaultWorkerPolicy(OfflineJobDefinitionPO definition) {
+    if (!StringUtils.hasText(definition.getWorkerSelectMode())) {
+      definition.setWorkerSelectMode("AUTO");
+    }
+    if (!StringUtils.hasText(definition.getWorkerRequiredLabelsJson())) {
+      definition.setWorkerRequiredLabelsJson("{}");
+    }
   }
 
   private void ensureEditable(OfflineJobDefinitionPO existing) {
@@ -346,11 +333,6 @@ public class OfflineJobDefinitionService {
         || executionRepository.hasActiveExecution(existing.getId())) {
       throw new IllegalStateException("运行中的任务不能修改");
     }
-  }
-
-  private boolean isInitialDraftValidation(IllegalArgumentException exception) {
-    return exception != null
-        && INITIAL_DRAFT_VALIDATION_MESSAGES.contains(exception.getMessage());
   }
 
   private Long id(io.yak.ops.common.bean.po.datasource.DataSourcePO source) {

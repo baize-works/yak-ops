@@ -34,25 +34,18 @@ export default function ChannelConfigSection({
   onChange,
   onSinkChange,
 }: ChannelConfigSectionProps) {
-  const channel = editor.workflow.channelConfig || {};
-
-  const updateChannel = (patch: Record<string, any>) => {
+  const updateChannel = (patch: Partial<SyncEditorState['channel']>) => {
     onChange({
       ...editor,
-      workflow: {
-        ...editor.workflow,
-        channelConfig: {
-          ...channel,
-          ...patch,
-        },
+      channel: {
+        ...editor.channel,
+        ...patch,
       },
     });
   };
 
   return (
-    <EditorSection
-      title="运行参数"
-    >
+    <EditorSection title="运行参数">
       <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
         <Field label="Channel 并发数">
           <InputNumber
@@ -60,15 +53,9 @@ export default function ChannelConfigSection({
             max={128}
             variant="filled"
             className="!w-full"
-            value={editor.env.parallelism}
+            value={editor.channel.parallelism}
             onChange={(parallelism) =>
-              onChange({
-                ...editor,
-                env: {
-                  ...editor.env,
-                  parallelism: Number(parallelism || 1),
-                },
-              })
+              updateChannel({ parallelism: Number(parallelism || 1) })
             }
           />
         </Field>
@@ -92,7 +79,7 @@ export default function ChannelConfigSection({
           <Select
             variant="filled"
             value={
-              channel.speedLimitEnabled
+              editor.channel.speedLimitEnabled
                 ? 'limited'
                 : 'unlimited'
             }
@@ -114,14 +101,12 @@ export default function ChannelConfigSection({
             min={1}
             max={10000000}
             variant="filled"
-            disabled={!channel.speedLimitEnabled}
+            disabled={!editor.channel.speedLimitEnabled}
             className="!w-full"
-            value={Number(channel.recordsPerSecond || 10000)}
+            value={Number(editor.channel.recordsPerSecond || 10000)}
             onChange={(recordsPerSecond) =>
               updateChannel({
-                recordsPerSecond: Number(
-                  recordsPerSecond || 10000,
-                ),
+                recordsPerSecond: Number(recordsPerSecond || 10000),
               })
             }
           />

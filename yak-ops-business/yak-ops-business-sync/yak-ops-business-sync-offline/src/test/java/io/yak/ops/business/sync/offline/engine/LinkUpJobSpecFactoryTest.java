@@ -15,7 +15,7 @@ class LinkUpJobSpecFactoryTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void shouldPersistLogicalJdbcJobSpecAndResolveCredentialsAtExecution() throws Exception {
+  void shouldBuildLogicalJdbcJobSpecFromFlatDefinition() throws Exception {
     DataSourceDao dao = mock(DataSourceDao.class);
     when(dao.selectById(1L)).thenReturn(dataSource(1L, "source", "source-secret"));
     when(dao.selectById(2L)).thenReturn(dataSource(2L, "sink", "sink-secret"));
@@ -24,33 +24,40 @@ class LinkUpJobSpecFactoryTest {
         {
           "basic": {
             "jobName": "orders-sync",
-            "mode": "GUIDE_SINGLE",
-            "sourceDataSourceId": 1,
-            "targetDataSourceId": 2
+            "mode": "GUIDE_SINGLE"
           },
-          "env": {"parallelism": 2, "channelCapacity": 32},
-          "workflow": {
-            "nodes": [
-              {"data": {"nodeType": "source", "config": {
-                "connectorType": "MYSQL",
-                "dataSourceId": 1,
-                "table": "sales.orders",
-                "fetchSize": 500,
-                "connectorOptions": {
-                  "password": "must-not-persist",
-                  "partition_column": "id"
-                }
-              }}},
-              {"data": {"nodeType": "sink", "config": {
-                "connectorType": "Jdbc",
-                "dataSourceId": 2,
-                "targetTableName": "warehouse.orders",
-                "writeMode": "upsert",
-                "primaryKey": "id,tenant_id",
-                "batchSize": 1000
-              }}}
-            ],
-            "channelConfig": {"dirtyDataPolicy": "skip", "dirtyDataLimit": 10}
+          "source": {
+            "connectorId": "jdbc",
+            "pluginName": "JDBC-MYSQL",
+            "dbType": "MYSQL",
+            "dataSourceId": "1",
+            "config": {
+              "table": "sales.orders",
+              "fetchSize": 500,
+              "connectorOptions": {
+                "password": "must-not-persist",
+                "partition_column": "id"
+              }
+            }
+          },
+          "sink": {
+            "connectorId": "jdbc",
+            "pluginName": "JDBC-MYSQL",
+            "dbType": "MYSQL",
+            "dataSourceId": "2",
+            "config": {
+              "targetTableName": "warehouse.orders",
+              "writeMode": "upsert",
+              "primaryKey": "id,tenant_id",
+              "batchSize": 1000
+            }
+          },
+          "channel": {
+            "parallelism": 2,
+            "speedLimitEnabled": true,
+            "recordsPerSecond": 20000,
+            "dirtyDataPolicy": "skip",
+            "dirtyDataLimit": 10
           }
         }
         """);
@@ -67,7 +74,11 @@ class LinkUpJobSpecFactoryTest {
     assertThat(logical.path("source").path("options").path("partition_column").asText())
         .isEqualTo("id");
     assertThat(logical.path("sink").path("options").path("primary_keys").size()).isEqualTo(2);
+    assertThat(logical.path("sink").path("options").path("dirty_data_max_count").asLong())
+        .isEqualTo(10L);
     assertThat(logical.path("runtime").path("sourceParallelism").asInt()).isEqualTo(2);
+    assertThat(logical.path("runtime").path("maxRecordsPerSecond").asLong())
+        .isEqualTo(20000L);
     assertThat(result.getJobSpecJson()).doesNotContain(
         "source-secret", "sink-secret", "must-not-persist", "jdbc:mysql");
 
@@ -87,18 +98,31 @@ class LinkUpJobSpecFactoryTest {
     JsonNode definition = mapper.readTree("""
         {
           "basic": {"jobName": "http-file", "mode": "GUIDE_SINGLE"},
-          "workflow": {
-            "nodes": [
-              {"data": {"nodeType": "source", "config": {
-                "connectorId": "http",
-                "connectorOptions": {"url": "https://example.test/data", "method": "GET"}
-              }}},
-              {"data": {"nodeType": "sink", "config": {
-                "connectorId": "file",
-                "connectorOptions": {"path": "/data/result.json", "format": "JSON"}
-              }}}
-            ]
-          }
+          "source": {
+            "connectorId": "http",
+            "pluginName": "HTTP",
+            "dbType": "HTTP",
+            "dataSourceId": "",
+            "config": {
+              "connectorOptions": {
+                "url": "https://example.test/data",
+                "method": "GET"
+              }
+            }
+          },
+          "sink": {
+            "connectorId": "file",
+            "pluginName": "FILE",
+            "dbType": "FILE",
+            "dataSourceId": "",
+            "config": {
+              "connectorOptions": {
+                "path": "/data/result.json",
+                "format": "JSON"
+              }
+            }
+          },
+          "channel": {"parallelism": 1}
         }
         """);
 
@@ -110,6 +134,35 @@ class LinkUpJobSpecFactoryTest {
     assertThat(logical.path("source").path("options").path("method").asText()).isEqualTo("GET");
     assertThat(logical.path("sink").path("connectorId").asText()).isEqualTo("file");
     assertThat(resolved).isEqualTo(logical);
+  }
+
+  @Test
+  void shouldStillBuildHistoricalWorkflowDefinition() throws Exception {
+    DataSourceDao dao = mock(DataSourceDao.class);
+    when(dao.selectById(1L)).thenReturn(dataSource(1L, "source", "source-secret"));
+    when(dao.selectById(2L)).thenReturn(dataSource(2L, "sink", "sink-secret"));
+    JsonNode definition = mapper.readTree("""
+        {
+          "basic": {"jobName": "legacy", "mode": "GUIDE_SINGLE"},
+          "env": {"parallelism": 3},
+          "workflow": {
+            "nodes": [
+              {"data": {"nodeType": "source", "config": {
+                "connectorId": "jdbc", "dataSourceId": 1, "table": "a.orders"
+              }}},
+              {"data": {"nodeType": "sink", "config": {
+                "connectorId": "jdbc", "dataSourceId": 2, "table": "b.orders"
+              }}}
+            ]
+          }
+        }
+        """);
+
+    JsonNode logical = new LinkUpJobSpecFactory(dao, mapper).build(definition).getJobSpec();
+
+    assertThat(logical.path("runtime").path("sourceParallelism").asInt()).isEqualTo(3);
+    assertThat(logical.path("source").path("options").path("table_path").asText())
+        .isEqualTo("a.orders");
   }
 
   private DataSourcePO dataSource(Long id, String name, String password) {

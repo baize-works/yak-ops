@@ -22,9 +22,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
- * 离线同步编辑模型与 Link-Up JobSpec 转换工厂。
+ * 离线同步定义与 Link-Up JobSpec 转换工厂。
  *
- * Converts the Yak Ops task editor model into Link-Up's structured JobSpec protocol.
+ * <p>新定义使用固定的 basic + source + sink + channel 结构。读取历史版本时仍兼容
+ * workflow.nodes 与 env，避免旧任务版本在执行或回看时失效。</p>
  *
  * @author weifuwan
  */
@@ -61,9 +62,7 @@ public class LinkUpJobSpecFactory {
   public BuildResult build(JsonNode definition) {
     requireObject(definition, "任务定义不能为空");
     JsonNode basic = definition.path("basic");
-    JsonNode workflow = definition.path("workflow");
     requireObject(basic, "basic 配置不能为空");
-    requireObject(workflow, "workflow 配置不能为空");
 
     String jobName = requiredText(basic, "jobName", "任务名称不能为空");
     String mode = text(basic, "mode", text(definition, "mode", "GUIDE_SINGLE"));
@@ -71,17 +70,18 @@ public class LinkUpJobSpecFactory {
       throw new IllegalArgumentException("离线同步仅支持 GUIDE_SINGLE 和 GUIDE_MULTI 模式");
     }
 
-    Endpoint source = endpoint(workflow, "source");
-    Endpoint sink = endpoint(workflow, "sink");
-    String sourceConnectorId = connectorId(source.config, "jdbc");
-    String sinkConnectorId = connectorId(sink.config, "jdbc");
+    Endpoint source = endpoint(definition, "source");
+    Endpoint sink = endpoint(definition, "sink");
+    JsonNode channel = channel(definition);
+    String sourceConnectorId = connectorId(source, "jdbc");
+    String sinkConnectorId = connectorId(sink, "jdbc");
     boolean jdbcSource = ConnectorIdResolver.isJdbc(sourceConnectorId);
     boolean jdbcSink = ConnectorIdResolver.isJdbc(sinkConnectorId);
 
     Long sourceDataSourceId = resolveDataSourceId(
-        source.config, basic, workflow, true, jdbcSource);
+        source, definition, true, jdbcSource);
     Long sinkDataSourceId = resolveDataSourceId(
-        sink.config, basic, workflow, false, jdbcSink);
+        sink, definition, false, jdbcSink);
     DataSourcePO sourceDataSource = dataSource(sourceDataSourceId, "来源端");
     DataSourcePO sinkDataSource = dataSource(sinkDataSourceId, "目标端");
 
@@ -96,8 +96,18 @@ public class LinkUpJobSpecFactory {
 
     String sourceTableView = text(sourceOptions, "table_path", null);
     String sinkTableView = text(sinkOptions, "table_path", null);
-    int parallelism = Math.max(1, definition.path("env").path("parallelism").asInt(1));
-    int channelCapacity = Math.max(1, definition.path("env").path("channelCapacity").asInt(64));
+    int parallelism = Math.max(
+        1,
+        intValue(
+            channel,
+            "parallelism",
+            definition.path("env").path("parallelism").asInt(1)));
+    int channelCapacity = Math.max(
+        1,
+        intValue(
+            channel,
+            "channelCapacity",
+            definition.path("env").path("channelCapacity").asInt(64)));
     int batchSize = Math.max(1, sink.config.path("batchSize").asInt(1000));
     int fetchSize = Math.max(1, source.config.path("fetchSize").asInt(batchSize));
 
@@ -170,15 +180,14 @@ public class LinkUpJobSpecFactory {
         sinkOptions.put("custom_sql", customSql.trim());
       }
       sinkOptions.put("batch_size", batchSize);
-      JsonNode channelConfig = workflow.path("channelConfig");
-      String dirtyPolicy = text(channelConfig, "dirtyDataPolicy", "stop");
+      String dirtyPolicy = text(channel, "dirtyDataPolicy", "stop");
       sinkOptions.put(
           "dirty_data_policy",
           "skip".equalsIgnoreCase(dirtyPolicy) ? "SKIP" : "FAIL_FAST");
       if ("skip".equalsIgnoreCase(dirtyPolicy)) {
         sinkOptions.put(
             "dirty_data_max_count",
-            Math.max(0, channelConfig.path("dirtyDataLimit").asInt(0)));
+            Math.max(0L, longValue(channel, "dirtyDataLimit", 0L)));
       } else {
         sinkOptions.remove("dirty_data_max_count");
       }
@@ -190,7 +199,13 @@ public class LinkUpJobSpecFactory {
     runtime.put("sinkParallelism", parallelism);
     runtime.put("pipelineParallelism", "GUIDE_MULTI".equals(mode) ? parallelism : 1);
     runtime.put("maxBufferedBatches", channelCapacity);
+    if (channel.path("speedLimitEnabled").asBoolean(false)) {
+      runtime.put(
+          "maxRecordsPerSecond",
+          Math.max(1L, longValue(channel, "recordsPerSecond", 10000L)));
+    }
     copyRuntime(definition.path("env"), runtime);
+    copyRuntime(channel, runtime);
 
     ObjectNode jobSpec = objectMapper.createObjectNode();
     jobSpec.put("apiVersion", API_VERSION);
@@ -271,11 +286,11 @@ public class LinkUpJobSpecFactory {
     return connector;
   }
 
-  private String connectorId(JsonNode config, String fallback) {
+  private String connectorId(Endpoint endpoint, String fallback) {
     return ConnectorIdResolver.resolve(
-        text(config, "connectorId", null),
-        text(config, "connectorType", null),
-        text(config, "dbType", null),
+        text(endpoint.root, "connectorId", text(endpoint.config, "connectorId", null)),
+        text(endpoint.root, "connectorType", text(endpoint.config, "connectorType", null)),
+        text(endpoint.root, "dbType", text(endpoint.config, "dbType", null)),
         fallback);
   }
 
@@ -290,13 +305,13 @@ public class LinkUpJobSpecFactory {
     DATASOURCE_OWNED_OPTIONS.forEach(options::remove);
   }
 
-  private void copyRuntime(JsonNode env, ObjectNode runtime) {
-    copyPositiveLong(env, runtime, "maxBufferedRecords", "maxBufferedRecords");
-    copyPositiveLong(env, runtime, "maxBufferedBytes", "maxBufferedBytes");
-    copyPositiveLong(env, runtime, "maxRecordsPerSecond", "maxRecordsPerSecond");
-    copyPositiveLong(env, runtime, "maxBytesPerSecond", "maxBytesPerSecond");
-    copyText(env, runtime, "sinkPartitionStrategy", "sinkPartitionStrategy");
-    copyText(env, runtime, "splitAssignmentMode", "splitAssignmentMode");
+  private void copyRuntime(JsonNode source, ObjectNode runtime) {
+    copyPositiveLong(source, runtime, "maxBufferedRecords", "maxBufferedRecords");
+    copyPositiveLong(source, runtime, "maxBufferedBytes", "maxBufferedBytes");
+    copyPositiveLong(source, runtime, "maxRecordsPerSecond", "maxRecordsPerSecond");
+    copyPositiveLong(source, runtime, "maxBytesPerSecond", "maxBytesPerSecond");
+    copyText(source, runtime, "sinkPartitionStrategy", "sinkPartitionStrategy");
+    copyText(source, runtime, "splitAssignmentMode", "splitAssignmentMode");
   }
 
   private void copyPositiveLong(
@@ -357,34 +372,63 @@ public class LinkUpJobSpecFactory {
     return result;
   }
 
-  private Endpoint endpoint(JsonNode workflow, String kind) {
+  private Endpoint endpoint(JsonNode definition, String kind) {
+    JsonNode direct = definition.get(kind);
+    if (direct != null && direct.isObject()) {
+      JsonNode config = direct.get("config");
+      if (config == null || config.isNull() || config.isMissingNode()) {
+        config = objectMapper.createObjectNode();
+      }
+      requireObject(config, kind + " 配置必须是 JSON 对象");
+      return new Endpoint(direct, config);
+    }
+
+    JsonNode workflow = definition.path("workflow");
     JsonNode nodes = workflow.path("nodes");
     if (!nodes.isArray()) {
-      throw new IllegalArgumentException("workflow.nodes 不能为空");
+      throw new IllegalArgumentException("任务缺少 " + kind + " 配置");
     }
     for (JsonNode node : nodes) {
-      String nodeType = text(node.path("data"), "nodeType", text(node, "type", null));
+      JsonNode data = node.path("data");
+      String nodeType = text(data, "nodeType", text(node, "type", null));
       if (kind.equalsIgnoreCase(nodeType)) {
-        JsonNode config = node.path("data").path("config");
+        JsonNode config = data.path("config");
         requireObject(config, kind + " 节点配置不能为空");
-        return new Endpoint(config);
+        return new Endpoint(data, config);
       }
     }
-    throw new IllegalArgumentException("任务缺少 " + kind + " 节点");
+    throw new IllegalArgumentException("任务缺少 " + kind + " 配置");
+  }
+
+  private JsonNode channel(JsonNode definition) {
+    JsonNode direct = definition.get("channel");
+    if (direct != null && direct.isObject()) {
+      return direct;
+    }
+    JsonNode legacy = definition.path("workflow").path("channelConfig");
+    return legacy.isObject() ? legacy : objectMapper.createObjectNode();
   }
 
   private Long resolveDataSourceId(
-      JsonNode config,
-      JsonNode basic,
-      JsonNode workflow,
+      Endpoint endpoint,
+      JsonNode definition,
       boolean source,
       boolean required) {
-    long id = config.path("dataSourceId").asLong(0L);
+    long id = longValue(endpoint.root, "dataSourceId", 0L);
     if (id <= 0L) {
-      id = basic.path(source ? "sourceDataSourceId" : "targetDataSourceId").asLong(0L);
+      id = longValue(endpoint.config, "dataSourceId", 0L);
     }
     if (id <= 0L) {
-      id = workflow.path(source ? "sourceDataSourceId" : "targetDataSourceId").asLong(0L);
+      id = longValue(
+          definition.path("basic"),
+          source ? "sourceDataSourceId" : "targetDataSourceId",
+          0L);
+    }
+    if (id <= 0L) {
+      id = longValue(
+          definition.path("workflow"),
+          source ? "sourceDataSourceId" : "targetDataSourceId",
+          0L);
     }
     if (id <= 0L && required) {
       throw new IllegalArgumentException(source ? "请选择来源数据源" : "请选择目标数据源");
@@ -687,6 +731,30 @@ public class LinkUpJobSpecFactory {
     return value.asText(fallback);
   }
 
+  private int intValue(JsonNode node, String field, int fallback) {
+    long value = longValue(node, field, fallback);
+    return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
+  }
+
+  private long longValue(JsonNode node, String field, long fallback) {
+    JsonNode value = node == null ? null : node.get(field);
+    if (value == null || value.isNull() || !value.isValueNode()) {
+      return fallback;
+    }
+    if (value.isNumber()) {
+      return value.asLong(fallback);
+    }
+    String text = value.asText("").trim();
+    if (!StringUtils.hasText(text)) {
+      return fallback;
+    }
+    try {
+      return Long.parseLong(text);
+    } catch (NumberFormatException ignored) {
+      return fallback;
+    }
+  }
+
   private void requireObject(JsonNode node, String message) {
     if (node == null || !node.isObject()) {
       throw new IllegalArgumentException(message);
@@ -698,9 +766,11 @@ public class LinkUpJobSpecFactory {
   }
 
   private static final class Endpoint {
+    private final JsonNode root;
     private final JsonNode config;
 
-    private Endpoint(JsonNode config) {
+    private Endpoint(JsonNode root, JsonNode config) {
+      this.root = root;
       this.config = config;
     }
   }

@@ -5,16 +5,18 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 /**
- * 离线同步任务基础信息。
+ * 离线同步传输通道配置。
  *
  * @author weifuwan
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
-public class OfflineJobBasicDTO {
+public class OfflineJobChannelDTO {
 
-  private String jobName;
-  private String jobDesc;
-  private String mode;
+  private Integer parallelism = 1;
+  private Boolean speedLimitEnabled = false;
+  private Long recordsPerSecond = 10000L;
+  private String dirtyDataPolicy = "stop";
+  private Long dirtyDataLimit = 0L;
 }

@@ -1,12 +1,9 @@
 import type { DataSourceRecord } from '@/pages/data-source/types';
 
-import {
-  connectorIdForDataSourceType,
-} from '../form-schema/valueAdapter';
+import { connectorIdForDataSourceType } from '../form-schema/valueAdapter';
 import useDataSourceColumns from '../hooks/useDataSourceColumns';
 import useDataSourceTables from '../hooks/useDataSourceTables';
 import {
-  endpointNode,
   updateEndpointConfig,
   type SyncEditorState,
 } from '../model';
@@ -15,7 +12,6 @@ import ConnectorExtraParams from './ConnectorExtraParams';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
-import WorkerSchedulingSection from './WorkerSchedulingSection';
 
 interface SyncTaskEditorProps {
   editor: SyncEditorState;
@@ -48,14 +44,10 @@ export default function SyncTaskEditor({
   dataSourceLoading,
   onChange,
 }: SyncTaskEditorProps) {
-  const sourceNode = endpointNode(editor.workflow, 'source');
-  const sinkNode = endpointNode(editor.workflow, 'sink');
-
-  const sourceConfig = sourceNode?.data?.config || {};
-  const sinkConfig = sinkNode?.data?.config || {};
-
-  const sourceId = editor.basic.sourceDataSourceId;
-  const targetId = editor.basic.targetDataSourceId;
+  const sourceConfig = editor.source.config || {};
+  const sinkConfig = editor.sink.config || {};
+  const sourceId = editor.source.dataSourceId;
+  const targetId = editor.sink.dataSourceId;
 
   const sourceCatalog = useDataSourceTables(sourceId);
   const targetCatalog = useDataSourceTables(targetId);
@@ -83,7 +75,7 @@ export default function SyncTaskEditor({
 
   const updateSink = (patch: Record<string, any>) => {
     let nextEditor = updateEndpointConfig(editor, 'sink', patch);
-    const channelPatch: Record<string, any> = {};
+    const channelPatch: Partial<SyncEditorState['channel']> = {};
 
     if (hasOwn(patch, 'dirtyDataPolicy')) {
       channelPatch.dirtyDataPolicy =
@@ -98,12 +90,9 @@ export default function SyncTaskEditor({
     if (Object.keys(channelPatch).length > 0) {
       nextEditor = {
         ...nextEditor,
-        workflow: {
-          ...nextEditor.workflow,
-          channelConfig: {
-            ...(nextEditor.workflow.channelConfig || {}),
-            ...channelPatch,
-          },
+        channel: {
+          ...nextEditor.channel,
+          ...channelPatch,
         },
       };
     }
@@ -111,12 +100,12 @@ export default function SyncTaskEditor({
     onChange(nextEditor);
   };
 
-  const sourceConnectorId = connectorIdForDataSourceType(
-    sourceConfig.connectorId || editor.basic.sourceType,
-  );
-  const sinkConnectorId = connectorIdForDataSourceType(
-    sinkConfig.connectorId || editor.basic.targetType,
-  );
+  const sourceConnectorId =
+    editor.source.connectorId ||
+    connectorIdForDataSourceType(editor.source.dbType);
+  const sinkConnectorId =
+    editor.sink.connectorId ||
+    connectorIdForDataSourceType(editor.sink.dbType);
 
   const sourceExtraParameters = (
     <ConnectorExtraParams
@@ -145,11 +134,6 @@ export default function SyncTaskEditor({
         editor={editor}
         dataSources={dataSources}
         dataSourceLoading={dataSourceLoading}
-        onChange={onChange}
-      />
-
-      <WorkerSchedulingSection
-        editor={editor}
         onChange={onChange}
       />
 
