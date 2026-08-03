@@ -1,94 +1,40 @@
 import type { DataSourceRecord } from '@/pages/data-source/types';
 import { API_SUCCESS_CODE } from '@/services/http/response';
 
+import { connectorIdForDataSourceType } from './form-schema/valueAdapter';
+
 export type SyncMode = 'GUIDE_SINGLE' | 'GUIDE_MULTI';
 export type EndpointKind = 'source' | 'sink';
-export type WorkerSelectMode = 'AUTO' | 'MANUAL';
-
-export interface WorkerLabelRequirement {
-  key: string;
-  value: string;
-}
-
-export interface WorkerSelectionConfig {
-  mode: WorkerSelectMode;
-  nodeId?: string;
-  requiredLabels: WorkerLabelRequirement[];
-}
-
-export interface ScheduleParam {
-  name: string;
-  value: string;
-}
-
-export interface ScheduleConfig {
-  paramsList: ScheduleParam[];
-  instanceGenerateMode: string;
-  scheduleRunType: string;
-  timeoutMode: string;
-  timeoutValue: number;
-  timeoutUnit: string;
-  rerunPolicy: string;
-  autoRetry: boolean;
-  retryTimes: number;
-  retryInterval: number;
-  scheduleType: string;
-  hourMode: string;
-  hourlyRangeValue?: {
-    startTime: string;
-    intervalHour: number;
-    endTime: string;
-  };
-  hourlyAppointValue?: {
-    hours: number[];
-    minute: string;
-  };
-  dailyValue?: {
-    time: string;
-  };
-  weeklyValue?: {
-    weekdays: string[];
-    time: string;
-  };
-  effectType: string;
-  cronExpression: string;
-}
-
-export interface EnvConfig {
-  jobMode: string;
-  parallelism: number;
-  [key: string]: unknown;
-}
 
 export interface SyncTaskBasic {
   jobName: string;
   jobDesc: string;
-  clientId: string;
   mode: SyncMode;
-  sourceType: string;
-  targetType: string;
-  sourceDataSourceId: string;
-  targetDataSourceId: string;
 }
 
-export interface SyncWorkflow {
-  nodes: any[];
-  edges: any[];
-  sourceType?: Record<string, any> | null;
-  targetType?: Record<string, any> | null;
-  sourceDataSourceId?: string;
-  targetDataSourceId?: string;
-  channelConfig?: Record<string, any>;
+export interface SyncEndpoint {
+  connectorId: string;
+  pluginName: string;
+  dbType: string;
+  dataSourceId: string;
+  config: Record<string, any>;
+}
+
+export interface SyncChannel {
+  parallelism: number;
+  speedLimitEnabled: boolean;
+  recordsPerSecond: number;
+  dirtyDataPolicy: 'stop' | 'skip';
+  dirtyDataLimit: number;
 }
 
 export interface SyncEditorState {
   id: string;
   mode: SyncMode;
   basic: SyncTaskBasic;
-  workflow: SyncWorkflow;
-  schedule: ScheduleConfig;
-  env: EnvConfig;
-  worker: WorkerSelectionConfig;
+  source: SyncEndpoint;
+  sink: SyncEndpoint;
+  channel: SyncChannel;
   state?: Record<string, any>;
 }
 
@@ -98,48 +44,18 @@ export interface CreateSyncTaskValues {
   mode: SyncMode;
 }
 
-export const DEFAULT_SCHEDULE_CONFIG: ScheduleConfig = {
-  paramsList: [],
-  instanceGenerateMode: 'nextDay',
-  scheduleRunType: 'pause',
-  timeoutMode: 'system',
-  timeoutValue: 1,
-  timeoutUnit: 'hour',
-  rerunPolicy: 'success_or_fail',
-  autoRetry: true,
-  retryTimes: 1,
-  retryInterval: 1,
-  scheduleType: 'day',
-  hourMode: 'range',
-  hourlyRangeValue: {
-    startTime: '00:00',
-    intervalHour: 1,
-    endTime: '23:59',
-  },
-  hourlyAppointValue: {
-    hours: [0],
-    minute: '00',
-  },
-  dailyValue: {
-    time: '00:00',
-  },
-  weeklyValue: {
-    weekdays: ['MON'],
-    time: '00:00',
-  },
-  effectType: 'forever',
-  cronExpression: '0 0 0 * * ?',
-};
+export interface CreateSyncEndpoint {
+  connectorId: string;
+  pluginName: string;
+  dbType: string;
+}
 
-export const DEFAULT_ENV_CONFIG: EnvConfig = {
-  jobMode: 'BATCH',
+export const DEFAULT_CHANNEL_CONFIG: SyncChannel = {
   parallelism: 1,
-};
-
-export const DEFAULT_WORKER_SELECTION: WorkerSelectionConfig = {
-  mode: 'AUTO',
-  nodeId: undefined,
-  requiredLabels: [],
+  speedLimitEnabled: false,
+  recordsPerSecond: 10000,
+  dirtyDataPolicy: 'stop',
+  dirtyDataLimit: 0,
 };
 
 export const isApiSuccess = (response: any): boolean =>
@@ -162,164 +78,113 @@ export const extractSavedId = (response: any, fallback: string): string => {
     : String(value);
 };
 
-const connectorMeta = (record?: DataSourceRecord | null) => {
-  if (!record) return null;
-
-  const dbType = record.dbType || '';
+const endpointFromType = (
+  endpoint?: Partial<CreateSyncEndpoint> | null,
+): SyncEndpoint => {
+  const dbType = String(endpoint?.dbType || '');
+  const connectorId =
+    String(endpoint?.connectorId || '') || connectorIdForDataSourceType(dbType);
 
   return {
+    connectorId,
+    pluginName: String(endpoint?.pluginName || dbType),
     dbType,
-    connectorType: dbType,
-    pluginName: dbType || record.name || '',
-  };
-};
-
-const createEndpointNode = (
-  taskId: string,
-  kind: EndpointKind,
-  record?: DataSourceRecord | null,
-) => {
-  const meta = connectorMeta(record);
-  const isSource = kind === 'source';
-  const nodeId = `${kind}-${taskId}`;
-
-  return {
-    id: nodeId,
-    type: kind,
-    position: isSource
-      ? { x: 120, y: 180 }
-      : { x: 660, y: 180 },
-    data: {
-      nodeType: kind,
-      title: isSource ? '数据来源' : '数据去向',
-      description: isSource ? '读取源端数据' : '写入目标端数据',
-      dbType: meta?.dbType || '',
-      connectorType: meta?.connectorType || '',
-      pluginName: meta?.pluginName || '',
-      config: isSource
-        ? {
-            dataSourceId: record?.id ? String(record.id) : '',
-            dbType: meta?.dbType || '',
-            connectorType: meta?.connectorType || '',
-            pluginName: meta?.pluginName || '',
-            readMode: 'table',
-            table: '',
-            tables: [],
-            sql: '',
-            extraParams: [],
-          }
-        : {
-            dataSourceId: record?.id ? String(record.id) : '',
-            dbType: meta?.dbType || '',
-            connectorType: meta?.connectorType || '',
-            pluginName: meta?.pluginName || '',
-            autoCreateTable: false,
-            targetMode: 'table',
-            table: '',
-            targetTableName: '',
-            tableNamingRule: 'same_name',
-            sql: '',
-            writeMode: 'append',
-            primaryKey: '',
-            batchSize: 1000,
-            extraParams: [],
-          },
-    },
-  };
-};
-
-export const buildDirectWorkflow = (
-  taskId: string,
-  source?: DataSourceRecord | null,
-  target?: DataSourceRecord | null,
-): SyncWorkflow => {
-  const sourceNode = createEndpointNode(taskId, 'source', source);
-  const sinkNode = createEndpointNode(taskId, 'sink', target);
-
-  return {
-    nodes: [sourceNode, sinkNode],
-    edges: [
-      {
-        id: `edge-${sourceNode.id}-${sinkNode.id}`,
-        source: sourceNode.id,
-        target: sinkNode.id,
-      },
-    ],
-    sourceType: connectorMeta(source),
-    targetType: connectorMeta(target),
-    sourceDataSourceId: source?.id ? String(source.id) : '',
-    targetDataSourceId: target?.id ? String(target.id) : '',
-    channelConfig: {
-      speedLimitEnabled: false,
-      recordsPerSecond: 10000,
-      dirtyDataPolicy: 'stop',
-      dirtyDataLimit: 0,
-    },
+    dataSourceId: '',
+    config: {},
   };
 };
 
 export const buildCreatePayload = (
   taskId: string,
   values: CreateSyncTaskValues,
-) => {
-  const basic: SyncTaskBasic = {
+  source: CreateSyncEndpoint,
+  sink: CreateSyncEndpoint,
+) => ({
+  id: taskId,
+  basic: {
     jobName: values.jobName.trim(),
     jobDesc: values.jobDesc?.trim() || '',
-    clientId: '',
     mode: values.mode,
-    sourceType: '',
-    targetType: '',
-    sourceDataSourceId: '',
-    targetDataSourceId: '',
-  };
+  },
+  source: endpointFromType(source),
+  sink: endpointFromType(sink),
+  channel: DEFAULT_CHANNEL_CONFIG,
+});
+
+const legacyEndpoint = (
+  raw: any,
+  kind: EndpointKind,
+): Partial<SyncEndpoint> | null => {
+  const workflow = raw?.workflow || {};
+  const node = Array.isArray(workflow?.nodes)
+    ? workflow.nodes.find(
+        (item: any) =>
+          item?.data?.nodeType === kind || item?.type === kind,
+      )
+    : undefined;
+
+  if (!node) return null;
+
+  const data = node?.data || {};
+  const config = data?.config || {};
+  const workflowType = kind === 'source'
+    ? workflow?.sourceType
+    : workflow?.targetType;
 
   return {
-    id: taskId,
-    basic,
-    workflow: buildDirectWorkflow(taskId),
-    schedule: DEFAULT_SCHEDULE_CONFIG,
-    env: DEFAULT_ENV_CONFIG,
-    worker: DEFAULT_WORKER_SELECTION,
+    connectorId:
+      config?.connectorId ||
+      data?.connectorId ||
+      workflowType?.connectorId ||
+      config?.connectorType ||
+      data?.connectorType ||
+      workflowType?.connectorType,
+    pluginName:
+      config?.pluginName ||
+      data?.pluginName ||
+      workflowType?.pluginName,
+    dbType:
+      config?.dbType ||
+      data?.dbType ||
+      workflowType?.dbType,
+    dataSourceId: String(
+      config?.dataSourceId ||
+        (kind === 'source'
+          ? workflow?.sourceDataSourceId || raw?.basic?.sourceDataSourceId
+          : workflow?.targetDataSourceId || raw?.basic?.targetDataSourceId) ||
+        '',
+    ),
+    config,
   };
 };
 
-const mergeSchedule = (
-  schedule?: Partial<ScheduleConfig>,
-): ScheduleConfig => ({
-  ...DEFAULT_SCHEDULE_CONFIG,
-  ...(schedule || {}),
-  hourlyRangeValue: {
-    ...DEFAULT_SCHEDULE_CONFIG.hourlyRangeValue!,
-    ...(schedule?.hourlyRangeValue || {}),
-  },
-  hourlyAppointValue: {
-    ...DEFAULT_SCHEDULE_CONFIG.hourlyAppointValue!,
-    ...(schedule?.hourlyAppointValue || {}),
-  },
-  dailyValue: {
-    ...DEFAULT_SCHEDULE_CONFIG.dailyValue!,
-    ...(schedule?.dailyValue || {}),
-  },
-  weeklyValue: {
-    ...DEFAULT_SCHEDULE_CONFIG.weeklyValue!,
-    ...(schedule?.weeklyValue || {}),
-  },
-});
+const normalizeEndpoint = (
+  raw: any,
+  kind: EndpointKind,
+): SyncEndpoint => {
+  const direct = raw?.[kind];
+  const legacy = legacyEndpoint(raw, kind);
+  const value = direct && typeof direct === 'object' ? direct : legacy || {};
+  const basicType = kind === 'source'
+    ? raw?.basic?.sourceType
+    : raw?.basic?.targetType;
+  const dbType = String(value?.dbType || basicType || '');
+  const connectorId = String(
+    value?.connectorId ||
+      value?.connectorType ||
+      connectorIdForDataSourceType(dbType),
+  );
 
-const normalizeRequiredLabels = (
-  value?: Record<string, unknown> | WorkerLabelRequirement[],
-): WorkerLabelRequirement[] => {
-  if (Array.isArray(value)) {
-    return value.map((item) => ({
-      key: String(item?.key || ''),
-      value: String(item?.value || ''),
-    }));
-  }
-
-  return Object.entries(value || {}).map(([key, labelValue]) => ({
-    key,
-    value: String(labelValue ?? ''),
-  }));
+  return {
+    connectorId,
+    pluginName: String(value?.pluginName || dbType),
+    dbType,
+    dataSourceId: String(value?.dataSourceId || ''),
+    config:
+      value?.config && typeof value.config === 'object'
+        ? value.config
+        : {},
+  };
 };
 
 export const normalizeEditDetail = (
@@ -328,34 +193,11 @@ export const normalizeEditDetail = (
 ): SyncEditorState => {
   const id = String(raw?.id || fallbackId);
   const basicRaw = raw?.basic || {};
-  const workflowRaw = raw?.workflow || {};
   const mode = (
-    basicRaw?.mode ||
-    raw?.mode ||
-    'GUIDE_SINGLE'
+    basicRaw?.mode || raw?.mode || 'GUIDE_SINGLE'
   ) as SyncMode;
-
-  const workflow =
-    Array.isArray(workflowRaw?.nodes) &&
-    workflowRaw.nodes.length > 0
-      ? {
-          ...workflowRaw,
-          nodes: workflowRaw.nodes,
-          edges: Array.isArray(workflowRaw.edges)
-            ? workflowRaw.edges
-            : [],
-          channelConfig: {
-            speedLimitEnabled: false,
-            recordsPerSecond: 10000,
-            dirtyDataPolicy: 'stop',
-            dirtyDataLimit: 0,
-            ...(workflowRaw.channelConfig || {}),
-          },
-        }
-      : buildDirectWorkflow(id);
-
-  const workerRaw = raw?.worker || {};
-  const workerMode = String(workerRaw?.mode || 'AUTO').toUpperCase() as WorkerSelectMode;
+  const legacyChannel = raw?.workflow?.channelConfig || {};
+  const channelRaw = raw?.channel || {};
 
   return {
     id,
@@ -363,56 +205,30 @@ export const normalizeEditDetail = (
     basic: {
       jobName: basicRaw?.jobName || raw?.jobName || '',
       jobDesc: basicRaw?.jobDesc || raw?.jobDesc || '',
-      clientId: basicRaw?.clientId
-        ? String(basicRaw.clientId)
-        : '',
       mode,
-      sourceType:
-        basicRaw?.sourceType ||
-        workflow.sourceType?.dbType ||
-        '',
-      targetType:
-        basicRaw?.targetType ||
-        workflow.targetType?.dbType ||
-        '',
-      sourceDataSourceId: String(
-        basicRaw?.sourceDataSourceId ||
-          workflow.sourceDataSourceId ||
-          workflow.sourceId ||
-          '',
-      ),
-      targetDataSourceId: String(
-        basicRaw?.targetDataSourceId ||
-          workflow.targetDataSourceId ||
-          workflow.targetId ||
-          '',
-      ),
     },
-    workflow,
-    schedule: mergeSchedule(raw?.schedule),
-    env: {
-      ...DEFAULT_ENV_CONFIG,
-      ...(raw?.env || {}),
-      jobMode: 'BATCH',
-    },
-    worker: {
-      mode: workerMode === 'MANUAL' ? 'MANUAL' : 'AUTO',
-      nodeId: workerRaw?.nodeId ? String(workerRaw.nodeId) : undefined,
-      requiredLabels: normalizeRequiredLabels(workerRaw?.requiredLabels),
+    source: normalizeEndpoint(raw, 'source'),
+    sink: normalizeEndpoint(raw, 'sink'),
+    channel: {
+      ...DEFAULT_CHANNEL_CONFIG,
+      ...legacyChannel,
+      ...channelRaw,
+      parallelism: Number(
+        channelRaw?.parallelism || raw?.env?.parallelism || 1,
+      ),
+      dirtyDataPolicy:
+        (channelRaw?.dirtyDataPolicy || legacyChannel?.dirtyDataPolicy) === 'skip'
+          ? 'skip'
+          : 'stop',
     },
     state: raw?.state,
   };
 };
 
-export const endpointNode = (
-  workflow: SyncWorkflow,
+export const endpoint = (
+  editor: SyncEditorState,
   kind: EndpointKind,
-): any | undefined =>
-  workflow.nodes.find(
-    (node) =>
-      node?.data?.nodeType === kind ||
-      node?.type === kind,
-  );
+): SyncEndpoint => editor[kind];
 
 const resetEndpointConfig = (
   kind: EndpointKind,
@@ -434,58 +250,15 @@ const resetEndpointConfig = (
         primaryKey: '',
       };
 
-const replaceEndpointNode = (
-  workflow: SyncWorkflow,
-  kind: EndpointKind,
-  record: DataSourceRecord,
-): SyncWorkflow => {
-  const recordId = String(record.id || '');
-  const meta = connectorMeta(record)!;
-  const existing = endpointNode(workflow, kind);
-  const nextNode =
-    existing || createEndpointNode('draft', kind, record);
-  const previousConfig = nextNode.data?.config || {};
-  const dataSourceChanged =
-    String(previousConfig.dataSourceId || '') !== recordId;
-  const nextConfig = dataSourceChanged
-    ? resetEndpointConfig(kind, previousConfig)
-    : previousConfig;
-
-  const nextData = {
-    ...(nextNode.data || {}),
-    dbType: meta.dbType,
-    connectorType: meta.connectorType,
-    pluginName: meta.pluginName,
-    config: {
-      ...nextConfig,
-      dataSourceId: recordId,
-      dbType: meta.dbType,
-      connectorType: meta.connectorType,
-      pluginName: meta.pluginName,
-    },
-  };
+const connectorMeta = (record: DataSourceRecord) => {
+  const dbType = String(record.dbType || '');
 
   return {
-    ...workflow,
-    nodes: existing
-      ? workflow.nodes.map((node) =>
-          node.id === existing.id
-            ? { ...node, data: nextData }
-            : node,
-        )
-      : [
-          ...workflow.nodes,
-          { ...nextNode, data: nextData },
-        ],
-    ...(kind === 'source'
-      ? {
-          sourceType: meta,
-          sourceDataSourceId: recordId,
-        }
-      : {
-          targetType: meta,
-          targetDataSourceId: recordId,
-        }),
+    dbType,
+    connectorId: connectorIdForDataSourceType(dbType),
+    pluginName:
+      String((record as any).pluginName || '') ||
+      (dbType ? `JDBC-${dbType}` : String(record.name || '')),
   };
 };
 
@@ -494,28 +267,21 @@ export const applyEndpointSelection = (
   kind: EndpointKind,
   record: DataSourceRecord,
 ): SyncEditorState => {
+  const current = editor[kind];
   const recordId = String(record.id || '');
-  const workflow = replaceEndpointNode(
-    editor.workflow,
-    kind,
-    record,
-  );
+  const dataSourceChanged = current.dataSourceId !== recordId;
+  const meta = connectorMeta(record);
 
   return {
     ...editor,
-    basic: {
-      ...editor.basic,
-      ...(kind === 'source'
-        ? {
-            sourceType: record.dbType || '',
-            sourceDataSourceId: recordId,
-          }
-        : {
-            targetType: record.dbType || '',
-            targetDataSourceId: recordId,
-          }),
+    [kind]: {
+      ...current,
+      ...meta,
+      dataSourceId: recordId,
+      config: dataSourceChanged
+        ? resetEndpointConfig(kind, current.config)
+        : current.config,
     },
-    workflow,
   };
 };
 
@@ -523,59 +289,27 @@ export const updateEndpointConfig = (
   editor: SyncEditorState,
   kind: EndpointKind,
   patch: Record<string, any>,
-): SyncEditorState => {
-  const current = endpointNode(editor.workflow, kind);
-
-  if (!current) return editor;
-
-  return {
-    ...editor,
-    workflow: {
-      ...editor.workflow,
-      nodes: editor.workflow.nodes.map((node) =>
-        node.id === current.id
-          ? {
-              ...node,
-              data: {
-                ...(node.data || {}),
-                config: {
-                  ...(node.data?.config || {}),
-                  ...patch,
-                },
-              },
-            }
-          : node,
-      ),
+): SyncEditorState => ({
+  ...editor,
+  [kind]: {
+    ...editor[kind],
+    config: {
+      ...editor[kind].config,
+      ...patch,
     },
-  };
-};
-
-const requiredLabelsRecord = (
-  labels: WorkerLabelRequirement[],
-): Record<string, string> =>
-  labels.reduce<Record<string, string>>((result, item) => {
-    const key = item.key.trim();
-    if (key) result[key] = item.value.trim();
-    return result;
-  }, {});
+  },
+});
 
 export const buildSavePayload = (
   editor: SyncEditorState,
 ) => ({
   id: editor.id,
   basic: {
-    ...editor.basic,
     jobName: editor.basic.jobName.trim(),
     jobDesc: editor.basic.jobDesc.trim(),
+    mode: editor.mode,
   },
-  workflow: editor.workflow,
-  schedule: editor.schedule,
-  env: editor.env,
-  worker: {
-    mode: editor.worker.mode,
-    nodeId: editor.worker.mode === 'MANUAL'
-      ? editor.worker.nodeId
-      : undefined,
-    requiredLabels: requiredLabelsRecord(editor.worker.requiredLabels),
-  },
+  source: editor.source,
+  sink: editor.sink,
+  channel: editor.channel,
 });
