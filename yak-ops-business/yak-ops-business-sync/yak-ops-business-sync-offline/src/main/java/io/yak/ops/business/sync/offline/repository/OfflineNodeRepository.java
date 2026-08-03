@@ -18,7 +18,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * Link-Up Worker 注册信息、调度状态、心跳和能力快照持久化。
+ * Link-Up Worker 注册信息、调度状态、心跳、租约和能力快照持久化。
  *
  * @author weifuwan
  */
@@ -27,7 +27,9 @@ import org.springframework.stereotype.Repository;
 public class OfflineNodeRepository {
 
   private static final String SELECT_COLUMNS =
-      "node_id, node_name, base_url, registration_mode, enabled, scheduling_status, "
+      "node_id, node_name, base_url, registration_mode, registration_lease_id, "
+          + "registration_instance_id, registration_protocol_version, lease_expires_at, "
+          + "last_registration_time, heartbeat_sequence, enabled, scheduling_status, "
           + "weight, labels_json, worker_instance_id, engine_version, started_at_millis, "
           + "offline_only, status, max_concurrent_jobs, max_queued_jobs, running_jobs, "
           + "queued_jobs, last_heartbeat_time, last_success_time, consecutive_failures, "
@@ -41,21 +43,30 @@ public class OfflineNodeRepository {
     this.jdbc = new JdbcTemplate(dataSource);
   }
 
-  /** 创建或覆盖配置来源的默认 Worker；已有能力快照不会被心跳登记覆盖。 */
+  /** 创建或覆盖配置来源 Worker；能力快照和租约字段按传入值更新。 */
   public void upsert(NodeRecord node) {
     LocalDateTime now = LocalDateTime.now();
     jdbc.update(
         "INSERT INTO yak_offline_engine_node ("
-            + "node_id, node_name, base_url, registration_mode, enabled, scheduling_status, "
+            + "node_id, node_name, base_url, registration_mode, registration_lease_id, "
+            + "registration_instance_id, registration_protocol_version, lease_expires_at, "
+            + "last_registration_time, heartbeat_sequence, enabled, scheduling_status, "
             + "weight, labels_json, worker_instance_id, engine_version, started_at_millis, "
             + "offline_only, status, max_concurrent_jobs, max_queued_jobs, running_jobs, "
             + "queued_jobs, last_heartbeat_time, last_success_time, consecutive_failures, "
             + "last_error_message, capability_status, capability_digest, connector_schemas_json, "
             + "capability_synced_at, capability_error_message, create_time, update_time) "
-            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+            + "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
             + "ON DUPLICATE KEY UPDATE "
             + "node_name = VALUES(node_name), base_url = VALUES(base_url), "
-            + "registration_mode = VALUES(registration_mode), enabled = VALUES(enabled), "
+            + "registration_mode = VALUES(registration_mode), "
+            + "registration_lease_id = VALUES(registration_lease_id), "
+            + "registration_instance_id = VALUES(registration_instance_id), "
+            + "registration_protocol_version = VALUES(registration_protocol_version), "
+            + "lease_expires_at = VALUES(lease_expires_at), "
+            + "last_registration_time = VALUES(last_registration_time), "
+            + "heartbeat_sequence = VALUES(heartbeat_sequence), enabled = VALUES(enabled), "
             + "scheduling_status = VALUES(scheduling_status), weight = VALUES(weight), "
             + "labels_json = VALUES(labels_json), worker_instance_id = VALUES(worker_instance_id), "
             + "engine_version = VALUES(engine_version), started_at_millis = VALUES(started_at_millis), "
@@ -65,8 +76,17 @@ public class OfflineNodeRepository {
             + "queued_jobs = VALUES(queued_jobs), last_heartbeat_time = VALUES(last_heartbeat_time), "
             + "last_success_time = VALUES(last_success_time), "
             + "consecutive_failures = VALUES(consecutive_failures), "
-            + "last_error_message = VALUES(last_error_message), update_time = VALUES(update_time)",
+            + "last_error_message = VALUES(last_error_message), "
+            + "capability_status = VALUES(capability_status), "
+            + "capability_digest = VALUES(capability_digest), "
+            + "connector_schemas_json = VALUES(connector_schemas_json), "
+            + "capability_synced_at = VALUES(capability_synced_at), "
+            + "capability_error_message = VALUES(capability_error_message), "
+            + "update_time = VALUES(update_time)",
         node.getNodeId(), node.getNodeName(), node.getBaseUrl(), node.getRegistrationMode(),
+        node.getRegistrationLeaseId(), node.getRegistrationInstanceId(),
+        node.getRegistrationProtocolVersion(), timestamp(node.getLeaseExpiresAt()),
+        timestamp(node.getLastRegistrationTime()), value(node.getHeartbeatSequence(), 0L),
         bool(node.getEnabled()), node.getSchedulingStatus(), node.getWeight(), node.getLabelsJson(),
         node.getWorkerInstanceId(), node.getEngineVersion(), node.getStartedAtMillis(),
         bool(node.getOfflineOnly()), node.getStatus(), node.getMaxConcurrentJobs(),
@@ -75,7 +95,8 @@ public class OfflineNodeRepository {
         node.getConsecutiveFailures(), node.getLastErrorMessage(),
         text(node.getCapabilityStatus(), "UNKNOWN"), node.getCapabilityDigest(),
         node.getConnectorSchemasJson(), timestamp(node.getCapabilitySyncedAt()),
-        node.getCapabilityErrorMessage(), timestamp(now), timestamp(now));
+        node.getCapabilityErrorMessage(), timestamp(
+            node.getCreateTime() == null ? now : node.getCreateTime()), timestamp(now));
   }
 
   /** 更新用户可编辑的 Worker 定义，并同步本次验证得到的运行信息。 */
@@ -169,6 +190,19 @@ public class OfflineNodeRepository {
     }
   }
 
+  /** 必须在 offline-sync 事务内调用。 */
+  public NodeRecord findForUpdate(String nodeId) {
+    try {
+      return jdbc.queryForObject(
+          "SELECT " + SELECT_COLUMNS
+              + " FROM yak_offline_engine_node WHERE node_id = ? FOR UPDATE",
+          rowMapper,
+          nodeId);
+    } catch (EmptyResultDataAccessException exception) {
+      return null;
+    }
+  }
+
   public NodeRecord findByBaseUrl(String baseUrl) {
     try {
       return jdbc.queryForObject(
@@ -195,11 +229,12 @@ public class OfflineNodeRepository {
         rowMapper);
   }
 
+  /** CONFIG/MANUAL 使用 Yak Ops 主动探测；DYNAMIC 由 Worker 主动续租。 */
   public List<NodeRecord> listHeartbeatTargets() {
     return jdbc.query(
         "SELECT " + SELECT_COLUMNS + " FROM yak_offline_engine_node "
             + "WHERE enabled = 1 AND scheduling_status <> 'DISABLED' "
-            + "ORDER BY node_id ASC",
+            + "AND registration_mode <> 'DYNAMIC' ORDER BY node_id ASC",
         rowMapper);
   }
 
@@ -221,6 +256,12 @@ public class OfflineNodeRepository {
         .nodeName(rs.getString("node_name"))
         .baseUrl(rs.getString("base_url"))
         .registrationMode(rs.getString("registration_mode"))
+        .registrationLeaseId(rs.getString("registration_lease_id"))
+        .registrationInstanceId(rs.getString("registration_instance_id"))
+        .registrationProtocolVersion(rs.getString("registration_protocol_version"))
+        .leaseExpiresAt(localDateTime(rs.getTimestamp("lease_expires_at")))
+        .lastRegistrationTime(localDateTime(rs.getTimestamp("last_registration_time")))
+        .heartbeatSequence(rs.getLong("heartbeat_sequence"))
         .enabled(rs.getBoolean("enabled"))
         .schedulingStatus(rs.getString("scheduling_status"))
         .weight(rs.getInt("weight"))
@@ -256,6 +297,10 @@ public class OfflineNodeRepository {
     return Boolean.TRUE.equals(value) ? 1 : 0;
   }
 
+  private long value(Long value, long fallback) {
+    return value == null ? fallback : value;
+  }
+
   private Timestamp timestamp(LocalDateTime value) {
     return value == null ? null : Timestamp.valueOf(value);
   }
@@ -274,6 +319,12 @@ public class OfflineNodeRepository {
     private String nodeName;
     private String baseUrl;
     private String registrationMode;
+    private String registrationLeaseId;
+    private String registrationInstanceId;
+    private String registrationProtocolVersion;
+    private LocalDateTime leaseExpiresAt;
+    private LocalDateTime lastRegistrationTime;
+    private Long heartbeatSequence;
     private Boolean enabled;
     private String schedulingStatus;
     private Integer weight;
