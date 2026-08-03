@@ -9,11 +9,11 @@ import io.yak.ops.business.sync.offline.worker.OfflineWorkerRegistrationModels.D
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerRegistrationModels.HeartbeatRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerRegistrationModels.LeaseResponse;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerRegistrationModels.RegisterRequest;
-import io.yak.ops.business.sync.offline.worker.OfflineWorkerRegistrationService;
+import io.yak.ops.business.sync.offline.worker.RestartAwareOfflineWorkerRegistrationFacade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,12 +27,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class OfflineWorkerRegistrationController {
 
   private final OfflineWorkerRegistrationAuthenticator authenticator;
-  private final OfflineWorkerRegistrationService service;
+  private final RestartAwareOfflineWorkerRegistrationFacade service;
   private final ObjectMapper objectMapper;
 
   public OfflineWorkerRegistrationController(
       OfflineWorkerRegistrationAuthenticator authenticator,
-      OfflineWorkerRegistrationService service,
+      RestartAwareOfflineWorkerRegistrationFacade service,
       @Qualifier("offlineSyncJsonMapper") ObjectMapper objectMapper) {
     this.authenticator = authenticator;
     this.service = service;
