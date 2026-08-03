@@ -1,5 +1,6 @@
 import {
   ArrowLeftOutlined,
+  DisconnectOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
 import { history, useParams } from '@umijs/max';
@@ -10,6 +11,7 @@ import {
   Descriptions,
   Empty,
   message,
+  Popconfirm,
   Spin,
   Table,
   Tag,
@@ -39,6 +41,12 @@ const capabilityStatusMeta = (status?: string, fresh?: boolean) => {
   return { label: '等待同步', color: 'default' as const };
 };
 
+const registrationLabel = (worker: LinkupClient) => {
+  if (worker.registrationMode === 'CONFIG') return '配置托管';
+  if (worker.registrationMode === 'DYNAMIC') return '动态注册';
+  return '手工注册';
+};
+
 const formatTime = (value?: string) => value || '--';
 
 export default function WorkerDetailPage() {
@@ -46,6 +54,7 @@ export default function WorkerDetailPage() {
   const nodeId = params.id ? decodeURIComponent(params.id) : '';
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const [worker, setWorker] = useState<LinkupClient | null>(null);
   const [capability, setCapability] = useState<WorkerCapability | null>(null);
 
@@ -87,12 +96,36 @@ export default function WorkerDetailPage() {
       if (response?.code !== API_SUCCESS_CODE) {
         throw new Error(response?.message || '刷新 Worker 失败');
       }
-      message.success('Worker 心跳与 Connector 能力已刷新');
+      message.success(
+        worker?.registrationMode === 'DYNAMIC'
+          ? '动态注册状态与 Connector 能力已刷新'
+          : 'Worker 心跳与 Connector 能力已刷新',
+      );
       await load();
     } catch (error: any) {
       message.error(error?.message || '刷新 Worker 失败');
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const revokeLease = async () => {
+    if (!nodeId) return;
+    setRevoking(true);
+    try {
+      const response = await linkupClientApi.revokeLease(
+        nodeId,
+        '管理员从执行节点详情页撤销租约',
+      );
+      if (response?.code !== API_SUCCESS_CODE) {
+        throw new Error(response?.message || '撤销动态注册租约失败');
+      }
+      message.success('动态注册租约已撤销');
+      await load();
+    } catch (error: any) {
+      message.error(error?.message || '撤销动态注册租约失败');
+    } finally {
+      setRevoking(false);
     }
   };
 
@@ -115,9 +148,7 @@ export default function WorkerDetailPage() {
         title: '角色',
         dataIndex: 'role',
         width: 100,
-        render: (value: string) => (
-          <Tag className="!m-0">{value}</Tag>
-        ),
+        render: (value: string) => <Tag className="!m-0">{value}</Tag>,
       },
       {
         title: 'Schema',
@@ -172,6 +203,8 @@ export default function WorkerDetailPage() {
   }
 
   const status = capabilityStatusMeta(capability?.status, capability?.fresh);
+  const dynamic = worker.registrationMode === 'DYNAMIC';
+  const activeLease = dynamic && worker.leaseStatus === 'ACTIVE';
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
@@ -193,6 +226,12 @@ export default function WorkerDetailPage() {
                     {worker.status === 'UP' ? '在线' : '离线'}
                   </Tag>
                   <Tag color={status.color}>{status.label}</Tag>
+                  <Tag>{registrationLabel(worker)}</Tag>
+                  {dynamic ? (
+                    <Tag color={activeLease ? 'success' : 'error'}>
+                      {activeLease ? '租约有效' : '租约已失效'}
+                    </Tag>
+                  ) : null}
                 </div>
                 <div className="mt-1 font-mono text-xs text-[#8a8f99]">
                   {worker.nodeId}
@@ -200,14 +239,44 @@ export default function WorkerDetailPage() {
               </div>
             </div>
 
-            <Button
-              icon={<ReloadOutlined />}
-              loading={refreshing}
-              onClick={() => void refresh()}
-            >
-              刷新心跳与能力
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {activeLease ? (
+                <Popconfirm
+                  title="撤销动态注册租约"
+                  description="撤销后节点立即离线；Worker 如仍启用动态注册，会重新发起登记。"
+                  okText="撤销租约"
+                  cancelText="取消"
+                  okButtonProps={{ danger: true, loading: revoking }}
+                  onConfirm={() => void revokeLease()}
+                >
+                  <Button danger icon={<DisconnectOutlined />} loading={revoking}>
+                    撤销租约
+                  </Button>
+                </Popconfirm>
+              ) : null}
+              <Button
+                icon={<ReloadOutlined />}
+                loading={refreshing}
+                onClick={() => void refresh()}
+              >
+                刷新状态与能力
+              </Button>
+            </div>
           </div>
+
+          {dynamic ? (
+            <Alert
+              className="mb-4"
+              type={activeLease ? 'info' : 'warning'}
+              showIcon
+              message="该节点由 Link-Up Worker 主动注册"
+              description={
+                activeLease
+                  ? '地址、实例、容量和能力由签名心跳维护；名称、标签、权重和调度状态由 Yak Ops 管理。'
+                  : '当前租约无效，节点不会参与调度；请检查 Worker 注册配置、共享密钥和控制面网络。'
+              }
+            />
+          ) : null}
 
           <section className="rounded-xl border border-[#eceef1] bg-white p-5">
             <Descriptions
@@ -215,13 +284,10 @@ export default function WorkerDetailPage() {
               column={{ xs: 1, sm: 2, lg: 3 }}
               items={[
                 { key: 'url', label: 'Worker 地址', children: worker.baseUrl },
+                { key: 'mode', label: '注册模式', children: registrationLabel(worker) },
                 { key: 'version', label: '引擎版本', children: worker.engineVersion || '--' },
                 { key: 'instance', label: '进程实例', children: worker.workerInstanceId || '--' },
-                {
-                  key: 'schedule',
-                  label: '调度状态',
-                  children: worker.schedulingStatus,
-                },
+                { key: 'schedule', label: '调度状态', children: worker.schedulingStatus },
                 {
                   key: 'capacity',
                   label: '运行容量',
@@ -237,6 +303,35 @@ export default function WorkerDetailPage() {
                   label: '最近心跳',
                   children: formatTime(worker.lastHeartbeatTime),
                 },
+                ...(dynamic
+                  ? [
+                      {
+                        key: 'lease',
+                        label: '租约状态',
+                        children: worker.leaseStatus || '--',
+                      },
+                      {
+                        key: 'leaseExpires',
+                        label: '租约到期',
+                        children: formatTime(worker.leaseExpiresAt),
+                      },
+                      {
+                        key: 'registerTime',
+                        label: '最近注册',
+                        children: formatTime(worker.lastRegistrationTime),
+                      },
+                      {
+                        key: 'sequence',
+                        label: '心跳序列',
+                        children: String(worker.heartbeatSequence ?? '--'),
+                      },
+                      {
+                        key: 'protocol',
+                        label: '注册协议',
+                        children: worker.registrationProtocolVersion || '--',
+                      },
+                    ]
+                  : []),
                 {
                   key: 'capabilityTime',
                   label: '能力同步',
@@ -272,7 +367,7 @@ export default function WorkerDetailPage() {
                   Connector 能力
                 </h2>
                 <div className="mt-1 text-xs text-[#8a8f99]">
-                  调度器会按 Connector、角色、Schema 指纹和任务特性能力进行硬过滤。
+                  调度器会按租约、Connector、角色、Schema 指纹和任务特性能力进行硬过滤。
                 </div>
               </div>
               <span className="text-sm text-[#667085]">
