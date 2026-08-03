@@ -500,9 +500,6 @@ const ClientPage = () => {
               <h1 className="m-0 text-[22px] font-semibold leading-8 text-[#161823]">
                 执行节点
               </h1>
-              <p className="m-0 mt-1 text-[13px] leading-6 text-[#8a8f99]">
-                管理 Link-Up Worker 的手工、配置与动态注册、租约、能力和调度状态。
-              </p>
             </div>
             <Space size={8} wrap>
               <Button

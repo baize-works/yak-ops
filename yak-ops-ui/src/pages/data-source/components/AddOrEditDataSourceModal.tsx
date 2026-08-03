@@ -1,30 +1,25 @@
-import { API_SUCCESS_CODE } from '@/services/http/response';
-import { useIntl } from '@umijs/max';
-import { Button, Form, message, Modal } from 'antd';
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from 'react';
+import { API_SUCCESS_CODE } from "@/services/http/response";
+import { useIntl } from "@umijs/max";
+import { Button, Form, message, Modal } from "antd";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 
-import { dataSourceGroupList } from '../constants';
-import DatabaseIcons from '../icon/DatabaseIcons';
+import { dataSourceGroupList } from "../constants";
+import DatabaseIcons from "../icon/DatabaseIcons";
 import {
   createDataSource,
   testDataSourceConnectionWithParams,
   updateDataSource,
-} from '../service';
+} from "../service";
 import type {
   DataSourceFormValues,
   DataSourceModalOpenPayload,
   DataSourceModalRef,
   DataSourceRecord,
-} from '../types';
-import { DataSourceOperateType } from '../types';
-import { buildSubmitPayload, parseOriginalJson } from '../utils';
-import DataSourceTypeSelector from './DataSourceTypeSelector';
-import DynamicDataSourceForm from './DynamicDataSourceForm';
+} from "../types";
+import { DataSourceOperateType } from "../types";
+import { buildSubmitPayload, parseOriginalJson } from "../utils";
+import DataSourceTypeSelector from "./DataSourceTypeSelector";
+import DynamicDataSourceForm from "./DynamicDataSourceForm";
 
 const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const intl = useIntl();
@@ -33,7 +28,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const [open, setOpen] = useState(false);
   const [operateType, setOperateType] = useState(DataSourceOperateType.Create);
   const [currentRecord, setCurrentRecord] = useState<DataSourceRecord>();
-  const [selectedDbType, setSelectedDbType] = useState('');
+  const [selectedDbType, setSelectedDbType] = useState("");
   const [showFormStep, setShowFormStep] = useState(false);
   const [hideBackButton, setHideBackButton] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -46,7 +41,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
   const resetModalState = () => {
     setCurrentRecord(undefined);
-    setSelectedDbType('');
+    setSelectedDbType("");
     setShowFormStep(false);
     setHideBackButton(false);
     setTesting(false);
@@ -64,9 +59,9 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
   const initializeEditForm = (record: DataSourceRecord) => {
     basicForm.setFieldsValue({
-      name: record.name || '',
-      environment: record.environment || '',
-      remark: record.remark || '',
+      name: record.name || "",
+      environment: record.environment || "",
+      remark: record.remark || "",
     });
   };
 
@@ -85,7 +80,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       setCurrentRecord(nextRecord);
 
       if (nextOperateType === DataSourceOperateType.Edit && nextRecord) {
-        setSelectedDbType(nextRecord.dbType || '');
+        setSelectedDbType(nextRecord.dbType || "");
         setShowFormStep(true);
         setHideBackButton(true);
         initializeEditForm(nextRecord);
@@ -99,7 +94,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         return;
       }
 
-      setSelectedDbType('');
+      setSelectedDbType("");
       setShowFormStep(false);
       setHideBackButton(false);
     },
@@ -117,7 +112,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
   const handleBackToTypeSelection = () => {
     if (busy) return;
     setShowFormStep(false);
-    setSelectedDbType('');
+    setSelectedDbType("");
     setHideBackButton(false);
     basicForm.resetFields();
     configForm.resetFields();
@@ -138,14 +133,10 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       });
 
       if (response.code === API_SUCCESS_CODE && response.data === true) {
-        message.success('连接测试成功');
+        message.success("连接测试成功");
       }
     } catch (error) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'errorFields' in error
-      ) {
+      if (error && typeof error === "object" && "errorFields" in error) {
         return;
       }
     } finally {
@@ -162,28 +153,24 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       const payload = buildSubmitPayload(
         selectedDbType,
         basicValues,
-        connectionValues,
+        connectionValues
       );
 
       const response = isCreateMode
         ? await createDataSource(payload)
         : currentRecord?.id
-          ? await updateDataSource(currentRecord.id, payload)
-          : undefined;
+        ? await updateDataSource(currentRecord.id, payload)
+        : undefined;
       if (!response || response.code !== API_SUCCESS_CODE) return;
 
       const successCallback = successCallbackRef.current;
-      message.success(isCreateMode ? '数据源创建成功' : '数据源更新成功');
+      message.success(isCreateMode ? "数据源创建成功" : "数据源更新成功");
       setSubmitting(false);
       setOpen(false);
       resetModalState();
       successCallback?.();
     } catch (error) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'errorFields' in error
-      ) {
+      if (error && typeof error === "object" && "errorFields" in error) {
         return;
       }
     } finally {
@@ -193,17 +180,17 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
 
   const modalActionText = isEditMode
     ? intl.formatMessage({
-        id: 'pages.datasource.modal.title.edit',
-        defaultMessage: 'Edit',
+        id: "pages.datasource.modal.title.edit",
+        defaultMessage: "Edit",
       })
     : intl.formatMessage({
-        id: 'pages.datasource.modal.title.add',
-        defaultMessage: 'Add',
+        id: "pages.datasource.modal.title.add",
+        defaultMessage: "Add",
       });
 
   return (
     <Modal
-      width="67vw"
+      width="min(960px, calc(100vw - 32px))"
       open={open}
       centered
       maskClosable={false}
@@ -213,47 +200,47 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
       destroyOnClose
       styles={{
         header: {
-          padding: '20px 24px 16px',
-          borderBottom: '1px solid #EEF2F6',
+          padding: "16px 20px 12px",
+          borderBottom: "1px solid #EEF0F3",
           marginBottom: 0,
         },
         body: {
-          padding: '20px 24px 16px',
-          background: '#F8FAFC',
-          maxHeight: '69vh',
-          overflowY: 'auto',
-          minHeight: '65vh',
+          padding: "14px 20px 18px",
+          background: "#FFFFFF",
+          maxHeight: "calc(100vh - 190px)",
+          overflowY: "auto",
         },
         footer: {
-          padding: '14px 24px 18px',
-          borderTop: '1px solid #EEF2F6',
-          background: '#FFFFFF',
+          padding: "11px 20px 14px",
+          borderTop: "1px solid #EEF0F3",
+          background: "#FFFFFF",
           marginTop: 0,
         },
         content: {
-          borderRadius: 20,
-          overflow: 'hidden',
+          padding: 0,
+          borderRadius: 12,
+          overflow: "hidden",
         },
       }}
       title={
-        <div className="flex items-center justify-between gap-3 pr-6">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-[#EEF4FF]">
-              <DatabaseIcons dbType={selectedDbType} width="18" height="18" />
+        <div className="flex min-w-0 items-center gap-2.5 pr-6">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F2F4F7]">
+            <DatabaseIcons dbType={selectedDbType} width="17" height="17" />
+          </div>
+
+          <div className="min-w-0">
+            <div className="truncate text-base font-semibold leading-6 text-[#161823]">
+              {modalActionText}
+              {intl.formatMessage({
+                id: "pages.datasource.common.title",
+                defaultMessage: " Data Source",
+              })}
             </div>
-            <div className="min-w-0">
-              <div className="text-[18px] font-semibold leading-7 text-[#101828]">
-                {modalActionText}
-                {intl.formatMessage({
-                  id: 'pages.datasource.common.title',
-                  defaultMessage: ' Data Source',
-                })}
-              </div>
-              <div className="mt-0.5 text-[13px] leading-5 text-[#667085]">
-                {selectedDbType
-                  ? `当前类型：${selectedDbType}`
-                  : '请选择数据源类型'}
-              </div>
+
+            <div className="truncate text-xs leading-5 text-[#8A8F99]">
+              {selectedDbType
+                ? `当前类型：${selectedDbType}`
+                : "选择需要创建的数据源类型"}
             </div>
           </div>
         </div>
@@ -262,40 +249,31 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         <div className="flex items-center justify-between gap-3">
           <div>
             {showFormStep && isCreateMode && !hideBackButton ? (
-              <Button
-                disabled={busy}
-                onClick={handleBackToTypeSelection}
-                style={{ height: 32, borderRadius: 16 }}
-              >
+              <Button disabled={busy} onClick={handleBackToTypeSelection}>
                 上一步
               </Button>
             ) : (
-              <Button
-                disabled={busy}
-                onClick={handleClose}
-                style={{ height: 32, borderRadius: 16 }}
-              >
+              <Button disabled={busy} onClick={handleClose}>
                 取消
               </Button>
             )}
           </div>
 
           {showFormStep && (
-            <div className="flex gap-2.5">
+            <div className="flex items-center gap-2">
               <Button
                 loading={testing}
                 disabled={submitting}
                 onClick={() => void handleTestConnection()}
-                style={{ height: 32, borderRadius: 16 }}
               >
                 连接测试
               </Button>
+
               <Button
                 type="primary"
                 loading={submitting}
                 disabled={testing}
                 onClick={() => void handleSubmit()}
-                style={{ height: 32, borderRadius: 16, paddingInline: 18 }}
               >
                 完成
               </Button>
@@ -304,31 +282,33 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         </div>
       }
     >
-      {showFormStep ? (
-        <DynamicDataSourceForm
-          key={`${operateType}-${selectedDbType}-${currentRecord?.id || 'create'}`}
-          dbType={selectedDbType}
-          form={basicForm}
-          configForm={configForm}
-          operateType={operateType}
-          initialConfig={
-            isEditMode
-              ? parseOriginalJson(currentRecord?.originalJson)
-              : undefined
-          }
-        />
-      ) : (
-        <div className="py-1 pb-2">
+      <div style={{ height: "50vh" }}>
+        {showFormStep ? (
+          <DynamicDataSourceForm
+            key={`${operateType}-${selectedDbType}-${
+              currentRecord?.id || "create"
+            }`}
+            dbType={selectedDbType}
+            form={basicForm}
+            configForm={configForm}
+            operateType={operateType}
+            initialConfig={
+              isEditMode
+                ? parseOriginalJson(currentRecord?.originalJson)
+                : undefined
+            }
+          />
+        ) : (
           <DataSourceTypeSelector
             dataSourceGroups={dataSourceGroupList}
             onSelect={handleSelectDbType}
           />
-        </div>
-      )}
+        )}
+      </div>
     </Modal>
   );
 });
 
-AddOrEditDataSourceModal.displayName = 'AddOrEditDataSourceModal';
+AddOrEditDataSourceModal.displayName = "AddOrEditDataSourceModal";
 
 export default AddOrEditDataSourceModal;
