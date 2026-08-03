@@ -42,4 +42,4 @@ CREATE TABLE yak_offline_worker_preflight (
         FOREIGN KEY (node_id)
         REFERENCES yak_offline_engine_node (node_id)
         ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
