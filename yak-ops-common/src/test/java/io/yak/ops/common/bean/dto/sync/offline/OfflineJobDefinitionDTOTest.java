@@ -11,7 +11,7 @@ class OfflineJobDefinitionDTOTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void shouldPreserveTopLevelMappingDuringRequestBindingAndSerialization() throws Exception {
+  void shouldPreserveTopLevelTaskConfigurationDuringRequestBinding() throws Exception {
     OfflineJobDefinitionDTO definition = mapper.readValue("""
         {
           "id": 1785737278040000,
@@ -38,6 +38,11 @@ class OfflineJobDefinitionDTOTest {
               {"source": "username", "target": "username"},
               {"sourceField": "id", "targetField": "age"}
             ]
+          },
+          "schedule": {
+            "cron": "0 0 2 * * ?",
+            "enabled": true,
+            "retryOnFailure": true
           }
         }
         """, OfflineJobDefinitionDTO.class);
@@ -51,6 +56,11 @@ class OfflineJobDefinitionDTOTest {
     assertThat(definition.getMapping().getColumns().get(1).getTarget())
         .isEqualTo("age");
 
+    assertThat(definition.getSchedule()).isNotNull();
+    assertThat(definition.getSchedule().getCron()).isEqualTo("0 0 2 * * ?");
+    assertThat(definition.getSchedule().getEnabled()).isTrue();
+    assertThat(definition.getSchedule().getRetryOnFailure()).isTrue();
+
     JsonNode persisted = mapper.valueToTree(definition);
     assertThat(persisted.path("mapping").path("columns")).hasSize(2);
     assertThat(persisted.path("mapping").path("columns").get(1).path("source").asText())
@@ -59,5 +69,9 @@ class OfflineJobDefinitionDTOTest {
         .isEqualTo("age");
     assertThat(persisted.path("mapping").path("columns").get(1).has("sourceField"))
         .isFalse();
+    assertThat(persisted.path("schedule").path("cron").asText())
+        .isEqualTo("0 0 2 * * ?");
+    assertThat(persisted.path("schedule").path("enabled").asBoolean()).isTrue();
+    assertThat(persisted.path("schedule").path("retryOnFailure").asBoolean()).isTrue();
   }
 }
