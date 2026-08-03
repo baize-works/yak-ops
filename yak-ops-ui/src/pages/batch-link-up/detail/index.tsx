@@ -18,7 +18,6 @@ import validateEditorConnectorForms from './form-schema/validateEditorConnectorF
 import { useSmoothWheelScroll } from './hooks/useSmoothWheelScroll';
 import {
   buildSavePayload,
-  endpointNode,
   extractSavedId,
   isApiSuccess,
   normalizeEditDetail,
@@ -33,32 +32,16 @@ const validateTaskConfig = (
     return '请输入任务名称';
   }
 
-  if (editor.worker.mode === 'MANUAL' && !editor.worker.nodeId) {
-    return '指定节点模式需要选择执行 Worker';
-  }
-
-  const workerLabelKeys = new Set<string>();
-  for (const label of editor.worker.requiredLabels) {
-    const key = label.key.trim();
-    if (!key) {
-      return 'Worker 标签约束的标签名不能为空';
-    }
-    if (workerLabelKeys.has(key)) {
-      return `Worker 标签约束存在重复标签：${key}`;
-    }
-    workerLabelKeys.add(key);
-  }
-
-  if (!editor.basic.sourceDataSourceId) {
+  if (!editor.source.dataSourceId) {
     return '请选择来源数据源';
   }
 
-  if (!editor.basic.targetDataSourceId) {
+  if (!editor.sink.dataSourceId) {
     return '请选择目标数据源';
   }
 
-  const source = endpointNode(editor.workflow, 'source')?.data?.config || {};
-  const sink = endpointNode(editor.workflow, 'sink')?.data?.config || {};
+  const source = editor.source.config || {};
+  const sink = editor.sink.config || {};
 
   if (editor.mode === 'GUIDE_MULTI') {
     if (!source.tables?.length && !source.tablePattern?.trim()) {
@@ -93,7 +76,7 @@ const validateTaskConfig = (
     return 'Upsert 写入模式需要配置主键字段';
   }
 
-  if (!editor.env.parallelism || editor.env.parallelism < 1) {
+  if (!editor.channel.parallelism || editor.channel.parallelism < 1) {
     return 'Channel 并发数必须大于 0';
   }
 
