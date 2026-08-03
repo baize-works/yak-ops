@@ -14,7 +14,7 @@
     <artifactId>yak-ops-business-job</artifactId>
 
     <name>Yak Ops Business Job</name>
-    <description>Job definition, publication, scheduling and operation business capabilities</description>
+    <description>Business scheduling aggregation and task registration capabilities</description>
 
     <dependencies>
         <dependency>
@@ -22,8 +22,17 @@
             <artifactId>yak-ops-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-business-sync-offline</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.yak.framework</groupId>
             <artifactId>yak-schedule-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
