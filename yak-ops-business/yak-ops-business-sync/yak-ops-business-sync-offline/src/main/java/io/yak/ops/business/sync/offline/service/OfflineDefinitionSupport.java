@@ -230,6 +230,7 @@ public class OfflineDefinitionSupport {
     normalizeEndpoint(request, "source");
     normalizeEndpoint(request, "sink");
     normalizeChannel(request);
+    OfflineDefinitionModelAdapter.sanitizeForPersistence(request);
     return request;
   }
 
