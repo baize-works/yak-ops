@@ -48,6 +48,7 @@ class OfflineWorkerRegistrationServiceTest {
     assertThat(stored.get().getStatus()).isEqualTo("UP");
     assertThat(stored.get().getLeaseExpiresAt()).isAfter(LocalDateTime.now());
     assertThat(response.getLeaseId()).isNotBlank();
+    assertThat(response.getHeartbeatSequence()).isZero();
     assertThat(response.getSchedulingStatus()).isEqualTo("ENABLED");
   }
 
