@@ -5,11 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -19,19 +17,19 @@ import io.yak.ops.business.sync.offline.repository.OfflineDefinitionCatalogRepos
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineScheduleRepository;
 import io.yak.ops.business.sync.offline.service.OfflineDefinitionSupport.DraftDefinition;
+import io.yak.ops.business.sync.offline.worker.OfflineCapabilityRequirementResolver;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * 离线同步任务定义草稿兼容流程测试。
+ * 离线同步基础定义持久化测试。
  *
  * @author weifuwan
  */
@@ -51,6 +49,10 @@ class OfflineJobDefinitionServiceTest {
   private OfflineExecutionControlRepository executionRepository;
   @Mock
   private OfflineDefinitionSupport support;
+  @Mock
+  private OfflineWorkerScheduler workerScheduler;
+  @Mock
+  private OfflineCapabilityRequirementResolver capabilityResolver;
 
   private OfflineJobDefinitionService service;
 
@@ -61,12 +63,13 @@ class OfflineJobDefinitionServiceTest {
         catalogRepository,
         scheduleRepository,
         executionRepository,
-        support);
+        support,
+        workerScheduler,
+        capabilityResolver);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"请选择来源数据源", "请选择目标数据源"})
-  void saveGuideCreatesDraftForLegacyInitialRequest(String validationMessage) {
+  @Test
+  void saveDraftPersistsOnlyBaseDefinitionAndDefaultWorkerPolicy() {
     OfflineJobDefinitionDTO request = request();
     ObjectNode requestJson = JsonNodeFactory.instance.objectNode();
     DraftDefinition draft = new DraftDefinition(
@@ -74,16 +77,15 @@ class OfflineJobDefinitionServiceTest {
         JOB_NAME,
         null,
         "GUIDE_SINGLE",
-        "{\"id\":1001}",
+        "{\"id\":1001,\"basic\":{},\"source\":{},\"sink\":{},\"channel\":{}}",
         "MYSQL",
         "MYSQL");
 
     when(definitionDao.selectById(TASK_ID)).thenReturn(null);
-    when(support.prepare(request)).thenThrow(new IllegalArgumentException(validationMessage));
     when(support.prepareDraft(request)).thenReturn(draft);
     when(definitionDao.existsByName(JOB_NAME, TASK_ID)).thenReturn(false);
 
-    assertEquals(TASK_ID, service.saveGuide(request));
+    assertEquals(TASK_ID, service.saveDraft(request));
 
     ArgumentCaptor<OfflineJobDefinitionPO> captor =
         ArgumentCaptor.forClass(OfflineJobDefinitionPO.class);
@@ -93,37 +95,23 @@ class OfflineJobDefinitionServiceTest {
     assertEquals(JOB_NAME, saved.getJobName());
     assertEquals("GUIDE_SINGLE", saved.getMode());
     assertEquals("OFFLINE", saved.getReleaseState());
+    assertEquals("MYSQL", saved.getSourceType());
+    assertEquals("MYSQL", saved.getSinkType());
+    assertEquals("AUTO", saved.getWorkerSelectMode());
+    assertEquals("{}", saved.getWorkerRequiredLabelsJson());
     assertEquals(0, saved.getVersion());
     assertNull(saved.getCurrentVersionId());
+    assertNull(saved.getScheduleJson());
+    assertNull(saved.getEnvJson());
+    verifyNoInteractions(scheduleRepository);
     verify(catalogRepository, never()).saveVersion(
-        anyLong(), anyInt(), anyString(), anyString(), anyString());
+        any(), any(), any(), any(), any(), any());
   }
 
   @Test
-  void saveGuideKeepsStrictValidationForExistingDraft() {
+  void saveGuideKeepsStrictValidationForIncompleteDefinition() {
     OfflineJobDefinitionDTO request = request();
-    OfflineJobDefinitionPO existing = new OfflineJobDefinitionPO();
-    existing.setId(TASK_ID);
-    existing.setReleaseState("OFFLINE");
     IllegalArgumentException expected = new IllegalArgumentException("请选择来源数据源");
-
-    when(definitionDao.selectById(TASK_ID)).thenReturn(existing);
-    when(executionRepository.hasActiveExecution(TASK_ID)).thenReturn(false);
-    when(support.prepare(request)).thenThrow(expected);
-
-    IllegalArgumentException actual = assertThrows(
-        IllegalArgumentException.class,
-        () -> service.saveGuide(request));
-
-    assertSame(expected, actual);
-    verify(support, never()).prepareDraft(any());
-    verify(definitionDao, never()).insert(any());
-  }
-
-  @Test
-  void saveGuideDoesNotHideOtherInitialValidationErrors() {
-    OfflineJobDefinitionDTO request = request();
-    IllegalArgumentException expected = new IllegalArgumentException("请选择或填写来源表");
 
     when(definitionDao.selectById(TASK_ID)).thenReturn(null);
     when(support.prepare(request)).thenThrow(expected);
@@ -135,6 +123,7 @@ class OfflineJobDefinitionServiceTest {
     assertSame(expected, actual);
     verify(support, never()).prepareDraft(any());
     verify(definitionDao, never()).insert(any());
+    verifyNoInteractions(scheduleRepository);
   }
 
   private OfflineJobDefinitionDTO request() {
