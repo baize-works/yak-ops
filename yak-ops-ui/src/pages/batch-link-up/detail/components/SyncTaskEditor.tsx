@@ -9,7 +9,9 @@ import {
 } from '../model';
 import ChannelConfigSection from './ChannelConfigSection';
 import ConnectorExtraParams from './ConnectorExtraParams';
-import FieldMappingSection from './FieldMappingSection';
+import PersistedFieldMappingSection, {
+  type PersistedColumnMapping,
+} from './PersistedFieldMappingSection';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
@@ -25,6 +27,7 @@ const SOURCE_MANAGED_KEYS = [
   'table_path',
   'table_list',
   'query',
+  'mapping',
 ];
 
 const SINK_MANAGED_KEYS = [
@@ -38,6 +41,25 @@ const SINK_MANAGED_KEYS = [
   'dirty_data_max_count',
 ];
 
+const normalizeMappings = (
+  value: unknown,
+): PersistedColumnMapping[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item: any) => ({
+      source: String(
+        item?.source ?? item?.sourceField ?? '',
+      ).trim(),
+      target: String(
+        item?.target ?? item?.targetField ?? '',
+      ).trim(),
+    }))
+    .filter((item) => item.source && item.target);
+};
+
 export default function SyncTaskEditor({
   editor,
   dataSources,
@@ -48,6 +70,9 @@ export default function SyncTaskEditor({
   const sinkConfig = editor.sink.config || {};
   const sourceId = editor.source.dataSourceId;
   const targetId = editor.sink.dataSourceId;
+  const mappingColumns = normalizeMappings(
+    sourceConfig.mapping?.columns,
+  );
 
   const sourceCatalog = useDataSourceTables(sourceId);
   const targetCatalog = useDataSourceTables(targetId);
@@ -173,7 +198,15 @@ export default function SyncTaskEditor({
 
       {editor.mode === 'GUIDE_SINGLE' ? (
         <div id="field-mapping" className="scroll-mt-6">
-          <FieldMappingSection
+          <PersistedFieldMappingSection
+            value={mappingColumns}
+            onChange={(columns) =>
+              updateSource({
+                mapping: {
+                  columns,
+                },
+              })
+            }
             sourceColumns={sourceColumnCatalog.columns}
             targetColumns={mappingTargetColumns}
             sourceLoading={sourceColumnCatalog.loading}
