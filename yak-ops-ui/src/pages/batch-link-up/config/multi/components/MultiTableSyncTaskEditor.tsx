@@ -1,14 +1,7 @@
 import type { DataSourceRecord } from '@/pages/data-source/types';
 
-import ChannelConfigSection from '../../../detail/components/ChannelConfigSection';
-import MultiTableConfigSection from '../../../detail/components/MultiTableConfigSection';
-import TaskBasicSection from '../../../detail/components/TaskBasicSection';
-import useDataSourceTables from '../../../detail/hooks/useDataSourceTables';
-import {
-  endpointNode,
-  updateEndpointConfig,
-  type SyncEditorState,
-} from '../../../detail/model';
+import SyncTaskEditor from '../../../detail/components/SyncTaskEditor';
+import type { SyncEditorState } from '../../../detail/model';
 
 interface MultiTableSyncTaskEditorProps {
   editor: SyncEditorState;
@@ -17,57 +10,14 @@ interface MultiTableSyncTaskEditorProps {
   onChange: (value: SyncEditorState) => void;
 }
 
-export default function MultiTableSyncTaskEditor({
-  editor,
-  dataSources,
-  dataSourceLoading,
-  onChange,
-}: MultiTableSyncTaskEditorProps) {
-  const sourceNode = endpointNode(editor.workflow, 'source');
-  const sinkNode = endpointNode(editor.workflow, 'sink');
-
-  const sourceConfig = sourceNode?.data?.config || {};
-  const sinkConfig = sinkNode?.data?.config || {};
-
-  const sourceId = editor.basic.sourceDataSourceId;
-  const targetId = editor.basic.targetDataSourceId;
-
-  const sourceCatalog = useDataSourceTables(sourceId);
-
-  const updateSource = (patch: Record<string, any>) => {
-    onChange(updateEndpointConfig(editor, 'source', patch));
-  };
-
-  const updateSink = (patch: Record<string, any>) => {
-    onChange(updateEndpointConfig(editor, 'sink', patch));
-  };
-
-  return (
-    <div className="space-y-5">
-      <TaskBasicSection
-        editor={editor}
-        dataSources={dataSources}
-        dataSourceLoading={dataSourceLoading}
-        onChange={onChange}
-      />
-
-      <MultiTableConfigSection
-        sourceConfig={sourceConfig}
-        sinkConfig={sinkConfig}
-        sourceTables={sourceCatalog.tables}
-        sourceLoading={sourceCatalog.loading}
-        sourceReady={Boolean(sourceId)}
-        targetReady={Boolean(targetId)}
-        onSourceChange={updateSource}
-        onSinkChange={updateSink}
-      />
-
-      <ChannelConfigSection
-        editor={editor}
-        sinkConfig={sinkConfig}
-        onChange={onChange}
-        onSinkChange={updateSink}
-      />
-    </div>
-  );
+/**
+ * 多表路由入口复用统一离线同步编辑器。
+ *
+ * 任务模式已经由路由页校验为 GUIDE_MULTI，具体渲染由 SyncTaskEditor
+ * 基于 editor.mode 选择 MultiTableConfigSection，避免维护第二套旧 Workflow 状态。
+ */
+export default function MultiTableSyncTaskEditor(
+  props: MultiTableSyncTaskEditorProps,
+) {
+  return <SyncTaskEditor {...props} />;
 }
