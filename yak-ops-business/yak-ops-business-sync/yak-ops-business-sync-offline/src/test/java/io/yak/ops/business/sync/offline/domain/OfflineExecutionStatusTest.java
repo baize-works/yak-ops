@@ -19,6 +19,13 @@ class OfflineExecutionStatusTest {
   }
 
   @Test
+  void shouldTreatMissingPersistedStatusAsInactive() {
+    assertThat(OfflineExecutionStatus.isActive(null)).isFalse();
+    assertThat(OfflineExecutionStatus.isActive("")).isFalse();
+    assertThat(OfflineExecutionStatus.isActive("   ")).isFalse();
+  }
+
+  @Test
   void shouldNormalizeLegacyStatusesWithoutAddingRealtimeStates() {
     assertThat(OfflineExecutionStatus.parse("FINISHED"))
         .isEqualTo(OfflineExecutionStatus.SUCCEEDED);
