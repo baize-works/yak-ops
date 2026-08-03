@@ -9,6 +9,7 @@ import {
 } from '../model';
 import ChannelConfigSection from './ChannelConfigSection';
 import ConnectorExtraParams from './ConnectorExtraParams';
+import FieldMappingSection from './FieldMappingSection';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
@@ -58,15 +59,27 @@ export default function SyncTaskEditor({
     : sourceConfig.table
       ? { table_path: sourceConfig.table }
       : undefined;
-  const targetColumnRequest = sinkConfig.autoCreateTable
-    ? sourceColumnRequest
-    : sinkConfig.table
-      ? { table_path: sinkConfig.table }
-      : undefined;
-  const primaryKeyCatalog = useDataSourceColumns(
-    sinkConfig.autoCreateTable ? sourceId : targetId,
+  const targetColumnRequest = !sinkConfig.autoCreateTable && sinkConfig.table
+    ? { table_path: sinkConfig.table }
+    : undefined;
+
+  const sourceColumnCatalog = useDataSourceColumns(
+    sourceId,
+    sourceColumnRequest,
+  );
+  const targetColumnCatalog = useDataSourceColumns(
+    targetId,
     targetColumnRequest,
   );
+  const primaryKeyCatalog = sinkConfig.autoCreateTable
+    ? sourceColumnCatalog
+    : targetColumnCatalog;
+  const mappingTargetColumns = sinkConfig.autoCreateTable
+    ? sourceColumnCatalog.columns
+    : targetColumnCatalog.columns;
+  const mappingTargetLoading = sinkConfig.autoCreateTable
+    ? sourceColumnCatalog.loading
+    : targetColumnCatalog.loading;
 
   const updateSource = (patch: Record<string, any>) => {
     onChange(updateEndpointConfig(editor, 'source', patch));
@@ -106,51 +119,74 @@ export default function SyncTaskEditor({
 
   return (
     <div className="space-y-5">
-      <TaskBasicSection
-        editor={editor}
-        dataSources={dataSources}
-        dataSourceLoading={dataSourceLoading}
-        onChange={onChange}
-      />
+      <div id="task-basic" className="scroll-mt-6">
+        <TaskBasicSection
+          editor={editor}
+          dataSources={dataSources}
+          dataSourceLoading={dataSourceLoading}
+          onChange={onChange}
+        />
+      </div>
 
-      {editor.mode === 'GUIDE_MULTI' ? (
-        <MultiTableConfigSection
-          sourceConfig={sourceConfig}
+      <div id="sync-config" className="scroll-mt-6">
+        {editor.mode === 'GUIDE_MULTI' ? (
+          <MultiTableConfigSection
+            sourceConfig={sourceConfig}
+            sinkConfig={sinkConfig}
+            sourceTables={sourceCatalog.tables}
+            sourceLoading={sourceCatalog.loading}
+            sourceReady={Boolean(sourceId)}
+            targetReady={Boolean(targetId)}
+            sourceExtraParameters={sourceExtraParameters}
+            sinkExtraParameters={sinkExtraParameters}
+            onSourceChange={updateSource}
+            onSinkChange={updateSink}
+          />
+        ) : (
+          <SingleTableConfigSection
+            sourceConfig={sourceConfig}
+            sinkConfig={sinkConfig}
+            sourceTables={sourceCatalog.tables}
+            targetTables={targetCatalog.tables}
+            sourceLoading={sourceCatalog.loading}
+            targetLoading={targetCatalog.loading}
+            primaryKeyOptions={primaryKeyCatalog.columns}
+            primaryKeyLoading={primaryKeyCatalog.loading}
+            sourceReady={Boolean(sourceId)}
+            targetReady={Boolean(targetId)}
+            sourceExtraParameters={sourceExtraParameters}
+            sinkExtraParameters={sinkExtraParameters}
+            onSourceChange={updateSource}
+            onSinkChange={updateSink}
+          />
+        )}
+      </div>
+
+      <div id="runtime-params" className="scroll-mt-6">
+        <ChannelConfigSection
+          editor={editor}
           sinkConfig={sinkConfig}
-          sourceTables={sourceCatalog.tables}
-          sourceLoading={sourceCatalog.loading}
-          sourceReady={Boolean(sourceId)}
-          targetReady={Boolean(targetId)}
-          sourceExtraParameters={sourceExtraParameters}
-          sinkExtraParameters={sinkExtraParameters}
-          onSourceChange={updateSource}
+          onChange={onChange}
           onSinkChange={updateSink}
         />
-      ) : (
-        <SingleTableConfigSection
-          sourceConfig={sourceConfig}
-          sinkConfig={sinkConfig}
-          sourceTables={sourceCatalog.tables}
-          targetTables={targetCatalog.tables}
-          sourceLoading={sourceCatalog.loading}
-          targetLoading={targetCatalog.loading}
-          primaryKeyOptions={primaryKeyCatalog.columns}
-          primaryKeyLoading={primaryKeyCatalog.loading}
-          sourceReady={Boolean(sourceId)}
-          targetReady={Boolean(targetId)}
-          sourceExtraParameters={sourceExtraParameters}
-          sinkExtraParameters={sinkExtraParameters}
-          onSourceChange={updateSource}
-          onSinkChange={updateSink}
-        />
-      )}
+      </div>
 
-      <ChannelConfigSection
-        editor={editor}
-        sinkConfig={sinkConfig}
-        onChange={onChange}
-        onSinkChange={updateSink}
-      />
+      {editor.mode === 'GUIDE_SINGLE' ? (
+        <div id="field-mapping" className="scroll-mt-6">
+          <FieldMappingSection
+            sourceColumns={sourceColumnCatalog.columns}
+            targetColumns={mappingTargetColumns}
+            sourceLoading={sourceColumnCatalog.loading}
+            targetLoading={mappingTargetLoading}
+            sourceReady={Boolean(sourceId && sourceColumnRequest)}
+            targetReady={Boolean(
+              targetId &&
+                (sinkConfig.autoCreateTable || targetColumnRequest),
+            )}
+            targetDerived={Boolean(sinkConfig.autoCreateTable)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
