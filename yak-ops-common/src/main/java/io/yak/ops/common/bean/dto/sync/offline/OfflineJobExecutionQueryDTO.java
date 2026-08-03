@@ -13,7 +13,7 @@ import lombok.Data;
 @Data
 public class OfflineJobExecutionQueryDTO {
 
-  @JsonAlias("pageNo")
+  @JsonAlias({"pageNo", "pageNum"})
   @Min(value = 1, message = "页码必须大于 0")
   private int current = 1;
 
