@@ -16,8 +16,8 @@ class DorisDataSourcePluginTest {
                     + "\"database\":\"warehouse\",\"username\":\"root\","
                     + "\"fenodes\":\"doris-fe:8030\"}");
 
-    assertThat(connection.jdbcUrl()).isEqualTo("jdbc:mariadb://doris-fe:9030/warehouse");
-    assertThat(connection.driverClassName()).isEqualTo("org.mariadb.jdbc.Driver");
+    assertThat(connection.jdbcUrl()).isEqualTo("jdbc:mysql://doris-fe:9030/warehouse");
+    assertThat(connection.driverClassName()).isEqualTo("com.mysql.cj.jdbc.Driver");
     assertThat(connection.normalizedJson()).contains("\"fenodes\":\"doris-fe:8030\"");
     assertThat(new DorisDataSourcePlugin().createCatalog(connection, 5))
         .isInstanceOf(DorisJdbcCatalog.class);
