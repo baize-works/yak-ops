@@ -18,7 +18,7 @@ import org.springframework.util.StringUtils;
 /**
  * Link-Up Worker 注册表、定时心跳和默认节点选择器。
  *
- * <p>任务执行由多 Worker 调度器选择节点；本组件继续负责默认配置节点的登记和全部节点心跳。
+ * <p>CONFIG/MANUAL 节点由 Yak Ops 主动探测；DYNAMIC 节点由 Worker 主动续租。
  *
  * @author weifuwan
  */
@@ -56,6 +56,9 @@ public class OfflineWorkerRegistry {
     NodeRecord node = repository.find(nodeId);
     if (node == null) {
       throw new IllegalArgumentException("Link-Up Worker 不存在：" + nodeId);
+    }
+    if ("DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())) {
+      return node;
     }
     return refresh(node, failFast);
   }
@@ -101,11 +104,13 @@ public class OfflineWorkerRegistry {
         ? engine.getNodeName().trim() : nodeId;
     String baseUrl = probeClient.normalizeBaseUrl(engine.getBaseUrl());
     NodeRecord existing = repository.find(nodeId);
+    if (existing != null && !"CONFIG".equalsIgnoreCase(existing.getRegistrationMode())) {
+      throw new IllegalStateException(
+          "默认 Worker nodeId 已由 " + existing.getRegistrationMode() + " 模式管理：" + nodeId);
+    }
     String nodeName = existing != null && StringUtils.hasText(existing.getNodeName())
         ? existing.getNodeName() : configuredNodeName;
-    if (existing != null
-        && "CONFIG".equalsIgnoreCase(existing.getRegistrationMode())
-        && baseUrl.equals(existing.getBaseUrl())) {
+    if (existing != null && baseUrl.equals(existing.getBaseUrl())) {
       return existing;
     }
 
@@ -118,6 +123,12 @@ public class OfflineWorkerRegistry {
     configured.setNodeName(nodeName);
     configured.setBaseUrl(baseUrl);
     configured.setRegistrationMode("CONFIG");
+    configured.setRegistrationLeaseId(null);
+    configured.setRegistrationInstanceId(null);
+    configured.setRegistrationProtocolVersion(null);
+    configured.setLeaseExpiresAt(null);
+    configured.setLastRegistrationTime(null);
+    configured.setHeartbeatSequence(0L);
     // 页面设置的排空/禁用状态必须跨定时心跳保留。
     configured.setEnabled(existing == null
         ? true : !Boolean.FALSE.equals(existing.getEnabled()));

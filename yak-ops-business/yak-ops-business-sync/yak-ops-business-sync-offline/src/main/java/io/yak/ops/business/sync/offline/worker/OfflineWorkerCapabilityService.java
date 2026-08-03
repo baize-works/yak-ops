@@ -31,11 +31,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 /**
- * 按 Worker 拉取并持久化 Connector Schema 能力摘要。
+ * Worker Connector 能力摘要服务。
  *
- * <p>远程调用在后台刷新或管理操作中完成，调度事务只读取数据库快照。
- *
- * @author weifuwan
+ * <p>CONFIG/MANUAL 节点由 Yak Ops 拉取；DYNAMIC 节点由签名注册心跳推送。
+ * 调度事务始终只读取数据库快照。
  */
 @ConditionalOnOfflineSyncEnabled
 @Service
@@ -157,7 +156,8 @@ public class OfflineWorkerCapabilityService {
   }
 
   private void refresh(NodeRecord node, boolean force) {
-    if (!properties.isEnabled()) {
+    if (!properties.isEnabled()
+        || "DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())) {
       return;
     }
     if (!force && !due(node)) {
@@ -167,7 +167,6 @@ public class OfflineWorkerCapabilityService {
       JsonNode response = schemaClient.list(node.getBaseUrl());
       ObjectNode snapshot = snapshot(node, response);
       String json = write(snapshot);
-      // 能力摘要只反映规范化 Connector 能力，不受进程 instanceId 重启噪声影响。
       String capabilityDigest = digest(write(snapshot.path("connectors")));
       repository.updateCapabilitySuccess(
           node.getNodeId(), capabilityDigest, json, LocalDateTime.now());

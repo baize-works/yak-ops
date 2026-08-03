@@ -37,6 +37,9 @@ export const useClientPageState = () => {
   const [statusLoadingIds, setStatusLoadingIds] = useState<Set<string>>(
     new Set(),
   );
+  const [leaseLoadingIds, setLeaseLoadingIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const loadClients = useCallback(async () => {
     setLoading(true);
@@ -205,6 +208,33 @@ export const useClientPageState = () => {
     [],
   );
 
+  const handleRevokeLease = useCallback(async (nodeId: string) => {
+    setLeaseLoadingIds((previous) => new Set(previous).add(nodeId));
+    try {
+      const response = await linkupClientApi.revokeLease(
+        nodeId,
+        '管理员从执行节点页面撤销租约',
+      );
+      if (response.code !== API_SUCCESS_CODE || !response.data) return;
+      setClients((previous) =>
+        previous.map((item) =>
+          item.nodeId === nodeId ? response.data : item,
+        ),
+      );
+      message.success('动态注册租约已撤销');
+    } catch (error) {
+      console.error('撤销动态注册租约失败', error);
+      message.error('动态注册租约撤销失败');
+      await loadClients();
+    } finally {
+      setLeaseLoadingIds((previous) => {
+        const next = new Set(previous);
+        next.delete(nodeId);
+        return next;
+      });
+    }
+  }, [loadClients]);
+
   useEffect(() => {
     void loadClients();
   }, [loadClients]);
@@ -220,6 +250,7 @@ export const useClientPageState = () => {
     deleteLoadingId,
     refreshLoadingIds,
     statusLoadingIds,
+    leaseLoadingIds,
     form,
     handleOpenCreate,
     handleOpenEdit,
@@ -229,6 +260,7 @@ export const useClientPageState = () => {
     handleVerifyWorker,
     handleRefreshWorker,
     handleChangeSchedulingStatus,
+    handleRevokeLease,
     loadClients,
   };
 };

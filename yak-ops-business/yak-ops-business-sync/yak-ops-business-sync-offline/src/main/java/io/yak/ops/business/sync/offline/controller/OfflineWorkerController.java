@@ -5,6 +5,7 @@ import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerCapabilityService;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.CapabilityView;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.CreateRequest;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.LeaseRevokeRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.OptionView;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.PageView;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.QueryRequest;
@@ -12,6 +13,7 @@ import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.SchedulingReq
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.UpdateRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.VerifyRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.WorkerView;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerRegistrationService;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -38,6 +40,7 @@ public class OfflineWorkerController {
 
   private final OfflineWorkerService service;
   private final OfflineWorkerCapabilityService capabilityService;
+  private final OfflineWorkerRegistrationService registrationService;
 
   @PostMapping("/verify")
   public Result<WorkerView> verify(@Valid @RequestBody VerifyRequest request) {
@@ -96,6 +99,14 @@ public class OfflineWorkerController {
   @PostMapping("/{nodeId}/capabilities/refresh")
   public Result<CapabilityView> refreshCapabilities(@PathVariable String nodeId) {
     return Result.success(capabilityService.refreshView(nodeId));
+  }
+
+  @PostMapping("/{nodeId}/lease/revoke")
+  public Result<WorkerView> revokeLease(
+      @PathVariable String nodeId,
+      @RequestBody(required = false) LeaseRevokeRequest request) {
+    registrationService.revoke(nodeId, request == null ? null : request.getReason());
+    return Result.success(capabilityService.enrich(service.get(nodeId)));
   }
 
   @PutMapping("/{nodeId}/scheduling-status")

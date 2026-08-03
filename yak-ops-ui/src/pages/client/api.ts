@@ -6,7 +6,13 @@ export const apiPrefix = '/api/v1/offline/workers';
 export type WorkerId = string | number;
 export type WorkerHealthStatus = 'UP' | 'DOWN' | string;
 export type WorkerSchedulingStatus = 'ENABLED' | 'DRAINING' | 'DISABLED';
-export type WorkerRegistrationMode = 'CONFIG' | 'MANUAL';
+export type WorkerRegistrationMode = 'CONFIG' | 'MANUAL' | 'DYNAMIC';
+export type WorkerLeaseStatus =
+  | 'ACTIVE'
+  | 'EXPIRED'
+  | 'UNKNOWN'
+  | 'NOT_APPLICABLE'
+  | string;
 export type WorkerCapabilityStatus = 'UNKNOWN' | 'READY' | 'ERROR' | string;
 
 export interface ConnectorCapability {
@@ -36,6 +42,11 @@ export interface LinkupClient {
   clientName?: string;
   baseUrl: string;
   registrationMode: WorkerRegistrationMode;
+  leaseStatus?: WorkerLeaseStatus;
+  leaseExpiresAt?: string;
+  lastRegistrationTime?: string;
+  heartbeatSequence?: number;
+  registrationProtocolVersion?: string;
   enabled: boolean;
   schedulingStatus: WorkerSchedulingStatus;
   weight: number;
@@ -96,6 +107,7 @@ export interface LinkupClientPageRequest {
   keywords?: string;
   status?: string;
   schedulingStatus?: WorkerSchedulingStatus;
+  registrationMode?: WorkerRegistrationMode;
   enabled?: boolean;
 }
 
@@ -118,6 +130,8 @@ export interface LinkupClientOption {
   label: string;
   status?: string;
   schedulingStatus?: string;
+  registrationMode?: WorkerRegistrationMode;
+  leaseStatus?: WorkerLeaseStatus;
   runningJobs?: number;
   maxConcurrentJobs?: number;
   queuedJobs?: number;
@@ -223,6 +237,16 @@ export const linkupClientApi = {
     return HttpUtils.post(
       `${apiPrefix}/${workerPath(nodeId)}/capabilities/refresh`,
       {},
+    );
+  },
+
+  revokeLease: (
+    nodeId: WorkerId,
+    reason?: string,
+  ): Promise<ApiResponse<LinkupClient>> => {
+    return HttpUtils.post(
+      `${apiPrefix}/${workerPath(nodeId)}/lease/revoke`,
+      { reason },
     );
   },
 
