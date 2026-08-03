@@ -149,7 +149,7 @@ V9 为 Worker 增加：
 并新增：
 
 - `yak_offline_worker_registration_nonce`：nonce 防重放
-- `yak_offline_worker_registration_event`：注册、续租、接管、注销和撤销审计
+- `yak_offline_worker_registration_event`：注册、重试、接管、注销和撤销等低频生命周期审计；普通心跳只更新节点表，不写事件表
 
 ## 发布顺序
 
