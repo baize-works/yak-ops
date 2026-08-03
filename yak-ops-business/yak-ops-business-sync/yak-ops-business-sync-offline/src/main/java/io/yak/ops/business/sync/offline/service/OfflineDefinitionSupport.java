@@ -31,8 +31,6 @@ import org.springframework.util.StringUtils;
 /**
  * 离线同步任务定义序列化与转换支持组件。
  *
- * Task definition serialization, structured JobSpec generation and view mapping.
- *
  * @author weifuwan
  */
 @ConditionalOnOfflineSyncEnabled
@@ -63,7 +61,7 @@ public class OfflineDefinitionSupport {
     ObjectNode request = object(requestDTO);
     JsonNode basic = request.path("basic");
     String name = requiredText(basic, "jobName", "任务名称不能为空");
-    String mode = mode(request, basic);
+    String mode = mode(basic);
     LinkUpJobSpecFactory.BuildResult buildResult = jobSpecFactory.build(request);
     validateEndpoint(
         buildResult.getSourceConnectorId(),
@@ -95,15 +93,15 @@ public class OfflineDefinitionSupport {
     ObjectNode request = object(requestDTO);
     JsonNode basic = request.path("basic");
     String name = requiredText(basic, "jobName", "任务名称不能为空");
-    String mode = mode(request, basic);
+    String mode = mode(basic);
     return new DraftDefinition(
         request,
         name.trim(),
         trim(text(basic, "jobDesc", null)),
         mode,
         write(request),
-        draftType(request, basic, true),
-        draftType(request, basic, false));
+        endpointType(request.path("source"), "来源类型不能为空"),
+        endpointType(request.path("sink"), "目标类型不能为空"));
   }
 
   public String buildJobSpec(OfflineJobDefinitionDTO requestDTO) {
@@ -139,7 +137,10 @@ public class OfflineDefinitionSupport {
         ? (ObjectNode) parsed.deepCopy()
         : objectMapper.createObjectNode();
     detail.put("id", definition.getId());
-    detail.put("mode", definition.getMode());
+    ObjectNode basic = detail.with("basic");
+    if (!basic.hasNonNull("mode")) {
+      basic.put("mode", definition.getMode());
+    }
     ObjectNode state = detail.with("state");
     state.put("releaseState", definition.getReleaseState());
     state.put("lastJobStatus", definition.getLastJobStatus());
@@ -221,27 +222,86 @@ public class OfflineDefinitionSupport {
     if (!value.isObject()) {
       throw new IllegalArgumentException("任务定义格式不正确");
     }
-    return (ObjectNode) value;
+    ObjectNode request = (ObjectNode) value;
+    requireObject(request.path("basic"), "basic 配置不能为空");
+    normalizeEndpoint(request, "source");
+    normalizeEndpoint(request, "sink");
+    normalizeChannel(request);
+    return request;
   }
 
-  private String mode(JsonNode request, JsonNode basic) {
-    String mode = text(basic, "mode", text(request, "mode", "GUIDE_SINGLE"));
+  private void normalizeEndpoint(ObjectNode request, String field) {
+    JsonNode value = request.get(field);
+    requireObject(value, field + " 配置不能为空");
+    ObjectNode endpoint = (ObjectNode) value;
+    JsonNode config = endpoint.get("config");
+    if (config == null || config.isNull()) {
+      endpoint.set("config", objectMapper.createObjectNode());
+    } else {
+      requireObject(config, field + ".config 必须是 JSON 对象");
+    }
+  }
+
+  private void normalizeChannel(ObjectNode request) {
+    JsonNode value = request.get("channel");
+    ObjectNode channel;
+    if (value == null || value.isNull()) {
+      channel = request.putObject("channel");
+    } else {
+      requireObject(value, "channel 配置必须是 JSON 对象");
+      channel = (ObjectNode) value;
+    }
+    putDefault(channel, "parallelism", 1);
+    putDefault(channel, "speedLimitEnabled", false);
+    putDefault(channel, "recordsPerSecond", 10000L);
+    putDefault(channel, "dirtyDataPolicy", "stop");
+    putDefault(channel, "dirtyDataLimit", 0L);
+  }
+
+  private void putDefault(ObjectNode node, String field, int value) {
+    if (!node.hasNonNull(field)) {
+      node.put(field, value);
+    }
+  }
+
+  private void putDefault(ObjectNode node, String field, long value) {
+    if (!node.hasNonNull(field)) {
+      node.put(field, value);
+    }
+  }
+
+  private void putDefault(ObjectNode node, String field, boolean value) {
+    if (!node.hasNonNull(field)) {
+      node.put(field, value);
+    }
+  }
+
+  private void putDefault(ObjectNode node, String field, String value) {
+    if (!node.hasNonNull(field)) {
+      node.put(field, value);
+    }
+  }
+
+  private String mode(JsonNode basic) {
+    String mode = text(basic, "mode", "GUIDE_SINGLE");
     if (!"GUIDE_SINGLE".equals(mode) && !"GUIDE_MULTI".equals(mode)) {
       throw new IllegalArgumentException("离线同步仅支持 GUIDE_SINGLE 和 GUIDE_MULTI 模式");
     }
     return mode;
   }
 
-  private String draftType(JsonNode request, JsonNode basic, boolean source) {
-    String basicField = source ? "sourceType" : "targetType";
-    String workflowField = source ? "sourceType" : "targetType";
-    String value = text(basic, basicField, null);
-    if (StringUtils.hasText(value)) {
-      return value.trim();
+  private String endpointType(JsonNode endpoint, String message) {
+    String value = text(endpoint, "dbType", null);
+    if (!StringUtils.hasText(value)) {
+      throw new IllegalArgumentException(message);
     }
-    JsonNode workflowValue = request.path("workflow").path(workflowField);
-    value = text(workflowValue, "dbType", null);
-    return StringUtils.hasText(value) ? value.trim() : null;
+    return value.trim();
+  }
+
+  private void requireObject(JsonNode node, String message) {
+    if (node == null || !node.isObject()) {
+      throw new IllegalArgumentException(message);
+    }
   }
 
   private JsonNode read(String value) {
