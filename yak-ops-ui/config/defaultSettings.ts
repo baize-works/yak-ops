@@ -1,5 +1,5 @@
 import type { ProLayoutProps } from '@ant-design/pro-components';
-
+import { BRAND_COLOR } from '../src/styles/brand';
 /**
  * @name
  */
@@ -9,7 +9,7 @@ const Settings: ProLayoutProps & {
 } = {
   navTheme: 'light',
   // 拂晓蓝
-  colorPrimary: 'rgba(254,44,85,1)',
+  colorPrimary: BRAND_COLOR,
   layout: 'mix',
   contentWidth: 'Fluid',
   fixedHeader: false,

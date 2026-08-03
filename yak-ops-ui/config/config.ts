@@ -4,6 +4,10 @@ import { join } from "node:path";
 import { defineConfig } from "@umijs/max";
 import defaultSettings from "./defaultSettings";
 import proxy from "./proxy";
+import {
+  BRAND_COLOR,
+  BRAND_THEME,
+} from '../src/styles/brand';
 
 import routes from "./routes";
 
@@ -113,17 +117,30 @@ export default defineConfig({
    * @description 内置了 babel import 插件
    * @doc https://umijs.org/docs/max/antd#antd
    */
-  antd: {
-    appConfig: {},
-    configProvider: {
-      theme: {
-        cssVar: true,
-        token: {
-          fontFamily: "AlibabaSans, sans-serif",
-        },
+antd: {
+  appConfig: {},
+  configProvider: {
+    theme: {
+      ...BRAND_THEME,
+
+      // 开启后会生成 --ant-color-primary 等 CSS 变量
+      cssVar: true,
+
+      token: {
+        ...BRAND_THEME.token,
+
+        // 全局品牌主色
+        colorPrimary: BRAND_COLOR,
+
+        // 需要把链接、processing、info 等默认蓝色也统一时保留
+        colorInfo: BRAND_COLOR,
+        colorLink: BRAND_COLOR,
+
+        fontFamily: 'AlibabaSans, sans-serif',
       },
     },
   },
+},
   /**
    * @name 网络请求配置
    * @description 它基于 axios 和 ahooks 的 useRequest 提供了一套统一的网络请求和错误处理方案。

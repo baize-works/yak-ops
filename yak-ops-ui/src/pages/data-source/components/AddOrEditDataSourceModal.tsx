@@ -282,7 +282,7 @@ const AddOrEditDataSourceModal = forwardRef<DataSourceModalRef>((_, ref) => {
         </div>
       }
     >
-      <div style={{ height: "50vh" }}>
+      <div style={{ height: "65vh" }}>
         {showFormStep ? (
           <DynamicDataSourceForm
             key={`${operateType}-${selectedDbType}-${
