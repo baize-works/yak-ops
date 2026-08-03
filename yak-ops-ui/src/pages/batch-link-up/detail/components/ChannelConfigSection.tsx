@@ -46,7 +46,7 @@ export default function ChannelConfigSection({
 
   return (
     <EditorSection title="运行参数">
-      <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
+      <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
         <Field label="Channel 并发数">
           <InputNumber
             min={1}
@@ -107,6 +107,37 @@ export default function ChannelConfigSection({
             onChange={(recordsPerSecond) =>
               updateChannel({
                 recordsPerSecond: Number(recordsPerSecond || 10000),
+              })
+            }
+          />
+        </Field>
+
+        <Field label="脏数据策略">
+          <Select
+            variant="filled"
+            value={editor.channel.dirtyDataPolicy}
+            options={[
+              { label: '遇错停止', value: 'stop' },
+              { label: '跳过并继续', value: 'skip' },
+            ]}
+            className="w-full"
+            onChange={(dirtyDataPolicy) =>
+              updateChannel({ dirtyDataPolicy })
+            }
+          />
+        </Field>
+
+        <Field label="脏数据上限">
+          <InputNumber
+            min={0}
+            max={10000000}
+            variant="filled"
+            disabled={editor.channel.dirtyDataPolicy !== 'skip'}
+            className="!w-full"
+            value={Number(editor.channel.dirtyDataLimit || 0)}
+            onChange={(dirtyDataLimit) =>
+              updateChannel({
+                dirtyDataLimit: Math.max(0, Number(dirtyDataLimit || 0)),
               })
             }
           />
