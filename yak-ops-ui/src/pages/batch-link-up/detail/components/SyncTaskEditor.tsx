@@ -13,6 +13,7 @@ import FieldMappingSection, {
   type FieldMappingValue,
 } from './FieldMappingSection';
 import MultiTableConfigSection from './MultiTableConfigSection';
+import ScheduleConfigSection from './ScheduleConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
 
@@ -222,6 +223,13 @@ export default function SyncTaskEditor({
           />
         </div>
       ) : null}
+
+      <div id="schedule-config" className="scroll-mt-6">
+        <ScheduleConfigSection
+          editor={editor}
+          onChange={onChange}
+        />
+      </div>
     </div>
   );
 }
