@@ -7,8 +7,8 @@ import lombok.Data;
 /**
  * 离线同步任务定义入参。
  *
- * <p>离线同步是固定的 Source -> Channel -> Sink 链路，不再保存前端 workflow
- * 节点、边和画布位置等交互状态。</p>
+ * <p>离线同步是固定的 Source -> Channel -> Sink 链路。字段映射作为任务级配置
+ * 与 basic、source、sink、channel 同级保存，不再挂载到任一端点配置中。</p>
  *
  * @author weifuwan
  */
@@ -22,4 +22,7 @@ public class OfflineJobDefinitionDTO {
   private OfflineJobEndpointDTO source;
   private OfflineJobEndpointDTO sink;
   private OfflineJobChannelDTO channel;
+
+  /** 单表同步任务级字段映射。 */
+  private OfflineJobMappingDTO mapping;
 }
