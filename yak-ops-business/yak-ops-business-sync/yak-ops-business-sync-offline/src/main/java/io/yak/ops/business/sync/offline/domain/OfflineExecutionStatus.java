@@ -46,6 +46,9 @@ public enum OfflineExecutionStatus {
   }
 
   public static boolean isActive(String value) {
+    if (value == null || value.trim().isEmpty()) {
+      return false;
+    }
     try {
       return parse(value).isActive();
     } catch (IllegalArgumentException exception) {
