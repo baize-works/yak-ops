@@ -6,11 +6,10 @@ import {
   DownOutlined,
   EditOutlined,
   EyeOutlined,
-  FileSearchOutlined,
   PauseCircleOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { history, useIntl } from '@umijs/max';
 import {
   Button,
   Dropdown,
@@ -20,14 +19,12 @@ import {
   message,
   type MenuProps,
 } from 'antd';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 import {
   linkupJobDefinitionApi,
   linkupJobExecuteApi,
 } from '../../../api';
-import TaskViewModal from '../../../TaskViewModal';
-import RunLogDrawer from './RunLogDrawer';
 
 interface ActionColumnProps {
   record: any;
@@ -49,10 +46,8 @@ const errorText = (response: any, fallback: string) =>
 
 const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) => {
   const intl = useIntl();
-  const taskViewRef = useRef<any>(null);
   const [runOpen, setRunOpen] = useState(false);
   const [runLoading, setRunLoading] = useState(false);
-  const [logOpen, setLogOpen] = useState(false);
 
   const isOnline = isReleaseOnline(record?.releaseState);
   const isActive = ACTIVE_STATUSES.has(normalizeStatus(record?.lastJobStatus));
@@ -62,6 +57,25 @@ const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) =>
 
   const stopPropagation = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation();
+  };
+
+  const openExecutionDetail = () => {
+    if (record?.id === undefined || record?.id === null) {
+      message.error('任务定义 ID 不存在');
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (record?.instanceId !== undefined && record?.instanceId !== null) {
+      params.set('instanceId', String(record.instanceId));
+    }
+
+    const search = params.toString();
+    history.push(
+      `/sync/batch-link-up/${encodeURIComponent(String(record.id))}/detail${
+        search ? `?${search}` : ''
+      }`,
+    );
   };
 
   const handleRun = async () => {
@@ -214,7 +228,6 @@ const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) =>
   const menuItems: MenuProps['items'] = [
     { key: 'view', icon: <EyeOutlined />, label: '查看详情' },
     { key: 'edit', icon: <EditOutlined />, label: '编辑配置', disabled: !canEdit },
-    { key: 'log', icon: <FileSearchOutlined />, label: '查看日志' },
     { type: 'divider' },
     {
       key: isOnline ? 'offline' : 'online',
@@ -234,101 +247,88 @@ const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) =>
 
   const handleMenuClick: MenuProps['onClick'] = ({ key, domEvent }) => {
     domEvent.stopPropagation();
-    if (key === 'view') taskViewRef.current?.onOpen(true, record, cbk);
+    if (key === 'view') openExecutionDetail();
     if (key === 'edit') handleEdit();
-    if (key === 'log') setLogOpen(true);
     if (key === 'online') showOnlineConfirm();
     if (key === 'offline') showOfflineConfirm();
     if (key === 'delete') handleDeleteTask();
   };
 
   return (
-    <>
-      <div className="flex items-center gap-1 whitespace-nowrap">
-        {isActive ? (
-          <Popconfirm
-            title="停止任务"
-            description="确认停止当前任务吗？"
-            okText={intl.formatMessage({ id: 'pages.common.yes', defaultMessage: '确认' })}
-            cancelText={intl.formatMessage({ id: 'pages.common.no', defaultMessage: '取消' })}
-            onConfirm={handleStop}
-          >
-            <Button
-              size="small"
-              color="danger"
-              variant="filled"
-              icon={<PauseCircleOutlined />}
-              className="!h-7 !rounded-md !px-2.5 !text-xs"
-              onClick={stopPropagation}
-            >
-              停止
-            </Button>
-          </Popconfirm>
-        ) : (
-          <Tooltip title={canRun ? undefined : '请先上线任务'}>
-            <Popconfirm
-              title="运行任务"
-              description="确认运行当前任务吗？"
-              open={canRun && runOpen}
-              okText="确认"
-              cancelText="取消"
-              okButtonProps={{ loading: runLoading }}
-              onConfirm={handleRun}
-              onOpenChange={(open) => {
-                if (!canRun) {
-                  if (open) message.warning('请先上线任务，再执行运行操作');
-                  return;
-                }
-                if (!runLoading) setRunOpen(open);
-              }}
-            >
-              <Button
-                size="small"
-                color={canRun ? 'primary' : 'default'}
-                variant="filled"
-                loading={runLoading}
-                aria-disabled={!canRun}
-                icon={<PlayCircleOutlined />}
-                className={[
-                  '!h-7 !rounded-md !px-2.5 !text-xs',
-                  !canRun ? '!cursor-not-allowed !text-[#98a2b3]' : '',
-                ].join(' ')}
-                onClick={stopPropagation}
-              >
-                运行
-              </Button>
-            </Popconfirm>
-          </Tooltip>
-        )}
-
-        <Dropdown
-          trigger={['click']}
-          placement="bottomRight"
-          menu={{ items: menuItems, onClick: handleMenuClick }}
+    <div className="flex items-center gap-1 whitespace-nowrap">
+      {isActive ? (
+        <Popconfirm
+          title="停止任务"
+          description="确认停止当前任务吗？"
+          okText={intl.formatMessage({ id: 'pages.common.yes', defaultMessage: '确认' })}
+          cancelText={intl.formatMessage({ id: 'pages.common.no', defaultMessage: '取消' })}
+          onConfirm={handleStop}
         >
           <Button
             size="small"
-            color="default"
-            variant="text"
-            className="!h-7 !rounded-md !px-2 !text-xs !text-[#667085]"
+            color="danger"
+            variant="filled"
+            icon={<PauseCircleOutlined />}
+            className="!h-7 !rounded-md !px-2.5 !text-xs"
             onClick={stopPropagation}
           >
-            更多
-            <DownOutlined className="text-[9px]" />
+            停止
           </Button>
-        </Dropdown>
-      </div>
+        </Popconfirm>
+      ) : (
+        <Tooltip title={canRun ? undefined : '请先上线任务'}>
+          <Popconfirm
+            title="运行任务"
+            description="确认运行当前任务吗？"
+            open={canRun && runOpen}
+            okText="确认"
+            cancelText="取消"
+            okButtonProps={{ loading: runLoading }}
+            onConfirm={handleRun}
+            onOpenChange={(open) => {
+              if (!canRun) {
+                if (open) message.warning('请先上线任务，再执行运行操作');
+                return;
+              }
+              if (!runLoading) setRunOpen(open);
+            }}
+          >
+            <Button
+              size="small"
+              color={canRun ? 'primary' : 'default'}
+              variant="filled"
+              loading={runLoading}
+              aria-disabled={!canRun}
+              icon={<PlayCircleOutlined />}
+              className={[
+                '!h-7 !rounded-md !px-2.5 !text-xs',
+                !canRun ? '!cursor-not-allowed !text-[#98a2b3]' : '',
+              ].join(' ')}
+              onClick={stopPropagation}
+            >
+              运行
+            </Button>
+          </Popconfirm>
+        </Tooltip>
+      )}
 
-      <TaskViewModal ref={taskViewRef} />
-      <RunLogDrawer
-        open={logOpen}
-        jobMode="BATCH"
-        instanceId={record?.instanceId}
-        onClose={() => setLogOpen(false)}
-        title="运行日志"
-        subtitle={record?.jobName ? `任务：${record.jobName}` : '查看任务运行输出'}
-      />
-    </>
+      <Dropdown
+        trigger={['click']}
+        placement="bottomRight"
+        menu={{ items: menuItems, onClick: handleMenuClick }}
+      >
+        <Button
+          size="small"
+          color="default"
+          variant="text"
+          className="!h-7 !rounded-md !px-2 !text-xs !text-[#667085]"
+          onClick={stopPropagation}
+        >
+          更多
+          <DownOutlined className="text-[9px]" />
+        </Button>
+      </Dropdown>
+    </div>
   );
 };
 
