@@ -288,32 +288,23 @@ const copyText = async (value: unknown, successText = '已复制') => {
   }
 };
 
-const SectionTitle = ({
-  title,
-  description,
-  extra,
+const DetailField = ({
+  label,
+  value,
+  mono = false,
 }: {
-  title: string;
-  description?: string;
-  extra?: ReactNode;
+  label: string;
+  value: ReactNode;
+  mono?: boolean;
 }) => (
-  <div className="flex min-h-11 items-center justify-between gap-3 border-b border-[#f0f1f3] px-5">
-    <div className="min-w-0">
-      <div className="text-[14px] font-semibold text-[#161823]">{title}</div>
-      {description ? (
-        <div className="mt-0.5 truncate text-[11px] text-[#98a2b3]">
-          {description}
-        </div>
-      ) : null}
-    </div>
-    {extra}
-  </div>
-);
-
-const InfoItem = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div className="min-w-0 px-4 py-3">
-    <div className="text-[11px] text-[#98a2b3]">{label}</div>
-    <div className="mt-1 min-h-5 truncate text-[13px] font-medium text-[#344054]">
+  <div className="min-w-0 py-2.5">
+    <div className="text-[11px] leading-4 text-[#98a2b3]">{label}</div>
+    <div
+      className={[
+        'mt-1 min-h-5 break-words text-[13px] font-medium leading-5 text-[#344054]',
+        mono ? 'font-mono text-[12px]' : '',
+      ].join(' ')}
+    >
       {value ?? '-'}
     </div>
   </div>
@@ -328,9 +319,9 @@ const MetricItem = ({
   value: ReactNode;
   hint?: string;
 }) => (
-  <div className="border-r border-[#f0f1f3] px-5 py-4 last:border-r-0">
-    <div className="text-[11px] text-[#98a2b3]">{label}</div>
-    <div className="mt-2 text-[22px] font-semibold tracking-[-0.02em] text-[#161823]">
+  <div className="min-w-0 px-5 py-4">
+    <div className="text-[11px] leading-4 text-[#98a2b3]">{label}</div>
+    <div className="mt-1.5 truncate text-[20px] font-semibold leading-7 tracking-[-0.02em] text-[#161823]">
       {value}
     </div>
     {hint ? <div className="mt-1 text-[11px] text-[#98a2b3]">{hint}</div> : null}
@@ -472,7 +463,17 @@ export default function BatchLinkUpExecutionDetailPage() {
     try {
       const response = await linkupJobInstanceApi.selectById(selectedInstanceId);
       if (response?.code === API_SUCCESS_CODE && response?.data) {
-        setInstanceDetail(response.data);
+        const detail = response.data;
+        setInstanceDetail(detail);
+        setInstances((previous) => {
+          const detailId = String(firstValue(detail?.id, detail?.instanceId) || '');
+          if (!detailId) return previous;
+          const exists = previous.some(
+            (item) =>
+              String(firstValue(item?.id, item?.instanceId) || '') === detailId,
+          );
+          return exists ? previous : [detail, ...previous];
+        });
         return;
       }
 
@@ -841,31 +842,35 @@ export default function BatchLinkUpExecutionDetailPage() {
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-      <div className="h-[calc(100vh-64px)] overflow-hidden bg-[#f7f7f8] text-[#161823]">
-        <div className="flex h-full flex-col px-5 py-4">
-          <header className="mb-3 flex min-h-[48px] items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-2.5">
+      <div className="h-[calc(100vh-64px)] overflow-hidden bg-white text-[#161823]">
+        <div className="flex h-full flex-col">
+          <header className="flex h-[62px] shrink-0 items-center justify-between gap-4 border-b border-[#eceef1] bg-white px-5">
+            <div className="flex min-w-0 items-center gap-3">
               <Button
                 type="text"
                 icon={<ArrowLeftOutlined />}
-                className="!h-8 !w-8 !min-w-0 !p-0"
+                className="!h-8 !w-8 !min-w-0 !p-0 !text-[#667085]"
                 onClick={() => history.push('/sync/batch-link-up')}
               />
 
+              <div className="h-7 w-px bg-[#eceef1]" />
+
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h1 className="m-0 truncate text-[18px] font-semibold leading-7 text-[#161823]">
+                  <h1 className="m-0 truncate text-[17px] font-semibold leading-6 text-[#161823]">
                     {definition.jobName || '离线同步详情'}
                   </h1>
-                  <Tag className="!m-0">{definition.mode || 'BATCH'}</Tag>
+                  <Tag bordered={false} className="!m-0 !bg-[#f2f3f5] !text-[11px] !text-[#667085]">
+                    {definition.mode || 'BATCH'}
+                  </Tag>
                   {currentInstance ? (
-                    <Tag color={currentStatus.color} className="!m-0">
+                    <Tag color={currentStatus.color} className="!m-0 !text-[11px]">
                       {currentStatus.label}
                     </Tag>
                   ) : null}
                 </div>
-                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[#98a2b3]">
-                  <span>任务定义 ID：{definition.id || taskId}</span>
+                <div className="mt-0.5 flex items-center gap-1 text-[11px] leading-4 text-[#98a2b3]">
+                  <span className="truncate">任务定义 ID：{definition.id || taskId}</span>
                   <Tooltip title="复制任务定义 ID">
                     <Button
                       type="text"
@@ -885,23 +890,25 @@ export default function BatchLinkUpExecutionDetailPage() {
             </div>
 
             <Button
+              size="small"
               icon={<ReloadOutlined />}
               loading={pageLoading}
+              className="!h-8"
               onClick={() => void loadPage()}
             >
               刷新
             </Button>
           </header>
 
-          <div className="grid min-h-0 flex-1 grid-cols-[318px_minmax(0,1fr)] overflow-hidden rounded-lg border border-[#e6e8ec] bg-white">
-            <aside className="flex min-h-0 flex-col border-r border-[#e6e8ec] bg-white">
-              <div className="border-b border-[#f0f1f3] px-4 py-3">
-                <div className="flex items-center justify-between">
+          <div className="grid min-h-0 flex-1 grid-cols-[286px_minmax(0,1fr)]">
+            <aside className="flex min-h-0 flex-col border-r border-[#eceef1] bg-white">
+              <div className="px-4 pb-3 pt-4">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[14px] font-semibold text-[#161823]">
+                    <div className="text-[14px] font-semibold leading-5 text-[#161823]">
                       执行实例
                     </div>
-                    <div className="mt-0.5 text-[11px] text-[#98a2b3]">
+                    <div className="mt-0.5 text-[11px] leading-4 text-[#98a2b3]">
                       共 {instances.length} 次运行
                     </div>
                   </div>
@@ -919,7 +926,7 @@ export default function BatchLinkUpExecutionDetailPage() {
                   variant="filled"
                   value={keyword}
                   prefix={<SearchOutlined className="text-[#98a2b3]" />}
-                  placeholder="搜索实例 ID、引擎任务 ID"
+                  placeholder="搜索实例或引擎任务 ID"
                   className="!mt-3 !h-8"
                   onChange={(event) => setKeyword(event.target.value)}
                 />
@@ -934,9 +941,9 @@ export default function BatchLinkUpExecutionDetailPage() {
                 />
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto bg-[#fafafa] p-2">
+              <div className="min-h-0 flex-1 overflow-y-auto border-t border-[#f0f1f3]">
                 {filteredInstances.length > 0 ? (
-                  <div className="space-y-1.5">
+                  <div>
                     {filteredInstances.map((item) => {
                       const id = String(
                         firstValue(item?.id, item?.instanceId) || '',
@@ -953,33 +960,32 @@ export default function BatchLinkUpExecutionDetailPage() {
                           key={id}
                           type="button"
                           className={[
-                            'w-full border px-3 py-2.5 text-left transition-colors',
+                            'relative w-full border-0 border-b border-solid border-[#f0f1f3] px-4 py-3 text-left transition-colors',
                             active
-                              ? 'border-[rgba(254,44,85,0.28)] bg-[rgba(254,44,85,0.05)]'
-                              : 'border-transparent bg-white hover:border-[#e6e8ec] hover:bg-white',
+                              ? 'bg-[rgba(254,44,85,0.045)] before:absolute before:bottom-0 before:left-0 before:top-0 before:w-[3px] before:bg-[rgba(254,44,85,1)]'
+                              : 'bg-white hover:bg-[#fafafa]',
                           ].join(' ')}
                           onClick={() => handleSelectInstance(item)}
                         >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="truncate text-[12px] font-medium text-[#344054]">
-                                实例 #{id || '-'}
-                              </div>
-                              <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
-                                {formatDateTime(
-                                  firstValue(item?.startTime, item?.createTime),
-                                )}
-                              </div>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0 truncate text-[12px] font-medium leading-5 text-[#344054]">
+                              实例 #{id || '-'}
                             </div>
                             <Tag
                               color={meta.color}
-                              className="!m-0 !text-[10px]"
+                              className="!m-0 shrink-0 !text-[10px]"
                             >
                               {meta.label}
                             </Tag>
                           </div>
 
-                          <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-[#667085]">
+                          <div className="mt-1 truncate text-[11px] leading-4 text-[#98a2b3]">
+                            {formatDateTime(
+                              firstValue(item?.startTime, item?.createTime),
+                            )}
+                          </div>
+
+                          <div className="mt-2 flex items-center justify-between gap-3 text-[11px] leading-4 text-[#667085]">
                             <span className="truncate">
                               {firstValue(
                                 item?.runMode,
@@ -988,7 +994,7 @@ export default function BatchLinkUpExecutionDetailPage() {
                                 '手动运行',
                               )}
                             </span>
-                            <span className="shrink-0">
+                            <span className="shrink-0 text-[#98a2b3]">
                               {formatDuration(itemDuration)}
                             </span>
                           </div>
@@ -997,7 +1003,7 @@ export default function BatchLinkUpExecutionDetailPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="flex h-full min-h-[260px] items-center justify-center">
+                  <div className="flex h-full min-h-[260px] items-center justify-center px-4">
                     <Empty
                       image={Empty.PRESENTED_IMAGE_SIMPLE}
                       description={
@@ -1011,32 +1017,62 @@ export default function BatchLinkUpExecutionDetailPage() {
               </div>
             </aside>
 
-            <main className="min-h-0 overflow-y-auto bg-[#f7f7f8] p-4">
+            <main className="min-h-0 overflow-y-auto bg-white">
               {!selectedInstanceId || !currentInstance ? (
-                <div className="flex h-full min-h-[420px] items-center justify-center rounded-lg border border-dashed border-[#dfe1e5] bg-white">
+                <div className="flex h-full min-h-[420px] items-center justify-center">
                   <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                     description="请选择左侧执行实例查看详情"
                   />
                 </div>
               ) : instanceLoading ? (
-                <div className="flex h-full min-h-[420px] items-center justify-center rounded-lg border border-[#eceef1] bg-white">
+                <div className="flex h-full min-h-[420px] items-center justify-center">
                   <Spin />
                 </div>
               ) : (
-                <>
-                  <section className="overflow-hidden rounded-lg border border-[#eceef1] bg-white">
-                    <SectionTitle
-                      title="基本信息"
-                      description="当前运行实例、执行节点与同步链路概览"
-                    />
+                <div className="min-w-0">
+                  <section className="border-b border-[#eceef1] px-6 pb-5 pt-5">
+                    <div className="flex items-start justify-between gap-5">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="m-0 text-[16px] font-semibold leading-6 text-[#161823]">
+                            实例 #{selectedInstanceId}
+                          </h2>
+                          <Tag color={currentStatus.color} className="!m-0">
+                            {currentStatus.label}
+                          </Tag>
+                        </div>
+                        <div className="mt-1 text-[12px] leading-5 text-[#98a2b3]">
+                          {formatDateTime(
+                            firstValue(
+                              currentInstance?.startTime,
+                              currentInstance?.createTime,
+                            ),
+                          )}
+                          <span className="mx-2 text-[#d0d5dd]">·</span>
+                          {firstValue(
+                            currentInstance?.runMode,
+                            currentInstance?.triggerType,
+                            currentInstance?.assignmentMode,
+                            '手动运行',
+                          )}
+                        </div>
+                      </div>
 
-                    <div className="flex items-center gap-3 border-b border-[#f0f1f3] px-5 py-4">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#f2f4f7] text-[#667085]">
+                      <div className="shrink-0 text-right">
+                        <div className="text-[11px] text-[#98a2b3]">运行耗时</div>
+                        <div className="mt-1 text-[15px] font-semibold text-[#344054]">
+                          {formatDuration(durationMillis)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex min-w-0 items-center gap-3 bg-[#fafafa] px-4 py-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-[#f0f2f5] text-[#667085]">
                         <DatabaseOutlined />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-[#344054]">
+                        <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium leading-5 text-[#344054]">
                           <span className="truncate">
                             {firstValue(
                               definition?.sourceDatasourceName,
@@ -1045,7 +1081,7 @@ export default function BatchLinkUpExecutionDetailPage() {
                             )}
                             {sourceTable ? ` / ${sourceTable}` : ''}
                           </span>
-                          <SyncOutlined className="shrink-0 text-[rgba(254,44,85,0.75)]" />
+                          <SyncOutlined className="shrink-0 text-[rgba(254,44,85,0.72)]" />
                           <span className="truncate">
                             {firstValue(
                               definition?.sinkDatasourceName,
@@ -1055,23 +1091,23 @@ export default function BatchLinkUpExecutionDetailPage() {
                             {sinkTable ? ` / ${sinkTable}` : ''}
                           </span>
                         </div>
-                        <div className="mt-1 text-[11px] text-[#98a2b3]">
+                        <div className="mt-0.5 text-[11px] leading-4 text-[#98a2b3]">
                           {sourceType || '-'} → {sinkType || '-'}
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 divide-x divide-y divide-[#f0f1f3] xl:grid-cols-4">
-                      <InfoItem label="实例 ID" value={selectedInstanceId} />
-                      <InfoItem
+                    <div className="mt-3 grid grid-cols-2 gap-x-8 xl:grid-cols-4">
+                      <DetailField
                         label="引擎任务 ID"
+                        mono
                         value={firstValue(
                           currentInstance?.engineJobId,
                           currentInstance?.externalExecutionId,
                           '-',
                         )}
                       />
-                      <InfoItem
+                      <DetailField
                         label="执行节点"
                         value={firstValue(
                           currentInstance?.workerNodeName,
@@ -1080,76 +1116,57 @@ export default function BatchLinkUpExecutionDetailPage() {
                           '-',
                         )}
                       />
-                      <InfoItem
-                        label="运行方式"
-                        value={firstValue(
-                          currentInstance?.runMode,
-                          currentInstance?.triggerType,
-                          currentInstance?.assignmentMode,
-                          '-',
-                        )}
-                      />
-                      <InfoItem
+                      <DetailField
                         label="开始时间"
                         value={formatDateTime(currentInstance?.startTime)}
                       />
-                      <InfoItem
+                      <DetailField
                         label="结束时间"
                         value={formatDateTime(currentInstance?.endTime)}
-                      />
-                      <InfoItem
-                        label="运行耗时"
-                        value={formatDuration(durationMillis)}
-                      />
-                      <InfoItem
-                        label="实例状态"
-                        value={
-                          <Tag color={currentStatus.color} className="!m-0">
-                            {currentStatus.label}
-                          </Tag>
-                        }
                       />
                     </div>
 
                     {errorMessage ? (
-                      <div className="border-t border-[#f0f1f3] bg-[#fff7f7] px-5 py-3 text-[12px] leading-5 text-[#d92d20]">
+                      <div className="mt-2 border-l-2 border-[#ff4d4f] bg-[#fff7f7] px-3 py-2.5 text-[12px] leading-5 text-[#d92d20]">
                         <span className="font-medium">错误信息：</span>
                         {String(errorMessage)}
                       </div>
                     ) : null}
                   </section>
 
-                  <section className="mt-4 overflow-hidden rounded-lg border border-[#eceef1] bg-white">
+                  <section className="border-b border-[#eceef1]">
                     <Tabs
                       activeKey={runtimeTab}
-                      className="[&_.ant-tabs-nav]:!mb-0 [&_.ant-tabs-nav]:!px-5 [&_.ant-tabs-content-holder]:!border-t [&_.ant-tabs-content-holder]:!border-[#f0f1f3]"
+                      className="[&_.ant-tabs-nav]:!mb-0 [&_.ant-tabs-nav]:!px-6 [&_.ant-tabs-nav]:!pt-1 [&_.ant-tabs-tab]:!py-3 [&_.ant-tabs-content-holder]:!border-t [&_.ant-tabs-content-holder]:!border-[#f0f1f3]"
                       onChange={handleRuntimeTabChange}
                       items={[
                         {
                           key: 'log',
                           label: '运行日志',
                           children: (
-                            <div className="p-4">
+                            <div className="px-6 pb-6 pt-4">
                               <div className="mb-3 flex items-center justify-between gap-3">
-                                <div className="text-[12px] text-[#98a2b3]">
-                                  展示当前实例由 Yak Ops 聚合的 Link-Up 运行日志
+                                <div className="text-[12px] leading-5 text-[#98a2b3]">
+                                  当前实例由 Yak Ops 聚合的 Link-Up 运行日志
                                 </div>
                                 <Button
                                   size="small"
+                                  type="text"
                                   icon={<ReloadOutlined />}
                                   loading={logLoading}
+                                  className="!h-7 !text-[#667085]"
                                   onClick={() => void loadLog()}
                                 >
                                   刷新日志
                                 </Button>
                               </div>
-                              <div className="relative min-h-[300px] overflow-hidden rounded-md border border-[#23262d] bg-[#16181d]">
+                              <div className="relative min-h-[320px] overflow-hidden border border-[#23262d] bg-[#16181d]">
                                 {logLoading ? (
-                                  <div className="flex min-h-[300px] items-center justify-center text-white/60">
+                                  <div className="flex min-h-[320px] items-center justify-center text-white/60">
                                     <Spin size="small" />
                                   </div>
                                 ) : (
-                                  <pre className="m-0 max-h-[460px] min-h-[300px] overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-[12px] leading-5 text-[#d6d9df]">
+                                  <pre className="m-0 max-h-[480px] min-h-[320px] overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-[12px] leading-5 text-[#d6d9df]">
                                     {logContent || '当前实例暂无运行日志'}
                                   </pre>
                                 )}
@@ -1161,16 +1178,18 @@ export default function BatchLinkUpExecutionDetailPage() {
                           key: 'config',
                           label: '运行配置',
                           children: (
-                            <div className="p-4">
+                            <div className="px-6 pb-6 pt-4">
                               {runtimeConfig ? (
-                                <pre className="m-0 max-h-[460px] min-h-[260px] overflow-auto whitespace-pre-wrap break-words rounded-md border border-[#e6e8ec] bg-[#fafafa] p-4 font-mono text-[12px] leading-5 text-[#344054]">
+                                <pre className="m-0 max-h-[480px] min-h-[280px] overflow-auto whitespace-pre-wrap break-words border border-[#e6e8ec] bg-[#fafafa] p-4 font-mono text-[12px] leading-5 text-[#344054]">
                                   {runtimeConfig}
                                 </pre>
                               ) : (
-                                <Empty
-                                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                  description="当前实例未返回运行配置"
-                                />
+                                <div className="flex min-h-[280px] items-center justify-center">
+                                  <Empty
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                    description="当前实例未返回运行配置"
+                                  />
+                                </div>
                               )}
                             </div>
                           ),
@@ -1215,25 +1234,25 @@ export default function BatchLinkUpExecutionDetailPage() {
                     />
                   </section>
 
-                  <section className="mt-4 overflow-hidden rounded-lg border border-[#eceef1] bg-white">
+                  <section>
                     <Tabs
                       activeKey={resultTab}
-                      className="[&_.ant-tabs-nav]:!mb-0 [&_.ant-tabs-nav]:!px-5 [&_.ant-tabs-content-holder]:!border-t [&_.ant-tabs-content-holder]:!border-[#f0f1f3]"
+                      className="[&_.ant-tabs-nav]:!mb-0 [&_.ant-tabs-nav]:!px-6 [&_.ant-tabs-nav]:!pt-1 [&_.ant-tabs-tab]:!py-3 [&_.ant-tabs-content-holder]:!border-t [&_.ant-tabs-content-holder]:!border-[#f0f1f3]"
                       onChange={(key) => setResultTab(key as ResultTabKey)}
                       items={[
                         {
                           key: 'sync',
                           label: '同步情况',
                           children: (
-                            <div className="p-4">
+                            <div className="px-6 pb-8 pt-4">
                               <div className="mb-3 flex items-center justify-between gap-3">
                                 <div>
-                                  <div className="flex items-center gap-2 text-[13px] font-medium text-[#344054]">
+                                  <div className="flex items-center gap-2 text-[13px] font-medium leading-5 text-[#344054]">
                                     <TableOutlined />
                                     表级同步结果
                                   </div>
-                                  <div className="mt-1 text-[11px] text-[#98a2b3]">
-                                    展示来源表、目标表、读取数量与写入数量
+                                  <div className="mt-0.5 text-[11px] leading-4 text-[#98a2b3]">
+                                    来源表、目标表及读取写入情况
                                   </div>
                                 </div>
                                 <span className="text-[12px] text-[#667085]">
@@ -1257,7 +1276,7 @@ export default function BatchLinkUpExecutionDetailPage() {
                                     />
                                   ),
                                 }}
-                                className="[&_.ant-table-thead>tr>th]:!bg-[#fafafa] [&_.ant-table-thead>tr>th]:!text-[12px] [&_.ant-table-tbody>tr>td]:!text-[12px]"
+                                className="[&_.ant-table-container]:!border-[#eceef1] [&_.ant-table-thead>tr>th]:!h-10 [&_.ant-table-thead>tr>th]:!bg-[#fafafa] [&_.ant-table-thead>tr>th]:!text-[12px] [&_.ant-table-tbody>tr>td]:!py-3 [&_.ant-table-tbody>tr>td]:!text-[12px]"
                               />
                             </div>
                           ),
@@ -1266,13 +1285,13 @@ export default function BatchLinkUpExecutionDetailPage() {
                           key: 'structure',
                           label: '结构迁移',
                           children: (
-                            <div className="p-4">
+                            <div className="px-6 pb-8 pt-4">
                               {sqlRecords.length > 0 ? (
                                 <div className="space-y-3">
                                   {sqlRecords.map((item) => (
                                     <div
                                       key={item.key}
-                                      className="overflow-hidden rounded-md border border-[#e6e8ec]"
+                                      className="overflow-hidden border border-[#e6e8ec]"
                                     >
                                       <div className="flex min-h-10 items-center justify-between gap-3 border-b border-[#e6e8ec] bg-[#fafafa] px-3">
                                         <div className="min-w-0">
@@ -1307,7 +1326,7 @@ export default function BatchLinkUpExecutionDetailPage() {
                                   ))}
                                 </div>
                               ) : (
-                                <div className="flex min-h-[240px] flex-col items-center justify-center rounded-md border border-dashed border-[#dfe1e5] bg-[#fafafa] px-6 text-center">
+                                <div className="flex min-h-[240px] flex-col items-center justify-center border border-dashed border-[#dfe1e5] bg-[#fafafa] px-6 text-center">
                                   <FileTextOutlined className="text-[28px] text-[#c0c4cc]" />
                                   <div className="mt-3 text-[13px] font-medium text-[#667085]">
                                     暂无结构迁移语句
@@ -1323,7 +1342,7 @@ export default function BatchLinkUpExecutionDetailPage() {
                       ]}
                     />
                   </section>
-                </>
+                </div>
               )}
             </main>
           </div>
