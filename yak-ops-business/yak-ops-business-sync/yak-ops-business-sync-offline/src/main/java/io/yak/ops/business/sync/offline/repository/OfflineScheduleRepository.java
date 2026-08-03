@@ -15,9 +15,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
 /**
- * 持久化 Cron 计划和重试策略。
+ * 持久化离线同步调度配置和业务重试策略。
  *
- * @author weifuwan
+ * <p>真正的时间触发由 Yak Schedule 管理；本仓库保留业务配置和运行时间投影。</p>
  */
 @ConditionalOnOfflineSyncEnabled
 @Repository
@@ -44,6 +44,7 @@ public class OfflineScheduleRepository {
     LocalDateTime nextFireTime = enabled ? next(cronExpression, LocalDateTime.now()) : null;
     String scheduleJson = schedule == null || schedule.isNull() ? null : write(schedule);
 
+    LocalDateTime now = LocalDateTime.now();
     jdbc.update(
         "INSERT INTO yak_offline_schedule "
             + "(job_definition_id, cron_expression, enabled, retry_max_attempts, retry_backoff_seconds, "
@@ -61,8 +62,8 @@ public class OfflineScheduleRepository {
         Math.max(1, backoffSeconds),
         timestamp(nextFireTime),
         scheduleJson,
-        Timestamp.valueOf(LocalDateTime.now()),
-        Timestamp.valueOf(LocalDateTime.now()));
+        Timestamp.valueOf(now),
+        Timestamp.valueOf(now));
     return findSchedule(definitionId);
   }
 
@@ -77,43 +78,24 @@ public class OfflineScheduleRepository {
     }
   }
 
-  public List<ScheduleRecord> findPendingSchedules(int limit) {
+  public List<ScheduleRecord> findAllSchedules() {
     return jdbc.query(
-        selectSql() + " WHERE enabled = 1 AND next_fire_time IS NULL "
-            + "AND cron_expression IS NOT NULL ORDER BY update_time ASC LIMIT ?",
-        (resultSet, rowNum) -> map(resultSet),
-        Math.max(1, limit));
+        selectSql() + " ORDER BY job_definition_id ASC",
+        (resultSet, rowNum) -> map(resultSet));
   }
 
-  public void initializeNextFireTime(ScheduleRecord schedule, LocalDateTime now) {
-    LocalDateTime nextFireTime = next(schedule.getCronExpression(), now);
+  public void updateRuntimeState(
+      Long definitionId,
+      LocalDateTime lastFireTime,
+      LocalDateTime nextFireTime) {
     jdbc.update(
-        "UPDATE yak_offline_schedule SET next_fire_time = ?, update_time = ? "
-            + "WHERE job_definition_id = ? AND enabled = 1 AND next_fire_time IS NULL",
+        "UPDATE yak_offline_schedule "
+            + "SET last_fire_time = ?, next_fire_time = ?, update_time = ? "
+            + "WHERE job_definition_id = ?",
+        timestamp(lastFireTime),
         timestamp(nextFireTime),
         Timestamp.valueOf(LocalDateTime.now()),
-        schedule.getJobDefinitionId());
-  }
-
-  public List<ScheduleRecord> findDueSchedules(LocalDateTime now, int limit) {
-    return jdbc.query(
-        selectSql() + " WHERE enabled = 1 AND next_fire_time IS NOT NULL "
-            + "AND next_fire_time <= ? ORDER BY next_fire_time ASC LIMIT ?",
-        (resultSet, rowNum) -> map(resultSet),
-        Timestamp.valueOf(now),
-        Math.max(1, limit));
-  }
-
-  public boolean claimSchedule(ScheduleRecord schedule, LocalDateTime fireTime) {
-    LocalDateTime nextFireTime = next(schedule.getCronExpression(), fireTime.plusSeconds(1));
-    return jdbc.update(
-        "UPDATE yak_offline_schedule SET last_fire_time = ?, next_fire_time = ?, update_time = ? "
-            + "WHERE job_definition_id = ? AND enabled = 1 AND next_fire_time = ?",
-        Timestamp.valueOf(fireTime),
-        timestamp(nextFireTime),
-        Timestamp.valueOf(LocalDateTime.now()),
-        schedule.getJobDefinitionId(),
-        timestamp(schedule.getNextFireTime())) > 0;
+        definitionId);
   }
 
   private int maxAttempts(JsonNode schedule) {
@@ -236,13 +218,36 @@ public class OfflineScheduleRepository {
       this.scheduleJson = scheduleJson;
     }
 
-    public Long getJobDefinitionId() { return jobDefinitionId; }
-    public String getCronExpression() { return cronExpression; }
-    public boolean isEnabled() { return enabled; }
-    public int getRetryMaxAttempts() { return retryMaxAttempts; }
-    public int getRetryBackoffSeconds() { return retryBackoffSeconds; }
-    public LocalDateTime getNextFireTime() { return nextFireTime; }
-    public LocalDateTime getLastFireTime() { return lastFireTime; }
-    public String getScheduleJson() { return scheduleJson; }
+    public Long getJobDefinitionId() {
+      return jobDefinitionId;
+    }
+
+    public String getCronExpression() {
+      return cronExpression;
+    }
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public int getRetryMaxAttempts() {
+      return retryMaxAttempts;
+    }
+
+    public int getRetryBackoffSeconds() {
+      return retryBackoffSeconds;
+    }
+
+    public LocalDateTime getNextFireTime() {
+      return nextFireTime;
+    }
+
+    public LocalDateTime getLastFireTime() {
+      return lastFireTime;
+    }
+
+    public String getScheduleJson() {
+      return scheduleJson;
+    }
   }
 }
