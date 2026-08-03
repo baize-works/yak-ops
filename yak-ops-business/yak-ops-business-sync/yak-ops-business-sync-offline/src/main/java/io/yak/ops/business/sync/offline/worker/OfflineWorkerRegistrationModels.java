@@ -86,6 +86,7 @@ public final class OfflineWorkerRegistrationModels {
     private String leaseId;
     private LocalDateTime leaseExpiresAt;
     private Long heartbeatIntervalMillis;
+    private Long heartbeatSequence;
     private Long serverTimeMillis;
     private Boolean enabled;
     private String schedulingStatus;
