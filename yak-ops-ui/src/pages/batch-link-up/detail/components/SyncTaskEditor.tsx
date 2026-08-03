@@ -27,7 +27,6 @@ const SOURCE_MANAGED_KEYS = [
   'table_path',
   'table_list',
   'query',
-  'mapping',
 ];
 
 const SINK_MANAGED_KEYS = [
@@ -71,7 +70,7 @@ export default function SyncTaskEditor({
   const sourceId = editor.source.dataSourceId;
   const targetId = editor.sink.dataSourceId;
   const mappingColumns = normalizeMappings(
-    sourceConfig.mapping?.columns,
+    editor.mapping?.columns,
   );
 
   const sourceCatalog = useDataSourceTables(sourceId);
@@ -112,6 +111,15 @@ export default function SyncTaskEditor({
 
   const updateSink = (patch: Record<string, any>) => {
     onChange(updateEndpointConfig(editor, 'sink', patch));
+  };
+
+  const updateMapping = (columns: FieldMappingValue[]) => {
+    onChange({
+      ...editor,
+      mapping: {
+        columns,
+      },
+    });
   };
 
   const sourceConnectorId =
@@ -200,13 +208,7 @@ export default function SyncTaskEditor({
         <div id="field-mapping" className="scroll-mt-6">
           <FieldMappingSection
             value={mappingColumns}
-            onChange={(columns) =>
-              updateSource({
-                mapping: {
-                  columns,
-                },
-              })
-            }
+            onChange={updateMapping}
             sourceColumns={sourceColumnCatalog.columns}
             targetColumns={mappingTargetColumns}
             sourceLoading={sourceColumnCatalog.loading}

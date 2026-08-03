@@ -17,9 +17,10 @@ import org.springframework.util.StringUtils;
 /**
  * Adds Yak Ops' fixed single-table column mapping contract to Link-Up JobSpec.
  *
- * <p>The existing factory remains responsible for connector and runtime
- * compilation. This primary specialization only normalizes mapping metadata,
- * keeping the mapping independent from connector options.</p>
+ * <p>Field mapping is a job-level configuration and is therefore stored next
+ * to basic/source/sink/channel in the Yak Ops definition. Historical
+ * source.config.mapping definitions are promoted to the top level before the
+ * base JobSpec compiler runs.</p>
  */
 @Primary
 @Component
@@ -37,15 +38,21 @@ public class ColumnMappingLinkUpJobSpecFactory extends LinkUpJobSpecFactory {
 
   @Override
   public BuildResult build(JsonNode definition) {
-    BuildResult base = super.build(definition);
-    ObjectNode mapping = normalizeMapping(definition);
-    if (mapping == null) {
-      return base;
+    ObjectNode normalizedDefinition = normalizeDefinition(definition);
+    ObjectNode mapping = objectMapping(normalizedDefinition.get("mapping"));
+
+    if (mapping != null) {
+      String mode = normalizedDefinition.path("basic")
+          .path("mode")
+          .asText("GUIDE_SINGLE");
+      if (!"GUIDE_SINGLE".equalsIgnoreCase(mode)) {
+        throw new IllegalArgumentException("多表同步暂不支持自定义字段映射");
+      }
     }
 
-    String mode = definition.path("basic").path("mode").asText("GUIDE_SINGLE");
-    if (!"GUIDE_SINGLE".equalsIgnoreCase(mode)) {
-      throw new IllegalArgumentException("多表同步暂不支持自定义字段映射");
+    BuildResult base = super.build(normalizedDefinition);
+    if (mapping == null) {
+      return base;
     }
 
     ObjectNode jobSpec = (ObjectNode) base.getJobSpec().deepCopy();
@@ -60,6 +67,34 @@ public class ColumnMappingLinkUpJobSpecFactory extends LinkUpJobSpecFactory {
         base.getSinkConnectorId(),
         base.getSourceTable(),
         base.getSinkTable());
+  }
+
+  private ObjectNode normalizeDefinition(JsonNode definition) {
+    if (definition == null || !definition.isObject()) {
+      throw new IllegalArgumentException("离线同步任务定义必须是 JSON 对象");
+    }
+
+    ObjectNode normalized = (ObjectNode) definition.deepCopy();
+    ObjectNode mapping = normalizeMapping(definition);
+
+    if (mapping == null) {
+      normalized.remove("mapping");
+    } else {
+      normalized.set("mapping", mapping);
+    }
+
+    JsonNode source = normalized.get("source");
+    if (source != null && source.isObject()) {
+      ObjectNode sourceObject = (ObjectNode) source;
+      sourceObject.remove("mapping");
+
+      JsonNode config = sourceObject.get("config");
+      if (config != null && config.isObject()) {
+        ((ObjectNode) config).remove("mapping");
+      }
+    }
+
+    return normalized;
   }
 
   private ObjectNode normalizeMapping(JsonNode definition) {
@@ -83,6 +118,7 @@ public class ColumnMappingLinkUpJobSpecFactory extends LinkUpJobSpecFactory {
       if (!StringUtils.hasText(source) || !StringUtils.hasText(target)) {
         throw new IllegalArgumentException("字段映射的来源字段和目标字段不能为空");
       }
+
       source = source.trim();
       target = target.trim();
       if (!sources.add(source)) {
@@ -91,6 +127,7 @@ public class ColumnMappingLinkUpJobSpecFactory extends LinkUpJobSpecFactory {
       if (!targets.add(target)) {
         throw new IllegalArgumentException("目标字段不能重复映射：" + target);
       }
+
       normalizedColumns.addObject()
           .put("source", source)
           .put("target", target);
@@ -99,6 +136,12 @@ public class ColumnMappingLinkUpJobSpecFactory extends LinkUpJobSpecFactory {
     ObjectNode normalized = objectMapper.createObjectNode();
     normalized.set("columns", normalizedColumns);
     return normalized;
+  }
+
+  private ObjectNode objectMapping(JsonNode mapping) {
+    return mapping != null && mapping.isObject()
+        ? (ObjectNode) mapping
+        : null;
   }
 
   private String text(JsonNode node, String field, String fallback) {

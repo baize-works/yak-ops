@@ -16,7 +16,7 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void shouldPromoteEditorMappingIntoTopLevelJobSpec() throws Exception {
+  void shouldCompileTopLevelEditorMappingIntoJobSpec() throws Exception {
     ColumnMappingLinkUpJobSpecFactory factory = factory();
     JsonNode definition = mapper.readTree("""
         {
@@ -24,15 +24,7 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
           "source": {
             "connectorId": "jdbc",
             "dataSourceId": 1,
-            "config": {
-              "table": "demo.users",
-              "mapping": {
-                "columns": [
-                  {"source": "name", "target": "user_name"},
-                  {"sourceField": "id", "targetField": "user_id"}
-                ]
-              }
-            }
+            "config": {"table": "demo.users"}
           },
           "sink": {
             "connectorId": "jdbc",
@@ -42,7 +34,13 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
               "writeMode": "append"
             }
           },
-          "channel": {"parallelism": 1}
+          "channel": {"parallelism": 1},
+          "mapping": {
+            "columns": [
+              {"source": "name", "target": "user_name"},
+              {"sourceField": "id", "targetField": "user_id"}
+            ]
+          }
         }
         """);
 
@@ -57,7 +55,42 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
   }
 
   @Test
-  void shouldRejectMappingForMultiTableJobs() throws Exception {
+  void shouldPromoteLegacySourceConfigMapping() throws Exception {
+    ColumnMappingLinkUpJobSpecFactory factory = factory();
+    JsonNode definition = mapper.readTree("""
+        {
+          "basic": {"jobName": "legacy-mapped-users", "mode": "GUIDE_SINGLE"},
+          "source": {
+            "connectorId": "jdbc",
+            "dataSourceId": 1,
+            "config": {
+              "table": "demo.users",
+              "mapping": {
+                "columns": [
+                  {"source": "id", "target": "user_id"}
+                ]
+              }
+            }
+          },
+          "sink": {
+            "connectorId": "jdbc",
+            "dataSourceId": 2,
+            "config": {"table": "demo.users_copy"}
+          },
+          "channel": {"parallelism": 1}
+        }
+        """);
+
+    LinkUpJobSpecFactory.BuildResult result = factory.build(definition);
+
+    assertThat(result.getJobSpec().path("mapping").path("columns")).hasSize(1);
+    assertThat(result.getJobSpec().path("mapping").path("columns").get(0).path("target").asText())
+        .isEqualTo("user_id");
+    assertThat(result.getJobSpec().path("source").path("options").has("mapping")).isFalse();
+  }
+
+  @Test
+  void shouldRejectTopLevelMappingForMultiTableJobs() throws Exception {
     ColumnMappingLinkUpJobSpecFactory factory = factory();
     JsonNode definition = mapper.readTree("""
         {
@@ -66,10 +99,7 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
             "connectorId": "jdbc",
             "dataSourceId": 1,
             "database": "demo",
-            "tables": ["users"],
-            "config": {
-              "mapping": {"columns": [{"source": "id", "target": "user_id"}]}
-            }
+            "tables": ["users"]
           },
           "sink": {
             "connectorId": "jdbc",
@@ -79,7 +109,10 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
             "autoCreateTable": true,
             "writeMode": "APPEND"
           },
-          "channel": {"parallelism": 1}
+          "channel": {"parallelism": 1},
+          "mapping": {
+            "columns": [{"source": "id", "target": "user_id"}]
+          }
         }
         """);
 
