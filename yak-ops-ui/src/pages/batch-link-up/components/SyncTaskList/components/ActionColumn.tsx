@@ -6,7 +6,6 @@ import {
   DownOutlined,
   EditOutlined,
   EyeOutlined,
-  FileSearchOutlined,
   PauseCircleOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons';
@@ -60,7 +59,7 @@ const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) =>
     event.stopPropagation();
   };
 
-  const openExecutionDetail = (tab?: 'log' | 'config' | 'metrics') => {
+  const openExecutionDetail = () => {
     if (record?.id === undefined || record?.id === null) {
       message.error('任务定义 ID 不存在');
       return;
@@ -69,9 +68,6 @@ const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) =>
     const params = new URLSearchParams();
     if (record?.instanceId !== undefined && record?.instanceId !== null) {
       params.set('instanceId', String(record.instanceId));
-    }
-    if (tab && tab !== 'log') {
-      params.set('tab', tab);
     }
 
     const search = params.toString();
@@ -232,7 +228,6 @@ const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) =>
   const menuItems: MenuProps['items'] = [
     { key: 'view', icon: <EyeOutlined />, label: '查看详情' },
     { key: 'edit', icon: <EditOutlined />, label: '编辑配置', disabled: !canEdit },
-    { key: 'log', icon: <FileSearchOutlined />, label: '查看日志' },
     { type: 'divider' },
     {
       key: isOnline ? 'offline' : 'online',
@@ -254,7 +249,6 @@ const ActionColumn: React.FC<ActionColumnProps> = ({ record, cbk, goDetail }) =>
     domEvent.stopPropagation();
     if (key === 'view') openExecutionDetail();
     if (key === 'edit') handleEdit();
-    if (key === 'log') openExecutionDetail('log');
     if (key === 'online') showOnlineConfirm();
     if (key === 'offline') showOfflineConfirm();
     if (key === 'delete') handleDeleteTask();
