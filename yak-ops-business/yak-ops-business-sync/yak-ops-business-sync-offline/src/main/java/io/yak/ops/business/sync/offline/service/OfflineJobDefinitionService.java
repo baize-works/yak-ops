@@ -80,6 +80,7 @@ public class OfflineJobDefinitionService {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + draft.getJobName());
     }
 
+    JsonNode schedule = draft.getRequest().get("schedule");
     LocalDateTime now = LocalDateTime.now();
     OfflineJobDefinitionPO definition = existing == null
         ? new OfflineJobDefinitionPO()
@@ -98,7 +99,7 @@ public class OfflineJobDefinitionService {
     definition.setSinkDatasourceId(null);
     definition.setSourceTable(null);
     definition.setSinkTable(null);
-    definition.setScheduleJson(existing == null ? null : existing.getScheduleJson());
+    definition.setScheduleJson(support.writeNullable(schedule));
     definition.setEnvJson(null);
     ensureDefaultWorkerPolicy(definition);
     definition.setCapabilityRequirementsJson(null);
@@ -112,6 +113,7 @@ public class OfflineJobDefinitionService {
     } else {
       definitionDao.updateById(definition);
     }
+    scheduleRepository.saveSchedule(id, schedule);
     return id;
   }
 
@@ -133,6 +135,7 @@ public class OfflineJobDefinitionService {
       throw new IllegalArgumentException("离线同步任务名称已存在：" + prepared.getJobName());
     }
 
+    JsonNode schedule = prepared.getRequest().get("schedule");
     int currentVersion = existing == null || existing.getVersion() == null
         ? 0
         : Math.max(0, existing.getVersion());
@@ -154,7 +157,7 @@ public class OfflineJobDefinitionService {
     definition.setSinkDatasourceId(id(prepared.getSink()));
     definition.setSourceTable(prepared.getSourceTable());
     definition.setSinkTable(prepared.getSinkTable());
-    definition.setScheduleJson(existing == null ? null : existing.getScheduleJson());
+    definition.setScheduleJson(support.writeNullable(schedule));
     definition.setEnvJson(null);
     ensureDefaultWorkerPolicy(definition);
     definition.setCapabilityRequirementsJson(capabilityRequirementsJson);
@@ -177,6 +180,7 @@ public class OfflineJobDefinitionService {
         capabilityRequirementsJson);
     definition.setCurrentVersionId(versionId);
     definitionDao.updateById(definition);
+    scheduleRepository.saveSchedule(id, schedule);
     return id;
   }
 
@@ -251,6 +255,7 @@ public class OfflineJobDefinitionService {
     if (executionRepository.hasActiveExecution(id)) {
       throw new IllegalStateException("运行中的任务不能删除");
     }
+    scheduleRepository.deleteSchedule(id);
     return definitionDao.deleteById(id);
   }
 
