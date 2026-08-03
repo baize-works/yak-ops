@@ -62,6 +62,8 @@ const AddClientDrawer = ({
   const [verifiedWorker, setVerifiedWorker] = useState<LinkupClient>();
   const isEdit = mode === 'edit';
   const configManaged = initialValues?.registrationMode === 'CONFIG';
+  const dynamicManaged = initialValues?.registrationMode === 'DYNAMIC';
+  const addressManaged = configManaged || dynamicManaged;
 
   useEffect(() => {
     if (!open) return;
@@ -132,7 +134,7 @@ const AddClientDrawer = ({
         type="info"
         showIcon
         message="Yak Ops 会读取 /api/v1/node 获取 nodeId、进程实例、版本和执行容量。"
-        description="节点保存后由后台定时心跳维护状态。禁用节点不会继续自动探测，排空节点不接收新任务但保留运行任务。"
+        description="手工和配置节点由 Yak Ops 主动探测；动态节点由 Worker 使用签名心跳续租。禁用节点不接收新任务，排空节点保留运行任务。"
       />
 
       {configManaged ? (
@@ -141,7 +143,17 @@ const AddClientDrawer = ({
           type="warning"
           showIcon
           message="该节点来自 application.yml"
-          description="Worker 地址和稳定 nodeId 由配置文件托管；页面可调整权重、标签和调度状态。"
+          description="Worker 地址和稳定 nodeId 由配置文件托管；页面可调整名称、权重、标签和调度状态。"
+        />
+      ) : null}
+
+      {dynamicManaged ? (
+        <Alert
+          className="mb-5"
+          type="warning"
+          showIcon
+          message="该节点由 Worker 动态注册"
+          description="Worker 地址、进程实例、容量和 Connector 能力由签名心跳维护；页面仅管理名称、权重、标签和调度状态。"
         />
       ) : null}
 
@@ -184,7 +196,13 @@ const AddClientDrawer = ({
         <Form.Item
           name="baseUrl"
           label="Worker 地址"
-          extra={configManaged ? '配置来源节点的地址请在 application.yml 中修改' : undefined}
+          extra={
+            configManaged
+              ? '配置来源节点的地址请在 application.yml 中修改'
+              : dynamicManaged
+                ? '动态节点地址由 Worker 的 advertised base URL 维护'
+                : undefined
+          }
           rules={[
             { required: true, whitespace: true, message: '请输入 Worker 地址' },
             {
@@ -195,7 +213,7 @@ const AddClientDrawer = ({
         >
           <Input
             variant="filled"
-            disabled={configManaged}
+            disabled={addressManaged}
             placeholder="http://127.0.0.1:18080"
           />
         </Form.Item>
@@ -203,7 +221,7 @@ const AddClientDrawer = ({
         <Form.Item
           name="weight"
           label="调度权重"
-          extra="第一阶段只保存权重，自动分配将在下一阶段启用。"
+          extra="自动调度会在能力、可达性、租约和容量硬过滤后使用该权重评分。"
           rules={[{ required: true, message: '请输入调度权重' }]}
         >
           <InputNumber
