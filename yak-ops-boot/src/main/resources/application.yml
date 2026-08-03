@@ -69,10 +69,10 @@ yak:
 
     datasource:
       enabled: true
-      url: ${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}
+      url: ${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}
       username: ${YAK_SECURITY_DATASOURCE_USERNAME:root}
       password: ${YAK_SECURITY_DATASOURCE_PASSWORD:123456}
-      driver-class-name: org.mariadb.jdbc.Driver
+      driver-class-name: com.mysql.cj.jdbc.Driver
       initial-size: 1
       min-idle: 1
       max-active: 8
@@ -85,10 +85,10 @@ yak:
   datasource:
     enabled: true
     database:
-      url: ${YAK_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+      url: ${YAK_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
       username: ${YAK_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
       password: ${YAK_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
-      driver-class-name: ${YAK_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+      driver-class-name: ${YAK_DATASOURCE_DRIVER:com.mysql.cj.jdbc.Driver}
       minimum-idle: 1
       maximum-pool-size: 8
     connection-test:
@@ -99,10 +99,10 @@ yak:
     max-file-size: ${YAK_RESOURCE_MAX_FILE_BYTES:104857600}
     editable-max-bytes: ${YAK_RESOURCE_EDITABLE_MAX_BYTES:2097152}
     database:
-      url: ${YAK_RESOURCE_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+      url: ${YAK_RESOURCE_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
       username: ${YAK_RESOURCE_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
       password: ${YAK_RESOURCE_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
-      driver-class-name: ${YAK_RESOURCE_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+      driver-class-name: ${YAK_RESOURCE_DATASOURCE_DRIVER:com.mysql.cj.jdbc.Driver}
       minimum-idle: 1
       maximum-pool-size: 8
     storage:
@@ -130,10 +130,10 @@ yak:
     offline:
       enabled: ${YAK_OFFLINE_SYNC_ENABLED:true}
       datasource:
-        url: ${YAK_OFFLINE_SYNC_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+        url: ${YAK_OFFLINE_SYNC_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
         username: ${YAK_OFFLINE_SYNC_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
         password: ${YAK_OFFLINE_SYNC_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
-        driver-class-name: ${YAK_OFFLINE_SYNC_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+        driver-class-name: ${YAK_OFFLINE_SYNC_DATASOURCE_DRIVER:com.mysql.cj.jdbc.Driver}
         minimum-idle: 1
         maximum-pool-size: 8
       engine:
@@ -159,10 +159,10 @@ yak:
   workflow:
     enabled: true
     datasource:
-      url: ${YAK_WORKFLOW_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mariadb://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+      url: ${YAK_WORKFLOW_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
       username: ${YAK_WORKFLOW_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
       password: ${YAK_WORKFLOW_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
-      driver-class-name: ${YAK_WORKFLOW_DATASOURCE_DRIVER:org.mariadb.jdbc.Driver}
+      driver-class-name: ${YAK_WORKFLOW_DATASOURCE_DRIVER:com.mysql.cj.jdbc.Driver}
       minimum-idle: 1
       maximum-pool-size: 8
     executor:
