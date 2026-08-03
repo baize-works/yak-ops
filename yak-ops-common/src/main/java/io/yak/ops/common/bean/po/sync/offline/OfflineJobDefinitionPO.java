@@ -69,6 +69,11 @@ public class OfflineJobDefinitionPO {
   @TableField(updateStrategy = FieldStrategy.ALWAYS)
   private String workerRequiredLabelsJson;
 
+  /** 根据不可变 JobSpec 派生的 Connector、Schema 和执行特性能力要求。 */
+  @ToString.Exclude
+  @TableField(updateStrategy = FieldStrategy.ALWAYS)
+  private String capabilityRequirementsJson;
+
   private Integer version;
   private Long currentVersionId;
   private Long lastExecutionId;

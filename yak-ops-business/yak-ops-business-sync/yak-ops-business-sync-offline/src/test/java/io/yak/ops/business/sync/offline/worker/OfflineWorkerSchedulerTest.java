@@ -2,6 +2,7 @@ package io.yak.ops.business.sync.offline.worker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +12,7 @@ import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlReposi
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
 import io.yak.ops.business.sync.offline.service.OfflineWorkerRegistry;
+import io.yak.ops.business.sync.offline.worker.OfflineCapabilityMatcher.MatchResult;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerScheduler.Assignment;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
 import java.time.LocalDateTime;
@@ -161,10 +163,14 @@ class OfflineWorkerSchedulerTest {
     OfflineSyncProperties properties = new OfflineSyncProperties();
     properties.getControl().setHeartbeatDelayMillis(10_000L);
     properties.getControl().setLostAfterMillis(120_000L);
+    OfflineCapabilityMatcher matcher = mock(OfflineCapabilityMatcher.class);
+    when(matcher.match(any(NodeRecord.class), any()))
+        .thenReturn(MatchResult.accept("能力匹配", "{}"));
     return new OfflineWorkerScheduler(
         repository,
         executionRepository,
         registry,
+        matcher,
         properties,
         new ObjectMapper().findAndRegisterModules());
   }

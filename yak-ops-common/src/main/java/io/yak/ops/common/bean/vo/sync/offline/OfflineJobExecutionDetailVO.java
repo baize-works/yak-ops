@@ -22,4 +22,7 @@ public class OfflineJobExecutionDetailVO {
   private JsonNode pipelines;
   private JsonNode tasks;
   private JsonNode metrics;
+  private JsonNode requiredCapabilities;
+  private JsonNode assignedCapabilities;
+  private JsonNode assignmentCandidates;
 }

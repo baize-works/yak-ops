@@ -30,27 +30,45 @@ public class OfflineDefinitionCatalogRepository {
     this.jdbc = new JdbcTemplate(dataSource);
   }
 
+  /** 兼容现有保存链路；能力要求可在保存后或首次执行时回填。 */
   public Long saveVersion(
       Long definitionId,
       int version,
       String definitionJson,
       String jobSpecJson,
       String configDigest) {
+    return saveVersion(
+        definitionId,
+        version,
+        definitionJson,
+        jobSpecJson,
+        configDigest,
+        null);
+  }
+
+  public Long saveVersion(
+      Long definitionId,
+      int version,
+      String definitionJson,
+      String jobSpecJson,
+      String configDigest,
+      String capabilityRequirementsJson) {
     KeyHolder keyHolder = new GeneratedKeyHolder();
     jdbc.update(
         connection -> {
           PreparedStatement statement = connection.prepareStatement(
               "INSERT INTO yak_offline_job_version "
                   + "(job_definition_id, version_no, definition_json, job_spec_json, "
-                  + "hocon_config, config_digest, create_time) "
-                  + "VALUES (?, ?, ?, ?, NULL, ?, ?)",
+                  + "hocon_config, config_digest, capability_requirements_json, create_time) "
+                  + "VALUES (?, ?, ?, ?, NULL, ?, ?, ?)",
               Statement.RETURN_GENERATED_KEYS);
           statement.setLong(1, definitionId);
           statement.setInt(2, version);
           statement.setString(3, definitionJson);
           statement.setString(4, jobSpecJson);
           statement.setString(5, configDigest);
-          statement.setTimestamp(6, Timestamp.valueOf(LocalDateTime.now()));
+          statement.setString(6, capabilityRequirementsJson);
+          statement.setTimestamp(7, Timestamp.valueOf(LocalDateTime.now()));
           return statement;
         },
         keyHolder);
@@ -59,6 +77,27 @@ public class OfflineDefinitionCatalogRepository {
       throw new IllegalStateException("保存离线任务版本后未返回版本 ID");
     }
     return key.longValue();
+  }
+
+  /** 只回填派生元数据，不修改 JobSpec、配置摘要或版本号。 */
+  public void backfillCapabilityRequirements(
+      Long definitionId,
+      Long versionId,
+      String capabilityRequirementsJson) {
+    if (definitionId == null || versionId == null || capabilityRequirementsJson == null) {
+      return;
+    }
+    jdbc.update(
+        "UPDATE yak_offline_job_version SET capability_requirements_json = ? "
+            + "WHERE id = ? AND capability_requirements_json IS NULL",
+        capabilityRequirementsJson,
+        versionId);
+    jdbc.update(
+        "UPDATE yak_offline_job_definition SET capability_requirements_json = ?, update_time = ? "
+            + "WHERE id = ?",
+        capabilityRequirementsJson,
+        Timestamp.valueOf(LocalDateTime.now()),
+        definitionId);
   }
 
   public DefinitionVersion findCurrentVersion(Long definitionId, Long currentVersionId) {
@@ -87,7 +126,8 @@ public class OfflineDefinitionCatalogRepository {
 
   private String selectSql() {
     return "SELECT id, job_definition_id, version_no, definition_json, job_spec_json, "
-        + "hocon_config, config_digest, create_time FROM yak_offline_job_version";
+        + "hocon_config, config_digest, capability_requirements_json, create_time "
+        + "FROM yak_offline_job_version";
   }
 
   private DefinitionVersion map(java.sql.ResultSet resultSet) throws java.sql.SQLException {
@@ -99,6 +139,7 @@ public class OfflineDefinitionCatalogRepository {
         resultSet.getString("job_spec_json"),
         resultSet.getString("hocon_config"),
         resultSet.getString("config_digest"),
+        resultSet.getString("capability_requirements_json"),
         resultSet.getTimestamp("create_time").toLocalDateTime());
   }
 
@@ -110,8 +151,10 @@ public class OfflineDefinitionCatalogRepository {
     private final String jobSpecJson;
     private final String legacyHoconConfig;
     private final String configDigest;
+    private final String capabilityRequirementsJson;
     private final LocalDateTime createTime;
 
+    /** 兼容第三阶段之前的直接构造调用。 */
     public DefinitionVersion(
         Long id,
         Long jobDefinitionId,
@@ -121,6 +164,28 @@ public class OfflineDefinitionCatalogRepository {
         String legacyHoconConfig,
         String configDigest,
         LocalDateTime createTime) {
+      this(
+          id,
+          jobDefinitionId,
+          versionNo,
+          definitionJson,
+          jobSpecJson,
+          legacyHoconConfig,
+          configDigest,
+          null,
+          createTime);
+    }
+
+    public DefinitionVersion(
+        Long id,
+        Long jobDefinitionId,
+        int versionNo,
+        String definitionJson,
+        String jobSpecJson,
+        String legacyHoconConfig,
+        String configDigest,
+        String capabilityRequirementsJson,
+        LocalDateTime createTime) {
       this.id = id;
       this.jobDefinitionId = jobDefinitionId;
       this.versionNo = versionNo;
@@ -128,6 +193,7 @@ public class OfflineDefinitionCatalogRepository {
       this.jobSpecJson = jobSpecJson;
       this.legacyHoconConfig = legacyHoconConfig;
       this.configDigest = configDigest;
+      this.capabilityRequirementsJson = capabilityRequirementsJson;
       this.createTime = createTime;
     }
 
@@ -138,6 +204,7 @@ public class OfflineDefinitionCatalogRepository {
     public String getJobSpecJson() { return jobSpecJson; }
     public String getLegacyHoconConfig() { return legacyHoconConfig; }
     public String getConfigDigest() { return configDigest; }
+    public String getCapabilityRequirementsJson() { return capabilityRequirementsJson; }
     public LocalDateTime getCreateTime() { return createTime; }
   }
 }

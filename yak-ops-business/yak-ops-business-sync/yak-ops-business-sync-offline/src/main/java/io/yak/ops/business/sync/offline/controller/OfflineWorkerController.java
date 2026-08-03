@@ -2,6 +2,8 @@ package io.yak.ops.business.sync.offline.controller;
 
 import io.yak.framework.common.Result;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerCapabilityService;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.CapabilityView;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.CreateRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.OptionView;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.PageView;
@@ -35,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OfflineWorkerController {
 
   private final OfflineWorkerService service;
+  private final OfflineWorkerCapabilityService capabilityService;
 
   @PostMapping("/verify")
   public Result<WorkerView> verify(@Valid @RequestBody VerifyRequest request) {
@@ -43,42 +46,67 @@ public class OfflineWorkerController {
 
   @PostMapping
   public Result<WorkerView> create(@Valid @RequestBody CreateRequest request) {
-    return Result.success(service.create(request));
+    WorkerView worker = service.create(request);
+    capabilityService.refreshQuietly(worker.getNodeId());
+    return Result.success(capabilityService.enrich(service.get(worker.getNodeId())));
   }
 
   @PutMapping("/{nodeId}")
   public Result<WorkerView> update(
       @PathVariable String nodeId,
       @Valid @RequestBody UpdateRequest request) {
-    return Result.success(service.update(nodeId, request));
+    service.update(nodeId, request);
+    capabilityService.refreshQuietly(nodeId);
+    return Result.success(capabilityService.enrich(service.get(nodeId)));
   }
 
   @GetMapping("/{nodeId}")
   public Result<WorkerView> detail(@PathVariable String nodeId) {
-    return Result.success(service.get(nodeId));
+    return Result.success(capabilityService.enrich(service.get(nodeId)));
   }
 
   @PostMapping("/page")
   public Result<PageView> page(@Valid @RequestBody(required = false) QueryRequest request) {
-    return Result.success(service.page(request));
+    PageView page = service.page(request);
+    if (page.getRecords() != null) {
+      page.getRecords().forEach(capabilityService::enrich);
+    }
+    return Result.success(page);
   }
 
   @GetMapping("/options")
   public Result<List<OptionView>> options() {
-    return Result.success(service.options());
+    List<OptionView> options = service.options();
+    options.forEach(capabilityService::enrich);
+    return Result.success(options);
   }
 
   @PostMapping("/{nodeId}/refresh")
   public Result<WorkerView> refresh(@PathVariable String nodeId) {
-    return Result.success(service.refresh(nodeId));
+    service.refresh(nodeId);
+    capabilityService.refresh(nodeId, true);
+    return Result.success(capabilityService.enrich(service.get(nodeId)));
+  }
+
+  @GetMapping("/{nodeId}/capabilities")
+  public Result<CapabilityView> capabilities(@PathVariable String nodeId) {
+    return Result.success(capabilityService.get(nodeId));
+  }
+
+  @PostMapping("/{nodeId}/capabilities/refresh")
+  public Result<CapabilityView> refreshCapabilities(@PathVariable String nodeId) {
+    return Result.success(capabilityService.refreshView(nodeId));
   }
 
   @PutMapping("/{nodeId}/scheduling-status")
   public Result<WorkerView> schedulingStatus(
       @PathVariable String nodeId,
       @Valid @RequestBody SchedulingRequest request) {
-    return Result.success(
-        service.changeSchedulingStatus(nodeId, request.getSchedulingStatus()));
+    WorkerView worker = service.changeSchedulingStatus(nodeId, request.getSchedulingStatus());
+    if (Boolean.TRUE.equals(worker.getEnabled())) {
+      capabilityService.refreshQuietly(nodeId);
+    }
+    return Result.success(capabilityService.enrich(service.get(nodeId)));
   }
 
   @DeleteMapping("/{nodeId}")

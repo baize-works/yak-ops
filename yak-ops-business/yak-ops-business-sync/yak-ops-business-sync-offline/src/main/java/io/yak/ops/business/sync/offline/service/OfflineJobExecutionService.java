@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.yak.framework.common.PagingData;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpJobResponse;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerCapabilityService;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineBatchOperationDTO;
 import io.yak.ops.common.bean.dto.sync.offline.OfflineJobExecutionQueryDTO;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobDefinitionPO;
@@ -30,20 +31,25 @@ public class OfflineJobExecutionService {
   private final OfflineExecutionOrchestrator orchestrator;
   private final OfflineExecutionReadService readService;
   private final OfflineJobDefinitionService definitionService;
+  private final OfflineWorkerCapabilityService capabilityService;
 
   public OfflineJobExecutionVO execute(Long definitionId) {
+    preheatCapabilities();
     return readService.toVO(orchestrator.execute(definitionId, "MANUAL", null, 1));
   }
 
   public OfflineJobExecutionVO executeScheduled(Long definitionId) {
+    preheatCapabilities();
     return readService.toVO(orchestrator.execute(definitionId, "SCHEDULE", null, 1));
   }
 
   public OfflineJobExecutionVO retry(Long executionId) {
+    preheatCapabilities();
     return readService.toVO(orchestrator.retryFrom(readService.require(executionId)));
   }
 
   public OfflineJobExecutionVO retryFrom(OfflineJobExecutionPO previous) {
+    preheatCapabilities();
     return readService.toVO(orchestrator.retryFrom(previous));
   }
 
@@ -90,6 +96,11 @@ public class OfflineJobExecutionService {
 
   public void markLost(OfflineJobExecutionPO execution, String message) {
     orchestrator.markLost(execution, message);
+  }
+
+  private void preheatCapabilities() {
+    // 该调用发生在执行领取事务之前；内部仅刷新到期或未知快照。
+    capabilityService.scheduledRefresh();
   }
 
   private OfflineBatchOperationVO batch(OfflineBatchOperationDTO requestDTO, boolean execute) {

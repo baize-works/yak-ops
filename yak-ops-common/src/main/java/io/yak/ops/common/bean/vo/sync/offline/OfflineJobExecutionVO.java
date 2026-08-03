@@ -28,6 +28,8 @@ public class OfflineJobExecutionVO {
   private String assignmentMode;
   private Double assignmentScore;
   private String assignmentReason;
+  private String requiredCapabilitiesJson;
+  private String assignedCapabilitiesJson;
   private String status;
   private Long stateVersion;
   private Integer attemptNo;
