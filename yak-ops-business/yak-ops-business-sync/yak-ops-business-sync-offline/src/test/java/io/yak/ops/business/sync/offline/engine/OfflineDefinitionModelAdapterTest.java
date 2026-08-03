@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 
 class OfflineDefinitionModelAdapterTest {
@@ -100,6 +101,71 @@ class OfflineDefinitionModelAdapterTest {
     assertThatThrownBy(() -> OfflineDefinitionModelAdapter.forJobSpec(definition, mapper))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("tablePrefix");
+  }
+
+  @Test
+  void shouldRejectMultiTableDefinitionWithoutDatabase() throws Exception {
+    JsonNode definition = mapper.readTree("""
+        {
+          "basic": {"jobName": "invalid", "mode": "GUIDE_MULTI"},
+          "source": {
+            "connectorId": "jdbc",
+            "database": "",
+            "tables": ["orders"]
+          },
+          "sink": {
+            "connectorId": "jdbc",
+            "database": "ods",
+            "tableNamingRule": "SAME_NAME",
+            "writeMode": "APPEND"
+          }
+        }
+        """);
+
+    assertThatThrownBy(() -> OfflineDefinitionModelAdapter.forJobSpec(definition, mapper))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("来源数据库");
+  }
+
+  @Test
+  void shouldStripJdbcDatasourceFieldsButKeepConnectorOptions() throws Exception {
+    ObjectNode definition = (ObjectNode) mapper.readTree("""
+        {
+          "source": {
+            "connectorId": "jdbc",
+            "dbType": "MYSQL",
+            "options": {
+              "url": "jdbc:mysql://127.0.0.1/demo",
+              "username": "root",
+              "password": "secret",
+              "fetch_size": 500,
+              "partition_column": "id"
+            }
+          },
+          "sink": {
+            "connectorId": "http",
+            "dbType": "HTTP",
+            "options": {
+              "url": "https://example.test/result",
+              "password": "http-token"
+            }
+          }
+        }
+        """);
+
+    OfflineDefinitionModelAdapter.sanitizeForPersistence(definition);
+
+    JsonNode jdbcOptions = definition.path("source").path("options");
+    assertThat(jdbcOptions.has("url")).isFalse();
+    assertThat(jdbcOptions.has("username")).isFalse();
+    assertThat(jdbcOptions.has("password")).isFalse();
+    assertThat(jdbcOptions.path("fetch_size").asInt()).isEqualTo(500);
+    assertThat(jdbcOptions.path("partition_column").asText()).isEqualTo("id");
+
+    JsonNode httpOptions = definition.path("sink").path("options");
+    assertThat(httpOptions.path("url").asText())
+        .isEqualTo("https://example.test/result");
+    assertThat(httpOptions.path("password").asText()).isEqualTo("http-token");
   }
 
   @Test
