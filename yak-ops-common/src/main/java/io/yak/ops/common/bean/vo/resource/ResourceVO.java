@@ -1,5 +1,7 @@
 package io.yak.ops.common.bean.vo.resource;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.yak.ops.common.enums.resource.ResourceNodeType;
 import io.yak.ops.common.enums.resource.ResourceStorageType;
 import java.time.LocalDateTime;
@@ -13,7 +15,9 @@ import lombok.Data;
 @Builder
 public class ResourceVO {
 
+  @JsonSerialize(using = ToStringSerializer.class)
   private Long id;
+  @JsonSerialize(using = ToStringSerializer.class)
   private Long parentId;
   private String name;
   private String fullPath;

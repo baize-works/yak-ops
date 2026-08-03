@@ -1,5 +1,7 @@
 package io.yak.ops.common.bean.vo.resource;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,6 +10,7 @@ import lombok.Data;
 @Builder
 public class ResourceContentVO {
 
+  @JsonSerialize(using = ToStringSerializer.class)
   private Long resourceId;
   private String fullPath;
   private String content;
