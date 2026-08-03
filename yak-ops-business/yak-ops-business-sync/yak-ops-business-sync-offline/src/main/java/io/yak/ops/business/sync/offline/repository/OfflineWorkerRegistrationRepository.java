@@ -9,7 +9,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** 动态 Worker 注册 nonce、租约过期和事件审计仓储。 */
+/** 动态 Worker 注册 nonce、租约过期和生命周期事件审计仓储。 */
 @ConditionalOnOfflineSyncEnabled
 @Repository
 public class OfflineWorkerRegistrationRepository {
@@ -62,6 +62,10 @@ public class OfflineWorkerRegistrationRepository {
         nodeId) > 0;
   }
 
+  /**
+   * 只记录低频生命周期事件。普通 HEARTBEAT 已由节点表的时间和序列承载，
+   * 不写事件表，避免长时间运行产生高容量无价值审计数据。
+   */
   public void recordEvent(
       String nodeId,
       String instanceId,
@@ -69,6 +73,9 @@ public class OfflineWorkerRegistrationRepository {
       String eventType,
       String remoteAddress,
       String message) {
+    if ("HEARTBEAT".equalsIgnoreCase(eventType)) {
+      return;
+    }
     jdbc.update(
         "INSERT INTO yak_offline_worker_registration_event "
             + "(node_id, instance_id, lease_id, event_type, remote_address, message, event_time) "
