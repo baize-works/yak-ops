@@ -97,6 +97,58 @@ export interface OfflineBatchOperationResult {
   errors: OfflineBatchOperationError[];
 }
 
+const toPositiveSafeInteger = (value: unknown, fieldName: string) => {
+  const normalizedValue =
+    typeof value === 'string' ? value.trim() : value;
+  const numericValue = Number(normalizedValue);
+
+  if (!Number.isSafeInteger(numericValue) || numericValue < 1) {
+    throw new Error(`${fieldName} 必须是安全的正整数`);
+  }
+
+  return numericValue;
+};
+
+/**
+ * 实例分页接口后端使用 current，并将任务定义 ID 声明为 Long。
+ * 这里统一兼容历史调用中的 pageNo/pageNum，并避免路由参数字符串触发反序列化错误。
+ */
+const normalizeOfflineInstancePageRequest = (
+  data: Record<string, unknown>,
+): Record<string, unknown> => {
+  const {
+    pageNo,
+    pageNum,
+    jobDefinitionId,
+    ...rest
+  } = data;
+  const current = toPositiveSafeInteger(
+    data.current ?? pageNo ?? pageNum ?? 1,
+    '页码',
+  );
+  const pageSize = toPositiveSafeInteger(data.pageSize ?? 10, '每页条数');
+
+  if (pageSize > 200) {
+    throw new Error('每页条数不能超过 200');
+  }
+
+  return {
+    ...rest,
+    current,
+    pageSize,
+    ...(jobDefinitionId === undefined ||
+    jobDefinitionId === null ||
+    jobDefinitionId === ''
+      ? {}
+      : {
+          jobDefinitionId: toPositiveSafeInteger(
+            jobDefinitionId,
+            '任务定义 ID',
+          ),
+        }),
+  };
+};
+
 export const apiPrefix = '/api/v1/job/batch-definition';
 
 export const linkupJobDefinitionApi = {
@@ -187,13 +239,19 @@ export const linkupJobExecuteApi = {
   execute: (
     jobDefineId: string | number,
   ): Promise<ApiResponse<OfflineJobExecutionVO>> => {
-    return HttpUtils.post(`${executeApiPrefix}/${encodeURIComponent(jobDefineId)}/execute`, {});
+    return HttpUtils.post(
+      `${executeApiPrefix}/${encodeURIComponent(jobDefineId)}/execute`,
+      {},
+    );
   },
 
   pause: (
     jobInstanceId: string | number,
   ): Promise<ApiResponse<OfflineJobExecutionVO>> => {
-    return HttpUtils.post(`${executeApiPrefix}/${encodeURIComponent(jobInstanceId)}/cancel`, {});
+    return HttpUtils.post(
+      `${executeApiPrefix}/${encodeURIComponent(jobInstanceId)}/cancel`,
+      {},
+    );
   },
 };
 
@@ -203,7 +261,10 @@ export const linkupJobInstanceApi = {
   page: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<PagingData<OfflineJobExecutionVO>>> => {
-    return HttpUtils.post(`${instanceApiPrefix}/page`, data);
+    return HttpUtils.post(
+      `${instanceApiPrefix}/page`,
+      normalizeOfflineInstancePageRequest(data),
+    );
   },
 
   selectById: (
@@ -253,7 +314,10 @@ export const batchJobInstanceApi = {
   page: (
     data: Record<string, unknown>,
   ): Promise<ApiResponse<PagingData<OfflineJobExecutionVO>>> => {
-    return HttpUtils.post('/api/v1/job/batch-instance/page', data);
+    return HttpUtils.post(
+      '/api/v1/job/batch-instance/page',
+      normalizeOfflineInstancePageRequest(data),
+    );
   },
 
   detail: (
