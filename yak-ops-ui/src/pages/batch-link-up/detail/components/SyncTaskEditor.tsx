@@ -9,9 +9,9 @@ import {
 } from '../model';
 import ChannelConfigSection from './ChannelConfigSection';
 import ConnectorExtraParams from './ConnectorExtraParams';
-import PersistedFieldMappingSection, {
-  type PersistedColumnMapping,
-} from './PersistedFieldMappingSection';
+import FieldMappingSection, {
+  type FieldMappingValue,
+} from './FieldMappingSection';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
 import TaskBasicSection from './TaskBasicSection';
@@ -43,7 +43,7 @@ const SINK_MANAGED_KEYS = [
 
 const normalizeMappings = (
   value: unknown,
-): PersistedColumnMapping[] => {
+): FieldMappingValue[] => {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -198,7 +198,7 @@ export default function SyncTaskEditor({
 
       {editor.mode === 'GUIDE_SINGLE' ? (
         <div id="field-mapping" className="scroll-mt-6">
-          <PersistedFieldMappingSection
+          <FieldMappingSection
             value={mappingColumns}
             onChange={(columns) =>
               updateSource({
