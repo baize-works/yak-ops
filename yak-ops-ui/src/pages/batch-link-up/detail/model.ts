@@ -28,6 +28,15 @@ export interface SyncChannel {
   dirtyDataLimit: number;
 }
 
+export interface SyncColumnMapping {
+  source: string;
+  target: string;
+}
+
+export interface SyncMapping {
+  columns: SyncColumnMapping[];
+}
+
 export interface SyncEditorState {
   id: string;
   mode: SyncMode;
@@ -35,6 +44,7 @@ export interface SyncEditorState {
   source: SyncEndpoint;
   sink: SyncEndpoint;
   channel: SyncChannel;
+  mapping: SyncMapping;
   state?: Record<string, any>;
 }
 
@@ -58,6 +68,10 @@ export const DEFAULT_CHANNEL_CONFIG: SyncChannel = {
   dirtyDataLimit: 0,
 };
 
+export const DEFAULT_MAPPING_CONFIG: SyncMapping = {
+  columns: [],
+};
+
 export const isApiSuccess = (response: any): boolean =>
   response?.code === API_SUCCESS_CODE;
 
@@ -77,6 +91,59 @@ export const extractSavedId = (response: any, fallback: string): string => {
     ? fallback
     : String(value);
 };
+
+const normalizeMappingColumns = (value: unknown): SyncColumnMapping[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const usedSources = new Set<string>();
+  const usedTargets = new Set<string>();
+
+  return value.reduce<SyncColumnMapping[]>((result, item: any) => {
+    const source = String(
+      item?.source ?? item?.sourceField ?? '',
+    ).trim();
+    const target = String(
+      item?.target ?? item?.targetField ?? '',
+    ).trim();
+
+    if (
+      !source ||
+      !target ||
+      usedSources.has(source) ||
+      usedTargets.has(target)
+    ) {
+      return result;
+    }
+
+    usedSources.add(source);
+    usedTargets.add(target);
+    result.push({ source, target });
+    return result;
+  }, []);
+};
+
+const normalizeMapping = (raw: any): SyncMapping => {
+  const directMapping =
+    raw?.mapping && typeof raw.mapping === 'object'
+      ? raw.mapping
+      : undefined;
+  const legacyMapping =
+    raw?.source?.config?.mapping &&
+    typeof raw.source.config.mapping === 'object'
+      ? raw.source.config.mapping
+      : undefined;
+  const mapping = directMapping || legacyMapping || {};
+
+  return {
+    columns: normalizeMappingColumns(mapping.columns),
+  };
+};
+
+const serializeMapping = (mapping?: SyncMapping): SyncMapping => ({
+  columns: normalizeMappingColumns(mapping?.columns),
+});
 
 const endpointFromType = (
   endpoint?: Partial<CreateSyncEndpoint> | null,
@@ -150,6 +217,7 @@ export const buildCreatePayload = (
       source: multiDraftEndpoint(sourceEndpoint, 'source'),
       sink: multiDraftEndpoint(sinkEndpoint, 'sink'),
       channel: serializeChannel(DEFAULT_CHANNEL_CONFIG),
+      mapping: { ...DEFAULT_MAPPING_CONFIG },
     };
   }
 
@@ -159,6 +227,7 @@ export const buildCreatePayload = (
     source: sourceEndpoint,
     sink: sinkEndpoint,
     channel: DEFAULT_CHANNEL_CONFIG,
+    mapping: { ...DEFAULT_MAPPING_CONFIG },
   };
 };
 
@@ -221,6 +290,10 @@ const directConfig = (
     value?.options && typeof value.options === 'object'
       ? value.options
       : config.connectorOptions || {};
+
+  // 字段映射是任务级配置。旧任务中的 source.config.mapping
+  // 会由 normalizeMapping 迁移到顶层，端点配置不再保留该字段。
+  delete config.mapping;
 
   const keys = kind === 'source'
     ? [
@@ -342,6 +415,7 @@ export const normalizeEditDetail = (
       ),
       dirtyDataPolicy: dirtyDataPolicy === 'SKIP' ? 'skip' : 'stop',
     },
+    mapping: normalizeMapping(raw),
     state: raw?.state,
   };
 };
@@ -405,6 +479,9 @@ export const applyEndpointSelection = (
         ? resetEndpointConfig(kind, current.config)
         : current.config,
     },
+    mapping: dataSourceChanged
+      ? { ...DEFAULT_MAPPING_CONFIG }
+      : editor.mapping,
   };
 };
 
@@ -489,6 +566,16 @@ const multiSinkPayload = (sink: SyncEndpoint) => {
   };
 };
 
+const endpointSavePayload = (endpointValue: SyncEndpoint): SyncEndpoint => {
+  const config = { ...(endpointValue.config || {}) };
+  delete config.mapping;
+
+  return {
+    ...endpointValue,
+    config,
+  };
+};
+
 export const buildSavePayload = (
   editor: SyncEditorState,
 ) => {
@@ -497,6 +584,9 @@ export const buildSavePayload = (
     jobDesc: editor.basic.jobDesc.trim(),
     mode: editor.mode,
   };
+  const mapping = editor.mode === 'GUIDE_SINGLE'
+    ? serializeMapping(editor.mapping)
+    : { ...DEFAULT_MAPPING_CONFIG };
 
   if (editor.mode === 'GUIDE_MULTI') {
     return {
@@ -505,14 +595,16 @@ export const buildSavePayload = (
       source: multiSourcePayload(editor.source),
       sink: multiSinkPayload(editor.sink),
       channel: serializeChannel(editor.channel),
+      mapping,
     };
   }
 
   return {
     id: editor.id,
     basic,
-    source: editor.source,
-    sink: editor.sink,
+    source: endpointSavePayload(editor.source),
+    sink: endpointSavePayload(editor.sink),
     channel: editor.channel,
+    mapping,
   };
 };
