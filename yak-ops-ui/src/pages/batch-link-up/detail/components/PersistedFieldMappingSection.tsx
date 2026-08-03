@@ -196,15 +196,44 @@ export default function PersistedFieldMappingSection({
       ),
     [sourceColumns],
   );
+
+  const displayTargetColumns = useMemo(() => {
+    if (!targetDerived) {
+      return targetColumns;
+    }
+
+    const existing = new Set(
+      targetColumns.map((column) => column.value),
+    );
+    const customColumns: DataSourceColumnOption[] = [];
+
+    value.forEach((mapping) => {
+      if (existing.has(mapping.target)) {
+        return;
+      }
+
+      existing.add(mapping.target);
+      const sourceColumn = sourceMap.get(mapping.source);
+      customColumns.push({
+        value: mapping.target,
+        label: mapping.target,
+        description:
+          sourceColumn?.description || '自定义目标字段',
+      });
+    });
+
+    return [...targetColumns, ...customColumns];
+  }, [sourceMap, targetColumns, targetDerived, value]);
+
   const targetMap = useMemo(
     () =>
       new Map(
-        targetColumns.map((column) => [
+        displayTargetColumns.map((column) => [
           column.value,
           column,
         ]),
       ),
-    [targetColumns],
+    [displayTargetColumns],
   );
 
   const usedSources = useMemo(
@@ -221,12 +250,13 @@ export default function PersistedFieldMappingSection({
     [sourceColumns, sourceKeyword],
   );
   const visibleTargets = useMemo(
-    () => filterColumns(targetColumns, targetKeyword),
-    [targetColumns, targetKeyword],
+    () =>
+      filterColumns(displayTargetColumns, targetKeyword),
+    [displayTargetColumns, targetKeyword],
   );
 
   const mappingReady =
-    sourceColumns.length > 0 && targetColumns.length > 0;
+    sourceColumns.length > 0 && displayTargetColumns.length > 0;
   const loading = sourceLoading || targetLoading;
 
   useEffect(() => {
@@ -259,7 +289,7 @@ export default function PersistedFieldMappingSection({
     const validMappings = value.filter(
       (item) =>
         sourceMap.has(item.source) &&
-        targetMap.has(item.target),
+        (targetDerived || targetMap.has(item.target)),
     );
 
     if (validMappings.length !== value.length) {
@@ -281,27 +311,44 @@ export default function PersistedFieldMappingSection({
     sourceColumns,
     sourceMap,
     targetColumns,
+    targetDerived,
     targetMap,
     value,
   ]);
 
   const connectFields = useCallback(
     (source: string, target: string) => {
-      if (!sourceMap.has(source) || !targetMap.has(target)) {
+      const normalizedTarget = target.trim();
+
+      if (
+        !sourceMap.has(source) ||
+        !normalizedTarget ||
+        (!targetDerived && !targetMap.has(normalizedTarget))
+      ) {
         message.error('来源字段或目标字段不存在');
         return;
       }
 
       const nextMappings = value.filter(
         (item) =>
-          item.source !== source && item.target !== target,
+          item.source !== source &&
+          item.target !== normalizedTarget,
       );
 
-      nextMappings.push({ source, target });
+      nextMappings.push({
+        source,
+        target: normalizedTarget,
+      });
       onChange(nextMappings);
       setSelectedSource(undefined);
     },
-    [onChange, sourceMap, targetMap, value],
+    [
+      onChange,
+      sourceMap,
+      targetDerived,
+      targetMap,
+      value,
+    ],
   );
 
   const removeMapping = useCallback(
@@ -463,18 +510,14 @@ export default function PersistedFieldMappingSection({
     setDrag(undefined);
   };
 
-  const sourceOptions = sourceColumns
-    .filter((item) => !usedSources.has(item.value))
-    .map((item) => ({
-      value: item.value,
-      label: item.label,
-    }));
-  const targetOptions = targetColumns
-    .filter((item) => !usedTargets.has(item.value))
-    .map((item) => ({
-      value: item.value,
-      label: item.label,
-    }));
+  const sourceOptions = sourceColumns.map((item) => ({
+    value: item.value,
+    label: item.label,
+  }));
+  const targetOptions = displayTargetColumns.map((item) => ({
+    value: item.value,
+    label: item.label,
+  }));
 
   const addMappingContent = (
     <div className="w-[300px] space-y-3 p-1">
@@ -488,16 +531,29 @@ export default function PersistedFieldMappingSection({
         optionFilterProp="label"
         onChange={setAddSource}
       />
-      <Select
-        showSearch
-        variant="filled"
-        className="w-full"
-        placeholder="选择目标字段"
-        value={addTarget}
-        options={targetOptions}
-        optionFilterProp="label"
-        onChange={setAddTarget}
-      />
+
+      {targetDerived ? (
+        <Input
+          variant="filled"
+          value={addTarget}
+          placeholder="输入目标字段名"
+          onChange={(event) =>
+            setAddTarget(event.target.value)
+          }
+        />
+      ) : (
+        <Select
+          showSearch
+          variant="filled"
+          className="w-full"
+          placeholder="选择目标字段"
+          value={addTarget}
+          options={targetOptions}
+          optionFilterProp="label"
+          onChange={setAddTarget}
+        />
+      )}
+
       <div className="flex justify-end gap-2">
         <Button
           size="small"
@@ -508,9 +564,9 @@ export default function PersistedFieldMappingSection({
         <Button
           size="small"
           type="primary"
-          disabled={!addSource || !addTarget}
+          disabled={!addSource || !addTarget?.trim()}
           onClick={() => {
-            if (!addSource || !addTarget) {
+            if (!addSource || !addTarget?.trim()) {
               return;
             }
 
