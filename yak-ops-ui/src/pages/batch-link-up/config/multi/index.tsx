@@ -19,10 +19,10 @@ import type { DataSourceRecord } from '@/pages/data-source/types';
 import { BRAND_THEME } from '@/styles/brand';
 
 import { linkupJobDefinitionApi } from '../../api';
+import validateEditorConnectorForms from '../../detail/form-schema/validateEditorConnectorForms';
 import { useSmoothWheelScroll } from '../../detail/hooks/useSmoothWheelScroll';
 import {
   buildSavePayload,
-  endpointNode,
   extractSavedId,
   isApiSuccess,
   normalizeEditDetail,
@@ -38,37 +38,59 @@ const validateTaskConfig = (
     return '请输入任务名称';
   }
 
-  if (!editor.basic.sourceDataSourceId) {
+  if (!editor.source.dataSourceId) {
     return '请选择来源数据源';
   }
 
-  if (!editor.basic.targetDataSourceId) {
+  if (!editor.sink.dataSourceId) {
     return '请选择目标数据源';
   }
 
-  const source =
-    endpointNode(editor.workflow, 'source')?.data?.config || {};
+  const source = editor.source.config || {};
+  const sink = editor.sink.config || {};
 
-  const sink =
-    endpointNode(editor.workflow, 'sink')?.data?.config || {};
+  if (!source.database?.trim()) {
+    return '请输入来源数据库';
+  }
 
-  if (!source.tables?.length && !source.tablePattern?.trim()) {
-    return '请选择来源表，或填写表名过滤规则';
+  if (!source.tables?.length) {
+    return source.tablePattern?.trim()
+      ? '表名过滤规则暂不能直接执行，请确认并选择实际来源表'
+      : '请选择至少一张来源表';
+  }
+
+  if (!sink.database?.trim()) {
+    return '请输入目标数据库';
+  }
+
+  const tableNamingRule = String(
+    sink.tableNamingRule || 'same_name',
+  ).toLowerCase();
+
+  if (tableNamingRule === 'prefix' && !sink.tablePrefix?.trim()) {
+    return '请填写目标表名前缀';
+  }
+
+  if (tableNamingRule === 'suffix' && !sink.tableSuffix?.trim()) {
+    return '请填写目标表名后缀';
   }
 
   if (
-    sink.tableNamingRule !== 'same_name' &&
-    !sink.tableNameAffix?.trim()
+    String(sink.writeMode || '').toLowerCase() === 'upsert' &&
+    !sink.primaryKey?.trim()
   ) {
-    return '请填写目标表名前缀或后缀';
-  }
-
-  if (sink.writeMode === 'upsert' && !sink.primaryKey?.trim()) {
     return 'Upsert 写入模式需要配置主键字段';
   }
 
-  if (!editor.env.parallelism || editor.env.parallelism < 1) {
+  if (!editor.channel.parallelism || editor.channel.parallelism < 1) {
     return 'Channel 并发数必须大于 0';
+  }
+
+  if (
+    editor.channel.dirtyDataPolicy === 'skip' &&
+    editor.channel.dirtyDataLimit < 0
+  ) {
+    return '脏数据上限不能小于 0';
   }
 
   return null;
@@ -77,7 +99,6 @@ const validateTaskConfig = (
 export default function MultiBatchLinkUpDetailPage() {
   const location = useLocation();
   const routeParams = useParams<{ id?: string }>();
-
   const pageRootRef = useRef<HTMLDivElement>(null);
 
   const taskId = useMemo(
@@ -90,13 +111,10 @@ export default function MultiBatchLinkUpDetailPage() {
 
   const [editor, setEditor] =
     useState<SyncEditorState | null>(null);
-
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
   const [dataSourceLoading, setDataSourceLoading] =
     useState(false);
-
   const [dataSources, setDataSources] = useState<
     DataSourceRecord[]
   >([]);
@@ -106,14 +124,12 @@ export default function MultiBatchLinkUpDetailPage() {
   const loadDataSources = useCallback(async () => {
     try {
       setDataSourceLoading(true);
-
       const response = await fetchDataSourceAll();
 
       if (!isApiSuccess(response)) {
         message.error(
           responseMessage(response, '获取数据源失败'),
         );
-
         setDataSources([]);
         return;
       }
@@ -132,7 +148,6 @@ export default function MultiBatchLinkUpDetailPage() {
 
     try {
       setLoading(true);
-
       const response =
         await linkupJobDefinitionApi.selectEditDetail(taskId);
 
@@ -140,7 +155,6 @@ export default function MultiBatchLinkUpDetailPage() {
         message.error(
           responseMessage(response, '获取同步任务失败'),
         );
-
         setEditor(null);
         return;
       }
@@ -167,7 +181,6 @@ export default function MultiBatchLinkUpDetailPage() {
 
   useEffect(() => {
     if (!taskId) return;
-
     void Promise.all([loadTask(), loadDataSources()]);
   }, [loadDataSources, loadTask, taskId]);
 
@@ -176,9 +189,7 @@ export default function MultiBatchLinkUpDetailPage() {
   ): Promise<SyncEditorState | null> => {
     try {
       setSaving(true);
-
       const payload = buildSavePayload(nextEditor);
-
       const response =
         await linkupJobDefinitionApi.saveOrUpdateGuideMulti(payload);
 
@@ -186,7 +197,6 @@ export default function MultiBatchLinkUpDetailPage() {
         message.error(
           responseMessage(response, '保存同步任务失败'),
         );
-
         return null;
       }
 
@@ -198,11 +208,9 @@ export default function MultiBatchLinkUpDetailPage() {
 
       setEditor(savedEditor);
       message.success('任务配置已保存');
-
       return savedEditor;
     } catch (error: any) {
       message.error(error?.message || '保存同步任务失败');
-
       return null;
     } finally {
       setSaving(false);
@@ -213,9 +221,14 @@ export default function MultiBatchLinkUpDetailPage() {
     if (!editor) return;
 
     const error = validateTaskConfig(editor);
-
     if (error) {
       message.warning(error);
+      return;
+    }
+
+    const remoteErrors = await validateEditorConnectorForms(editor);
+    if (remoteErrors.length > 0) {
+      message.warning(remoteErrors[0]);
       return;
     }
 
