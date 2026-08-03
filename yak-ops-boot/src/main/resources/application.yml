@@ -47,9 +47,11 @@ yak:
     audit-enabled: true
     application-name: ${YAK_SECURITY_APPLICATION_NAME:${spring.application.name}}
 
-    # Keep startup verification and API documentation public. Other endpoints require login.
+    # Keep startup verification, signed Worker registration and API documentation public.
+    # Dynamic registration performs its own HMAC authentication and replay protection.
     public-paths:
       - /api/test/ping
+      - /api/v1/offline/worker-registration/**
       - /yak-security/api/v1/account/login
       - /yak-security/api/v1/common/heart
       - /v3/api-docs/**
@@ -139,6 +141,16 @@ yak:
         base-url: ${YAK_LINK_UP_BASE_URL:http://127.0.0.1:18080}
         connect-timeout: ${YAK_LINK_UP_CONNECT_TIMEOUT:10s}
         request-timeout: ${YAK_LINK_UP_REQUEST_TIMEOUT:30s}
+      registration:
+        enabled: ${YAK_OFFLINE_REGISTRATION_ENABLED:false}
+        secret: ${YAK_OFFLINE_REGISTRATION_SECRET:}
+        auto-enable: ${YAK_OFFLINE_REGISTRATION_AUTO_ENABLE:true}
+        heartbeat-interval-millis: ${YAK_OFFLINE_REGISTRATION_HEARTBEAT_MILLIS:20000}
+        lease-duration-millis: ${YAK_OFFLINE_REGISTRATION_LEASE_MILLIS:90000}
+        clock-skew-millis: ${YAK_OFFLINE_REGISTRATION_CLOCK_SKEW_MILLIS:300000}
+        nonce-retention-millis: ${YAK_OFFLINE_REGISTRATION_NONCE_RETENTION_MILLIS:600000}
+        cleanup-initial-delay-millis: ${YAK_OFFLINE_REGISTRATION_CLEANUP_INITIAL_DELAY_MILLIS:10000}
+        cleanup-delay-millis: ${YAK_OFFLINE_REGISTRATION_CLEANUP_DELAY_MILLIS:10000}
 
   schedule:
     enabled: true
