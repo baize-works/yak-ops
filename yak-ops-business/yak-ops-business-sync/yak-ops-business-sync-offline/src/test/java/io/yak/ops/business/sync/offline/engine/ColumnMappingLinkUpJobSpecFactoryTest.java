@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.yak.ops.business.datasource.dao.DataSourceDao;
+import io.yak.ops.common.bean.dto.sync.offline.OfflineJobDefinitionDTO;
 import io.yak.ops.common.bean.po.datasource.DataSourcePO;
 import org.junit.jupiter.api.Test;
 
@@ -16,9 +17,9 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  void shouldCompileTopLevelEditorMappingIntoJobSpec() throws Exception {
+  void shouldPreserveRequestMappingAndCompileItIntoJobSpec() throws Exception {
     ColumnMappingLinkUpJobSpecFactory factory = factory();
-    JsonNode definition = mapper.readTree("""
+    OfflineJobDefinitionDTO request = mapper.readValue("""
         {
           "basic": {"jobName": "mapped-users", "mode": "GUIDE_SINGLE"},
           "source": {
@@ -42,7 +43,10 @@ class ColumnMappingLinkUpJobSpecFactoryTest {
             ]
           }
         }
-        """);
+        """, OfflineJobDefinitionDTO.class);
+    JsonNode definition = mapper.valueToTree(request);
+
+    assertThat(definition.path("mapping").path("columns")).hasSize(2);
 
     LinkUpJobSpecFactory.BuildResult result = factory.build(definition);
 
