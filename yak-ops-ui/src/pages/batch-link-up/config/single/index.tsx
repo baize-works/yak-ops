@@ -25,6 +25,75 @@ import {
   type SyncEditorState,
 } from '../../detail/model';
 
+const SECTION_ITEMS = [
+  { key: 'task-basic', label: '任务基础信息' },
+  { key: 'sync-config', label: '单表同步配置' },
+  { key: 'runtime-params', label: '运行参数' },
+  { key: 'field-mapping', label: '字段映射' },
+] as const;
+
+type SectionKey = (typeof SECTION_ITEMS)[number]['key'];
+
+interface SectionNavigatorProps {
+  activeKey: SectionKey;
+  onSelect: (key: SectionKey) => void;
+}
+
+function SectionNavigator({
+  activeKey,
+  onSelect,
+}: SectionNavigatorProps) {
+  return (
+    <nav
+      aria-label="配置区块定位"
+      className="rounded-xl bg-white px-4 py-4"
+    >
+      <div className="mb-3 text-[12px] font-semibold text-[#344054]">
+        快速定位
+      </div>
+
+      <div className="relative">
+        <span className="absolute bottom-3 left-[5px] top-3 w-px bg-[#e4e7ec]" />
+
+        <div className="space-y-1">
+          {SECTION_ITEMS.map((item) => {
+            const active = activeKey === item.key;
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                aria-current={active ? 'location' : undefined}
+                className="relative flex w-full cursor-pointer items-center gap-3 border-0 bg-transparent px-0 py-2 text-left"
+                onClick={() => onSelect(item.key)}
+              >
+                <span
+                  className={[
+                    'relative z-10 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-white transition-colors',
+                    active
+                      ? 'bg-[var(--yak-brand-color)] shadow-[0_0_0_1px_var(--yak-brand-color)]'
+                      : 'bg-[#98a2b3] shadow-[0_0_0_1px_#d0d5dd]',
+                  ].join(' ')}
+                />
+                <span
+                  className={[
+                    'text-[12px] leading-5 transition-colors',
+                    active
+                      ? 'font-medium text-[var(--yak-brand-color)]'
+                      : 'text-[#667085] hover:text-[#344054]',
+                  ].join(' ')}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 const validateTaskConfig = (
   editor: SyncEditorState,
 ): string | null => {
@@ -98,8 +167,59 @@ export default function SingleBatchLinkUpConfigPage() {
   const [saving, setSaving] = useState(false);
   const [dataSourceLoading, setDataSourceLoading] = useState(false);
   const [dataSources, setDataSources] = useState<DataSourceRecord[]>([]);
+  const [activeSection, setActiveSection] = useState<SectionKey>('task-basic');
 
   useSmoothWheelScroll(pageRootRef, true);
+
+  const updateActiveSection = useCallback(() => {
+    const container = pageRootRef.current;
+    if (!container) return;
+
+    const threshold = container.getBoundingClientRect().top + 140;
+    let nextActive: SectionKey = SECTION_ITEMS[0].key;
+
+    SECTION_ITEMS.forEach((item) => {
+      const element = document.getElementById(item.key);
+      if (element && element.getBoundingClientRect().top <= threshold) {
+        nextActive = item.key;
+      }
+    });
+
+    setActiveSection((current) =>
+      current === nextActive ? current : nextActive,
+    );
+  }, []);
+
+  useEffect(() => {
+    const container = pageRootRef.current;
+    if (!container || !editor) return;
+
+    const handleViewportChange = () => {
+      window.requestAnimationFrame(updateActiveSection);
+    };
+
+    container.addEventListener('scroll', handleViewportChange, {
+      passive: true,
+    });
+    window.addEventListener('resize', handleViewportChange);
+    updateActiveSection();
+
+    return () => {
+      container.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('resize', handleViewportChange);
+    };
+  }, [editor, updateActiveSection]);
+
+  const handleSectionLocate = (key: SectionKey) => {
+    const element = document.getElementById(key);
+    if (!element) return;
+
+    setActiveSection(key);
+    element.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
 
   const loadDataSources = useCallback(async () => {
     try {
@@ -252,36 +372,47 @@ export default function SingleBatchLinkUpConfigPage() {
     <ConfigProvider theme={BRAND_THEME}>
       <div className="h-[calc(100vh-64px)] overflow-hidden bg-[#f7f8fa] text-[#161823]">
         <div ref={pageRootRef} className="h-full overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1040px] px-6 pt-6">
-            <main className="pb-4">
-              <SyncTaskEditor
-                editor={editor}
-                dataSources={dataSources}
-                dataSourceLoading={dataSourceLoading}
-                onChange={setEditor}
-              />
-            </main>
+          <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-6 px-6 pt-6 max-xl:max-w-[1040px] xl:grid-cols-[minmax(0,1fr)_160px]">
+            <div className="min-w-0">
+              <main className="pb-4">
+                <SyncTaskEditor
+                  editor={editor}
+                  dataSources={dataSources}
+                  dataSourceLoading={dataSourceLoading}
+                  onChange={setEditor}
+                />
+              </main>
 
-            <footer className="sticky bottom-0 z-50 overflow-hidden rounded-t-lg border border-b-0 border-[#eaecf0] bg-white shadow-[0_-8px_16px_rgba(0,0,0,0.06)]">
-              <div className="flex min-h-[80px] items-center gap-3 px-8 py-4">
-                <Button
-                  type="primary"
-                  loading={saving}
-                  className="!h-9 !min-w-[120px] !rounded-lg !px-6 !font-medium !text-white"
-                  onClick={handleSave}
-                >
-                  保存配置
-                </Button>
+              <footer className="sticky bottom-0 z-50 overflow-hidden rounded-t-lg border border-b-0 border-[#eaecf0] bg-white shadow-[0_-8px_16px_rgba(0,0,0,0.06)]">
+                <div className="flex min-h-[80px] items-center gap-3 px-8 py-4">
+                  <Button
+                    type="primary"
+                    loading={saving}
+                    className="!h-9 !min-w-[120px] !rounded-lg !px-6 !font-medium !text-white"
+                    onClick={handleSave}
+                  >
+                    保存配置
+                  </Button>
 
-                <Button
-                  disabled={saving}
-                  className="!h-9 !min-w-[120px] !rounded-lg !border-0 !bg-[#f2f3f5] !px-5 !font-medium !text-[#344054] hover:!bg-[#e9eaec]"
-                  onClick={handleCancel}
-                >
-                  取消
-                </Button>
+                  <Button
+                    disabled={saving}
+                    className="!h-9 !min-w-[120px] !rounded-lg !border-0 !bg-[#f2f3f5] !px-5 !font-medium !text-[#344054] hover:!bg-[#e9eaec]"
+                    onClick={handleCancel}
+                  >
+                    取消
+                  </Button>
+                </div>
+              </footer>
+            </div>
+
+            <aside className="hidden xl:block">
+              <div className="sticky top-6">
+                <SectionNavigator
+                  activeKey={activeSection}
+                  onSelect={handleSectionLocate}
+                />
               </div>
-            </footer>
+            </aside>
           </div>
         </div>
       </div>
