@@ -34,11 +34,16 @@ public class OfflineScheduleRepository {
   }
 
   public ScheduleRecord saveSchedule(Long definitionId, JsonNode schedule) {
-    String cronExpression = text(schedule, "cronExpression");
-    String runType = text(schedule, "scheduleRunType");
-    boolean enabled = StringUtils.hasText(cronExpression)
-        && !"pause".equalsIgnoreCase(runType)
-        && !"paused".equalsIgnoreCase(runType);
+    String cronExpression = firstText(schedule, "cron", "cronExpression");
+    boolean requestedEnabled = enabled(schedule, cronExpression);
+    if (requestedEnabled && !StringUtils.hasText(cronExpression)) {
+      throw new IllegalArgumentException("启用调度时必须填写 Cron 表达式");
+    }
+    if (StringUtils.hasText(cronExpression)) {
+      validateCron(cronExpression);
+    }
+
+    boolean enabled = requestedEnabled && StringUtils.hasText(cronExpression);
     int maxAttempts = maxAttempts(schedule);
     int backoffSeconds = backoffSeconds(schedule);
     LocalDateTime nextFireTime = enabled ? next(cronExpression, LocalDateTime.now()) : null;
@@ -98,10 +103,39 @@ public class OfflineScheduleRepository {
         definitionId);
   }
 
+  public void deleteSchedule(Long definitionId) {
+    jdbc.update(
+        "DELETE FROM yak_offline_schedule WHERE job_definition_id = ?",
+        definitionId);
+  }
+
+  private boolean enabled(JsonNode schedule, String cronExpression) {
+    if (schedule == null || schedule.isNull()) {
+      return false;
+    }
+    JsonNode configured = schedule.get("enabled");
+    if (configured != null && !configured.isNull()) {
+      return configured.asBoolean(false);
+    }
+
+    String runType = text(schedule, "scheduleRunType");
+    if (StringUtils.hasText(runType)) {
+      return !"pause".equalsIgnoreCase(runType)
+          && !"paused".equalsIgnoreCase(runType);
+    }
+    return StringUtils.hasText(cronExpression);
+  }
+
   private int maxAttempts(JsonNode schedule) {
     if (schedule == null || schedule.isNull()) {
       return 1;
     }
+
+    JsonNode retryOnFailure = schedule.get("retryOnFailure");
+    if (retryOnFailure != null && !retryOnFailure.isNull()) {
+      return retryOnFailure.asBoolean(false) ? 2 : 1;
+    }
+
     if (!schedule.path("autoRetry").asBoolean(true)) {
       return 1;
     }
@@ -115,7 +149,7 @@ public class OfflineScheduleRepository {
 
   private int backoffSeconds(JsonNode schedule) {
     if (schedule == null || schedule.isNull()) {
-      return 30;
+      return 60;
     }
     JsonNode configured = schedule.path("retryPolicy").path("backoffSeconds");
     if (configured.canConvertToInt() && configured.asInt() > 0) {
@@ -125,7 +159,7 @@ public class OfflineScheduleRepository {
     if (seconds.canConvertToInt() && seconds.asInt() > 0) {
       return seconds.asInt();
     }
-    // The existing editor exposes retryInterval in minutes.
+    // The historical editor exposed retryInterval in minutes.
     int minutes = intValue(schedule, "retryInterval", 1);
     return Math.max(1, minutes) * 60;
   }
@@ -156,6 +190,11 @@ public class OfflineScheduleRepository {
     }
   }
 
+  private String firstText(JsonNode node, String first, String second) {
+    String value = text(node, first);
+    return StringUtils.hasText(value) ? value : text(node, second);
+  }
+
   private String text(JsonNode node, String field) {
     if (node == null || node.isNull() || !node.hasNonNull(field)) {
       return null;
@@ -170,15 +209,16 @@ public class OfflineScheduleRepository {
         : node.path(field).asInt(fallback);
   }
 
-  private LocalDateTime next(String cron, LocalDateTime after) {
-    if (!StringUtils.hasText(cron)) {
-      return null;
-    }
+  private void validateCron(String cron) {
     try {
-      return CronExpression.parse(cron).next(after);
+      CronExpression.parse(cron);
     } catch (IllegalArgumentException exception) {
       throw new IllegalArgumentException("调度 Cron 表达式不合法：" + cron, exception);
     }
+  }
+
+  private LocalDateTime next(String cron, LocalDateTime after) {
+    return CronExpression.parse(cron).next(after);
   }
 
   private Timestamp timestamp(LocalDateTime value) {
