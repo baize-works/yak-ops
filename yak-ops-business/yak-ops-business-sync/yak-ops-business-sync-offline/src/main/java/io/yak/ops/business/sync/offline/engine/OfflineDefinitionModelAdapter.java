@@ -23,6 +23,27 @@ public final class OfflineDefinitionModelAdapter {
       Set.of("SAME_NAME", "PREFIX", "SUFFIX");
   private static final Set<String> WRITE_MODES =
       Set.of("APPEND", "OVERWRITE", "UPSERT");
+  private static final Set<String> JDBC_DATASOURCE_OWNED_FIELDS = Set.of(
+      "url",
+      "jdbcUrl",
+      "jdbc_url",
+      "driver",
+      "driverClassName",
+      "driver_class_name",
+      "username",
+      "user",
+      "password",
+      "passwd",
+      "schema",
+      "dialect",
+      "compatible_mode",
+      "properties",
+      "connectionParams",
+      "connection_params",
+      "connJson",
+      "connection_check_timeout_sec",
+      "connect_timeout_ms",
+      "socket_timeout_ms");
 
   private static final List<String> SOURCE_FIELDS = List.of(
       "database",
@@ -60,6 +81,58 @@ public final class OfflineDefinitionModelAdapter {
     adaptEndpoint(adapted, "source", mode, objectMapper);
     adaptEndpoint(adapted, "sink", mode, objectMapper);
     return adapted;
+  }
+
+  /**
+   * 清理 JDBC 数据源负责维护的连接字段，防止凭据进入 definition_json。
+   * 非 JDBC Connector 的 options 不做处理。
+   */
+  public static void sanitizeForPersistence(ObjectNode definition) {
+    if (definition == null) {
+      return;
+    }
+    sanitizeEndpoint(definition, "source");
+    sanitizeEndpoint(definition, "sink");
+  }
+
+  private static void sanitizeEndpoint(ObjectNode definition, String field) {
+    JsonNode value = definition.get(field);
+    if (value == null || !value.isObject()) {
+      return;
+    }
+    ObjectNode endpoint = (ObjectNode) value;
+    String connectorId;
+    try {
+      connectorId = ConnectorIdResolver.resolve(
+          text(endpoint, "connectorId", null),
+          text(endpoint, "connectorType", null),
+          text(endpoint, "dbType", null),
+          null);
+    } catch (IllegalArgumentException ignored) {
+      return;
+    }
+    if (!ConnectorIdResolver.isJdbc(connectorId)) {
+      return;
+    }
+
+    removeDatasourceOwnedFields(endpoint);
+    JsonNode options = endpoint.get("options");
+    if (options != null && options.isObject()) {
+      removeDatasourceOwnedFields((ObjectNode) options);
+    }
+    JsonNode config = endpoint.get("config");
+    if (config != null && config.isObject()) {
+      ObjectNode configObject = (ObjectNode) config;
+      removeDatasourceOwnedFields(configObject);
+      JsonNode connectorOptions = configObject.get("connectorOptions");
+      if (connectorOptions != null && connectorOptions.isObject()) {
+        removeDatasourceOwnedFields((ObjectNode) connectorOptions);
+      }
+    }
+  }
+
+  private static void removeDatasourceOwnedFields(ObjectNode node) {
+    JDBC_DATASOURCE_OWNED_FIELDS.forEach(node::remove);
   }
 
   private static void adaptEndpoint(
@@ -104,6 +177,10 @@ public final class OfflineDefinitionModelAdapter {
 
   private static void adaptMultiSource(ObjectNode config, ObjectMapper objectMapper) {
     String database = trim(text(config, "database", null));
+    if (!StringUtils.hasText(database)) {
+      throw new IllegalArgumentException("多表同步必须填写来源数据库");
+    }
+
     JsonNode tables = config.get("tables");
     if (tables != null && tables.isArray()) {
       ArrayNode qualified = objectMapper.createArrayNode();
@@ -128,6 +205,10 @@ public final class OfflineDefinitionModelAdapter {
 
   private static void adaptMultiSink(ObjectNode config) {
     String database = trim(text(config, "database", null));
+    if (!StringUtils.hasText(database)) {
+      throw new IllegalArgumentException("多表同步必须填写目标数据库");
+    }
+
     String rule = text(config, "tableNamingRule", "SAME_NAME")
         .trim()
         .toUpperCase(Locale.ROOT);
@@ -161,9 +242,7 @@ public final class OfflineDefinitionModelAdapter {
     } else if ("SUFFIX".equals(rule)) {
       tableTemplate = tableTemplate + suffix;
     }
-    if (StringUtils.hasText(database)) {
-      tableTemplate = database + "." + tableTemplate;
-    }
+    tableTemplate = database + "." + tableTemplate;
 
     config.put("targetTableName", tableTemplate);
     config.put("tableNamingRule", rule.toLowerCase(Locale.ROOT));
@@ -184,7 +263,7 @@ public final class OfflineDefinitionModelAdapter {
   }
 
   private static String qualify(String database, String table) {
-    if (!StringUtils.hasText(database) || table.contains(".")) {
+    if (table.contains(".")) {
       return table;
     }
     return database + "." + table;
