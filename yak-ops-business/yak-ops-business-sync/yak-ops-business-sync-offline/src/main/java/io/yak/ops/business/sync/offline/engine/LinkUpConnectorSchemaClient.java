@@ -45,7 +45,7 @@ public class LinkUpConnectorSchemaClient {
   }
 
   public JsonNode list(String baseUrl) {
-    return get(baseUrl, "/api/v1/connectors");
+    return request(baseUrl, "/api/v1/connectors");
   }
 
   public JsonNode listByRole(String role) {
@@ -53,7 +53,7 @@ public class LinkUpConnectorSchemaClient {
   }
 
   public JsonNode listByRole(String baseUrl, String role) {
-    return get(baseUrl, "/api/v1/connectors?role=" + encodeRole(role));
+    return request(baseUrl, "/api/v1/connectors?role=" + encodeRole(role));
   }
 
   public JsonNode get(String connectorId, String role) {
@@ -64,12 +64,12 @@ public class LinkUpConnectorSchemaClient {
     if (!StringUtils.hasText(connectorId)) {
       throw new IllegalArgumentException("connectorId 不能为空");
     }
-    return get(
+    return request(
         baseUrl,
         "/api/v1/connectors/" + encode(connectorId) + "/schema?role=" + encodeRole(role));
   }
 
-  private JsonNode get(String baseUrl, String path) {
+  private JsonNode request(String baseUrl, String path) {
     requireEnabled();
     String normalized = normalizeBaseUrl(baseUrl);
     HttpRequest request = HttpRequest.newBuilder(URI.create(normalized + path))
