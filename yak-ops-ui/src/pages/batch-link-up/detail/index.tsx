@@ -44,15 +44,28 @@ const validateTaskConfig = (
   const sink = editor.sink.config || {};
 
   if (editor.mode === 'GUIDE_MULTI') {
-    if (!source.tables?.length && !source.tablePattern?.trim()) {
-      return '请选择来源表，或填写表名过滤规则';
+    if (!source.database?.trim()) {
+      return '请输入来源数据库';
     }
 
-    if (
-      sink.tableNamingRule !== 'same_name' &&
-      !sink.tableNameAffix?.trim()
-    ) {
-      return '请填写目标表名前缀或后缀';
+    if (!source.tables?.length) {
+      return source.tablePattern?.trim()
+        ? '表名过滤规则暂不能直接执行，请确认并选择实际来源表'
+        : '请选择至少一张来源表';
+    }
+
+    if (!sink.database?.trim()) {
+      return '请输入目标数据库';
+    }
+
+    const tableNamingRule = String(
+      sink.tableNamingRule || 'same_name',
+    ).toLowerCase();
+    if (tableNamingRule === 'prefix' && !sink.tablePrefix?.trim()) {
+      return '请填写目标表名前缀';
+    }
+    if (tableNamingRule === 'suffix' && !sink.tableSuffix?.trim()) {
+      return '请填写目标表名后缀';
     }
   } else if (source.readMode === 'sql') {
     if (!source.sql?.trim()) {
@@ -72,12 +85,22 @@ const validateTaskConfig = (
     }
   }
 
-  if (sink.writeMode === 'upsert' && !sink.primaryKey?.trim()) {
+  if (
+    String(sink.writeMode || '').toLowerCase() === 'upsert' &&
+    !sink.primaryKey?.trim()
+  ) {
     return 'Upsert 写入模式需要配置主键字段';
   }
 
   if (!editor.channel.parallelism || editor.channel.parallelism < 1) {
     return 'Channel 并发数必须大于 0';
+  }
+
+  if (
+    editor.channel.dirtyDataPolicy === 'skip' &&
+    editor.channel.dirtyDataLimit < 0
+  ) {
+    return '脏数据上限不能小于 0';
   }
 
   return null;
