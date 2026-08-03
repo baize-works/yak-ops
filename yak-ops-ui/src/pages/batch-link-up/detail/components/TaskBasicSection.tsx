@@ -38,13 +38,11 @@ const compatibleDataSources = (
   dbType: string,
 ) => {
   const expected = normalizeType(dbType);
-
   if (!expected) return records;
 
   const matched = records.filter(
     (record) => normalizeType(record.dbType) === expected,
   );
-
   return matched.length > 0 ? matched : records;
 };
 
@@ -63,13 +61,12 @@ export default function TaskBasicSection({
   onChange,
 }: TaskBasicSectionProps) {
   const sourceRecords = useMemo(
-    () => compatibleDataSources(dataSources, editor.basic.sourceType),
-    [dataSources, editor.basic.sourceType],
+    () => compatibleDataSources(dataSources, editor.source.dbType),
+    [dataSources, editor.source.dbType],
   );
-
   const targetRecords = useMemo(
-    () => compatibleDataSources(dataSources, editor.basic.targetType),
-    [dataSources, editor.basic.targetType],
+    () => compatibleDataSources(dataSources, editor.sink.dbType),
+    [dataSources, editor.sink.dbType],
   );
 
   const updateBasic = (
@@ -91,16 +88,13 @@ export default function TaskBasicSection({
     const record = dataSources.find(
       (item) => String(item.id) === String(id),
     );
-
     if (!record) return;
 
     onChange(applyEndpointSelection(editor, kind, record));
   };
 
   return (
-    <EditorSection
-      title="任务基础信息"
-    >
+    <EditorSection title="任务基础信息">
       <div className="space-y-5">
         <EditorField label="任务名称" required>
           <Input
@@ -129,26 +123,22 @@ export default function TaskBasicSection({
           />
         </EditorField>
 
-        <EditorField
-          label="同步链路"
-          required
-        >
+        <EditorField label="同步链路" required>
           <div className="grid grid-cols-[minmax(0,1fr)_42px_minmax(0,1fr)] items-center gap-3 max-md:grid-cols-1">
             <div className="rounded-lg border border-[#ebecef] bg-[#fcfcfd] p-3">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <span className="text-[12px] font-medium text-[#667085]">
                   Source 来源端
                 </span>
-
                 <Tag className="!m-0 !border-[#ffd1da] !bg-[#fff4f6] !text-[11px] !text-[var(--yak-brand-color)]">
-                  {editor.basic.sourceType || 'SOURCE'}
+                  {editor.source.dbType || 'SOURCE'}
                 </Tag>
               </div>
 
               <Select
                 showSearch
                 variant="filled"
-                value={editor.basic.sourceDataSourceId || undefined}
+                value={editor.source.dataSourceId || undefined}
                 options={toOptions(sourceRecords)}
                 loading={dataSourceLoading}
                 optionFilterProp="label"
@@ -167,16 +157,15 @@ export default function TaskBasicSection({
                 <span className="text-[12px] font-medium text-[#667085]">
                   Sink 目标端
                 </span>
-
                 <Tag className="!m-0 !border-[#ffd1da] !bg-[#fff4f6] !text-[11px] !text-[var(--yak-brand-color)]">
-                  {editor.basic.targetType || 'SINK'}
+                  {editor.sink.dbType || 'SINK'}
                 </Tag>
               </div>
 
               <Select
                 showSearch
                 variant="filled"
-                value={editor.basic.targetDataSourceId || undefined}
+                value={editor.sink.dataSourceId || undefined}
                 options={toOptions(targetRecords)}
                 loading={dataSourceLoading}
                 optionFilterProp="label"
@@ -199,11 +188,9 @@ export default function TaskBasicSection({
             >
               <DatabaseOutlined />
             </span>
-
             <span className="text-[13px] font-medium text-[#344054]">
               {modeLabel[editor.mode]}
             </span>
-
             <span className="text-[11px] text-[#98a2b3]">
               创建后不可切换类型
             </span>
