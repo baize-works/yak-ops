@@ -66,11 +66,7 @@ public class OfflineWorkerRegistrationService {
     String nodeId = request.getNodeId().trim();
     String instanceId = request.getInstanceId().trim();
     String baseUrl = probeClient.normalizeBaseUrl(request.getBaseUrl());
-
-    NodeRecord sameAddress = nodeRepository.findByBaseUrl(baseUrl);
-    if (sameAddress != null && !nodeId.equals(sameAddress.getNodeId())) {
-      conflict("Worker 地址已被其他节点使用：" + baseUrl);
-    }
+    requireAddressOwnership(nodeId, baseUrl);
 
     NodeRecord existing = nodeRepository.findForUpdate(nodeId);
     boolean takeover = false;
@@ -96,7 +92,6 @@ public class OfflineWorkerRegistrationService {
       sequence = idempotent ? value(existing.getHeartbeatSequence(), 0L) : 0L;
     }
 
-    LocalDateTime expiresAt = now.plusNanos(leaseDurationMillis() * 1_000_000L);
     NodeRecord record = existing == null ? NodeRecord.builder().build() : copy(existing);
     record.setNodeId(nodeId);
     if (existing == null || !StringUtils.hasText(existing.getNodeName())) {
@@ -107,7 +102,7 @@ public class OfflineWorkerRegistrationService {
     record.setRegistrationLeaseId(leaseId);
     record.setRegistrationInstanceId(instanceId);
     record.setRegistrationProtocolVersion(request.getProtocolVersion().trim());
-    record.setLeaseExpiresAt(expiresAt);
+    record.setLeaseExpiresAt(now.plusNanos(leaseDurationMillis() * 1_000_000L));
     record.setLastRegistrationTime(now);
     record.setHeartbeatSequence(sequence);
     if (existing == null) {
@@ -118,9 +113,18 @@ public class OfflineWorkerRegistrationService {
       record.setLabelsJson(writeLabels(request.getLabels()));
       record.setCreateTime(now);
     }
-    applyRuntime(record, request.getEngineVersion(), request.getStartedAtMillis(),
-        request.getOfflineOnly(), request.getMaxConcurrentJobs(), request.getMaxQueuedJobs(),
-        request.getRunningJobs(), request.getQueuedJobs(), instanceId, request.getConnectors(), now);
+    applyRuntime(
+        record,
+        request.getEngineVersion(),
+        request.getStartedAtMillis(),
+        request.getOfflineOnly(),
+        request.getMaxConcurrentJobs(),
+        request.getMaxQueuedJobs(),
+        request.getRunningJobs(),
+        request.getQueuedJobs(),
+        instanceId,
+        request.getConnectors(),
+        now);
     record.setUpdateTime(now);
     nodeRepository.upsert(record);
 
@@ -131,14 +135,15 @@ public class OfflineWorkerRegistrationService {
         takeover ? "LEASE_TAKEOVER" : idempotent ? "REGISTER_RETRY" : "REGISTERED",
         remoteAddress,
         takeover ? "旧租约已过期，新实例接管" : "Worker 动态注册成功");
-    return response(nodeRepository.find(nodeId));
+    return response(requireStored(nodeId));
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
   public LeaseResponse heartbeat(HeartbeatRequest request, String remoteAddress) {
     validateHeartbeat(request);
     LocalDateTime now = LocalDateTime.now();
-    NodeRecord existing = nodeRepository.findForUpdate(request.getNodeId().trim());
+    String nodeId = request.getNodeId().trim();
+    NodeRecord existing = nodeRepository.findForUpdate(nodeId);
     validateLease(existing, request.getLeaseId(), request.getInstanceId(), now);
     long sequence = request.getSequence();
     if (sequence <= value(existing.getHeartbeatSequence(), 0L)) {
@@ -146,14 +151,24 @@ public class OfflineWorkerRegistrationService {
           + "，请求=" + sequence);
     }
 
+    String baseUrl = probeClient.normalizeBaseUrl(request.getBaseUrl());
+    requireAddressOwnership(nodeId, baseUrl);
     NodeRecord record = copy(existing);
-    record.setBaseUrl(probeClient.normalizeBaseUrl(request.getBaseUrl()));
+    record.setBaseUrl(baseUrl);
     record.setLeaseExpiresAt(now.plusNanos(leaseDurationMillis() * 1_000_000L));
     record.setHeartbeatSequence(sequence);
-    applyRuntime(record, request.getEngineVersion(), request.getStartedAtMillis(),
-        request.getOfflineOnly(), request.getMaxConcurrentJobs(), request.getMaxQueuedJobs(),
-        request.getRunningJobs(), request.getQueuedJobs(), request.getInstanceId(),
-        request.getConnectors(), now);
+    applyRuntime(
+        record,
+        request.getEngineVersion(),
+        request.getStartedAtMillis(),
+        request.getOfflineOnly(),
+        request.getMaxConcurrentJobs(),
+        request.getMaxQueuedJobs(),
+        request.getRunningJobs(),
+        request.getQueuedJobs(),
+        request.getInstanceId(),
+        request.getConnectors(),
+        now);
     record.setUpdateTime(now);
     nodeRepository.upsert(record);
     registrationRepository.recordEvent(
@@ -163,7 +178,7 @@ public class OfflineWorkerRegistrationService {
         "HEARTBEAT",
         remoteAddress,
         "sequence=" + sequence);
-    return response(nodeRepository.find(record.getNodeId()));
+    return response(requireStored(nodeId));
   }
 
   @Transactional(transactionManager = "offlineSyncTransactionManager", rollbackFor = Exception.class)
@@ -215,9 +230,27 @@ public class OfflineWorkerRegistrationService {
       initialDelayString = "${yak.sync.offline.registration.cleanup-initial-delay-millis:10000}",
       fixedDelayString = "${yak.sync.offline.registration.cleanup-delay-millis:10000}")
   public void cleanup() {
+    if (!properties.isEnabled()) {
+      return;
+    }
     LocalDateTime now = LocalDateTime.now();
     registrationRepository.expireLeases(now);
     registrationRepository.cleanupNonces(now);
+  }
+
+  private void requireAddressOwnership(String nodeId, String baseUrl) {
+    NodeRecord sameAddress = nodeRepository.findByBaseUrl(baseUrl);
+    if (sameAddress != null && !nodeId.equals(sameAddress.getNodeId())) {
+      conflict("Worker 地址已被其他节点使用：" + baseUrl);
+    }
+  }
+
+  private NodeRecord requireStored(String nodeId) {
+    NodeRecord stored = nodeRepository.find(nodeId);
+    if (stored == null) {
+      throw new IllegalStateException("动态 Worker 租约保存后无法读取：" + nodeId);
+    }
+    return stored;
   }
 
   private void applyRuntime(
@@ -246,7 +279,7 @@ public class OfflineWorkerRegistrationService {
     record.setConsecutiveFailures(0);
     record.setLastErrorMessage(null);
 
-    String snapshot = capabilitySnapshot(
+    CapabilitySnapshot snapshot = capabilitySnapshot(
         record.getNodeId(), instanceId, engineVersion, connectors);
     if (snapshot == null) {
       record.setCapabilityStatus("UNKNOWN");
@@ -256,14 +289,14 @@ public class OfflineWorkerRegistrationService {
       record.setCapabilityErrorMessage(null);
     } else {
       record.setCapabilityStatus("READY");
-      record.setCapabilityDigest("sha256:" + sha256(snapshot));
-      record.setConnectorSchemasJson(snapshot);
+      record.setCapabilityDigest(snapshot.digest);
+      record.setConnectorSchemasJson(snapshot.json);
       record.setCapabilitySyncedAt(now);
       record.setCapabilityErrorMessage(null);
     }
   }
 
-  private String capabilitySnapshot(
+  private CapabilitySnapshot capabilitySnapshot(
       String nodeId,
       String instanceId,
       String engineVersion,
@@ -275,6 +308,7 @@ public class OfflineWorkerRegistrationService {
     connectors.sort(Comparator
         .comparing((ConnectorCapabilityPayload value) -> normalizeId(value.getConnectorId()))
         .thenComparing(value -> normalizeRole(value.getRole())));
+
     ObjectNode root = objectMapper.createObjectNode();
     root.put("nodeId", nodeId);
     root.put("workerInstanceId", instanceId);
@@ -289,7 +323,8 @@ public class OfflineWorkerRegistrationService {
       item.put("implementationVersion", text(connector.getImplementationVersion()));
       ArrayNode capabilities = item.putArray("capabilities");
       List<String> capabilityValues = connector.getCapabilities() == null
-          ? Collections.emptyList() : new ArrayList<>(connector.getCapabilities());
+          ? Collections.emptyList()
+          : new ArrayList<>(connector.getCapabilities());
       capabilityValues.stream()
           .filter(StringUtils::hasText)
           .map(value -> value.trim().toUpperCase(Locale.ROOT))
@@ -298,11 +333,9 @@ public class OfflineWorkerRegistrationService {
           .forEach(capabilities::add);
       items.add(item);
     }
-    try {
-      return objectMapper.writeValueAsString(root);
-    } catch (JsonProcessingException exception) {
-      throw new IllegalStateException("序列化动态 Worker 能力快照失败", exception);
-    }
+    String json = write(root, "序列化动态 Worker 能力快照失败");
+    String canonicalConnectors = write(items, "序列化动态 Worker 能力摘要失败");
+    return new CapabilitySnapshot(json, "sha256:" + sha256(canonicalConnectors));
   }
 
   private LeaseResponse response(NodeRecord node) {
@@ -313,6 +346,7 @@ public class OfflineWorkerRegistrationService {
         .leaseId(node.getRegistrationLeaseId())
         .leaseExpiresAt(node.getLeaseExpiresAt())
         .heartbeatIntervalMillis(heartbeatIntervalMillis())
+        .heartbeatSequence(value(node.getHeartbeatSequence(), 0L))
         .serverTimeMillis(System.currentTimeMillis())
         .enabled(node.getEnabled())
         .schedulingStatus(node.getSchedulingStatus())
@@ -444,6 +478,22 @@ public class OfflineWorkerRegistrationService {
     }
   }
 
+  private String write(ObjectNode value, String message) {
+    try {
+      return objectMapper.writeValueAsString(value);
+    } catch (JsonProcessingException exception) {
+      throw new IllegalStateException(message, exception);
+    }
+  }
+
+  private String write(ArrayNode value, String message) {
+    try {
+      return objectMapper.writeValueAsString(value);
+    } catch (JsonProcessingException exception) {
+      throw new IllegalStateException(message, exception);
+    }
+  }
+
   private String normalizeId(String value) {
     required(value, "connectorId");
     return value.trim().toLowerCase(Locale.ROOT);
@@ -508,5 +558,15 @@ public class OfflineWorkerRegistrationService {
 
   private void conflict(String message) {
     throw new ResponseStatusException(HttpStatus.CONFLICT, message);
+  }
+
+  private static final class CapabilitySnapshot {
+    private final String json;
+    private final String digest;
+
+    private CapabilitySnapshot(String json, String digest) {
+      this.json = json;
+      this.digest = digest;
+    }
   }
 }
