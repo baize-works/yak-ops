@@ -1,5 +1,4 @@
 import {
-  endpointNode,
   isApiSuccess,
   responseMessage,
   type SyncEditorState,
@@ -23,15 +22,14 @@ const resultErrors = (result: any): string[] => {
 export default async function validateEditorConnectorForms(
   editor: SyncEditorState,
 ): Promise<string[]> {
-  const sourceConfig = endpointNode(editor.workflow, 'source')?.data?.config || {};
-  const sinkConfig = endpointNode(editor.workflow, 'sink')?.data?.config || {};
-  const sourceConnectorId = connectorIdForDataSourceType(
-    sourceConfig.connectorId || editor.basic.sourceType,
-  );
-  const sinkConnectorId = connectorIdForDataSourceType(
-    sinkConfig.connectorId || editor.basic.targetType,
-  );
-  const channel = editor.workflow.channelConfig || {};
+  const sourceConfig = editor.source.config || {};
+  const sinkConfig = editor.sink.config || {};
+  const sourceConnectorId =
+    editor.source.connectorId ||
+    connectorIdForDataSourceType(editor.source.dbType);
+  const sinkConnectorId =
+    editor.sink.connectorId ||
+    connectorIdForDataSourceType(editor.sink.dbType);
 
   const requests: Promise<any>[] = [];
   if (sourceConnectorId) {
@@ -40,7 +38,7 @@ export default async function validateEditorConnectorForms(
         sourceConnectorId,
         'SOURCE',
         toSchemaValues(sourceConfig, 'SOURCE'),
-        { dataSourceId: editor.basic.sourceDataSourceId },
+        { dataSourceId: editor.source.dataSourceId },
       ),
     );
   }
@@ -52,10 +50,12 @@ export default async function validateEditorConnectorForms(
         {
           ...toSchemaValues(sinkConfig, 'SINK'),
           dirty_data_policy:
-            channel.dirtyDataPolicy === 'skip' ? 'SKIP' : 'FAIL_FAST',
-          dirty_data_max_count: Number(channel.dirtyDataLimit || 0),
+            editor.channel.dirtyDataPolicy === 'skip'
+              ? 'SKIP'
+              : 'FAIL_FAST',
+          dirty_data_max_count: Number(editor.channel.dirtyDataLimit || 0),
         },
-        { dataSourceId: editor.basic.targetDataSourceId },
+        { dataSourceId: editor.sink.dataSourceId },
       ),
     );
   }
