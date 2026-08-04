@@ -22,6 +22,8 @@ yak:
       enabled: false
   datasource:
     enabled: false
+  data-development:
+    enabled: false
   resource:
     enabled: false
     storage:
