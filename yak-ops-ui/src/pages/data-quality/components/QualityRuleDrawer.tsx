@@ -17,18 +17,14 @@ import {
   Switch,
 } from 'antd';
 import { useEffect, useMemo, type ReactNode } from 'react';
-import {
-  COLUMN_OPTIONS,
-  DATABASE_OPTIONS,
-  DATA_SOURCE_OPTIONS,
-  QUALITY_RULE_TYPE_META,
-  TABLE_OPTIONS,
-} from '../mock';
+
+import { QUALITY_RULE_TYPE_META } from '../mock';
 import type {
   QualityOperator,
   QualityRule,
   QualityRuleFormValues,
   QualityRuleType,
+  QualitySelectOption,
   QualityTriggerType,
 } from '../types';
 
@@ -36,16 +32,30 @@ interface QualityRuleDrawerProps {
   open: boolean;
   record?: QualityRule;
   submitting?: boolean;
+  dataSourceOptions: QualitySelectOption[];
+  databaseOptions: QualitySelectOption[];
+  schemaOptions: QualitySelectOption[];
+  tableOptions: QualitySelectOption[];
+  columnOptions: QualitySelectOption[];
+  dataSourceLoading?: boolean;
+  databaseLoading?: boolean;
+  schemaLoading?: boolean;
+  tableLoading?: boolean;
+  columnLoading?: boolean;
+  onDataSourceChange: (dataSourceId: string) => void;
+  onDatabaseChange: (databaseName: string) => void;
+  onSchemaChange: (schemaName?: string) => void;
+  onTableChange: (tableName: string) => void;
   onCancel: () => void;
-  onSubmit: (values: QualityRuleFormValues) => void;
+  onSubmit: (values: QualityRuleFormValues) => void | Promise<void>;
 }
 
 const DEFAULT_VALUES: QualityRuleFormValues = {
   name: '',
   importance: 'NORMAL',
-  dataSourceId: 'ds-mysql-prod',
-  databaseName: 'yak_ops',
-  tableName: 'user_info',
+  dataSourceId: '',
+  databaseName: '',
+  tableName: '',
   ruleType: 'TABLE_ROW_COUNT',
   operator: '>',
   threshold: 0,
@@ -85,6 +95,9 @@ const toFormValues = (record?: QualityRule): QualityRuleFormValues => {
     description: record.description,
     importance: record.importance,
     dataSourceId: record.dataSourceId,
+    dataSourceName: record.dataSourceName,
+    catalogName: record.catalogName,
+    schemaName: record.schemaName,
     databaseName: record.databaseName,
     tableName: record.tableName,
     columnName: record.columnName,
@@ -93,7 +106,9 @@ const toFormValues = (record?: QualityRule): QualityRuleFormValues => {
     threshold: record.threshold,
     thresholdEnd: record.thresholdEnd,
     scheduleMode: record.scheduleMode,
-    schedulePreset: record.cronExpression ? 'CUSTOM' : 'DAILY_0200',
+    schedulePreset:
+      record.schedulePreset ||
+      (record.cronExpression ? 'CUSTOM' : 'DAILY_0200'),
     cronExpression: record.cronExpression,
     enabled: record.enabled,
     customSql: record.customSql,
@@ -117,6 +132,20 @@ const QualityRuleDrawer = ({
   open,
   record,
   submitting,
+  dataSourceOptions,
+  databaseOptions,
+  schemaOptions,
+  tableOptions,
+  columnOptions,
+  dataSourceLoading,
+  databaseLoading,
+  schemaLoading,
+  tableLoading,
+  columnLoading,
+  onDataSourceChange,
+  onDatabaseChange,
+  onSchemaChange,
+  onTableChange,
   onCancel,
   onSubmit,
 }: QualityRuleDrawerProps) => {
@@ -131,7 +160,9 @@ const QualityRuleDrawer = ({
     (Form.useWatch('scheduleMode', form) as QualityTriggerType | undefined) ||
     DEFAULT_VALUES.scheduleMode;
   const schedulePreset = Form.useWatch('schedulePreset', form);
+  const dataSourceId = Form.useWatch('dataSourceId', form);
   const databaseName = Form.useWatch('databaseName', form);
+  const schemaName = Form.useWatch('schemaName', form);
   const tableName = Form.useWatch('tableName', form);
   const columnName = Form.useWatch('columnName', form);
   const threshold = Form.useWatch('threshold', form);
@@ -141,21 +172,19 @@ const QualityRuleDrawer = ({
 
   useEffect(() => {
     if (!open) return;
+    form.resetFields();
     form.setFieldsValue(toFormValues(record));
   }, [form, open, record]);
 
   useEffect(() => {
     if (!open) return;
-    const nextMeta = QUALITY_RULE_TYPE_META[ruleType];
-    if (nextMeta.scope === 'TABLE') {
+    if (QUALITY_RULE_TYPE_META[ruleType].scope === 'TABLE') {
       form.setFieldValue('columnName', undefined);
-    } else if (!form.getFieldValue('columnName')) {
-      form.setFieldValue('columnName', COLUMN_OPTIONS[0].value);
     }
   }, [form, open, ruleType]);
 
   const preview = useMemo(() => {
-    const target = [databaseName, tableName, columnName]
+    const target = [databaseName, schemaName, tableName, columnName]
       .filter(Boolean)
       .join('.');
     const range =
@@ -168,6 +197,7 @@ const QualityRuleDrawer = ({
     databaseName,
     meta.label,
     meta.unit,
+    schemaName,
     operator,
     tableName,
     threshold,
@@ -176,7 +206,7 @@ const QualityRuleDrawer = ({
 
   const handleFinish = async () => {
     const values = await form.validateFields();
-    onSubmit(values);
+    await onSubmit(values);
   };
 
   return (
@@ -249,15 +279,68 @@ const QualityRuleDrawer = ({
             label="数据源"
             rules={[{ required: true, message: '请选择数据源' }]}
           >
-            <Select variant="filled" options={DATA_SOURCE_OPTIONS} />
+            <Select
+              showSearch
+              variant="filled"
+              optionFilterProp="label"
+              options={dataSourceOptions}
+              loading={dataSourceLoading}
+              placeholder="请选择已配置的数据源"
+              onChange={(value: string) => {
+                form.setFieldValue('dataSourceId', value);
+                form.resetFields([
+                  'databaseName',
+                  'schemaName',
+                  'tableName',
+                  'columnName',
+                ]);
+                onDataSourceChange(value);
+              }}
+            />
           </Form.Item>
           <Form.Item
             name="databaseName"
-            label="数据库 / Schema"
+            label="数据库"
             rules={[{ required: true, message: '请选择数据库或 Schema' }]}
           >
-            <Select variant="filled" options={DATABASE_OPTIONS} />
+            <Select
+              showSearch
+              variant="filled"
+              optionFilterProp="label"
+              options={databaseOptions}
+              loading={databaseLoading}
+              disabled={!dataSourceId}
+              placeholder={dataSourceId ? '请选择数据库' : '请先选择数据源'}
+              onChange={(value: string) => {
+                form.setFieldValue('databaseName', value);
+                form.resetFields(['schemaName', 'tableName', 'columnName']);
+                onDatabaseChange(value);
+              }}
+            />
           </Form.Item>
+          {schemaOptions.length > 0 ? (
+            <Form.Item
+              name="schemaName"
+              label="Schema"
+              rules={[{ required: true, message: '请选择 Schema' }]}
+            >
+              <Select
+                showSearch
+                allowClear
+                variant="filled"
+                optionFilterProp="label"
+                options={schemaOptions}
+                loading={schemaLoading}
+                disabled={!databaseName}
+                placeholder="请选择 Schema"
+                onChange={(value?: string) => {
+                  form.setFieldValue('schemaName', value);
+                  form.resetFields(['tableName', 'columnName']);
+                  onSchemaChange(value);
+                }}
+              />
+            </Form.Item>
+          ) : null}
           <Form.Item
             name="tableName"
             label="数据表"
@@ -266,8 +349,26 @@ const QualityRuleDrawer = ({
             <Select
               showSearch
               variant="filled"
-              options={TABLE_OPTIONS}
+              options={tableOptions}
+              loading={tableLoading}
+              disabled={
+                !dataSourceId ||
+                !databaseName ||
+                (schemaOptions.length > 0 && !schemaName)
+              }
               optionFilterProp="label"
+              placeholder={
+                !databaseName
+                  ? '请先选择数据库'
+                  : schemaOptions.length > 0 && !schemaName
+                    ? '请先选择 Schema'
+                    : '请选择数据表'
+              }
+              onChange={(value: string) => {
+                form.setFieldValue('tableName', value);
+                form.resetFields(['columnName']);
+                onTableChange(value);
+              }}
             />
           </Form.Item>
           {meta.scope === 'COLUMN' ? (
@@ -279,8 +380,11 @@ const QualityRuleDrawer = ({
               <Select
                 showSearch
                 variant="filled"
-                options={COLUMN_OPTIONS}
+                options={columnOptions}
+                loading={columnLoading}
+                disabled={!tableName}
                 optionFilterProp="label"
+                placeholder={tableName ? '请选择字段' : '请先选择数据表'}
               />
             </Form.Item>
           ) : (
@@ -303,7 +407,7 @@ const QualityRuleDrawer = ({
           <Form.Item
             name="customSql"
             label="检查 SQL"
-            extra="SQL 需要返回单行单列指标值，后端接入时仅允许只读查询。"
+            extra="SQL 需要返回单行单列指标值；第 2 步接入执行引擎时会增加只读 SQL 校验。"
             rules={[{ required: true, message: '请输入检查 SQL' }]}
           >
             <Input.TextArea
@@ -339,7 +443,25 @@ const QualityRuleDrawer = ({
               <Form.Item
                 name="thresholdEnd"
                 label="最大值"
-                rules={[{ required: true, message: '请输入最大值' }]}
+                dependencies={['threshold']}
+                rules={[
+                  { required: true, message: '请输入最大值' },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const minimum = getFieldValue('threshold');
+                      if (
+                        value === undefined ||
+                        minimum === undefined ||
+                        Number(value) >= Number(minimum)
+                      ) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(
+                        new Error('最大值不能小于最小值'),
+                      );
+                    },
+                  }),
+                ]}
               >
                 <InputNumber
                   variant="filled"
@@ -370,7 +492,11 @@ const QualityRuleDrawer = ({
         </Form.Item>
         {scheduleMode === 'SCHEDULE' ? (
           <div className="grid grid-cols-2 gap-3">
-            <Form.Item name="schedulePreset" label="调度周期">
+            <Form.Item
+              name="schedulePreset"
+              label="调度周期"
+              rules={[{ required: true, message: '请选择调度周期' }]}
+            >
               <Select variant="filled" options={scheduleOptions} />
             </Form.Item>
             {schedulePreset === 'CUSTOM' ? (
@@ -383,7 +509,7 @@ const QualityRuleDrawer = ({
               </Form.Item>
             ) : (
               <div className="rounded-lg border border-dashed border-[#e4e7ec] bg-[#fafafa] px-3 py-2.5 text-[12px] leading-5 text-[#98a2b3]">
-                第一期仅设计调度配置，后续统一接入 Yak Schedule。
+                当前保存调度配置；实际定时触发将在第 3 步接入 Yak Schedule。
               </div>
             )}
           </div>
