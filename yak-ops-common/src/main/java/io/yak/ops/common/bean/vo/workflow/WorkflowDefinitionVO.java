@@ -1,8 +1,9 @@
 package io.yak.ops.common.bean.vo.workflow;
 
+import io.yak.ops.common.bean.entity.workflow.WorkflowDag;
+import io.yak.ops.common.bean.entity.workflow.v2.WorkflowV2Dag;
 import io.yak.ops.common.enums.workflow.DefinitionState;
 import io.yak.ops.common.enums.workflow.FailureStrategy;
-import io.yak.ops.common.bean.entity.workflow.WorkflowDag;
 import java.util.Date;
 import lombok.Data;
 
@@ -17,7 +18,9 @@ public class WorkflowDefinitionVO {
   private Integer currentVersion;
   private FailureStrategy failureStrategy;
   private int maxParallelism;
+  private int schemaVersion = 1;
   private WorkflowDag draft;
+  private WorkflowV2Dag draftV2;
   private String createdBy;
   private Date createdAt;
   private Date updatedAt;

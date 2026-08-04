@@ -5,8 +5,8 @@ import io.yak.ops.business.workflow.config.ConditionalOnWorkflowEnabled;
 import io.yak.ops.business.workflow.dao.WorkflowDefinitionDao;
 import io.yak.ops.business.workflow.dao.mapper.WorkflowDefinitionMapper;
 import io.yak.ops.business.workflow.dao.mapper.WorkflowVersionMapper;
-import io.yak.ops.business.workflow.util.WorkflowConvertUtils;
 import io.yak.ops.business.workflow.util.WorkflowJsonCodec;
+import io.yak.ops.business.workflow.util.WorkflowV2ConvertUtils;
 import io.yak.ops.common.bean.entity.workflow.WorkflowDefinition;
 import io.yak.ops.common.bean.entity.workflow.WorkflowVersion;
 import io.yak.ops.common.bean.po.workflow.WorkflowDefinitionPO;
@@ -53,7 +53,7 @@ public class WorkflowDefinitionDaoImpl implements WorkflowDefinitionDao {
 
   @Override
   public WorkflowDefinition selectDefinitionById(Long workflowId) {
-    return WorkflowConvertUtils.toDefinition(definitionMapper.selectById(workflowId), jsonCodec);
+    return WorkflowV2ConvertUtils.toDefinition(definitionMapper.selectById(workflowId), jsonCodec);
   }
 
   @Override
@@ -63,7 +63,7 @@ public class WorkflowDefinitionDaoImpl implements WorkflowDefinitionDao {
                 .orderByDesc(WorkflowDefinitionPO::getUpdatedAt)
                 .orderByDesc(WorkflowDefinitionPO::getId))
         .stream()
-        .map(item -> WorkflowConvertUtils.toDefinition(item, jsonCodec))
+        .map(item -> WorkflowV2ConvertUtils.toDefinition(item, jsonCodec))
         .collect(Collectors.toList());
   }
 
@@ -78,6 +78,6 @@ public class WorkflowDefinitionDaoImpl implements WorkflowDefinitionDao {
         Wrappers.<WorkflowVersionPO>lambdaQuery()
             .eq(WorkflowVersionPO::getWorkflowId, workflowId)
             .eq(WorkflowVersionPO::getVersion, version));
-    return WorkflowConvertUtils.toVersion(versionPO, jsonCodec);
+    return WorkflowV2ConvertUtils.toVersion(versionPO, jsonCodec);
   }
 }

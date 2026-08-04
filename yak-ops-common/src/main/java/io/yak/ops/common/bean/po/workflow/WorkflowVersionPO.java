@@ -14,6 +14,7 @@ public class WorkflowVersionPO {
   private Long id;
   private Long workflowId;
   private Integer version;
+  private Integer schemaVersion;
   private String dagJson;
   private String contentHash;
   private String publishedBy;
