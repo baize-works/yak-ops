@@ -1,8 +1,12 @@
 import { Form, Input, Modal, Select, message } from 'antd';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { nodePluginRegistry } from '../core/registry';
 import type { ResourceType } from '../core/types';
-import { createNewResource } from '../mock/workspace';
+import {
+  workbenchErrorMessage,
+  workbenchRepository,
+} from '../repository/workbench.repository';
+import { useWorkbenchControlStore } from '../store/workbench-control.store';
 import { useWorkbenchStore } from '../store/workbench.store';
 
 interface CreateResourceValues {
@@ -22,40 +26,69 @@ const CreateResourceModal = ({
   onClose,
 }: CreateResourceModalProps) => {
   const [form] = Form.useForm<CreateResourceValues>();
-  const createResource = useWorkbenchStore((state) => state.createResource);
-  const plugins = useMemo(
-    () =>
-      nodePluginRegistry
-        .list()
-        .slice()
-        .sort(
-          (left, right) =>
-            left.metadata.folderOrder - right.metadata.folderOrder ||
-            left.metadata.label.localeCompare(right.metadata.label),
-        ),
-    [],
+  const [submitting, setSubmitting] = useState(false);
+  const projectId = useWorkbenchControlStore((state) => state.projectId);
+  const supportedTaskTypes = useWorkbenchControlStore(
+    (state) => state.supportedTaskTypes,
   );
+  const createResource = useWorkbenchStore((state) => state.createResource);
+  const plugins = useMemo(() => {
+    const supported = new Set(supportedTaskTypes);
+    return nodePluginRegistry
+      .list()
+      .filter((plugin) => supported.has(plugin.type.toUpperCase()))
+      .slice()
+      .sort(
+        (left, right) =>
+          left.metadata.folderOrder - right.metadata.folderOrder ||
+          left.metadata.label.localeCompare(right.metadata.label),
+      );
+  }, [supportedTaskTypes]);
 
   useEffect(() => {
     if (!open) return;
+    const requested = plugins.some(
+      (plugin) => plugin.type === initialResourceType,
+    )
+      ? initialResourceType
+      : plugins[0]?.type;
     form.setFieldsValue({
-      resourceType: initialResourceType ?? plugins[0]?.type,
+      resourceType: requested,
       name: '',
     });
   }, [form, initialResourceType, open, plugins]);
 
-  const handleCreate = ({ resourceType, name }: CreateResourceValues) => {
+  const handleCreate = async ({
+    resourceType,
+    name,
+  }: CreateResourceValues) => {
     const plugin = nodePluginRegistry.get(resourceType);
     if (!plugin) {
       message.error(`未找到节点插件：${resourceType}`);
       return;
     }
+    if (!projectId) {
+      message.error('数据开发项目尚未加载');
+      return;
+    }
 
-    const { resource, document } = createNewResource(plugin, name);
-    createResource(resource, document);
-    message.success(`${plugin.metadata.label} 已创建`);
-    form.resetFields();
-    onClose();
+    setSubmitting(true);
+    try {
+      const { resource, document } = await workbenchRepository.createTask(
+        projectId,
+        resourceType,
+        name,
+        plugin.metadata.defaultEngine,
+      );
+      createResource(resource, document);
+      message.success(`${plugin.metadata.label} 已创建并保存`);
+      form.resetFields();
+      onClose();
+    } catch (error) {
+      message.error(workbenchErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -66,6 +99,8 @@ const CreateResourceModal = ({
       width={540}
       okText="创建节点"
       cancelText="取消"
+      confirmLoading={submitting}
+      okButtonProps={{ disabled: plugins.length === 0 }}
       destroyOnHidden
       onCancel={() => {
         form.resetFields();
@@ -87,6 +122,9 @@ const CreateResourceModal = ({
         >
           <Select
             variant="filled"
+            placeholder={
+              plugins.length === 0 ? '后端没有注册可用任务插件' : undefined
+            }
             options={plugins.map((plugin) => ({
               value: plugin.type,
               label: `${plugin.metadata.category} / ${plugin.metadata.label}`,
@@ -102,11 +140,12 @@ const CreateResourceModal = ({
             { max: 80, message: '节点名称不能超过 80 个字符' },
           ]}
         >
-          <Input variant="filled" placeholder="例如：mysql_sql_etl" />
+          <Input variant="filled" placeholder="例如：http_user_profile" />
         </Form.Item>
 
         <div className="rounded-lg bg-[#f7f8f9] p-3 text-[11px] leading-5 text-[rgba(22,24,35,0.5)]">
-          节点由 NodePluginDefinition 注册。创建后，渲染器、运行参数、工具栏动作和能力开关会自动按插件定义加载。
+          节点类型由后端 TaskPluginCatalog 与前端 NodePluginDefinition
+          共同确认。未在后端注册的节点不会出现在创建列表中。
         </div>
       </Form>
     </Modal>

@@ -2,6 +2,7 @@ package io.yak.ops.business.development.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.yak.ops.business.development.domain.DataDevelopmentModel.Draft;
+import io.yak.ops.business.development.domain.DataDevelopmentModel.Project;
 import io.yak.ops.business.development.domain.DataDevelopmentModel.Resource;
 import io.yak.ops.business.development.domain.DataDevelopmentModel.Task;
 import io.yak.ops.plugin.task.api.TaskPluginFactory.Descriptor;
@@ -79,6 +80,18 @@ public final class DataDevelopmentApi {
       Resource resource,
       Task task,
       Draft draft) {
+  }
+
+  /**
+   * Complete authoring snapshot used by the web workbench.
+   *
+   * <p>The workspace endpoint deliberately returns task drafts in one request during the first
+   * integration phase. The API can be split into lazy resource/document loading later without
+   * changing the persisted task envelope.</p>
+   */
+  public record WorkspaceView(
+      Project project,
+      List<TaskDetailView> tasks) {
   }
 
   public record ValidationView(

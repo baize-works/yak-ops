@@ -2,7 +2,7 @@ import {
   BRAND_CSS_VARIABLES,
   BRAND_THEME,
 } from '@/styles/brand';
-import { Button, ConfigProvider, Tooltip } from 'antd';
+import { Alert, Button, ConfigProvider, Spin, Tooltip } from 'antd';
 import {
   ChevronRight,
   Circle,
@@ -12,7 +12,7 @@ import {
   Minimize2,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CreateResourceModal from './components/CreateResourceModal';
 import EditorTabs from './components/EditorTabs';
 import ExplorerPanel from './components/ExplorerPanel';
@@ -24,6 +24,7 @@ import WorkbenchResizeHandle from './components/WorkbenchResizeHandle';
 import WorkbenchToolbar from './components/WorkbenchToolbar';
 import type { ResourceType } from './core/types';
 import ExecutionBottomPanel from './execution/components/ExecutionBottomPanel';
+import { useWorkbenchControlStore } from './store/workbench-control.store';
 import { useWorkbenchStore } from './store/workbench.store';
 
 const EXPLORER_MIN_WIDTH = 300;
@@ -36,6 +37,13 @@ const WorkbenchPage = () => {
   const fullscreen = useWorkbenchStore((state) => state.fullscreen);
   const splitResourceId = useWorkbenchStore((state) => state.splitResourceId);
   const resourcesById = useWorkbenchStore((state) => state.resourcesById);
+  const workspaceLoading = useWorkbenchControlStore(
+    (state) => state.workspaceLoading,
+  );
+  const workspaceError = useWorkbenchControlStore(
+    (state) => state.workspaceError,
+  );
+  const initialize = useWorkbenchControlStore((state) => state.initialize);
   const setExplorerWidth = useWorkbenchStore((state) => state.setExplorerWidth);
   const setFullscreen = useWorkbenchStore((state) => state.setFullscreen);
   const setSplitResource = useWorkbenchStore(
@@ -45,9 +53,13 @@ const WorkbenchPage = () => {
     (state) => state.setActiveResource,
   );
   const [createOpen, setCreateOpen] = useState(false);
-  const [createType, setCreateType] = useState<ResourceType>('SQL');
+  const [createType, setCreateType] = useState<ResourceType>('HTTP');
 
-  const openCreateModal = (resourceType: ResourceType = 'SQL') => {
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
+
+  const openCreateModal = (resourceType: ResourceType = 'HTTP') => {
     setCreateType(resourceType);
     setCreateOpen(true);
   };
@@ -73,18 +85,20 @@ const WorkbenchPage = () => {
               数据开发
             </strong>
             <span className="ml-2 hidden rounded bg-[#f2f3f5] px-2 py-1 text-[10px] font-medium text-[rgba(22,24,35,0.48)] md:inline-flex">
-              Plugin Workbench
+              Control Plane
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="hidden items-center gap-2 rounded-md border border-[#e2e5e9] bg-[#fafbfc] px-2.5 py-1.5 text-[12px] text-[rgba(22,24,35,0.68)] sm:flex">
               <Cloud size={14} />
-              开发环境
+              {workspaceError ? '连接异常' : '开发环境'}
               <Circle
                 size={7}
-                fill="#20b26b"
-                className="text-[#20b26b]"
+                fill={workspaceError ? '#ff4d4f' : '#20b26b'}
+                className={
+                  workspaceError ? 'text-[#ff4d4f]' : 'text-[#20b26b]'
+                }
               />
             </div>
             <Tooltip title={fullscreen ? '退出沉浸模式' : '沉浸模式'}>
@@ -104,7 +118,27 @@ const WorkbenchPage = () => {
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1">
+        {workspaceError && (
+          <Alert
+            banner
+            showIcon
+            type="error"
+            message={workspaceError}
+            action={
+              <Button size="small" onClick={() => void initialize()}>
+                重新加载
+              </Button>
+            }
+          />
+        )}
+
+        <div className="relative flex min-h-0 flex-1">
+          {workspaceLoading && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/75">
+              <Spin tip="正在加载数据开发工作区" />
+            </div>
+          )}
+
           {explorerVisible && !fullscreen && (
             <>
               <div
@@ -131,7 +165,7 @@ const WorkbenchPage = () => {
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="flex min-h-0 flex-1 overflow-hidden">
                 <section className="min-w-0 flex-1 overflow-hidden">
-                  <ResourceView onCreate={() => openCreateModal('SQL')} />
+                  <ResourceView onCreate={() => openCreateModal('HTTP')} />
                 </section>
 
                 {splitResource && !fullscreen && (

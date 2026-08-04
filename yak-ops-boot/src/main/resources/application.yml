@@ -94,6 +94,16 @@ yak:
     connection-test:
       timeout-seconds: ${YAK_DATASOURCE_CONNECT_TIMEOUT_SECONDS:5}
 
+  data-development:
+    enabled: ${YAK_DATA_DEVELOPMENT_ENABLED:true}
+    datasource:
+      url: ${YAK_DATA_DEVELOPMENT_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
+      username: ${YAK_DATA_DEVELOPMENT_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
+      password: ${YAK_DATA_DEVELOPMENT_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
+      driver-class-name: ${YAK_DATA_DEVELOPMENT_DATASOURCE_DRIVER:com.mysql.cj.jdbc.Driver}
+      minimum-idle: 1
+      maximum-pool-size: 8
+
   resource:
     enabled: ${YAK_RESOURCE_ENABLED:true}
     max-file-size: ${YAK_RESOURCE_MAX_FILE_BYTES:104857600}

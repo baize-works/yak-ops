@@ -1,6 +1,13 @@
 import { message } from 'antd';
 import { useExecutionPanelStore } from '../execution/store/execution-panel.store';
+import {
+  isWorkbenchConflict,
+  workbenchErrorMessage,
+  workbenchRepository,
+} from '../repository/workbench.repository';
+import { useWorkbenchControlStore } from '../store/workbench-control.store';
 import { useWorkbenchStore } from '../store/workbench.store';
+import type { ExecutionSession } from '../execution/types';
 import type {
   DevelopmentDocument,
   ResourceContent,
@@ -18,77 +25,156 @@ const updateContent = (
   updatedAt: new Date().toISOString(),
 });
 
-const runResource = (
+const recordSubmittedExecution = (
   context: WorkbenchActionContext,
-  successText: string,
+  executionId: string,
 ) => {
-  const workbenchStore = useWorkbenchStore.getState();
-  const executionPanelStore = useExecutionPanelStore.getState();
-  const resourceId = context.resource.id;
-  const executionId = executionPanelStore.startExecution(
-    context.resource,
-    context.plugin,
-  );
+  const submittedAt = new Date().toISOString();
+  const session: ExecutionSession = {
+    id: executionId,
+    resourceId: context.resource.id,
+    resourceType: context.resource.resourceType,
+    resourceName: context.resource.name,
+    engine: context.resource.engine,
+    status: 'RUNNING',
+    submittedAt,
+    startedAt: submittedAt,
+    logs: [
+      {
+        id: `${executionId}-submitted`,
+        level: 'INFO',
+        timestamp: new Intl.DateTimeFormat('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        }).format(new Date()),
+        message: '执行快照已保存，等待 Execution Gateway 接管',
+      },
+    ],
+  };
 
-  workbenchStore.setExecutionStatus(resourceId, 'RUNNING');
+  useExecutionPanelStore.setState((state) => ({
+    sessionsById: {
+      ...state.sessionsById,
+      [executionId]: session,
+    },
+    sessionIdsByResourceId: {
+      ...state.sessionIdsByResourceId,
+      [context.resource.id]: [
+        executionId,
+        ...(state.sessionIdsByResourceId[context.resource.id] ?? []),
+      ],
+    },
+    activeSessionIdByResourceId: {
+      ...state.activeSessionIdByResourceId,
+      [context.resource.id]: executionId,
+    },
+    visible: true,
+    activeTab: 'output',
+  }));
+};
+
+const runResource = async (
+  context: WorkbenchActionContext,
+  loadingText: string,
+) => {
+  const store = useWorkbenchStore.getState();
+  const controlStore = useWorkbenchControlStore.getState();
+  const resourceId = context.resource.id;
+
+  store.setExecutionStatus(resourceId, 'RUNNING');
   message.loading({
-    content: `${successText}：${context.resource.name}`,
+    content: `${loadingText}：${context.resource.name}`,
     key: `run-${resourceId}`,
   });
 
-  window.setTimeout(() => {
-    const currentSession =
-      useExecutionPanelStore.getState().sessionsById[executionId];
-    if (!currentSession || currentSession.status !== 'RUNNING') return;
-
-    useWorkbenchStore.getState().setExecutionStatus(resourceId, 'SUCCESS');
-    useExecutionPanelStore
-      .getState()
-      .completeExecution(executionId, context.resource);
+  try {
+    const execution = await workbenchRepository.createExecution(
+      context.resource,
+      context.document,
+    );
+    controlStore.setExecutionRecord(resourceId, execution.id, 'QUEUED');
+    recordSubmittedExecution(context, execution.id);
     message.success({
-      content: '运行完成，结果已进入底部运行面板',
+      content: `执行记录 #${execution.id} 已创建，等待执行网关接管`,
       key: `run-${resourceId}`,
     });
-  }, 1100);
+  } catch (error) {
+    store.setExecutionStatus(resourceId, 'FAILED');
+    message.error({
+      content: workbenchErrorMessage(error),
+      key: `run-${resourceId}`,
+    });
+  }
 };
 
 export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
   {
     id: 'execution.run',
-    execute: (context) => runResource(context, '正在运行'),
+    execute: (context) => runResource(context, '正在提交运行'),
   },
   {
     id: 'sql.run-statement',
-    execute: (context) => runResource(context, '正在运行当前 SQL'),
+    execute: (context) => runResource(context, '正在提交当前 SQL'),
   },
   {
     id: 'http.test',
-    execute: (context) => runResource(context, '正在发送测试请求'),
+    execute: (context) => runResource(context, '正在提交测试请求'),
   },
   {
     id: 'notebook.run-all',
-    execute: (context) => runResource(context, '正在运行全部 Cell'),
+    execute: (context) => runResource(context, '正在提交全部 Cell'),
   },
   {
     id: 'execution.stop',
-    execute: ({ resource }) => {
-      useWorkbenchStore.getState().setExecutionStatus(resource.id, 'STOPPED');
-      useExecutionPanelStore.getState().stopExecution(resource.id);
-      message.success('停止请求已提交');
+    execute: async ({ resource }) => {
+      const store = useWorkbenchStore.getState();
+      const controlStore = useWorkbenchControlStore.getState();
+      const executionId = controlStore.executionIdByResourceId[resource.id];
+      if (!executionId) {
+        message.warning('当前节点没有可取消的执行记录');
+        return;
+      }
+
+      try {
+        await workbenchRepository.cancelExecution(executionId);
+        store.setExecutionStatus(resource.id, 'STOPPED');
+        useExecutionPanelStore.getState().stopExecution(resource.id);
+        message.success(`执行记录 #${executionId} 已取消`);
+      } catch (error) {
+        message.error(workbenchErrorMessage(error));
+      }
     },
   },
   {
     id: 'document.save',
-    execute: async ({ resource }) => {
+    execute: async ({ resource, document }) => {
       const store = useWorkbenchStore.getState();
-      store.updateDocument(resource.id, (document) => ({
-        ...document,
+      store.updateDocument(resource.id, (current) => ({
+        ...current,
         saveStatus: 'SAVING',
       }));
 
-      await new Promise((resolve) => window.setTimeout(resolve, 260));
-      useWorkbenchStore.getState().markDocumentSaved(resource.id);
-      message.success(`${resource.name} 已保存`);
+      try {
+        const saved = await workbenchRepository.saveDraft(resource, document);
+        store.updateDocument(resource.id, () => saved);
+        store.updateResource(resource.id, {
+          latestRevision: saved.revision,
+          updatedAt: saved.updatedAt,
+        });
+        message.success(`${resource.name} 已保存，Revision ${saved.revision}`);
+      } catch (error) {
+        store.updateDocument(resource.id, (current) => ({
+          ...current,
+          saveStatus: isWorkbenchConflict(error) ? 'CONFLICT' : 'ERROR',
+        }));
+        message.error(
+          isWorkbenchConflict(error)
+            ? '草稿已被其他用户更新，请刷新工作区后再保存'
+            : workbenchErrorMessage(error),
+        );
+      }
     },
   },
   {
@@ -122,34 +208,63 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
   },
   {
     id: 'document.refresh',
-    execute: ({ resource }) => {
-      message.success(`${resource.name} 已刷新`);
+    execute: async ({ resource }) => {
+      await useWorkbenchControlStore.getState().initialize();
+      message.success(`${resource.name} 已从服务端刷新`);
     },
   },
   {
     id: 'document.validate',
-    execute: ({ resource, plugin }) => {
-      useExecutionPanelStore
-        .getState()
-        .openForResource(resource.id, 'validation');
-      message.success(`${plugin.metadata.label} 语法、依赖与运行参数检查通过`);
+    execute: async ({ resource, document, plugin }) => {
+      try {
+        const result = await workbenchRepository.validate(resource, document);
+        useExecutionPanelStore
+          .getState()
+          .openForResource(resource.id, 'validation');
+        message.success(
+          `${plugin.metadata.label} 校验通过 · ${result.contentDigest.slice(0, 12)}`,
+        );
+      } catch (error) {
+        useExecutionPanelStore
+          .getState()
+          .openForResource(resource.id, 'problems');
+        message.error(workbenchErrorMessage(error));
+      }
     },
   },
   {
     id: 'version.publish',
-    execute: ({ resource }) => {
-      const store = useWorkbenchStore.getState();
-      store.updateResource(resource.id, {
-        status: 'PUBLISHED',
-        publishedVersion: (resource.publishedVersion ?? 0) + 1,
-      });
-      useExecutionPanelStore.getState().openForResource(resource.id, 'publish');
-      message.success('已创建不可变发布版本');
+    execute: async ({ resource, document }) => {
+      if (document.dirty) {
+        message.warning('请先保存草稿，再创建发布版本');
+        return;
+      }
+
+      try {
+        const version = await workbenchRepository.publish(resource, document);
+        useWorkbenchStore.getState().updateResource(resource.id, {
+          status: 'PUBLISHED',
+          publishedVersion: version.versionNumber,
+        });
+        useExecutionPanelStore
+          .getState()
+          .openForResource(resource.id, 'publish');
+        message.success(`已创建不可变发布版本 V${version.versionNumber}`);
+      } catch (error) {
+        message.error(
+          isWorkbenchConflict(error)
+            ? '草稿版本已变化，请刷新后重新发布'
+            : workbenchErrorMessage(error),
+        );
+      }
     },
   },
   {
     id: 'resource.share',
-    execute: () => {
+    execute: async ({ resource }) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('resourceId', resource.id);
+      await navigator.clipboard.writeText(url.toString());
       message.success('分享链接已复制');
     },
   },

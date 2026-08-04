@@ -6,10 +6,16 @@ import {
   nodePluginRegistry,
 } from '../core/registry';
 import type {
+  DevelopmentDocument,
   ToolbarGroup,
   WorkbenchActionContext,
   WorkbenchActionDefinition,
 } from '../core/types';
+import {
+  workbenchErrorMessage,
+  workbenchRepository,
+} from '../repository/workbench.repository';
+import { useWorkbenchControlStore } from '../store/workbench-control.store';
 import {
   selectActiveDocument,
   selectActiveResource,
@@ -62,10 +68,10 @@ const ToolbarActionButton = ({
 const WorkbenchToolbar = () => {
   const resource = useWorkbenchStore(selectActiveResource);
   const document = useWorkbenchStore(selectActiveDocument);
+  const projectId = useWorkbenchControlStore((state) => state.projectId);
   const executionStatusByResourceId = useWorkbenchStore(
     (state) => state.executionStatusByResourceId,
   );
-  const updateResource = useWorkbenchStore((state) => state.updateResource);
   const createResource = useWorkbenchStore((state) => state.createResource);
   const deleteResource = useWorkbenchStore((state) => state.deleteResource);
   const setRightPanel = useWorkbenchStore((state) => state.setRightPanel);
@@ -99,25 +105,33 @@ const WorkbenchToolbar = () => {
         left.order - right.order,
     );
 
-  const duplicateResource = () => {
-    const copyId = `${resource.resourceType.toLowerCase()}-${Date.now()}`;
-    const nextResource = {
-      ...resource,
-      id: copyId,
-      name: `${resource.name} 副本`,
-      status: 'DRAFT' as const,
-      publishedVersion: undefined,
-      latestRevision: 0,
-      favorite: false,
-    };
-    const nextDocument = {
-      ...document,
-      resourceId: copyId,
-      revision: 0,
-      dirty: true,
-    };
-    createResource(nextResource, nextDocument);
-    message.success('节点副本已创建');
+  const duplicateResource = async () => {
+    if (!projectId) return;
+    const key = `toolbar-clone-${resource.id}`;
+    message.loading({ content: '正在复制节点', key });
+    try {
+      const created = await workbenchRepository.createTask(
+        projectId,
+        resource.resourceType,
+        `${resource.name} 副本`,
+        resource.engine,
+      );
+      const copiedDocument: DevelopmentDocument = {
+        ...created.document,
+        content: structuredClone(document.content),
+        config: structuredClone(document.config),
+        runtime: structuredClone(document.runtime),
+        dirty: true,
+      };
+      const saved = await workbenchRepository.saveDraft(
+        created.resource,
+        copiedDocument,
+      );
+      createResource(created.resource, saved);
+      message.success({ content: '节点副本已创建并保存', key });
+    } catch (error) {
+      message.error({ content: workbenchErrorMessage(error), key });
+    }
   };
 
   const confirmDelete = () => {
@@ -128,9 +142,16 @@ const WorkbenchToolbar = () => {
       okText: '删除',
       cancelText: '取消',
       okButtonProps: { danger: true },
-      onOk: () => {
-        deleteResource(resource.id);
-        message.success('节点已删除');
+      onOk: async () => {
+        try {
+          await workbenchRepository.deleteResource(resource.id);
+          deleteResource(resource.id);
+          useWorkbenchControlStore.getState().clearExecutionRecord(resource.id);
+          message.success('节点已删除');
+        } catch (error) {
+          message.error(workbenchErrorMessage(error));
+          throw error;
+        }
       },
     });
   };
@@ -143,6 +164,7 @@ const WorkbenchToolbar = () => {
           size="small"
           className="w-[125px] shrink-0"
           value={resource.engine}
+          disabled
           options={
             plugin.metadata.engineOptions ?? [
               {
@@ -151,7 +173,6 @@ const WorkbenchToolbar = () => {
               },
             ]
           }
-          onChange={(engine: string) => updateResource(resource.id, { engine })}
         />
 
         <span className="mx-1 h-5 w-px shrink-0 bg-[#e4e6e9]" />
@@ -190,7 +211,7 @@ const WorkbenchToolbar = () => {
             },
           ],
           onClick: ({ key }: { key: string }) => {
-            if (key === 'copy') duplicateResource();
+            if (key === 'copy') void duplicateResource();
             if (key === 'history') setRightPanel('version');
             if (key === 'delete') confirmDelete();
           },

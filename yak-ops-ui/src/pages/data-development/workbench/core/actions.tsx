@@ -11,7 +11,10 @@ import {
   Square,
   WandSparkles,
 } from 'lucide-react';
-import type { WorkbenchActionDefinition } from './types';
+import type { ExecutionStatus, WorkbenchActionDefinition } from './types';
+
+const isExecutionActive = (status: ExecutionStatus) =>
+  status === 'RUNNING' || status === 'QUEUED';
 
 export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
   {
@@ -22,7 +25,7 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     group: 'primary',
     order: 10,
     visible: ({ plugin, executionStatus }) =>
-      plugin.capabilities.runnable && executionStatus !== 'RUNNING',
+      plugin.capabilities.runnable && !isExecutionActive(executionStatus),
     enabled: ({ document }) => document.loadStatus === 'READY',
   },
   {
@@ -33,7 +36,7 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     group: 'primary',
     order: 10,
     visible: ({ plugin, executionStatus }) =>
-      plugin.type === 'HTTP' && executionStatus !== 'RUNNING',
+      plugin.type === 'HTTP' && !isExecutionActive(executionStatus),
   },
   {
     id: 'notebook.run-all',
@@ -43,7 +46,7 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     group: 'primary',
     order: 10,
     visible: ({ plugin, executionStatus }) =>
-      plugin.type === 'NOTEBOOK' && executionStatus !== 'RUNNING',
+      plugin.type === 'NOTEBOOK' && !isExecutionActive(executionStatus),
   },
   {
     id: 'execution.stop',
@@ -53,8 +56,8 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     group: 'primary',
     order: 20,
     visible: ({ plugin, executionStatus }) =>
-      plugin.capabilities.stoppable && executionStatus === 'RUNNING',
-    enabled: ({ executionStatus }) => executionStatus === 'RUNNING',
+      plugin.capabilities.stoppable && isExecutionActive(executionStatus),
+    enabled: ({ executionStatus }) => isExecutionActive(executionStatus),
   },
   {
     id: 'document.save',
@@ -138,7 +141,7 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     order: 10,
     visible: ({ plugin }) => plugin.capabilities.publishable,
     enabled: ({ document, executionStatus }) =>
-      !document.dirty && executionStatus !== 'RUNNING',
+      !document.dirty && !isExecutionActive(executionStatus),
   },
   {
     id: 'resource.share',
