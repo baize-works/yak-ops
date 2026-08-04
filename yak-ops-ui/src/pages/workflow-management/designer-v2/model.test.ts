@@ -4,6 +4,7 @@ import {
   createTaskFlowNode,
   decodeTaskDragPayload,
   encodeTaskDragPayload,
+  toFlowNodes,
   toWorkflowV2Dag,
 } from './model';
 
@@ -43,6 +44,7 @@ describe('Workflow V2 designer model', () => {
 
   it('copies only an immutable task reference into a dropped task node', () => {
     const node = createTaskFlowNode(task(), { x: 300, y: 200 });
+    expect(node.deletable).toBe(true);
     expect(node.data.taskRef).toEqual({
       taskId: '1001',
       taskVersionId: '2003',
@@ -52,6 +54,32 @@ describe('Workflow V2 designer model', () => {
     expect(node.data).not.toHaveProperty('config');
     expect(node.data).not.toHaveProperty('definition');
     expect(node.data).not.toHaveProperty('compiledSpec');
+  });
+
+  it('protects control nodes while keeping task nodes deletable', () => {
+    const dag = createInitialWorkflowV2Dag();
+    dag.nodes.splice(1, 0, {
+      key: 'task_1',
+      name: '任务',
+      kind: 'TASK',
+      positionX: 420,
+      positionY: 220,
+      enabled: true,
+      taskRef: {
+        taskId: '1001',
+        taskVersionId: '2003',
+        taskVersionNumber: 3,
+        taskType: 'HTTP',
+      },
+      inputBindings: [],
+      outputBindings: {},
+      executionPolicy: dag.nodes[0].executionPolicy,
+    });
+
+    const nodes = toFlowNodes(dag);
+    expect(nodes.find((node) => node.id === 'start')?.deletable).toBe(false);
+    expect(nodes.find((node) => node.id === 'end')?.deletable).toBe(false);
+    expect(nodes.find((node) => node.id === 'task_1')?.deletable).toBe(true);
   });
 
   it('preserves SUCCESS and FAILURE source ports when saving', () => {
