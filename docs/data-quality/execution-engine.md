@@ -2,12 +2,11 @@
 
 ## Scope
 
-This phase turns persisted quality rules into real manual checks and replaces the quality-report mock data with durable execution records.
-
-The execution path is intentionally local and bounded:
+Persisted quality rules can be submitted manually or by Yak Schedule. Both paths create
+the same immutable execution snapshot and use the same bounded worker.
 
 ```text
-Quality rule page
+Quality rule / Yak Schedule
   -> create immutable execution snapshot
   -> dispatch after the database transaction commits
   -> bounded quality executor
@@ -17,7 +16,9 @@ Quality rule page
   -> quality report page
 ```
 
-Cron scheduling is not activated in this phase. Rules can still persist schedule configuration, while a later phase can dispatch the same execution snapshot with `trigger_type=SCHEDULE`.
+Manual attempts use `trigger_type=MANUAL`. Cron-triggered attempts use
+`trigger_type=SCHEDULE`. Schedule registration and reconciliation are documented in
+[`scheduling.md`](./scheduling.md).
 
 ## Persistence
 
@@ -45,13 +46,17 @@ A successful execution has a separate check result:
 - `PASSED`
 - `NOT_PASSED`
 
-Infrastructure, SQL, metadata or conversion failures use `execution_status=FAILED` and `check_result=UNKNOWN`.
+Infrastructure, SQL, metadata or conversion failures use
+`execution_status=FAILED` and `check_result=UNKNOWN`.
 
-Only one `WAITING` or `RUNNING` execution is accepted for a rule at a time. The rule row is locked while creating the snapshot so concurrent clicks cannot enqueue duplicate active attempts.
+Only one `WAITING` or `RUNNING` execution is accepted for a rule at a time. The rule
+row is locked while creating the snapshot so concurrent clicks or overlapping
+schedule triggers cannot enqueue duplicate active attempts.
 
 ## SQL strategies
 
-The engine obtains an identifier-quoted `SELECT` template from the datasource plugin Catalog, then compiles a read-only metric query:
+The engine obtains an identifier-quoted `SELECT` template from the datasource plugin
+Catalog, then compiles a read-only metric query:
 
 | Rule type | Metric |
 | --- | --- |
@@ -62,17 +67,22 @@ The engine obtains an identifier-quoted `SELECT` template from the datasource pl
 | `DATA_FRESHNESS` | age in hours from `MAX(timestamp_column)` |
 | `CUSTOM_SQL` | first value of the single-row metric result |
 
-All queries are routed through `DataSourceCatalogService`. The browser never receives datasource credentials, and the existing Catalog guard only permits a single `SELECT` statement.
+All queries are routed through `DataSourceCatalogService`. The browser never receives
+datasource credentials, and the existing Catalog guard only permits a single
+`SELECT` statement.
 
 ## Recovery and capacity
 
-The executor uses a bounded `ThreadPoolTaskExecutor`. Queue rejection is persisted as a failed execution rather than being silently lost.
+The executor uses a bounded `ThreadPoolTaskExecutor`. Queue rejection is persisted
+as a failed execution rather than being silently lost.
 
 On application startup:
 
-- interrupted `RUNNING` executions are marked failed because the local worker cannot safely resume an in-flight JDBC statement;
+- interrupted `RUNNING` executions are marked failed because the local worker cannot
+  safely resume an in-flight JDBC statement;
 - persisted `WAITING` executions are dispatched again in queue order;
-- the latest rule projection is repaired to `ERROR` for interrupted attempts.
+- the latest rule projection is repaired to `ERROR` for interrupted attempts;
+- Yak Schedule definitions are rebuilt from persisted scheduled rules.
 
 ## APIs
 
@@ -82,6 +92,11 @@ POST /api/v1/data-quality/execution/page
 GET  /api/v1/data-quality/execution/{executionNo}
 ```
 
+Scheduled execution is an internal handler path and does not expose a second public
+run API. This keeps permission checks and external commands focused on manual
+execution while Quartz uses the same business service internally.
+
 ## Follow-up
 
-The same execution snapshot can later be reused by a Yak Schedule dispatcher, distributed workers, cancellation, timeout policies and alert-channel adapters without changing the rule authoring contract.
+Distributed workers, cancellation, query timeout policy and alert-channel adapters
+can extend the execution layer without changing rule authoring or schedule identity.
