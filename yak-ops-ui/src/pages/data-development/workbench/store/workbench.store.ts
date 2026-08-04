@@ -15,6 +15,9 @@ interface WorkbenchStoreState {
   resourceIdsByFolder: Record<string, string[]>;
   openResourceIds: string[];
   activeResourceId?: string;
+  previewResourceId?: string;
+  pinnedResourceIds: string[];
+  splitResourceId?: string;
   expandedFolderIds: Record<string, boolean>;
   executionStatusByResourceId: Record<string, ExecutionStatus>;
   scheduleEnabledByResourceId: Record<string, boolean>;
@@ -23,18 +26,26 @@ interface WorkbenchStoreState {
   explorerKeyword: string;
   explorerVisible: boolean;
   fullscreen: boolean;
+  previewEnabled: boolean;
+  tabGroupLocked: boolean;
   rightPanel: RightPanelKey | null;
 
   setExplorerFilter: (filter: ExplorerFilter) => void;
   setExplorerKeyword: (keyword: string) => void;
   setExplorerVisible: (visible: boolean) => void;
   setFullscreen: (fullscreen: boolean) => void;
+  setPreviewEnabled: (enabled: boolean) => void;
+  setTabGroupLocked: (locked: boolean) => void;
   setRightPanel: (panel: RightPanelKey | null) => void;
+  setSplitResource: (resourceId?: string) => void;
   toggleFolder: (folderId: string) => void;
 
-  openResource: (resourceId: string) => void;
+  openResource: (resourceId: string, options?: { pinned?: boolean }) => void;
   closeResource: (resourceId: string) => void;
+  closeResources: (resourceIds: string[]) => void;
   setActiveResource: (resourceId: string) => void;
+  pinResource: (resourceId: string, pinned?: boolean) => void;
+  moveResourceTab: (sourceId: string, targetId: string) => void;
   createResource: (
     resource: DevelopmentResource,
     document: DevelopmentDocument,
@@ -78,12 +89,17 @@ const expandedFolderIds = Object.keys(resourceIdsByFolder).reduce<
   return result;
 }, {});
 
+const uniqueIds = (ids: string[]) => Array.from(new Set(ids));
+
 export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
   resourcesById,
   documentsByResourceId,
   resourceIdsByFolder,
   openResourceIds: snapshot.openResourceIds,
   activeResourceId: snapshot.activeResourceId,
+  previewResourceId: undefined,
+  pinnedResourceIds: [],
+  splitResourceId: undefined,
   expandedFolderIds,
   executionStatusByResourceId: {},
   scheduleEnabledByResourceId: {},
@@ -92,13 +108,22 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
   explorerKeyword: '',
   explorerVisible: true,
   fullscreen: false,
+  previewEnabled: true,
+  tabGroupLocked: false,
   rightPanel: null,
 
   setExplorerFilter: (explorerFilter) => set({ explorerFilter }),
   setExplorerKeyword: (explorerKeyword) => set({ explorerKeyword }),
   setExplorerVisible: (explorerVisible) => set({ explorerVisible }),
   setFullscreen: (fullscreen) => set({ fullscreen }),
+  setPreviewEnabled: (previewEnabled) =>
+    set((state) => ({
+      previewEnabled,
+      previewResourceId: previewEnabled ? state.previewResourceId : undefined,
+    })),
+  setTabGroupLocked: (tabGroupLocked) => set({ tabGroupLocked }),
   setRightPanel: (rightPanel) => set({ rightPanel }),
+  setSplitResource: (splitResourceId) => set({ splitResourceId }),
   toggleFolder: (folderId) =>
     set((state: WorkbenchStoreState) => ({
       expandedFolderIds: {
@@ -107,30 +132,127 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
       },
     })),
 
-  openResource: (resourceId) =>
-    set((state: WorkbenchStoreState) => ({
-      openResourceIds: state.openResourceIds.includes(resourceId)
-        ? state.openResourceIds
-        : [...state.openResourceIds, resourceId],
-      activeResourceId: resourceId,
-    })),
+  openResource: (resourceId, options) =>
+    set((state: WorkbenchStoreState) => {
+      if (!state.resourcesById[resourceId]) return state;
 
-  closeResource: (resourceId) => {
-    const { openResourceIds, activeResourceId } = get();
-    const index = openResourceIds.indexOf(resourceId);
-    const nextOpenIds = openResourceIds.filter((id: string) => id !== resourceId);
-    const nextActiveId =
-      activeResourceId === resourceId
-        ? nextOpenIds[Math.max(0, index - 1)] ?? nextOpenIds[0]
-        : activeResourceId;
+      const alreadyOpen = state.openResourceIds.includes(resourceId);
+      const shouldPin = options?.pinned === true;
+      const pinnedResourceIds = shouldPin
+        ? uniqueIds([...state.pinnedResourceIds, resourceId])
+        : state.pinnedResourceIds;
 
-    set({
-      openResourceIds: nextOpenIds,
-      activeResourceId: nextActiveId,
-    });
-  },
+      if (alreadyOpen) {
+        return {
+          activeResourceId: resourceId,
+          pinnedResourceIds,
+          previewResourceId:
+            shouldPin && state.previewResourceId === resourceId
+              ? undefined
+              : state.previewResourceId,
+        };
+      }
+
+      if (!shouldPin && state.previewEnabled && state.previewResourceId) {
+        const previousPreviewId = state.previewResourceId;
+        const previousPreviewDocument =
+          state.documentsByResourceId[previousPreviewId];
+        const canReplacePreview =
+          !state.pinnedResourceIds.includes(previousPreviewId) &&
+          !previousPreviewDocument?.dirty;
+
+        if (canReplacePreview) {
+          const previewIndex = state.openResourceIds.indexOf(previousPreviewId);
+          const nextOpenIds = [...state.openResourceIds];
+          if (previewIndex >= 0) {
+            nextOpenIds.splice(previewIndex, 1, resourceId);
+          } else {
+            nextOpenIds.push(resourceId);
+          }
+
+          return {
+            openResourceIds: uniqueIds(nextOpenIds),
+            activeResourceId: resourceId,
+            previewResourceId: resourceId,
+            pinnedResourceIds,
+          };
+        }
+      }
+
+      return {
+        openResourceIds: [...state.openResourceIds, resourceId],
+        activeResourceId: resourceId,
+        previewResourceId:
+          !shouldPin && state.previewEnabled ? resourceId : undefined,
+        pinnedResourceIds,
+      };
+    }),
+
+  closeResource: (resourceId) => get().closeResources([resourceId]),
+
+  closeResources: (resourceIds) =>
+    set((state: WorkbenchStoreState) => {
+      const closeSet = new Set(resourceIds);
+      if (closeSet.size === 0) return state;
+
+      const nextOpenIds = state.openResourceIds.filter(
+        (resourceId) => !closeSet.has(resourceId),
+      );
+      const activeIndex = state.activeResourceId
+        ? state.openResourceIds.indexOf(state.activeResourceId)
+        : -1;
+      const nextActiveId =
+        state.activeResourceId && closeSet.has(state.activeResourceId)
+          ? nextOpenIds[Math.max(0, activeIndex - 1)] ?? nextOpenIds[0]
+          : state.activeResourceId;
+
+      return {
+        openResourceIds: nextOpenIds,
+        activeResourceId: nextActiveId,
+        previewResourceId:
+          state.previewResourceId && closeSet.has(state.previewResourceId)
+            ? undefined
+            : state.previewResourceId,
+        pinnedResourceIds: state.pinnedResourceIds.filter(
+          (resourceId) => !closeSet.has(resourceId),
+        ),
+        splitResourceId:
+          state.splitResourceId && closeSet.has(state.splitResourceId)
+            ? undefined
+            : state.splitResourceId,
+      };
+    }),
 
   setActiveResource: (activeResourceId) => set({ activeResourceId }),
+
+  pinResource: (resourceId, pinned) =>
+    set((state: WorkbenchStoreState) => {
+      const currentlyPinned = state.pinnedResourceIds.includes(resourceId);
+      const nextPinned = pinned ?? !currentlyPinned;
+
+      return {
+        pinnedResourceIds: nextPinned
+          ? uniqueIds([...state.pinnedResourceIds, resourceId])
+          : state.pinnedResourceIds.filter((id) => id !== resourceId),
+        previewResourceId:
+          nextPinned && state.previewResourceId === resourceId
+            ? undefined
+            : state.previewResourceId,
+      };
+    }),
+
+  moveResourceTab: (sourceId, targetId) =>
+    set((state: WorkbenchStoreState) => {
+      if (sourceId === targetId) return state;
+      const sourceIndex = state.openResourceIds.indexOf(sourceId);
+      const targetIndex = state.openResourceIds.indexOf(targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return state;
+
+      const nextOpenIds = [...state.openResourceIds];
+      nextOpenIds.splice(sourceIndex, 1);
+      nextOpenIds.splice(targetIndex, 0, sourceId);
+      return { openResourceIds: nextOpenIds };
+    }),
 
   createResource: (resource, document) =>
     set((state: WorkbenchStoreState) => ({
@@ -153,8 +275,10 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
         ...state.expandedFolderIds,
         [resource.folderId]: true,
       },
-      openResourceIds: [...state.openResourceIds, resource.id],
+      openResourceIds: uniqueIds([...state.openResourceIds, resource.id]),
       activeResourceId: resource.id,
+      previewResourceId: undefined,
+      pinnedResourceIds: uniqueIds([...state.pinnedResourceIds, resource.id]),
     })),
 
   deleteResource: (resourceId) => {
@@ -171,7 +295,7 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
     delete nextExecution[resourceId];
     delete nextSchedule[resourceId];
 
-    const nextOpenIds = state.openResourceIds.filter((id: string) => id !== resourceId);
+    const nextOpenIds = state.openResourceIds.filter((id) => id !== resourceId);
 
     set({
       resourcesById: nextResources,
@@ -189,6 +313,17 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
         state.activeResourceId === resourceId
           ? nextOpenIds[nextOpenIds.length - 1]
           : state.activeResourceId,
+      previewResourceId:
+        state.previewResourceId === resourceId
+          ? undefined
+          : state.previewResourceId,
+      pinnedResourceIds: state.pinnedResourceIds.filter(
+        (id) => id !== resourceId,
+      ),
+      splitResourceId:
+        state.splitResourceId === resourceId
+          ? undefined
+          : state.splitResourceId,
     });
   },
 
@@ -213,12 +348,17 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
     set((state: WorkbenchStoreState) => {
       const document = state.documentsByResourceId[resourceId];
       if (!document) return state;
+      const nextDocument = updater(document);
 
       return {
         documentsByResourceId: {
           ...state.documentsByResourceId,
-          [resourceId]: updater(document),
+          [resourceId]: nextDocument,
         },
+        previewResourceId:
+          nextDocument.dirty && state.previewResourceId === resourceId
+            ? undefined
+            : state.previewResourceId,
       };
     }),
 
