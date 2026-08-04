@@ -46,7 +46,7 @@ const QualityFilterBar = ({
             onChange({ ...value, keyword: event.target.value })
           }
         />
-        <Select
+        <Select<string>
           allowClear
           variant="filled"
           placeholder="全部数据源"
@@ -54,7 +54,7 @@ const QualityFilterBar = ({
           value={value.dataSourceId}
           onChange={(dataSourceId) => onChange({ ...value, dataSourceId })}
         />
-        <Select
+        <Select<QualityRuleType>
           allowClear
           variant="filled"
           placeholder="全部规则类型"
@@ -62,7 +62,7 @@ const QualityFilterBar = ({
           value={value.ruleType}
           onChange={(ruleType) => onChange({ ...value, ruleType })}
         />
-        <Select
+        <Select<QualityRuleResult>
           allowClear
           variant="filled"
           placeholder="全部结果"
@@ -72,7 +72,7 @@ const QualityFilterBar = ({
         />
       </div>
       <div className="flex items-center justify-end gap-2">
-        <Select
+        <Select<boolean>
           allowClear
           variant="filled"
           className="w-[128px]"
