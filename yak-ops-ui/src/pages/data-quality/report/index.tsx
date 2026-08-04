@@ -79,7 +79,7 @@ const DataQualityExecutionPage = () => {
       <div className="min-h-[calc(100vh-48px)] bg-[#f7f7f8] px-5 py-5 lg:px-6">
         <div className="mx-auto w-full max-w-[1680px]">
           <QualityPageHeader
-            title="运行记录"
+            title="质量报告"
             actions={
               <Button
                 icon={<ReloadOutlined spin={refreshing} />}
