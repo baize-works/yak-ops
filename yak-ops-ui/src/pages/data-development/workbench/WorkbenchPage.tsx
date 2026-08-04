@@ -2,6 +2,7 @@ import {
   BRAND_CSS_VARIABLES,
   BRAND_THEME,
 } from '@/styles/brand';
+import { history } from '@umijs/max';
 import { Alert, Button, ConfigProvider, Spin, Tooltip } from 'antd';
 import {
   ChevronRight,
@@ -10,6 +11,7 @@ import {
   Columns2,
   Maximize2,
   Minimize2,
+  Settings2,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -37,21 +39,13 @@ const WorkbenchPage = () => {
   const fullscreen = useWorkbenchStore((state) => state.fullscreen);
   const splitResourceId = useWorkbenchStore((state) => state.splitResourceId);
   const resourcesById = useWorkbenchStore((state) => state.resourcesById);
-  const workspaceLoading = useWorkbenchControlStore(
-    (state) => state.workspaceLoading,
-  );
-  const workspaceError = useWorkbenchControlStore(
-    (state) => state.workspaceError,
-  );
+  const workspaceLoading = useWorkbenchControlStore((state) => state.workspaceLoading);
+  const workspaceError = useWorkbenchControlStore((state) => state.workspaceError);
   const initialize = useWorkbenchControlStore((state) => state.initialize);
   const setExplorerWidth = useWorkbenchStore((state) => state.setExplorerWidth);
   const setFullscreen = useWorkbenchStore((state) => state.setFullscreen);
-  const setSplitResource = useWorkbenchStore(
-    (state) => state.setSplitResource,
-  );
-  const setActiveResource = useWorkbenchStore(
-    (state) => state.setActiveResource,
-  );
+  const setSplitResource = useWorkbenchStore((state) => state.setSplitResource);
+  const setActiveResource = useWorkbenchStore((state) => state.setActiveResource);
   const [createOpen, setCreateOpen] = useState(false);
   const [createType, setCreateType] = useState<ResourceType>('HTTP');
 
@@ -64,9 +58,7 @@ const WorkbenchPage = () => {
     setCreateOpen(true);
   };
 
-  const splitResource = splitResourceId
-    ? resourcesById[splitResourceId]
-    : undefined;
+  const splitResource = splitResourceId ? resourcesById[splitResourceId] : undefined;
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
@@ -77,41 +69,35 @@ const WorkbenchPage = () => {
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-[#e5e7ea] px-4">
           <div className="flex min-w-0 items-center gap-2 text-[13px]">
             <span className="text-[rgba(22,24,35,0.48)]">工作台</span>
-            <ChevronRight
-              size={14}
-              className="text-[rgba(22,24,35,0.26)]"
-            />
-            <strong className="truncate font-semibold text-[#161823]">
-              数据开发
-            </strong>
+            <ChevronRight size={14} className="text-[rgba(22,24,35,0.26)]" />
+            <strong className="truncate font-semibold text-[#161823]">数据开发</strong>
             <span className="ml-2 hidden rounded bg-[#f2f3f5] px-2 py-1 text-[10px] font-medium text-[rgba(22,24,35,0.48)] md:inline-flex">
-              Control Plane
+              Platform Ready
             </span>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              size="small"
+              icon={<Settings2 size={14} />}
+              onClick={() => history.push('/data-development/platform')}
+            >
+              平台能力
+            </Button>
             <div className="hidden items-center gap-2 rounded-md border border-[#e2e5e9] bg-[#fafbfc] px-2.5 py-1.5 text-[12px] text-[rgba(22,24,35,0.68)] sm:flex">
               <Cloud size={14} />
               {workspaceError ? '连接异常' : '开发环境'}
               <Circle
                 size={7}
                 fill={workspaceError ? '#ff4d4f' : '#20b26b'}
-                className={
-                  workspaceError ? 'text-[#ff4d4f]' : 'text-[#20b26b]'
-                }
+                className={workspaceError ? 'text-[#ff4d4f]' : 'text-[#20b26b]'}
               />
             </div>
             <Tooltip title={fullscreen ? '退出沉浸模式' : '沉浸模式'}>
               <Button
                 type="text"
                 size="small"
-                icon={
-                  fullscreen ? (
-                    <Minimize2 size={16} />
-                  ) : (
-                    <Maximize2 size={16} />
-                  )
-                }
+                icon={fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 onClick={() => setFullscreen(!fullscreen)}
               />
             </Tooltip>
@@ -124,11 +110,7 @@ const WorkbenchPage = () => {
             showIcon
             type="error"
             message={workspaceError}
-            action={
-              <Button size="small" onClick={() => void initialize()}>
-                重新加载
-              </Button>
-            }
+            action={<Button size="small" onClick={() => void initialize()}>重新加载</Button>}
           />
         )}
 
@@ -141,10 +123,7 @@ const WorkbenchPage = () => {
 
           {explorerVisible && !fullscreen && (
             <>
-              <div
-                style={{ width: explorerWidth }}
-                className="h-full min-w-0 shrink-0 overflow-hidden"
-              >
+              <div style={{ width: explorerWidth }} className="h-full min-w-0 shrink-0 overflow-hidden">
                 <ExplorerPanel onCreate={openCreateModal} />
               </div>
               <WorkbenchResizeHandle
@@ -195,10 +174,8 @@ const WorkbenchPage = () => {
                   </section>
                 )}
               </div>
-
               <ExecutionBottomPanel />
             </div>
-
             <StatusBar />
           </main>
 

@@ -8,6 +8,7 @@ import io.yak.ops.business.development.domain.DataDevelopmentModel.ExecutionStat
 import io.yak.ops.business.development.repository.DataDevelopmentExecutionRepository;
 import io.yak.ops.business.development.repository.DataDevelopmentRepository;
 import io.yak.ops.business.development.service.DataDevelopmentJsonCodec;
+import io.yak.ops.business.development.service.DataDevelopmentPlatformRuntimeResolver;
 import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
 import io.yak.ops.plugin.task.api.TaskPluginCatalog;
 import io.yak.ops.spi.workflow.WorkflowTaskContext;
@@ -35,6 +36,7 @@ public class DataDevelopmentExecutionWorker {
   private final WorkflowTaskExecutorRegistry executorRegistry;
   private final DataDevelopmentExecutionRuntimeRegistry runtimeRegistry;
   private final DataDevelopmentExecutionEventStream eventStream;
+  private final DataDevelopmentPlatformRuntimeResolver platformRuntimeResolver;
   private final String workerId;
 
   public DataDevelopmentExecutionWorker(
@@ -42,10 +44,10 @@ public class DataDevelopmentExecutionWorker {
       DataDevelopmentExecutionRepository executionRepository,
       DataDevelopmentJsonCodec json,
       TaskPluginCatalog taskPluginCatalog,
-      @Qualifier("dataDevelopmentTaskExecutorRegistry")
-      WorkflowTaskExecutorRegistry executorRegistry,
+      @Qualifier("dataDevelopmentTaskExecutorRegistry") WorkflowTaskExecutorRegistry executorRegistry,
       DataDevelopmentExecutionRuntimeRegistry runtimeRegistry,
       DataDevelopmentExecutionEventStream eventStream,
+      DataDevelopmentPlatformRuntimeResolver platformRuntimeResolver,
       DataDevelopmentProperties properties) {
     this.controlRepository = controlRepository;
     this.executionRepository = executionRepository;
@@ -54,53 +56,31 @@ public class DataDevelopmentExecutionWorker {
     this.executorRegistry = executorRegistry;
     this.runtimeRegistry = runtimeRegistry;
     this.eventStream = eventStream;
+    this.platformRuntimeResolver = platformRuntimeResolver;
     this.workerId = properties.getExecution().getWorkerId();
   }
 
   public void execute(long executionId) {
     Execution queued = requireExecution(executionId);
-    if (queued.status().terminal()) {
-      return;
-    }
+    if (queued.status().terminal()) return;
 
     int attemptNo = queued.currentAttemptNo() + 1;
     LocalDateTime startedAt = LocalDateTime.now();
-    if (executionRepository.markRunning(executionId, attemptNo, startedAt) != 1) {
-      return;
-    }
+    if (executionRepository.markRunning(executionId, attemptNo, startedAt) != 1) return;
 
     Execution execution = requireExecution(executionId);
     long attemptId = executionRepository.insertAttempt(
-        executionId,
-        attemptNo,
-        execution.taskType(),
-        workerId,
-        startedAt);
-    eventStream.publish(
-        executionId,
-        attemptId,
-        "EXECUTION_RUNNING",
+        executionId, attemptNo, execution.taskType(), workerId, startedAt);
+    eventStream.publish(executionId, attemptId, "EXECUTION_RUNNING",
         Map.of("status", ExecutionStatus.RUNNING.name(), "attemptNo", attemptNo));
 
     WorkflowTaskExecutor executor = executorRegistry.require(execution.taskType());
-    DataDevelopmentExecutionRuntimeRegistry.CancellationSignal cancellation =
-        runtimeRegistry.newSignal();
-    Map<String, Object> configuration = configuration(execution);
-    Map<String, Object> inputs = runtimeParameters(execution);
+    DataDevelopmentExecutionRuntimeRegistry.CancellationSignal cancellation = runtimeRegistry.newSignal();
     WorkflowTaskContext context = new WorkflowTaskContext(
-        execution.id(),
-        execution.taskId(),
-        attemptId,
-        attemptNo,
-        Long.toString(execution.taskId()),
-        execution.taskType(),
-        configuration,
-        inputs,
-        cancellation,
-        line -> eventStream.publish(
-            executionId,
-            attemptId,
-            "LOG",
+        execution.id(), execution.taskId(), attemptId, attemptNo,
+        Long.toString(execution.taskId()), execution.taskType(), configuration(execution),
+        runtimeParameters(execution), cancellation,
+        line -> eventStream.publish(executionId, attemptId, "LOG",
             Map.of("level", "INFO", "line", sanitizeLine(line))));
 
     runtimeRegistry.register(executionId, attemptId, cancellation, executor, context);
@@ -112,10 +92,7 @@ public class DataDevelopmentExecutionWorker {
         finishSucceeded(execution, attemptId, result, startedAt, startedNanos);
       } else {
         persistResult(execution, attemptId, result, startedAt, startedNanos);
-        finishFailed(
-            executionId,
-            attemptId,
-            "PLUGIN_EXECUTION_FAILED",
+        finishFailed(executionId, attemptId, "PLUGIN_EXECUTION_FAILED",
             defaultMessage(result.message(), "任务插件返回失败"));
       }
     } catch (CancellationException error) {
@@ -124,10 +101,7 @@ public class DataDevelopmentExecutionWorker {
       Thread.currentThread().interrupt();
       finishInterrupted(executionId, attemptId, "执行线程被中断");
     } catch (Exception error) {
-      finishFailed(
-          executionId,
-          attemptId,
-          error.getClass().getSimpleName(),
+      finishFailed(executionId, attemptId, error.getClass().getSimpleName(),
           defaultMessage(error.getMessage(), "任务插件执行异常"));
     } finally {
       runtimeRegistry.unregister(executionId);
@@ -135,47 +109,25 @@ public class DataDevelopmentExecutionWorker {
   }
 
   private void finishSucceeded(
-      Execution execution,
-      long attemptId,
-      WorkflowTaskResult result,
-      LocalDateTime startedAt,
-      long startedNanos) {
+      Execution execution, long attemptId, WorkflowTaskResult result,
+      LocalDateTime startedAt, long startedNanos) {
     if (currentStatus(execution.id()) != ExecutionStatus.RUNNING) {
       finishInterrupted(execution.id(), attemptId, "执行状态已被外部终止");
       return;
     }
-
-    PersistedResult persisted = persistResult(
-        execution,
-        attemptId,
-        result,
-        startedAt,
-        startedNanos);
-    executionRepository.completeAttempt(
-        attemptId,
-        ExecutionStatus.SUCCEEDED,
-        result.externalId(),
-        persisted.exitCode(),
-        null,
-        null,
-        persisted.finishedAt());
+    PersistedResult persisted = persistResult(execution, attemptId, result, startedAt, startedNanos);
+    executionRepository.completeAttempt(attemptId, ExecutionStatus.SUCCEEDED,
+        result.externalId(), persisted.exitCode(), null, null, persisted.finishedAt());
     if (executionRepository.markSucceeded(execution.id(), persisted.finishedAt()) == 1) {
-      eventStream.publish(
-          execution.id(),
-          attemptId,
-          "EXECUTION_SUCCEEDED",
-          Map.of(
-              "status", ExecutionStatus.SUCCEEDED.name(),
+      eventStream.publish(execution.id(), attemptId, "EXECUTION_SUCCEEDED",
+          Map.of("status", ExecutionStatus.SUCCEEDED.name(),
               "durationMs", persisted.durationMs()));
     }
   }
 
   private PersistedResult persistResult(
-      Execution execution,
-      long attemptId,
-      WorkflowTaskResult result,
-      LocalDateTime startedAt,
-      long startedNanos) {
+      Execution execution, long attemptId, WorkflowTaskResult result,
+      LocalDateTime startedAt, long startedNanos) {
     LocalDateTime finishedAt = LocalDateTime.now();
     long durationMs = Duration.ofNanos(System.nanoTime() - startedNanos).toMillis();
     Map<String, Object> summary = new LinkedHashMap<>();
@@ -190,46 +142,22 @@ public class DataDevelopmentExecutionWorker {
     boolean truncated = Boolean.TRUE.equals(result.outputs().get("bodyTruncated"))
         || Boolean.TRUE.equals(result.outputs().get("truncated"));
     String datasetRef = text(result.outputs().get("datasetRef"));
-    long resultId = executionRepository.insertResult(
-        execution.id(),
-        attemptId,
-        resultKind,
-        json.write(json.toTree(summary)),
-        json.write(json.toTree(result.outputs())),
-        datasetRef,
-        truncated,
-        finishedAt);
-    eventStream.publish(
-        execution.id(),
-        attemptId,
-        "RESULT",
+    long resultId = executionRepository.insertResult(execution.id(), attemptId, resultKind,
+        json.write(json.toTree(summary)), json.write(json.toTree(result.outputs())),
+        datasetRef, truncated, finishedAt);
+    eventStream.publish(execution.id(), attemptId, "RESULT",
         Map.of("resultId", resultId, "resultKind", resultKind));
     return new PersistedResult(finishedAt, durationMs, exitCode);
   }
 
-  private void finishFailed(
-      long executionId,
-      long attemptId,
-      String errorCode,
-      String errorMessage) {
+  private void finishFailed(long executionId, long attemptId, String code, String message) {
     LocalDateTime now = LocalDateTime.now();
     executionRepository.completeAttempt(
-        attemptId,
-        ExecutionStatus.FAILED,
-        null,
-        null,
-        errorCode,
-        errorMessage,
-        now);
-    if (executionRepository.markFailed(executionId, errorCode, errorMessage, now) == 1) {
-      eventStream.publish(
-          executionId,
-          attemptId,
-          "EXECUTION_FAILED",
-          Map.of(
-              "status", ExecutionStatus.FAILED.name(),
-              "errorCode", errorCode,
-              "errorMessage", errorMessage));
+        attemptId, ExecutionStatus.FAILED, null, null, code, message, now);
+    if (executionRepository.markFailed(executionId, code, message, now) == 1) {
+      eventStream.publish(executionId, attemptId, "EXECUTION_FAILED",
+          Map.of("status", ExecutionStatus.FAILED.name(),
+              "errorCode", code, "errorMessage", message));
     }
   }
 
@@ -237,54 +165,34 @@ public class DataDevelopmentExecutionWorker {
     ExecutionStatus status = currentStatus(executionId);
     LocalDateTime now = LocalDateTime.now();
     if (status == ExecutionStatus.TIMED_OUT) {
-      executionRepository.completeAttempt(
-          attemptId,
-          ExecutionStatus.TIMED_OUT,
-          null,
-          null,
-          "EXECUTION_TIMEOUT",
-          message,
-          now);
+      executionRepository.completeAttempt(attemptId, ExecutionStatus.TIMED_OUT,
+          null, null, "EXECUTION_TIMEOUT", message, now);
       return;
     }
     executionRepository.completeAttempt(
-        attemptId,
-        ExecutionStatus.CANCELED,
-        null,
-        null,
-        null,
-        message,
-        now);
-    if (status == ExecutionStatus.RUNNING || status == ExecutionStatus.QUEUED) {
-      if (executionRepository.markCanceled(executionId, now) == 1) {
-        eventStream.publish(
-            executionId,
-            attemptId,
-            "EXECUTION_CANCELED",
-            Map.of("status", ExecutionStatus.CANCELED.name()));
-      }
+        attemptId, ExecutionStatus.CANCELED, null, null, null, message, now);
+    if ((status == ExecutionStatus.RUNNING || status == ExecutionStatus.QUEUED)
+        && executionRepository.markCanceled(executionId, now) == 1) {
+      eventStream.publish(executionId, attemptId, "EXECUTION_CANCELED",
+          Map.of("status", ExecutionStatus.CANCELED.name()));
     }
   }
 
   private Map<String, Object> configuration(Execution execution) {
     JsonNode compiled = execution.compiledSpecSnapshot();
-    JsonNode configuration = compiled == null ? null : compiled.get("configuration");
-    if (configuration != null && configuration.isObject()) {
-      return json.toMap(configuration);
-    }
+    JsonNode value = compiled == null ? null : compiled.get("configuration");
+    if (value != null && value.isObject()) return json.toMap(value);
     JsonNode definition = execution.definitionSnapshot();
-    JsonNode config = definition == null ? null : definition.get("config");
-    return objectMap(config);
+    return objectMap(definition == null ? null : definition.get("config"));
   }
 
   private Map<String, Object> runtimeParameters(Execution execution) {
     Map<String, Object> values = new LinkedHashMap<>();
     JsonNode runtime = execution.runtimeSnapshot();
+    values.putAll(platformRuntimeResolver.resolve(runtime));
     if (runtime != null && runtime.isObject()) {
       JsonNode parameters = runtime.path("common").path("parameters");
-      if (parameters.isObject()) {
-        values.putAll(json.toMap(parameters));
-      }
+      if (parameters.isObject()) values.putAll(json.toMap(parameters));
     }
     values.putAll(objectMap(execution.inputSnapshot()));
     return values;
@@ -296,8 +204,7 @@ public class DataDevelopmentExecutionWorker {
 
   private ExecutionStatus currentStatus(long executionId) {
     return controlRepository.findExecution(executionId)
-        .map(Execution::status)
-        .orElse(ExecutionStatus.LOST);
+        .map(Execution::status).orElse(ExecutionStatus.LOST);
   }
 
   private Execution requireExecution(long executionId) {
@@ -306,23 +213,14 @@ public class DataDevelopmentExecutionWorker {
   }
 
   private static Integer integer(Object value) {
-    if (value == null) {
-      return null;
-    }
-    if (value instanceof Number number) {
-      return number.intValue();
-    }
-    try {
-      return Integer.valueOf(String.valueOf(value));
-    } catch (NumberFormatException ignored) {
-      return null;
-    }
+    if (value == null) return null;
+    if (value instanceof Number number) return number.intValue();
+    try { return Integer.valueOf(String.valueOf(value)); }
+    catch (NumberFormatException ignored) { return null; }
   }
 
   private static String text(Object value) {
-    if (value == null) {
-      return null;
-    }
+    if (value == null) return null;
     String result = String.valueOf(value);
     return result.isBlank() ? null : result;
   }
@@ -330,17 +228,13 @@ public class DataDevelopmentExecutionWorker {
   private static String sanitizeLine(String line) {
     String value = line == null ? "" : line;
     return value.length() <= MAX_LOG_LINE_LENGTH
-        ? value
-        : value.substring(0, MAX_LOG_LINE_LENGTH) + "...";
+        ? value : value.substring(0, MAX_LOG_LINE_LENGTH) + "...";
   }
 
   private static String defaultMessage(String value, String fallback) {
     return value == null || value.isBlank() ? fallback : value;
   }
 
-  private record PersistedResult(
-      LocalDateTime finishedAt,
-      long durationMs,
-      Integer exitCode) {
+  private record PersistedResult(LocalDateTime finishedAt, long durationMs, Integer exitCode) {
   }
 }

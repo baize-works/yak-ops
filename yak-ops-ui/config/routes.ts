@@ -21,6 +21,14 @@ export default [
         path: '/',
         redirect: '/home',
       },
+      {
+        path: '/data-development/platform',
+        component: './data-development/platform',
+        access: 'isAuthenticated',
+        wrappers: ['@/components/security/RouteAccessBoundary'],
+        hideInMenu: true,
+        hideInBreadcrumb: true,
+      },
       ...appRoutes.map(({ path, component, hidden }) => ({
         path,
         component,

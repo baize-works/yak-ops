@@ -8,9 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Maps authoring conflicts to HTTP 409 so the workbench can surface a refresh action. */
+/** Maps data-development conflicts and validation failures to stable HTTP responses. */
 @ConditionalOnDataDevelopmentEnabled
-@RestControllerAdvice(assignableTypes = DataDevelopmentController.class)
+@RestControllerAdvice(assignableTypes = {
+    DataDevelopmentController.class,
+    DataDevelopmentPlatformController.class
+})
 public class DataDevelopmentExceptionHandler {
 
   @ExceptionHandler(IllegalStateException.class)
@@ -21,20 +24,17 @@ public class DataDevelopmentExceptionHandler {
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<Map<String, Object>> handleInvalidRequest(
       IllegalArgumentException exception) {
-    HttpStatus status = isRevisionConflict(exception.getMessage())
-        ? HttpStatus.CONFLICT
-        : HttpStatus.BAD_REQUEST;
+    HttpStatus status = isConflict(exception.getMessage())
+        ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
     return response(status, exception.getMessage());
   }
 
-  private static boolean isRevisionConflict(String message) {
-    return message != null
-        && (message.contains("revision") || message.contains("draftRevision"));
+  private static boolean isConflict(String message) {
+    return message != null && (message.contains("revision")
+        || message.contains("draftRevision") || message.contains("其他用户更新"));
   }
 
-  private static ResponseEntity<Map<String, Object>> response(
-      HttpStatus status,
-      String message) {
+  private static ResponseEntity<Map<String, Object>> response(HttpStatus status, String message) {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("code", status.value());
     body.put("message", message);

@@ -156,9 +156,7 @@ public class DataDevelopmentController {
   }
 
   @GetMapping("/tasks/{taskId}/versions/{versionId}")
-  public Result<Version> getVersion(
-      @PathVariable long taskId,
-      @PathVariable long versionId) {
+  public Result<Version> getVersion(@PathVariable long taskId, @PathVariable long versionId) {
     return Result.success(service.getVersion(taskId, versionId));
   }
 
@@ -167,8 +165,8 @@ public class DataDevelopmentController {
       @PathVariable long taskId,
       @Valid @RequestBody CreateExecutionRequest request,
       Principal principal) {
-    return Result.success(
-        executionService.createExecution(taskId, request, operator(principal)));
+    return Result.success(executionService.createExecution(
+        taskId, request, operator(principal)));
   }
 
   @GetMapping("/tasks/{taskId}/executions")
@@ -185,8 +183,8 @@ public class DataDevelopmentController {
       @RequestParam(required = false) String keyword,
       @RequestParam(defaultValue = "0") int offset,
       @RequestParam(defaultValue = "50") int limit) {
-    return Result.success(
-        executionService.listExecutions(status, taskType, keyword, offset, limit));
+    return Result.success(executionService.listExecutions(
+        status, taskType, keyword, offset, limit));
   }
 
   @GetMapping("/executions/{executionId}")
@@ -209,13 +207,15 @@ public class DataDevelopmentController {
       @RequestParam(defaultValue = "0") long after,
       @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId) {
     return executionEventStream.subscribe(
-        executionId,
-        Math.max(after, parseSequence(lastEventId)));
+        executionId, Math.max(after, parseSequence(lastEventId)));
   }
 
   @PostMapping("/executions/{executionId}/cancel")
-  public Result<Execution> cancelExecution(@PathVariable long executionId) {
-    return Result.success(executionService.cancelExecution(executionId));
+  public Result<Execution> cancelExecution(
+      @PathVariable long executionId,
+      Principal principal) {
+    return Result.success(
+        executionService.cancelExecution(executionId, operator(principal)));
   }
 
   @PutMapping("/resources/{resourceId}")
@@ -243,19 +243,13 @@ public class DataDevelopmentController {
   }
 
   private static long parseSequence(String value) {
-    if (value == null || value.isBlank()) {
-      return 0L;
-    }
-    try {
-      return Math.max(0L, Long.parseLong(value));
-    } catch (NumberFormatException ignored) {
-      return 0L;
-    }
+    if (value == null || value.isBlank()) return 0L;
+    try { return Math.max(0L, Long.parseLong(value)); }
+    catch (NumberFormatException ignored) { return 0L; }
   }
 
   private static String operator(Principal principal) {
     return principal == null || principal.getName() == null || principal.getName().isBlank()
-        ? "system"
-        : principal.getName();
+        ? "system" : principal.getName();
   }
 }
