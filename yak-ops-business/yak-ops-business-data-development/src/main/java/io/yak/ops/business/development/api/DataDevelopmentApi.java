@@ -2,6 +2,11 @@ package io.yak.ops.business.development.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.yak.ops.business.development.domain.DataDevelopmentModel.Draft;
+import io.yak.ops.business.development.domain.DataDevelopmentModel.Execution;
+import io.yak.ops.business.development.domain.DataDevelopmentModel.ExecutionAttempt;
+import io.yak.ops.business.development.domain.DataDevelopmentModel.ExecutionEvent;
+import io.yak.ops.business.development.domain.DataDevelopmentModel.ExecutionResult;
+import io.yak.ops.business.development.domain.DataDevelopmentModel.ExecutionSummary;
 import io.yak.ops.business.development.domain.DataDevelopmentModel.Project;
 import io.yak.ops.business.development.domain.DataDevelopmentModel.Resource;
 import io.yak.ops.business.development.domain.DataDevelopmentModel.Task;
@@ -82,13 +87,7 @@ public final class DataDevelopmentApi {
       Draft draft) {
   }
 
-  /**
-   * Complete authoring snapshot used by the web workbench.
-   *
-   * <p>The workspace endpoint deliberately returns task drafts in one request during the first
-   * integration phase. The API can be split into lazy resource/document loading later without
-   * changing the persisted task envelope.</p>
-   */
+  /** Complete authoring snapshot used by the web workbench. */
   public record WorkspaceView(
       Project project,
       List<TaskDetailView> tasks) {
@@ -99,5 +98,21 @@ public final class DataDevelopmentApi {
       JsonNode normalizedDefinition,
       String contentDigest,
       List<String> warnings) {
+  }
+
+  public record ExecutionDetailView(
+      Execution execution,
+      String taskName,
+      String engineType,
+      List<ExecutionAttempt> attempts,
+      List<ExecutionEvent> events,
+      List<ExecutionResult> results) {
+  }
+
+  public record ExecutionPageView(
+      List<ExecutionSummary> items,
+      long total,
+      int offset,
+      int limit) {
   }
 }

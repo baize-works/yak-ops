@@ -30,15 +30,17 @@ export const ExecutionStatusTag = ({
 }: {
   session: ExecutionSession;
 }) => {
+  const queued = session.status === 'QUEUED';
   const running = session.status === 'RUNNING';
   const success = session.status === 'SUCCESS';
   const stopped = session.status === 'STOPPED';
+  const active = queued || running;
 
   return (
     <Tag
       bordered={false}
       icon={
-        running ? (
+        active ? (
           <LoaderCircle size={12} className="animate-spin" />
         ) : success ? (
           <CheckCircle2 size={12} />
@@ -49,7 +51,7 @@ export const ExecutionStatusTag = ({
         )
       }
       color={
-        running
+        active
           ? 'processing'
           : success
             ? 'success'
@@ -59,13 +61,15 @@ export const ExecutionStatusTag = ({
       }
       className="!m-0"
     >
-      {running
-        ? '运行中'
-        : success
-          ? '运行成功'
-          : stopped
-            ? '已停止'
-            : '运行失败'}
+      {queued
+        ? '排队中'
+        : running
+          ? '运行中'
+          : success
+            ? '运行成功'
+            : stopped
+              ? '已停止'
+              : '运行失败'}
     </Tag>
   );
 };

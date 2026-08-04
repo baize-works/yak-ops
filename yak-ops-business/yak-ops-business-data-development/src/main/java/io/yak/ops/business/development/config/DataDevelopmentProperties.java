@@ -2,12 +2,13 @@ package io.yak.ops.business.development.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** Persistence settings for the data-development control plane. */
+/** Persistence and local execution-gateway settings for data development. */
 @ConfigurationProperties(prefix = "yak.data-development")
 public class DataDevelopmentProperties {
 
   private boolean enabled;
   private final Datasource datasource = new Datasource();
+  private final Execution execution = new Execution();
 
   public boolean isEnabled() {
     return enabled;
@@ -19,6 +20,10 @@ public class DataDevelopmentProperties {
 
   public Datasource getDatasource() {
     return datasource;
+  }
+
+  public Execution getExecution() {
+    return execution;
   }
 
   public static class Datasource {
@@ -76,6 +81,64 @@ public class DataDevelopmentProperties {
 
     public void setMinimumIdle(int minimumIdle) {
       this.minimumIdle = minimumIdle;
+    }
+  }
+
+  public static class Execution {
+
+    private int corePoolSize = 4;
+    private int maximumPoolSize = 16;
+    private int queueCapacity = 200;
+    private int defaultTimeoutSeconds = 300;
+    private int eventReplayLimit = 1000;
+    private String workerId = "local-worker";
+
+    public int getCorePoolSize() {
+      return corePoolSize;
+    }
+
+    public void setCorePoolSize(int corePoolSize) {
+      this.corePoolSize = corePoolSize;
+    }
+
+    public int getMaximumPoolSize() {
+      return maximumPoolSize;
+    }
+
+    public void setMaximumPoolSize(int maximumPoolSize) {
+      this.maximumPoolSize = maximumPoolSize;
+    }
+
+    public int getQueueCapacity() {
+      return queueCapacity;
+    }
+
+    public void setQueueCapacity(int queueCapacity) {
+      this.queueCapacity = queueCapacity;
+    }
+
+    public int getDefaultTimeoutSeconds() {
+      return defaultTimeoutSeconds;
+    }
+
+    public void setDefaultTimeoutSeconds(int defaultTimeoutSeconds) {
+      this.defaultTimeoutSeconds = defaultTimeoutSeconds;
+    }
+
+    public int getEventReplayLimit() {
+      return eventReplayLimit;
+    }
+
+    public void setEventReplayLimit(int eventReplayLimit) {
+      this.eventReplayLimit = eventReplayLimit;
+    }
+
+    public String getWorkerId() {
+      return workerId;
+    }
+
+    public void setWorkerId(String workerId) {
+      this.workerId = workerId;
     }
   }
 }

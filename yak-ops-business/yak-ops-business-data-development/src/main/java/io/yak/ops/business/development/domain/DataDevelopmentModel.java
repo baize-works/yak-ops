@@ -3,7 +3,7 @@ package io.yak.ops.business.development.domain;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDateTime;
 
-/** Compact domain records for the data-development control plane. */
+/** Compact domain records for the data-development control and execution planes. */
 public final class DataDevelopmentModel {
 
   private DataDevelopmentModel() {
@@ -135,6 +135,60 @@ public final class DataDevelopmentModel {
       LocalDateTime startedAt,
       LocalDateTime finishedAt,
       String errorCode,
+      String errorMessage) {
+  }
+
+  public record ExecutionAttempt(
+      Long id,
+      Long executionId,
+      int attemptNo,
+      String executorType,
+      String workerId,
+      String externalExecutionId,
+      ExecutionStatus status,
+      Integer exitCode,
+      String errorCode,
+      String errorMessage,
+      LocalDateTime startedAt,
+      LocalDateTime finishedAt) {
+  }
+
+  public record ExecutionEvent(
+      Long id,
+      Long executionId,
+      Long attemptId,
+      long sequenceNo,
+      String eventType,
+      JsonNode payload,
+      LocalDateTime occurredAt) {
+  }
+
+  public record ExecutionResult(
+      Long id,
+      Long executionId,
+      Long attemptId,
+      String resultKind,
+      int schemaVersion,
+      JsonNode summary,
+      JsonNode payload,
+      String datasetRef,
+      boolean truncated,
+      LocalDateTime createdAt) {
+  }
+
+  public record ExecutionSummary(
+      Long id,
+      Long taskId,
+      String taskName,
+      String taskType,
+      String engineType,
+      ExecutionSourceType sourceType,
+      ExecutionStatus status,
+      int currentAttemptNo,
+      String createdBy,
+      LocalDateTime createdAt,
+      LocalDateTime startedAt,
+      LocalDateTime finishedAt,
       String errorMessage) {
   }
 }

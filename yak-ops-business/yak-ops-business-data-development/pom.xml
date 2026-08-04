@@ -14,12 +14,16 @@
     <artifactId>yak-ops-business-data-development</artifactId>
 
     <name>Yak Ops Business Data Development</name>
-    <description>Data-development workspace, task authoring, immutable versions and execution snapshots</description>
+    <description>Data-development workspace, authoring, execution gateway and result streaming</description>
 
     <dependencies>
         <dependency>
             <groupId>io.yak.ops</groupId>
             <artifactId>yak-ops-plugin-task-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.yak.ops</groupId>
