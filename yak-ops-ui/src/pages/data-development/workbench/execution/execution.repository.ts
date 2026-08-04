@@ -62,7 +62,13 @@ export interface ApiExecutionEvent {
 
 interface ApiExecutionResult {
   id: number;
-  resultKind: 'TABLE' | 'JSON' | 'TERMINAL' | 'NOTEBOOK' | 'PIPELINE' | 'TEXT';
+  resultKind:
+    | 'TABLE'
+    | 'JSON'
+    | 'TERMINAL'
+    | 'NOTEBOOK'
+    | 'PIPELINE'
+    | 'TEXT';
   summary: Record<string, unknown>;
   payload: Record<string, unknown>;
   truncated: boolean;
@@ -133,12 +139,32 @@ const asRecord = (value: unknown): Record<string, unknown> =>
     ? (value as Record<string, unknown>)
     : {};
 
+const asArray = (value: unknown): unknown[] =>
+  Array.isArray(value) ? value : [];
+
 const asString = (value: unknown, fallback = '') =>
   value === undefined || value === null ? fallback : String(value);
 
 const asNumber = (value: unknown, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const asBoolean = (value: unknown, fallback = false) =>
+  value === undefined || value === null ? fallback : Boolean(value);
+
+const asCellValue = (
+  value: unknown,
+): string | number | boolean | null => {
+  if (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  ) {
+    return value;
+  }
+  return JSON.stringify(value) ?? String(value);
 };
 
 const parseBody = (value: unknown) => {
@@ -183,6 +209,53 @@ const mapHeaders = (value: unknown): Record<string, string> => {
   );
 };
 
+const mapTableResult = (
+  payload: Record<string, unknown>,
+): ExecutionResultPayload => {
+  const columns = asArray(payload.columns).map((item, index) => {
+    const column = asRecord(item);
+    const key = asString(column.key, `column_${index + 1}`);
+    return {
+      key,
+      title: asString(column.title, key),
+      dataType: asString(column.dataType, 'UNKNOWN'),
+    };
+  });
+  const rows = asArray(payload.rows).map((item) =>
+    Object.fromEntries(
+      Object.entries(asRecord(item)).map(([key, value]) => [
+        key,
+        asCellValue(value),
+      ]),
+    ),
+  );
+  return {
+    kind: 'table',
+    columns,
+    rows,
+    affectedRows: asNumber(payload.affectedRows),
+  };
+};
+
+const mapNotebookResult = (
+  payload: Record<string, unknown>,
+): ExecutionResultPayload => ({
+  kind: 'notebook',
+  cells: asArray(payload.cells).map((item, index) => {
+    const cell = asRecord(item);
+    return {
+      id: asString(cell.id, `cell-${index + 1}`),
+      label: asString(cell.label, `Cell ${index + 1}`),
+      status: cell.status === 'FAILED' ? 'FAILED' : 'SUCCESS',
+      durationMs: asNumber(cell.durationMs),
+      output: asString(cell.output),
+    };
+  }),
+});
+
+const stringArray = (value: unknown) =>
+  asArray(value).map((item) => asString(item));
+
 const mapResult = (
   detail: ApiExecutionDetail,
   logs: ExecutionLogEntry[],
@@ -191,6 +264,10 @@ const mapResult = (
   if (!result) return undefined;
   const payload = asRecord(result.payload);
   const summary = asRecord(result.summary);
+
+  if (result.resultKind === 'TABLE') {
+    return mapTableResult(payload);
+  }
 
   if (detail.execution.taskType === 'HTTP' || result.resultKind === 'JSON') {
     const statusCode = asNumber(payload.statusCode);
@@ -204,23 +281,75 @@ const mapResult = (
     };
   }
 
-  if (detail.execution.taskType === 'SHELL' || result.resultKind === 'TERMINAL') {
+  if (
+    detail.execution.taskType === 'SHELL' ||
+    detail.execution.taskType === 'PYTHON' ||
+    result.resultKind === 'TERMINAL'
+  ) {
+    const stdout = stringArray(payload.stdout);
+    const stderr = stringArray(payload.stderr);
     return {
       kind: 'terminal',
       exitCode: asNumber(payload.exitCode),
-      stdout: logs
-        .filter((log) => log.level !== 'ERROR')
-        .map((log) => log.message),
-      stderr: logs
-        .filter((log) => log.level === 'ERROR')
-        .map((log) => log.message),
+      stdout:
+        stdout.length > 0
+          ? stdout
+          : logs
+              .filter((log) => log.level !== 'ERROR')
+              .map((log) => log.message),
+      stderr:
+        stderr.length > 0
+          ? stderr
+          : logs
+              .filter((log) => log.level === 'ERROR')
+              .map((log) => log.message),
+    };
+  }
+
+  if (
+    detail.execution.taskType === 'NOTEBOOK' ||
+    result.resultKind === 'NOTEBOOK'
+  ) {
+    return mapNotebookResult(payload);
+  }
+
+  if (result.resultKind === 'PIPELINE') {
+    return {
+      kind: 'pipeline',
+      processedRows: asNumber(payload.processedRows),
+      writtenRows: asNumber(payload.writtenRows),
+      rejectedRows: asNumber(payload.rejectedRows),
+      throughput: asNumber(payload.throughput),
+      stages: asArray(payload.stages).map((item, index) => {
+        const stage = asRecord(item);
+        const status =
+          stage.status === 'FAILED'
+            ? 'FAILED'
+            : stage.status === 'RUNNING'
+              ? 'RUNNING'
+              : 'SUCCESS';
+        return {
+          id: asString(stage.id, `stage-${index + 1}`),
+          label: asString(stage.label, `Stage ${index + 1}`),
+          status,
+          rows: asNumber(stage.rows),
+          durationMs: asNumber(stage.durationMs),
+        };
+      }),
     };
   }
 
   return {
     kind: 'text',
     title: result.resultKind,
-    value: JSON.stringify(payload, null, 2),
+    value: JSON.stringify(
+      {
+        ...payload,
+        truncated: result.truncated || asBoolean(payload.truncated),
+      },
+      null,
+      2,
+    ),
   };
 };
 
@@ -243,7 +372,10 @@ export const toExecutionSession = (
     finishedAt,
     durationMs:
       finishedAt && startedAt
-        ? Math.max(0, new Date(finishedAt).getTime() - new Date(startedAt).getTime())
+        ? Math.max(
+            0,
+            new Date(finishedAt).getTime() - new Date(startedAt).getTime(),
+          )
         : undefined,
     logs,
     result: mapResult(detail, logs),
@@ -269,7 +401,11 @@ export const executionRepository = {
   }) {
     const query = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && String(value).length > 0) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        String(value).length > 0
+      ) {
         query.set(key, String(value));
       }
     });

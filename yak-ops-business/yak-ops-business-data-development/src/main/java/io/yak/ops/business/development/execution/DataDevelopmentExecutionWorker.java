@@ -111,6 +111,7 @@ public class DataDevelopmentExecutionWorker {
       if (result.success()) {
         finishSucceeded(execution, attemptId, result, startedAt, startedNanos);
       } else {
+        persistResult(execution, attemptId, result, startedAt, startedNanos);
         finishFailed(
             executionId,
             attemptId,
@@ -139,12 +140,43 @@ public class DataDevelopmentExecutionWorker {
       WorkflowTaskResult result,
       LocalDateTime startedAt,
       long startedNanos) {
-    LocalDateTime finishedAt = LocalDateTime.now();
     if (currentStatus(execution.id()) != ExecutionStatus.RUNNING) {
       finishInterrupted(execution.id(), attemptId, "执行状态已被外部终止");
       return;
     }
 
+    PersistedResult persisted = persistResult(
+        execution,
+        attemptId,
+        result,
+        startedAt,
+        startedNanos);
+    executionRepository.completeAttempt(
+        attemptId,
+        ExecutionStatus.SUCCEEDED,
+        result.externalId(),
+        persisted.exitCode(),
+        null,
+        null,
+        persisted.finishedAt());
+    if (executionRepository.markSucceeded(execution.id(), persisted.finishedAt()) == 1) {
+      eventStream.publish(
+          execution.id(),
+          attemptId,
+          "EXECUTION_SUCCEEDED",
+          Map.of(
+              "status", ExecutionStatus.SUCCEEDED.name(),
+              "durationMs", persisted.durationMs()));
+    }
+  }
+
+  private PersistedResult persistResult(
+      Execution execution,
+      long attemptId,
+      WorkflowTaskResult result,
+      LocalDateTime startedAt,
+      long startedNanos) {
+    LocalDateTime finishedAt = LocalDateTime.now();
     long durationMs = Duration.ofNanos(System.nanoTime() - startedNanos).toMillis();
     Map<String, Object> summary = new LinkedHashMap<>();
     summary.put("message", result.message());
@@ -155,36 +187,24 @@ public class DataDevelopmentExecutionWorker {
 
     Integer exitCode = integer(result.outputs().get("exitCode"));
     String resultKind = taskPluginCatalog.descriptor(execution.taskType()).resultKind().name();
-    boolean truncated = Boolean.TRUE.equals(result.outputs().get("bodyTruncated"));
+    boolean truncated = Boolean.TRUE.equals(result.outputs().get("bodyTruncated"))
+        || Boolean.TRUE.equals(result.outputs().get("truncated"));
+    String datasetRef = text(result.outputs().get("datasetRef"));
     long resultId = executionRepository.insertResult(
         execution.id(),
         attemptId,
         resultKind,
         json.write(json.toTree(summary)),
         json.write(json.toTree(result.outputs())),
-        null,
+        datasetRef,
         truncated,
         finishedAt);
-    executionRepository.completeAttempt(
+    eventStream.publish(
+        execution.id(),
         attemptId,
-        ExecutionStatus.SUCCEEDED,
-        result.externalId(),
-        exitCode,
-        null,
-        null,
-        finishedAt);
-    if (executionRepository.markSucceeded(execution.id(), finishedAt) == 1) {
-      eventStream.publish(
-          execution.id(),
-          attemptId,
-          "RESULT",
-          Map.of("resultId", resultId, "resultKind", resultKind));
-      eventStream.publish(
-          execution.id(),
-          attemptId,
-          "EXECUTION_SUCCEEDED",
-          Map.of("status", ExecutionStatus.SUCCEEDED.name(), "durationMs", durationMs));
-    }
+        "RESULT",
+        Map.of("resultId", resultId, "resultKind", resultKind));
+    return new PersistedResult(finishedAt, durationMs, exitCode);
   }
 
   private void finishFailed(
@@ -299,6 +319,14 @@ public class DataDevelopmentExecutionWorker {
     }
   }
 
+  private static String text(Object value) {
+    if (value == null) {
+      return null;
+    }
+    String result = String.valueOf(value);
+    return result.isBlank() ? null : result;
+  }
+
   private static String sanitizeLine(String line) {
     String value = line == null ? "" : line;
     return value.length() <= MAX_LOG_LINE_LENGTH
@@ -308,5 +336,11 @@ public class DataDevelopmentExecutionWorker {
 
   private static String defaultMessage(String value, String fallback) {
     return value == null || value.isBlank() ? fallback : value;
+  }
+
+  private record PersistedResult(
+      LocalDateTime finishedAt,
+      long durationMs,
+      Integer exitCode) {
   }
 }
