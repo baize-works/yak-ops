@@ -26,6 +26,10 @@
             <artifactId>yak-ops-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-business-datasource</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.yak.framework</groupId>
             <artifactId>yak-security-spring-boot-starter</artifactId>
             <optional>true</optional>
