@@ -11,7 +11,7 @@ export const pythonPlugin: NodePluginDefinition = {
   version: 1,
   metadata: {
     label: 'Python 任务',
-    description: '编写 Python 数据处理任务。',
+    description: '在受控本地进程中执行 Python 脚本。',
     category: '数据开发',
     folderId: 'python',
     folderLabel: 'Python',
@@ -19,11 +19,8 @@ export const pythonPlugin: NodePluginDefinition = {
     icon: Code2,
     iconClassName: 'text-[#3478c9]',
     extension: '.py',
-    defaultEngine: 'Python',
-    engineOptions: [
-      { label: 'Python', value: 'Python' },
-      { label: 'PySpark', value: 'PySpark' },
-    ],
+    defaultEngine: 'Local Python',
+    engineOptions: [{ label: 'Local Python', value: 'Local Python' }],
   },
   capabilities: CODE_CAPABILITIES,
   authoring: {
@@ -32,7 +29,7 @@ export const pythonPlugin: NodePluginDefinition = {
       createTextContent(
         'python',
         joinLines(
-          `"""Yak-ops task: ${name}"""`,
+          `"""Yak Ops task: ${name}"""`,
           '',
           '',
           'def main() -> None:',
@@ -49,20 +46,11 @@ export const pythonPlugin: NodePluginDefinition = {
       columns: 1,
       fields: [
         {
-          key: 'pythonVersion',
-          label: 'Python 版本',
-          type: 'select',
-          options: [
-            { label: 'Python 3.11', value: '3.11' },
-            { label: 'Python 3.12', value: '3.12' },
-          ],
-        },
-        {
-          key: 'requirements',
-          label: '依赖包',
-          type: 'textarea',
-          rows: 6,
-          placeholder: 'pandas==2.2.2\nrequests==2.32.3',
+          key: 'pythonExecutable',
+          label: 'Python 可执行文件',
+          type: 'text',
+          required: true,
+          placeholder: 'python3',
         },
         {
           key: 'arguments',
@@ -70,12 +58,35 @@ export const pythonPlugin: NodePluginDefinition = {
           type: 'text',
           placeholder: '--bizdate ${bizdate}',
         },
+        {
+          key: 'workingDirectory',
+          label: '工作目录',
+          type: 'text',
+          placeholder: '/data/yak-ops/python',
+        },
+        {
+          key: 'environment',
+          label: '环境变量',
+          type: 'textarea',
+          rows: 6,
+          placeholder: 'PYTHONPATH=/data/libs\nENV=prod',
+          description: '每行一个 KEY=VALUE。',
+        },
+        {
+          key: 'maxOutputLines',
+          label: '最大输出行数',
+          type: 'number',
+          min: 100,
+          max: 100000,
+        },
       ],
     },
     defaultValue: () => ({
-      pythonVersion: '3.11',
-      requirements: '',
+      pythonExecutable: 'python3',
       arguments: '',
+      workingDirectory: '',
+      environment: '',
+      maxOutputLines: 5000,
     }),
   },
   toolbar: [
@@ -83,7 +94,9 @@ export const pythonPlugin: NodePluginDefinition = {
     'execution.stop',
     'document.save',
     'document.format',
+    'document.refresh',
     'version.publish',
+    'document.validate',
     'resource.share',
   ],
 };

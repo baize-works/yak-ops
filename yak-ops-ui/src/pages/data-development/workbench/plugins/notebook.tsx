@@ -7,7 +7,7 @@ export const notebookPlugin: NodePluginDefinition = {
   version: 1,
   metadata: {
     label: 'Notebook',
-    description: '以 Cell 组织交互式数据分析。',
+    description: '顺序执行 Python、Shell 和 Markdown Cell。',
     category: '数据分析',
     folderId: 'notebook',
     folderLabel: 'Notebook',
@@ -15,10 +15,9 @@ export const notebookPlugin: NodePluginDefinition = {
     icon: BookOpen,
     iconClassName: 'text-[#8b5cf6]',
     extension: '.ipynb',
-    defaultEngine: 'PySpark',
+    defaultEngine: 'Local Notebook',
     engineOptions: [
-      { label: 'PySpark', value: 'PySpark' },
-      { label: 'Python', value: 'Python' },
+      { label: 'Local Notebook', value: 'Local Notebook' },
     ],
   },
   capabilities: {
@@ -33,14 +32,13 @@ export const notebookPlugin: NodePluginDefinition = {
       cells: [
         {
           id: 'cell-1',
-          language: 'python',
-          source: 'from pyspark.sql import functions as F',
+          language: 'markdown',
+          source: '# Yak Ops Notebook',
         },
         {
           id: 'cell-2',
           language: 'python',
-          source:
-            'profiles = spark.table("dim_user_profile")\nprofiles.groupBy("user_level").count().show()',
+          source: 'print("hello yak-ops notebook")',
         },
       ],
     }),
@@ -50,26 +48,52 @@ export const notebookPlugin: NodePluginDefinition = {
       columns: 1,
       fields: [
         {
-          key: 'sessionMode',
-          label: '会话模式',
-          type: 'select',
-          options: [
-            { label: '共享 Session', value: 'shared' },
-            { label: '独立 Session', value: 'isolated' },
-          ],
+          key: 'pythonExecutable',
+          label: 'Python 可执行文件',
+          type: 'text',
+          placeholder: 'python3',
         },
         {
-          key: 'idleTimeoutMinutes',
-          label: '空闲回收时间（分钟）',
+          key: 'workingDirectory',
+          label: '工作目录',
+          type: 'text',
+        },
+        {
+          key: 'environment',
+          label: '环境变量',
+          type: 'textarea',
+          rows: 6,
+          placeholder: 'PYTHONPATH=/data/libs\nENV=prod',
+          description: '每行一个 KEY=VALUE。',
+        },
+        {
+          key: 'continueOnError',
+          label: '失败后继续',
+          type: 'switch',
+        },
+        {
+          key: 'cellTimeoutSeconds',
+          label: '单 Cell 超时（秒）',
           type: 'number',
-          min: 5,
-          max: 240,
+          min: 1,
+          max: 86400,
+        },
+        {
+          key: 'maxOutputLines',
+          label: '单 Cell 最大输出行数',
+          type: 'number',
+          min: 100,
+          max: 100000,
         },
       ],
     },
     defaultValue: () => ({
-      sessionMode: 'isolated',
-      idleTimeoutMinutes: 30,
+      pythonExecutable: 'python3',
+      workingDirectory: '',
+      environment: '',
+      continueOnError: false,
+      cellTimeoutSeconds: 300,
+      maxOutputLines: 5000,
     }),
   },
   toolbar: [
@@ -77,7 +101,9 @@ export const notebookPlugin: NodePluginDefinition = {
     'execution.stop',
     'document.save',
     'notebook.clear-output',
+    'document.refresh',
     'version.publish',
+    'document.validate',
     'resource.share',
   ],
 };

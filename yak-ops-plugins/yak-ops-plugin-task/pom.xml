@@ -21,6 +21,10 @@
         <module>yak-ops-plugin-task-api</module>
         <module>yak-ops-plugin-task-http</module>
         <module>yak-ops-plugin-task-shell</module>
+        <module>yak-ops-plugin-task-jdbc-sql</module>
+        <module>yak-ops-plugin-task-flink-sql</module>
+        <module>yak-ops-plugin-task-python</module>
+        <module>yak-ops-plugin-task-notebook</module>
         <module>yak-ops-plugin-task-all</module>
     </modules>
 </project>
