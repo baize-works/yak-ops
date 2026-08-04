@@ -7,8 +7,10 @@ import {
   ChevronRight,
   Circle,
   Cloud,
+  Columns2,
   Maximize2,
   Minimize2,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 import CreateResourceModal from './components/CreateResourceModal';
@@ -25,7 +27,15 @@ import { useWorkbenchStore } from './store/workbench.store';
 const WorkbenchPage = () => {
   const explorerVisible = useWorkbenchStore((state) => state.explorerVisible);
   const fullscreen = useWorkbenchStore((state) => state.fullscreen);
+  const splitResourceId = useWorkbenchStore((state) => state.splitResourceId);
+  const resourcesById = useWorkbenchStore((state) => state.resourcesById);
   const setFullscreen = useWorkbenchStore((state) => state.setFullscreen);
+  const setSplitResource = useWorkbenchStore(
+    (state) => state.setSplitResource,
+  );
+  const setActiveResource = useWorkbenchStore(
+    (state) => state.setActiveResource,
+  );
   const [createOpen, setCreateOpen] = useState(false);
   const [createType, setCreateType] = useState<ResourceType>('SQL');
 
@@ -33,6 +43,10 @@ const WorkbenchPage = () => {
     setCreateType(resourceType);
     setCreateOpen(true);
   };
+
+  const splitResource = splitResourceId
+    ? resourcesById[splitResourceId]
+    : undefined;
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
@@ -90,9 +104,40 @@ const WorkbenchPage = () => {
           <main className="flex min-w-0 flex-1 flex-col bg-white">
             <EditorTabs onCreate={openCreateModal} />
             <WorkbenchToolbar />
-            <div className="min-h-0 flex-1">
-              <ResourceView onCreate={() => openCreateModal('SQL')} />
+
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <section className="min-w-0 flex-1 overflow-hidden">
+                <ResourceView onCreate={() => openCreateModal('SQL')} />
+              </section>
+
+              {splitResource && !fullscreen && (
+                <section className="flex min-w-[360px] flex-1 flex-col border-l border-[#dfe2e6] bg-white">
+                  <div className="flex h-9 shrink-0 items-center justify-between border-b border-[#e7e9ec] bg-[#fafbfc] px-3">
+                    <button
+                      type="button"
+                      className="flex min-w-0 items-center gap-2 border-0 bg-transparent p-0 text-left text-[12px] text-[rgba(22,24,35,0.72)]"
+                      onClick={() => setActiveResource(splitResource.id)}
+                    >
+                      <Columns2 size={14} />
+                      <span className="truncate">{splitResource.name}</span>
+                    </button>
+                    <Tooltip title="关闭拆分编辑器">
+                      <Button
+                        type="text"
+                        size="small"
+                        className="!h-7 !w-7 !px-0"
+                        icon={<X size={14} />}
+                        onClick={() => setSplitResource(undefined)}
+                      />
+                    </Tooltip>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-hidden">
+                    <ResourceView resourceId={splitResource.id} />
+                  </div>
+                </section>
+              )}
             </div>
+
             <StatusBar />
           </main>
 
