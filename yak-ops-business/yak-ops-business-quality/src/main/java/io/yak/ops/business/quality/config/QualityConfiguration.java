@@ -9,9 +9,11 @@ import io.yak.ops.business.quality.execution.QualityMetricEvaluator;
 import io.yak.ops.business.quality.execution.QualitySqlCompiler;
 import io.yak.ops.business.quality.repository.QualityExecutionRepository;
 import io.yak.ops.business.quality.repository.QualityRuleRepository;
+import io.yak.ops.business.quality.repository.QualityScheduleRepository;
 import io.yak.ops.business.quality.service.QualityExecutionService;
 import io.yak.ops.business.quality.service.QualityExecutionStateService;
 import io.yak.ops.business.quality.service.QualityRuleService;
+import io.yak.ops.business.quality.service.QualityScheduleService;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -92,6 +94,12 @@ public class QualityConfiguration {
   }
 
   @Bean
+  public QualityScheduleRepository qualityScheduleRepository(
+      @Qualifier("qualityJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
+    return new QualityScheduleRepository(jdbcTemplate);
+  }
+
+  @Bean
   public QualityExecutionRepository qualityExecutionRepository(
       @Qualifier("qualityJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate) {
     return new QualityExecutionRepository(jdbcTemplate);
@@ -100,6 +108,12 @@ public class QualityConfiguration {
   @Bean
   public QualityRuleService qualityRuleService(QualityRuleRepository repository) {
     return new QualityRuleService(repository);
+  }
+
+  @Bean
+  public QualityScheduleService qualityScheduleService(
+      QualityScheduleRepository repository) {
+    return new QualityScheduleService(repository);
   }
 
   @Bean
