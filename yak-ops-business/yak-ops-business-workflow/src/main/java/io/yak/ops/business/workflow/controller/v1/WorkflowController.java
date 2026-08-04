@@ -9,6 +9,8 @@ import io.yak.ops.common.bean.dto.workflow.WorkflowDTO;
 import io.yak.ops.common.bean.dto.workflow.WorkflowScheduleDTO;
 import io.yak.ops.common.bean.dto.workflow.WorkflowTriggerDTO;
 import io.yak.ops.common.bean.dto.workflow.WorkflowUpdateDTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowV2DTO;
+import io.yak.ops.common.bean.dto.workflow.WorkflowV2UpdateDTO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowDefinitionVO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowInstanceVO;
 import io.yak.ops.common.bean.vo.workflow.WorkflowScheduleVO;
@@ -57,11 +59,29 @@ public class WorkflowController {
     return Result.success(Map.of("workflowId", workflowId));
   }
 
+  @PostMapping("/v2")
+  public Result<Map<String, Long>> addWorkflowV2(
+      @Valid @RequestBody WorkflowV2DTO workflowDTO,
+      @RequestHeader(
+          name = "X-Operator",
+          defaultValue = WorkflowConstant.SYSTEM_OPERATOR) String operator) {
+    Long workflowId = definitionService.addWorkflowV2(workflowDTO, operator);
+    return Result.success(Map.of("workflowId", workflowId));
+  }
+
   @PutMapping({"/{workflowId}", "/{workflowId}/draft"})
   public Result<Boolean> editWorkflow(
       @PathVariable Long workflowId,
       @Valid @RequestBody WorkflowUpdateDTO workflowDTO) {
     definitionService.editWorkflow(workflowId, workflowDTO);
+    return Result.success(true);
+  }
+
+  @PutMapping("/{workflowId}/draft/v2")
+  public Result<Boolean> editWorkflowV2(
+      @PathVariable Long workflowId,
+      @Valid @RequestBody WorkflowV2UpdateDTO workflowDTO) {
+    definitionService.editWorkflowV2(workflowId, workflowDTO);
     return Result.success(true);
   }
 
@@ -96,6 +116,13 @@ public class WorkflowController {
   @GetMapping("/{workflowId}")
   public Result<WorkflowDefinitionVO> getWorkflow(@PathVariable Long workflowId) {
     return Result.success(definitionService.getWorkflow(workflowId));
+  }
+
+  @GetMapping("/{workflowId}/versions/{version}")
+  public Result<WorkflowVersionVO> getWorkflowVersion(
+      @PathVariable Long workflowId,
+      @PathVariable Integer version) {
+    return Result.success(definitionService.getWorkflowVersion(workflowId, version));
   }
 
   @PostMapping("/{workflowId}/run")
