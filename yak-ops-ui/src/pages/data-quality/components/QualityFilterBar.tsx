@@ -1,14 +1,18 @@
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { Button, Input, Select } from 'antd';
-import { DATA_SOURCE_OPTIONS, QUALITY_RULE_TYPE_META } from '../mock';
+
+import { QUALITY_RULE_TYPE_META } from '../mock';
 import type {
   QualityRuleFilters,
   QualityRuleResult,
   QualityRuleType,
+  QualitySelectOption,
 } from '../types';
 
 interface QualityFilterBarProps {
   value: QualityRuleFilters;
+  dataSourceOptions: QualitySelectOption[];
+  dataSourceLoading?: boolean;
   onChange: (value: QualityRuleFilters) => void;
   onReset: () => void;
 }
@@ -30,6 +34,8 @@ const resultOptions: Array<{ label: string; value: QualityRuleResult }> = [
 
 const QualityFilterBar = ({
   value,
+  dataSourceOptions,
+  dataSourceLoading,
   onChange,
   onReset,
 }: QualityFilterBarProps) => (
@@ -48,9 +54,12 @@ const QualityFilterBar = ({
         />
         <Select<string>
           allowClear
+          showSearch
           variant="filled"
           placeholder="全部数据源"
-          options={DATA_SOURCE_OPTIONS}
+          optionFilterProp="label"
+          options={dataSourceOptions}
+          loading={dataSourceLoading}
           value={value.dataSourceId}
           onChange={(dataSourceId) => onChange({ ...value, dataSourceId })}
         />
