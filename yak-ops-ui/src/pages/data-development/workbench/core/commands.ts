@@ -45,6 +45,10 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
     execute: (context) => runResource(context, '正在运行'),
   },
   {
+    id: 'sql.run-statement',
+    execute: (context) => runResource(context, '正在运行当前 SQL'),
+  },
+  {
     id: 'http.test',
     execute: (context) => runResource(context, '正在发送测试请求'),
   },
