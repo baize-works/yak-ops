@@ -57,16 +57,20 @@ const ExecutionTable = ({ records, loading, onView }: ExecutionTableProps) => {
       title: '执行状态',
       dataIndex: 'executionStatus',
       width: 130,
-      render: (value: QualityExecutionRecord['executionStatus']) => (
-        <QualityResultTag value={value} />
+      render: (value) => (
+        <QualityResultTag
+          value={value as QualityExecutionRecord['executionStatus']}
+        />
       ),
     },
     {
       title: '检查结果',
       dataIndex: 'checkResult',
       width: 130,
-      render: (value: QualityExecutionRecord['checkResult']) => (
-        <QualityResultTag value={value} />
+      render: (value) => (
+        <QualityResultTag
+          value={value as QualityExecutionRecord['checkResult']}
+        />
       ),
     },
     {
