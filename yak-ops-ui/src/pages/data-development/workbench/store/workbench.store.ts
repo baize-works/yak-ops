@@ -25,6 +25,7 @@ interface WorkbenchStoreState {
   explorerFilter: ExplorerFilter;
   explorerKeyword: string;
   explorerVisible: boolean;
+  explorerWidth: number;
   fullscreen: boolean;
   previewEnabled: boolean;
   tabGroupLocked: boolean;
@@ -33,6 +34,7 @@ interface WorkbenchStoreState {
   setExplorerFilter: (filter: ExplorerFilter) => void;
   setExplorerKeyword: (keyword: string) => void;
   setExplorerVisible: (visible: boolean) => void;
+  setExplorerWidth: (width: number) => void;
   setFullscreen: (fullscreen: boolean) => void;
   setPreviewEnabled: (enabled: boolean) => void;
   setTabGroupLocked: (locked: boolean) => void;
@@ -50,6 +52,8 @@ interface WorkbenchStoreState {
     resource: DevelopmentResource,
     document: DevelopmentDocument,
   ) => void;
+  cloneResource: (resourceId: string) => string | undefined;
+  moveResource: (resourceId: string, folderId: string) => void;
   deleteResource: (resourceId: string) => void;
   updateResource: (
     resourceId: string,
@@ -67,6 +71,7 @@ interface WorkbenchStoreState {
   setScheduleEnabled: (resourceId: string, enabled: boolean) => void;
 }
 
+const CURRENT_USER_NAME = 'aliyun0124584470';
 const snapshot = createMockWorkspaceSnapshot();
 
 const resourcesById = Object.fromEntries(
@@ -77,7 +82,10 @@ const documentsByResourceId = Object.fromEntries(
 );
 const resourceIdsByFolder = snapshot.resources.reduce<Record<string, string[]>>(
   (groups, resource) => {
-    groups[resource.folderId] = [...(groups[resource.folderId] ?? []), resource.id];
+    groups[resource.folderId] = [
+      ...(groups[resource.folderId] ?? []),
+      resource.id,
+    ];
     return groups;
   },
   {},
@@ -90,6 +98,21 @@ const expandedFolderIds = Object.keys(resourceIdsByFolder).reduce<
 }, {});
 
 const uniqueIds = (ids: string[]) => Array.from(new Set(ids));
+
+const createCloneName = (sourceName: string, existingNames: Set<string>) => {
+  const dotIndex = sourceName.lastIndexOf('.');
+  const hasExtension = dotIndex > 0;
+  const basename = hasExtension ? sourceName.slice(0, dotIndex) : sourceName;
+  const extension = hasExtension ? sourceName.slice(dotIndex) : '';
+
+  let index = 1;
+  let candidate = `${basename}_copy${extension}`;
+  while (existingNames.has(candidate)) {
+    index += 1;
+    candidate = `${basename}_copy_${index}${extension}`;
+  }
+  return candidate;
+};
 
 export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
   resourcesById,
@@ -107,6 +130,7 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
   explorerFilter: 'all',
   explorerKeyword: '',
   explorerVisible: true,
+  explorerWidth: 460,
   fullscreen: false,
   previewEnabled: true,
   tabGroupLocked: false,
@@ -115,6 +139,10 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
   setExplorerFilter: (explorerFilter) => set({ explorerFilter }),
   setExplorerKeyword: (explorerKeyword) => set({ explorerKeyword }),
   setExplorerVisible: (explorerVisible) => set({ explorerVisible }),
+  setExplorerWidth: (explorerWidth) =>
+    set({
+      explorerWidth: Math.min(720, Math.max(300, Math.round(explorerWidth))),
+    }),
   setFullscreen: (fullscreen) => set({ fullscreen }),
   setPreviewEnabled: (previewEnabled) =>
     set((state) => ({
@@ -281,6 +309,109 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
       pinnedResourceIds: uniqueIds([...state.pinnedResourceIds, resource.id]),
     })),
 
+  cloneResource: (resourceId) => {
+    const state = get();
+    const resource = state.resourcesById[resourceId];
+    const document = state.documentsByResourceId[resourceId];
+    if (!resource || !document) return undefined;
+
+    const timestamp = Date.now();
+    const clonedId = `${resource.resourceType.toLowerCase()}-${timestamp}`;
+    const updatedAt = dayjs().format('YYYY-MM-DD HH:mm');
+    const existingNames = new Set(
+      (state.resourceIdsByFolder[resource.folderId] ?? [])
+        .map((id) => state.resourcesById[id]?.name)
+        .filter((name): name is string => Boolean(name)),
+    );
+    const clonedName = createCloneName(resource.name, existingNames);
+
+    const clonedResource: DevelopmentResource = {
+      ...resource,
+      id: clonedId,
+      name: clonedName,
+      owner: 'me',
+      updatedBy: CURRENT_USER_NAME,
+      favorite: false,
+      status: 'DRAFT',
+      latestRevision: 0,
+      publishedVersion: undefined,
+      createdAt: updatedAt,
+      updatedAt,
+    };
+    const clonedDocument: DevelopmentDocument = {
+      ...document,
+      resourceId: clonedId,
+      revision: 0,
+      content: structuredClone(document.content),
+      config: structuredClone(document.config),
+      runtime: structuredClone(document.runtime),
+      dirty: true,
+      saveStatus: 'IDLE',
+      updatedAt,
+    };
+
+    set({
+      resourcesById: {
+        ...state.resourcesById,
+        [clonedId]: clonedResource,
+      },
+      documentsByResourceId: {
+        ...state.documentsByResourceId,
+        [clonedId]: clonedDocument,
+      },
+      resourceIdsByFolder: {
+        ...state.resourceIdsByFolder,
+        [resource.folderId]: [
+          ...(state.resourceIdsByFolder[resource.folderId] ?? []),
+          clonedId,
+        ],
+      },
+      expandedFolderIds: {
+        ...state.expandedFolderIds,
+        [resource.folderId]: true,
+      },
+      openResourceIds: uniqueIds([...state.openResourceIds, clonedId]),
+      activeResourceId: clonedId,
+      previewResourceId: undefined,
+      pinnedResourceIds: uniqueIds([...state.pinnedResourceIds, clonedId]),
+    });
+
+    return clonedId;
+  },
+
+  moveResource: (resourceId, folderId) =>
+    set((state: WorkbenchStoreState) => {
+      const resource = state.resourcesById[resourceId];
+      if (!resource || resource.folderId === folderId) return state;
+
+      const updatedAt = dayjs().format('YYYY-MM-DD HH:mm');
+      return {
+        resourcesById: {
+          ...state.resourcesById,
+          [resourceId]: {
+            ...resource,
+            folderId,
+            updatedBy: CURRENT_USER_NAME,
+            updatedAt,
+          },
+        },
+        resourceIdsByFolder: {
+          ...state.resourceIdsByFolder,
+          [resource.folderId]: (
+            state.resourceIdsByFolder[resource.folderId] ?? []
+          ).filter((id) => id !== resourceId),
+          [folderId]: uniqueIds([
+            ...(state.resourceIdsByFolder[folderId] ?? []),
+            resourceId,
+          ]),
+        },
+        expandedFolderIds: {
+          ...state.expandedFolderIds,
+          [folderId]: true,
+        },
+      };
+    }),
+
   deleteResource: (resourceId) => {
     const state = get();
     const resource = state.resourcesById[resourceId];
@@ -338,6 +469,7 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
           [resourceId]: {
             ...resource,
             ...patch,
+            updatedBy: patch.updatedBy ?? CURRENT_USER_NAME,
             updatedAt: dayjs().format('YYYY-MM-DD HH:mm'),
           },
         },
@@ -387,6 +519,7 @@ export const useWorkbenchStore = create<WorkbenchStoreState>((set, get) => ({
           [resourceId]: {
             ...resource,
             latestRevision: nextRevision,
+            updatedBy: CURRENT_USER_NAME,
             updatedAt,
           },
         },
