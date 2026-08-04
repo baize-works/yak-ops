@@ -158,11 +158,12 @@ export interface QualityExecutionRecord {
   checkResult: QualityCheckResult;
   metricValue?: string;
   expectedValue: string;
-  startedAt: string;
+  queuedAt?: string;
+  startedAt?: string;
   finishedAt?: string;
   duration?: number;
   operator: string;
-  sql: string;
+  sql?: string;
   errorMessage?: string;
 }
 
@@ -171,4 +172,24 @@ export interface QualityExecutionFilters {
   status?: QualityExecutionStatus;
   checkResult?: QualityCheckResult;
   triggerType?: QualityTriggerType;
+}
+
+export interface QualityExecutionPageParams extends QualityExecutionFilters {
+  current: number;
+  pageSize: number;
+}
+
+export interface QualityExecutionSummary {
+  total: number;
+  passed: number;
+  attention: number;
+  running: number;
+}
+
+export interface QualityExecutionPageResult {
+  records: QualityExecutionRecord[];
+  total: number;
+  current: number;
+  pageSize: number;
+  summary: QualityExecutionSummary;
 }

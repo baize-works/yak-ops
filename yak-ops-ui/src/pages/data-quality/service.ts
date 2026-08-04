@@ -4,6 +4,9 @@ import type {
   CommonApiResponse,
   QualityCatalogColumn,
   QualityCatalogTable,
+  QualityExecutionPageParams,
+  QualityExecutionPageResult,
+  QualityExecutionRecord,
   QualityRule,
   QualityRuleFormValues,
   QualityRulePageParams,
@@ -11,6 +14,7 @@ import type {
 } from './types';
 
 const QUALITY_RULE_API_PREFIX = '/api/v1/data-quality/rule';
+const QUALITY_EXECUTION_API_PREFIX = '/api/v1/data-quality/execution';
 const DATA_SOURCE_API_PREFIX = '/api/v1/data-source';
 const DATA_SOURCE_CATALOG_API_PREFIX = `${DATA_SOURCE_API_PREFIX}/catalog`;
 
@@ -51,6 +55,12 @@ export const qualityRuleApi = {
   copy: (id: string): Promise<CommonApiResponse<QualityRule>> =>
     HttpUtils.post<QualityRule>(`${QUALITY_RULE_API_PREFIX}/${id}/copy`, {}),
 
+  run: (id: string): Promise<CommonApiResponse<QualityExecutionRecord>> =>
+    HttpUtils.post<QualityExecutionRecord>(
+      `${QUALITY_RULE_API_PREFIX}/${id}/run`,
+      {},
+    ),
+
   setEnabled: (
     id: string,
     enabled: boolean,
@@ -62,6 +72,23 @@ export const qualityRuleApi = {
 
   delete: (id: string): Promise<CommonApiResponse<boolean>> =>
     HttpUtils.delete<boolean>(`${QUALITY_RULE_API_PREFIX}/${id}`),
+};
+
+export const qualityExecutionApi = {
+  page: (
+    params: QualityExecutionPageParams,
+  ): Promise<CommonApiResponse<QualityExecutionPageResult>> =>
+    HttpUtils.post<QualityExecutionPageResult>(
+      `${QUALITY_EXECUTION_API_PREFIX}/page`,
+      params,
+    ),
+
+  detail: (
+    executionNo: string,
+  ): Promise<CommonApiResponse<QualityExecutionRecord>> =>
+    HttpUtils.get<QualityExecutionRecord>(
+      `${QUALITY_EXECUTION_API_PREFIX}/${encodeURIComponent(executionNo)}`,
+    ),
 };
 
 export const qualityCatalogApi = {

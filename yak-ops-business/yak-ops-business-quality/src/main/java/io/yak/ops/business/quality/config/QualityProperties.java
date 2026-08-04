@@ -7,6 +7,7 @@ public class QualityProperties {
 
   private boolean enabled = true;
   private final Datasource datasource = new Datasource();
+  private final Executor executor = new Executor();
 
   public boolean isEnabled() {
     return enabled;
@@ -18,6 +19,10 @@ public class QualityProperties {
 
   public Datasource getDatasource() {
     return datasource;
+  }
+
+  public Executor getExecutor() {
+    return executor;
   }
 
   public static class Datasource {
@@ -78,6 +83,55 @@ public class QualityProperties {
 
     public void setMinimumIdle(int minimumIdle) {
       this.minimumIdle = minimumIdle;
+    }
+  }
+
+  public static class Executor {
+
+    private int corePoolSize = 2;
+    private int maximumPoolSize = 8;
+    private int queueCapacity = 200;
+    private int recoveryBatchSize = 500;
+    private int shutdownWaitSeconds = 20;
+
+    public int getCorePoolSize() {
+      return corePoolSize;
+    }
+
+    public void setCorePoolSize(int corePoolSize) {
+      this.corePoolSize = corePoolSize;
+    }
+
+    public int getMaximumPoolSize() {
+      return maximumPoolSize;
+    }
+
+    public void setMaximumPoolSize(int maximumPoolSize) {
+      this.maximumPoolSize = maximumPoolSize;
+    }
+
+    public int getQueueCapacity() {
+      return queueCapacity;
+    }
+
+    public void setQueueCapacity(int queueCapacity) {
+      this.queueCapacity = queueCapacity;
+    }
+
+    public int getRecoveryBatchSize() {
+      return recoveryBatchSize;
+    }
+
+    public void setRecoveryBatchSize(int recoveryBatchSize) {
+      this.recoveryBatchSize = recoveryBatchSize;
+    }
+
+    public int getShutdownWaitSeconds() {
+      return shutdownWaitSeconds;
+    }
+
+    public void setShutdownWaitSeconds(int shutdownWaitSeconds) {
+      this.shutdownWaitSeconds = shutdownWaitSeconds;
     }
   }
 }

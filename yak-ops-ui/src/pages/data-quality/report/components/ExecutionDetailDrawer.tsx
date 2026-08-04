@@ -5,7 +5,7 @@ import {
   FieldTimeOutlined,
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
-import { Alert, Button, Descriptions, Drawer, message, Space } from 'antd';
+import { Alert, Button, Descriptions, Drawer, message } from 'antd';
 import QualityResultTag from '../../components/QualityResultTag';
 import { QUALITY_RULE_TYPE_META } from '../../mock';
 import type { QualityExecutionRecord } from '../../types';
@@ -22,7 +22,7 @@ const ExecutionDetailDrawer = ({
   onClose,
 }: ExecutionDetailDrawerProps) => {
   const copySql = async () => {
-    if (!record) return;
+    if (!record?.sql) return;
     try {
       await navigator.clipboard.writeText(record.sql);
       message.success('SQL 已复制');
@@ -125,7 +125,8 @@ const ExecutionDetailDrawer = ({
                     record.triggerType === 'SCHEDULE' ? '定时调度' : '手动触发',
                 },
                 { key: 'operator', label: '执行人', children: record.operator },
-                { key: 'start', label: '开始时间', children: record.startedAt },
+                { key: 'queued', label: '入队时间', children: record.queuedAt },
+                { key: 'start', label: '开始时间', children: record.startedAt || '--' },
                 { key: 'end', label: '结束时间', children: record.finishedAt || '--' },
                 {
                   key: 'duration',
@@ -143,19 +144,36 @@ const ExecutionDetailDrawer = ({
                 <CodeOutlined className="text-[#667085]" />
                 执行 SQL
               </div>
-              <Space>
-                <Button
-                  size="small"
-                  icon={<CopyOutlined />}
-                  onClick={() => void copySql()}
-                >
-                  复制
-                </Button>
-              </Space>
+              <Button
+                size="small"
+                icon={<CopyOutlined />}
+                disabled={!record.sql}
+                onClick={() => void copySql()}
+              >
+                复制
+              </Button>
             </div>
-            <pre className="m-0 overflow-auto rounded-lg border border-[#eceef2] bg-[#101828] p-4 text-[12px] leading-6 text-[#f2f4f7]">
-              <code>{record.sql}</code>
-            </pre>
+            {record.sql ? (
+              <pre
+                className={
+                  'm-0 overflow-auto rounded-lg border border-[#eceef2] ' +
+                  'bg-[#101828] p-4 text-[12px] leading-6 text-[#f2f4f7]'
+                }
+              >
+                <code>{record.sql}</code>
+              </pre>
+            ) : (
+              <div
+                className={
+                  'rounded-lg border border-dashed border-[#e4e7ec] ' +
+                  'bg-[#fafafa] px-4 py-6 text-center text-[13px] text-[#98a2b3]'
+                }
+              >
+                {record.executionStatus === 'WAITING'
+                  ? '任务仍在队列中，SQL 将在开始执行后生成。'
+                  : '本次执行没有可展示的 SQL。'}
+              </div>
+            )}
           </section>
         </div>
       ) : null}

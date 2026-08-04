@@ -27,7 +27,10 @@ const ExecutionTable = ({ records, loading, onView }: ExecutionTableProps) => {
         <div className="py-1">
           <button
             type="button"
-            className="cursor-pointer border-0 bg-transparent p-0 text-left text-[14px] font-semibold text-[#161823] hover:text-[#fe2c55]"
+            className={
+              'cursor-pointer border-0 bg-transparent p-0 text-left ' +
+              'text-[14px] font-semibold text-[#161823] hover:text-[#fe2c55]'
+            }
             onClick={() => onView(record)}
           >
             {record.ruleName}
@@ -109,9 +112,11 @@ const ExecutionTable = ({ records, loading, onView }: ExecutionTableProps) => {
       width: 180,
       render: (_, record) => (
         <div className="py-1">
-          <div className="text-[13px] text-[#344054]">{record.startedAt}</div>
+          <div className="text-[13px] text-[#344054]">
+            {record.startedAt || record.queuedAt || '--'}
+          </div>
           <div className="mt-1 text-[12px] text-[#98a2b3]">
-            {formatDuration(record.duration)}
+            {record.startedAt ? formatDuration(record.duration) : '等待执行'}
           </div>
         </div>
       ),
