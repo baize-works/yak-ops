@@ -9,15 +9,25 @@ import {
 } from '../store/workbench.store';
 
 interface ResourceViewProps {
-  onCreate: () => void;
+  onCreate?: () => void;
+  resourceId?: string;
 }
 
-const ResourceView = ({ onCreate }: ResourceViewProps) => {
-  const resource = useWorkbenchStore(selectActiveResource);
-  const document = useWorkbenchStore(selectActiveDocument);
+const ResourceView = ({ onCreate, resourceId }: ResourceViewProps) => {
+  const activeResource = useWorkbenchStore(selectActiveResource);
+  const activeDocument = useWorkbenchStore(selectActiveDocument);
+  const resourcesById = useWorkbenchStore((state) => state.resourcesById);
+  const documentsByResourceId = useWorkbenchStore(
+    (state) => state.documentsByResourceId,
+  );
   const updateDocument = useWorkbenchStore((state) => state.updateDocument);
 
-  if (!resource || !document) {
+  const resource = resourceId ? resourcesById[resourceId] : activeResource;
+  const documentState = resourceId
+    ? documentsByResourceId[resourceId]
+    : activeDocument;
+
+  if (!resource || !documentState) {
     return (
       <div className="flex h-full items-center justify-center bg-[#fbfbfc] p-8">
         <div className="w-full max-w-[620px] text-center">
@@ -30,14 +40,16 @@ const ResourceView = ({ onCreate }: ResourceViewProps) => {
           <p className="m-0 text-[13px] text-[rgba(22,24,35,0.48)]">
             从左侧打开开发节点，或创建 SQL、HTTP、Notebook、数据集成等资源。
           </p>
-          <Button
-            type="primary"
-            className="mt-5"
-            icon={<Plus size={15} />}
-            onClick={onCreate}
-          >
-            新建开发节点
-          </Button>
+          {onCreate && (
+            <Button
+              type="primary"
+              className="mt-5"
+              icon={<Plus size={15} />}
+              onClick={onCreate}
+            >
+              新建开发节点
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -65,7 +77,7 @@ const ResourceView = ({ onCreate }: ResourceViewProps) => {
     <Renderer
       key={resource.id}
       resource={resource}
-      document={document}
+      document={documentState}
       plugin={plugin}
       onChange={(nextDocument: DevelopmentDocument) =>
         updateDocument(resource.id, () => nextDocument)
