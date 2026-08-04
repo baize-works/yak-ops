@@ -19,6 +19,7 @@ public class WorkflowDefinitionPO {
   private Integer currentVersion;
   private String failureStrategy;
   private Integer maxParallelism;
+  private Integer draftSchemaVersion;
   private String draftJson;
   private String createdBy;
   private Date createdAt;
