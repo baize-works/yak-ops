@@ -64,14 +64,14 @@ yak_wf_version.schema_version
 
 ## 发布校验
 
-V2 发布前通过 `PublishedTaskVersionCatalog` 逐个校验启用的 TASK 节点：
+V2 发布前通过 `PublishedTaskVersionCatalog` 逐个校验所有 TASK 节点：
 
 - taskId + taskVersionId 对应的发布版本存在；
 - taskVersionNumber 与真实版本一致；
 - taskType 与真实版本一致；
 - Input Schema 中的 required 字段已经绑定。
 
-工作流允许固定历史不可变版本，不强制跟随任务当前最新版本。
+工作流允许固定历史不可变版本，不强制跟随任务当前最新版本。即使节点暂时禁用，发布快照中的 taskRef 也必须保持有效，避免以后启用时暴露悬空引用。
 
 Workflow 只依赖公共只读端口。Data Development 提供适配器，Workflow 不直接查询 `yak_dev_*` 表，也不会读取 Definition、Compiled Spec 或密钥。
 
