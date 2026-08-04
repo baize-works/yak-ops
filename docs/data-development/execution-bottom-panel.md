@@ -47,7 +47,11 @@ workbench/
 │   ├── types.ts
 │   ├── components/
 │   │   ├── ExecutionBottomPanel.tsx
-│   │   └── ExecutionPanelResizeHandle.tsx
+│   │   ├── ExecutionCommonPanels.tsx
+│   │   ├── ExecutionPanelHeader.tsx
+│   │   ├── ExecutionPanelResizeHandle.tsx
+│   │   ├── ExecutionPanelShared.tsx
+│   │   └── ExecutionSessionList.tsx
 │   ├── renderers/
 │   │   ├── TableExecutionResultRenderer.tsx
 │   │   ├── JsonExecutionResultRenderer.tsx
@@ -58,6 +62,8 @@ workbench/
 │   └── store/
 │       └── execution-panel.store.ts
 ```
+
+`ExecutionBottomPanel` 只负责组合布局和根据当前 Tab 分发内容。标签栏、运行历史、公共面板、状态摘要和拖拽分隔条分别维护，避免重新形成新的大型单文件组件。
 
 执行面板状态和工作台资源状态分开保存。编辑一个字符不会导致运行日志、历史结果和面板尺寸跟随文档 Store 高频更新。
 
