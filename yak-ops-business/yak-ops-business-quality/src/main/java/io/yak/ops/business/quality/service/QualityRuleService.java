@@ -12,6 +12,7 @@ import io.yak.ops.business.quality.repository.QualityRuleRepository;
 import io.yak.ops.business.quality.repository.QualityRuleRepository.PageResult;
 import io.yak.ops.business.quality.repository.QualityRuleRepository.RuleWrite;
 import java.math.BigDecimal;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.transaction.annotation.Transactional;
 
 public class QualityRuleService {
@@ -178,7 +179,18 @@ public class QualityRuleService {
       }
       default -> throw new IllegalArgumentException("不支持的调度周期：" + preset);
     };
+    validateCron(cron);
     return new ScheduleValues(preset, cron);
+  }
+
+  private void validateCron(String cron) {
+    try {
+      CronExpression.parse(cron);
+    } catch (IllegalArgumentException exception) {
+      throw new IllegalArgumentException(
+          "Cron 表达式不合法：" + exception.getMessage(),
+          exception);
+    }
   }
 
   private RuleView requireRule(long id) {
