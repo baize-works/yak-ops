@@ -85,16 +85,19 @@ const QualityRuleTable = ({
       title: '规则类型',
       dataIndex: 'ruleType',
       width: 170,
-      render: (value: QualityRule['ruleType'], record) => (
-        <div className="py-1">
-          <div className="text-[13px] text-[#344054]">
-            {QUALITY_RULE_TYPE_META[value].label}
+      render: (value, record) => {
+        const ruleType = value as QualityRule['ruleType'];
+        return (
+          <div className="py-1">
+            <div className="text-[13px] text-[#344054]">
+              {QUALITY_RULE_TYPE_META[ruleType].label}
+            </div>
+            <div className="mt-1 text-[12px] text-[#98a2b3]">
+              {record.dimension} · {record.scope === 'TABLE' ? '表级' : '字段级'}
+            </div>
           </div>
-          <div className="mt-1 text-[12px] text-[#98a2b3]">
-            {record.dimension} · {record.scope === 'TABLE' ? '表级' : '字段级'}
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: '判断条件',
@@ -158,15 +161,18 @@ const QualityRuleTable = ({
       dataIndex: 'enabled',
       width: 88,
       fixed: 'right',
-      render: (enabled: boolean, record) => (
-        <Tooltip title={enabled ? '停用规则' : '启用规则'}>
-          <Switch
-            size="small"
-            checked={enabled}
-            onChange={(checked: boolean) => onToggle(record, checked)}
-          />
-        </Tooltip>
-      ),
+      render: (value, record) => {
+        const enabled = Boolean(value);
+        return (
+          <Tooltip title={enabled ? '停用规则' : '启用规则'}>
+            <Switch
+              size="small"
+              checked={enabled}
+              onChange={(checked: boolean) => onToggle(record, checked)}
+            />
+          </Tooltip>
+        );
+      },
     },
     {
       title: '操作',
