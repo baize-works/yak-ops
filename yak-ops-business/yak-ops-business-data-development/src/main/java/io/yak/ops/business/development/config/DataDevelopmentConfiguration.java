@@ -2,9 +2,12 @@ package io.yak.ops.business.development.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.yak.ops.business.development.repository.DataDevelopmentExecutionRepository;
 import io.yak.ops.business.development.repository.DataDevelopmentRepository;
 import io.yak.ops.business.development.service.DataDevelopmentJsonCodec;
+import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
 import io.yak.ops.plugin.task.api.TaskPluginCatalog;
+import java.util.List;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -16,7 +19,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
-/** Data-development datasource, Flyway and plugin-catalog assembly. */
+/** Data-development datasource, Flyway, plugin catalog and execution runtime assembly. */
 @ConditionalOnDataDevelopmentEnabled
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(DataDevelopmentProperties.class)
@@ -66,6 +69,11 @@ public class DataDevelopmentConfiguration {
     return new TaskPluginCatalog();
   }
 
+  @Bean(name = "dataDevelopmentTaskExecutorRegistry")
+  public WorkflowTaskExecutorRegistry dataDevelopmentTaskExecutorRegistry() {
+    return new WorkflowTaskExecutorRegistry(List.of());
+  }
+
   @Bean
   public DataDevelopmentJsonCodec dataDevelopmentJsonCodec() {
     return new DataDevelopmentJsonCodec();
@@ -76,5 +84,12 @@ public class DataDevelopmentConfiguration {
       @Qualifier("dataDevelopmentJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate,
       DataDevelopmentJsonCodec jsonCodec) {
     return new DataDevelopmentRepository(jdbcTemplate, jsonCodec);
+  }
+
+  @Bean
+  public DataDevelopmentExecutionRepository dataDevelopmentExecutionRepository(
+      @Qualifier("dataDevelopmentJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate,
+      DataDevelopmentJsonCodec jsonCodec) {
+    return new DataDevelopmentExecutionRepository(jdbcTemplate, jsonCodec);
   }
 }

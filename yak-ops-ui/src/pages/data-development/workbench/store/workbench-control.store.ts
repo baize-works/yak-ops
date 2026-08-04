@@ -54,7 +54,7 @@ const indexSnapshot = (snapshot: WorkspaceSnapshot) => {
   };
 };
 
-const clearMockWorkspace = () => {
+const clearWorkspace = () => {
   useWorkbenchStore.setState({
     resourcesById: {},
     documentsByResourceId: {},
@@ -70,7 +70,7 @@ const clearMockWorkspace = () => {
   });
 };
 
-clearMockWorkspace();
+clearWorkspace();
 
 export const useWorkbenchControlStore = create<WorkbenchControlState>(
   (set, get) => ({
@@ -84,7 +84,7 @@ export const useWorkbenchControlStore = create<WorkbenchControlState>(
     initialize: async () => {
       if (get().workspaceLoading) return;
       set({ workspaceLoading: true, workspaceError: undefined });
-      clearMockWorkspace();
+      clearWorkspace();
 
       try {
         const result = await workbenchRepository.bootstrap();
@@ -123,6 +123,13 @@ export const useWorkbenchControlStore = create<WorkbenchControlState>(
           [resourceId]: executionId,
         },
       }));
+
+      if (status === 'QUEUED') {
+        void import('../execution/execution.sync').then(
+          ({ observeExecutionForResource }) =>
+            observeExecutionForResource(resourceId, executionId),
+        );
+      }
     },
 
     clearExecutionRecord: (resourceId) =>
