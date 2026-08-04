@@ -13,10 +13,12 @@ const HTTP_SCHEMA: WorkbenchFormSchema = {
       label: '请求方式',
       type: 'select',
       required: true,
-      options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((value) => ({
-        label: value,
-        value,
-      })),
+      options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map(
+        (value) => ({
+          label: value,
+          value,
+        }),
+      ),
     },
     {
       key: 'url',
@@ -49,15 +51,8 @@ const HTTP_RUNTIME_SCHEMA: WorkbenchFormSchema = {
   columns: 1,
   fields: [
     {
-      key: 'connectTimeoutSeconds',
-      label: '连接超时',
-      type: 'number',
-      min: 1,
-      max: 300,
-    },
-    {
-      key: 'readTimeoutSeconds',
-      label: '读取超时',
+      key: 'requestTimeoutSeconds',
+      label: '请求超时',
       type: 'number',
       min: 1,
       max: 3600,
@@ -66,12 +61,14 @@ const HTTP_RUNTIME_SCHEMA: WorkbenchFormSchema = {
       key: 'successCodes',
       label: '成功状态码',
       type: 'text',
-      placeholder: '200,201,204',
+      placeholder: '留空表示 200-299；也可填写 200,201,204',
     },
     {
-      key: 'followRedirects',
-      label: '自动跟随重定向',
-      type: 'switch',
+      key: 'maxResponseBodyCharacters',
+      label: '最大响应体字符数',
+      type: 'number',
+      min: 1,
+      max: 10_000_000,
     },
   ],
 };
@@ -81,7 +78,7 @@ export const httpPlugin: NodePluginDefinition = {
   version: 1,
   metadata: {
     label: 'HTTP 请求',
-    description: '通过 JSON Schema 驱动的表单配置 HTTP API 调用。',
+    description: '调用 HTTP 接口并保存状态码、响应头与响应体。',
     category: '数据处理',
     folderId: 'http',
     folderLabel: 'HTTP',
@@ -111,10 +108,9 @@ export const httpPlugin: NodePluginDefinition = {
   runtime: {
     schema: HTTP_RUNTIME_SCHEMA,
     defaultValue: () => ({
-      connectTimeoutSeconds: 10,
-      readTimeoutSeconds: 60,
-      successCodes: '200,201,204',
-      followRedirects: true,
+      requestTimeoutSeconds: 60,
+      successCodes: '',
+      maxResponseBodyCharacters: 1_000_000,
     }),
   },
   toolbar: [

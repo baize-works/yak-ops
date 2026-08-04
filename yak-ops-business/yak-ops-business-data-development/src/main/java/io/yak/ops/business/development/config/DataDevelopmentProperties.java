@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "yak.data-development")
 public class DataDevelopmentProperties {
 
-  private boolean enabled = true;
+  private boolean enabled;
   private final Datasource datasource = new Datasource();
 
   public boolean isEnabled() {
@@ -23,9 +23,9 @@ public class DataDevelopmentProperties {
 
   public static class Datasource {
 
-    private String url = "jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai";
-    private String username = "root";
-    private String password = "123456";
+    private String url;
+    private String username;
+    private String password;
     private String driverClassName = "com.mysql.cj.jdbc.Driver";
     private int maximumPoolSize = 8;
     private int minimumIdle = 1;

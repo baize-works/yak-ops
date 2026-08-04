@@ -13,6 +13,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
     prefix = "yak.data-development",
     name = "enabled",
     havingValue = "true",
-    matchIfMissing = true)
+    matchIfMissing = false)
 public @interface ConditionalOnDataDevelopmentEnabled {
 }

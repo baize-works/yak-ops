@@ -17,6 +17,7 @@ import type {
   ResourceType,
   WorkbenchFolderDefinition,
 } from '../core/types';
+import { useWorkbenchControlStore } from '../store/workbench-control.store';
 import { useWorkbenchStore } from '../store/workbench.store';
 import ResourceContextMenu from './ResourceContextMenu';
 
@@ -24,9 +25,11 @@ interface ExplorerPanelProps {
   onCreate: (resourceType: ResourceType) => void;
 }
 
-const PROJECT_LABEL = '用户数据平台';
-
 const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
+  const projectName = useWorkbenchControlStore((state) => state.projectName);
+  const supportedTaskTypes = useWorkbenchControlStore(
+    (state) => state.supportedTaskTypes,
+  );
   const resourcesById = useWorkbenchStore((state) => state.resourcesById);
   const documentsByResourceId = useWorkbenchStore(
     (state) => state.documentsByResourceId,
@@ -53,7 +56,12 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
     (state) => state.setExplorerVisible,
   );
 
-  const plugins = nodePluginRegistry.list();
+  const plugins = useMemo(() => {
+    const supported = new Set(supportedTaskTypes);
+    return nodePluginRegistry
+      .list()
+      .filter((plugin) => supported.has(plugin.type.toUpperCase()));
+  }, [supportedTaskTypes]);
 
   const folders = useMemo(() => {
     const folderMap = new Map<string, WorkbenchFolderDefinition>();
@@ -95,8 +103,7 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
         resource.updatedBy.toLowerCase().includes(normalizedKeyword);
       const matchesFilter =
         explorerFilter === 'all' ||
-        (explorerFilter === 'owned' && resource.owner === 'me') ||
-        (explorerFilter === 'favorite' && resource.favorite);
+        (explorerFilter === 'owned' && resource.owner === 'me');
       return matchesKeyword && matchesFilter;
     })
     .map((resource) => resource.id);
@@ -126,7 +133,7 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
         key={resource.id}
         resource={resource}
         folders={folders}
-        projectLabel={PROJECT_LABEL}
+        projectLabel={projectName}
       >
         <button
           type="button"
@@ -147,13 +154,6 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
             <span className="min-w-0 flex-1 truncate" title={resource.name}>
               {resource.name}
             </span>
-            {resource.favorite && (
-              <Circle
-                size={6}
-                fill="currentColor"
-                className="shrink-0 text-[rgba(22,24,35,0.24)]"
-              />
-            )}
             {document?.dirty && (
               <Circle
                 size={6}
@@ -192,11 +192,8 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
           <Select
             variant="borderless"
             className="min-w-0 flex-1 [&_.ant-select-selector]:!px-0"
-            defaultValue="user-data-platform"
-            options={[
-              { label: PROJECT_LABEL, value: 'user-data-platform' },
-              { label: '实时数仓项目', value: 'realtime-warehouse' },
-            ]}
+            value="current-project"
+            options={[{ label: projectName, value: 'current-project' }]}
           />
           <Tooltip title="收起项目目录">
             <Button
@@ -224,7 +221,6 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
           {[
             ['all', '全部'],
             ['owned', '我负责的'],
-            ['favorite', '我收藏的'],
           ].map(([value, label]) => (
             <button
               key={value}
@@ -251,6 +247,7 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
             <Button
               type="primary"
               size="small"
+              disabled={plugins.length === 0}
               aria-label="新建开发节点"
               icon={<Plus size={15} />}
               className="!h-7 !w-7 !px-0"

@@ -41,32 +41,23 @@ export const shellPlugin: NodePluginDefinition = {
       columns: 1,
       fields: [
         {
-          key: 'shell',
-          label: 'Shell',
-          type: 'select',
-          options: [
-            { label: 'bash', value: 'bash' },
-            { label: 'sh', value: 'sh' },
-          ],
-        },
-        {
-          key: 'workingDirectory',
+          key: 'workDirectory',
           label: '工作目录',
           type: 'text',
           placeholder: '/data/yak-ops/work',
         },
         {
-          key: 'environmentVariables',
+          key: 'environment',
           label: '环境变量（JSON）',
           type: 'textarea',
           rows: 6,
+          placeholder: '{\n  "BIZ_DATE": "${bizdate}"\n}',
         },
       ],
     },
     defaultValue: () => ({
-      shell: 'bash',
-      workingDirectory: '',
-      environmentVariables: '{}',
+      workDirectory: '',
+      environment: '{}',
     }),
   },
   toolbar: [
