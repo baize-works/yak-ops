@@ -25,6 +25,12 @@ public final class WorkflowV2PublicationValidator {
   }
 
   public void validate(WorkflowV2Dag dag) {
+    List<WorkflowV2Node> taskNodes = dag.getNodes().stream()
+        .filter(node -> node.getKind() == WorkflowV2Node.Kind.TASK)
+        .toList();
+    if (taskNodes.isEmpty()) {
+      return;
+    }
     if (catalogs.isEmpty()) {
       throw new IllegalStateException(
           "Workflow V2 发布校验不可用：未装配已发布任务版本目录");
@@ -34,10 +40,7 @@ public final class WorkflowV2PublicationValidator {
           "Workflow V2 发布校验配置错误：存在多个已发布任务版本目录");
     }
     PublishedTaskVersionCatalog catalog = catalogs.get(0);
-    for (WorkflowV2Node node : dag.getNodes()) {
-      if (node.getKind() != WorkflowV2Node.Kind.TASK || !node.isEnabled()) continue;
-      validateTaskNode(node, catalog);
-    }
+    taskNodes.forEach(node -> validateTaskNode(node, catalog));
   }
 
   private static void validateTaskNode(
