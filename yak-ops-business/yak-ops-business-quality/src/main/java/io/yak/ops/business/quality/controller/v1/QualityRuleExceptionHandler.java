@@ -9,19 +9,36 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @ConditionalOnQualityEnabled
-@RestControllerAdvice(assignableTypes = QualityRuleController.class)
+@RestControllerAdvice(assignableTypes = {
+    QualityRuleController.class,
+    QualityExecutionController.class
+})
 public class QualityRuleExceptionHandler {
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<Map<String, Object>> handleInvalidRequest(
       IllegalArgumentException exception) {
-    HttpStatus status = exception.getMessage() != null
-            && exception.getMessage().startsWith("质量规则不存在")
+    String message = exception.getMessage();
+    HttpStatus status = message != null
+            && (message.startsWith("质量规则不存在")
+                || message.startsWith("质量执行记录不存在"))
         ? HttpStatus.NOT_FOUND
         : HttpStatus.BAD_REQUEST;
+    return response(status, message);
+  }
+
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<Map<String, Object>> handleConflict(
+      IllegalStateException exception) {
+    return response(HttpStatus.CONFLICT, exception.getMessage());
+  }
+
+  private static ResponseEntity<Map<String, Object>> response(
+      HttpStatus status,
+      String message) {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("code", status.value());
-    body.put("message", exception.getMessage());
+    body.put("message", message == null ? status.getReasonPhrase() : message);
     return ResponseEntity.status(status).body(body);
   }
 }

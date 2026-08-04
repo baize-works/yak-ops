@@ -2,11 +2,13 @@ package io.yak.ops.business.quality.controller.v1;
 
 import io.yak.framework.common.Result;
 import io.yak.framework.security.web.RequiresPermission;
+import io.yak.ops.business.quality.api.QualityExecutionApi.ExecutionView;
 import io.yak.ops.business.quality.api.QualityRuleApi.RulePageRequest;
 import io.yak.ops.business.quality.api.QualityRuleApi.RulePageView;
 import io.yak.ops.business.quality.api.QualityRuleApi.RuleView;
 import io.yak.ops.business.quality.api.QualityRuleApi.SaveRuleRequest;
 import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
+import io.yak.ops.business.quality.service.QualityExecutionService;
 import io.yak.ops.business.quality.service.QualityRuleService;
 import jakarta.validation.Valid;
 import java.security.Principal;
@@ -26,9 +28,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class QualityRuleController {
 
   private final QualityRuleService service;
+  private final QualityExecutionService executionService;
 
-  public QualityRuleController(QualityRuleService service) {
+  public QualityRuleController(
+      QualityRuleService service,
+      QualityExecutionService executionService) {
     this.service = service;
+    this.executionService = executionService;
   }
 
   @PostMapping("/page")
@@ -59,6 +65,12 @@ public class QualityRuleController {
   @PostMapping("/{id}/copy")
   public Result<RuleView> copy(@PathVariable long id, Principal principal) {
     return Result.success(service.copy(id, operator(principal)));
+  }
+
+  @PostMapping("/{id}/run")
+  @RequiresPermission("quality:execute")
+  public Result<ExecutionView> run(@PathVariable long id, Principal principal) {
+    return Result.success(executionService.run(id, operator(principal)));
   }
 
   @PutMapping("/{id}/enable")

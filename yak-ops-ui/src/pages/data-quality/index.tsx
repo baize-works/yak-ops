@@ -6,12 +6,7 @@ import {
   Modal,
   Pagination,
 } from 'antd';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { fetchDataSourceAll } from '@/pages/data-source/service';
 import { API_SUCCESS_CODE } from '@/services/http/response';
@@ -35,9 +30,7 @@ import type {
   QualitySelectOption,
 } from './types';
 
-const EMPTY_FILTERS: QualityRuleFilters = {
-  keyword: '',
-};
+const EMPTY_FILTERS: QualityRuleFilters = { keyword: '' };
 
 const EMPTY_SUMMARY: QualityRuleSummary = {
   total: 0,
@@ -46,10 +39,8 @@ const EMPTY_SUMMARY: QualityRuleSummary = {
   attention: 0,
 };
 
-const responseMessage = (response: {
-  message?: string;
-  msg?: string;
-}) => response.message || response.msg || '请求处理失败';
+const responseMessage = (response: { message?: string; msg?: string }) =>
+  response.message || response.msg || '请求处理失败';
 
 const ensureSuccess = <T,>(response: CommonApiResponse<T>): T => {
   if (response.code !== API_SUCCESS_CODE) {
@@ -67,37 +58,32 @@ const uniqueOptions = (options: QualitySelectOption[]) => {
   });
 };
 
-const tableOptions = (
-  records: QualityCatalogTable[],
-): QualitySelectOption[] =>
+const tableOptions = (records: QualityCatalogTable[]): QualitySelectOption[] =>
   uniqueOptions(
     records
       .map((item) => {
-        const value =
-          item.tableName || item.name || item.value || item.label || '';
+        const value = item.tableName || item.name || item.value || item.label || '';
         return {
           value,
           label: item.label || item.tableName || item.name || value,
-          description: item.comment || item.description,
+          description:
+            item.comment || item.remarks || item.description || item.type,
         };
       })
       .filter((item) => item.value),
   );
 
-const columnOptions = (
-  records: QualityCatalogColumn[],
-): QualitySelectOption[] =>
+const columnOptions = (records: QualityCatalogColumn[]): QualitySelectOption[] =>
   uniqueOptions(
     records
       .map((item) => {
-        const value =
-          item.columnName || item.name || item.value || item.label || '';
-        const type = item.dataType || item.type;
+        const value = item.columnName || item.name || item.value || item.label || '';
+        const type = item.dataType || item.typeName || item.type;
         const label = item.label || item.columnName || item.name || value;
         return {
           value,
           label: type ? `${label} · ${type}` : label,
-          description: item.comment || item.description,
+          description: item.comment || item.remarks || item.description,
         };
       })
       .filter((item) => item.value),
@@ -106,8 +92,7 @@ const columnOptions = (
 const DataQualityPage = () => {
   const [rules, setRules] = useState<QualityRule[]>([]);
   const [filters, setFilters] = useState<QualityRuleFilters>(EMPTY_FILTERS);
-  const [summary, setSummary] =
-    useState<QualityRuleSummary>(EMPTY_SUMMARY);
+  const [summary, setSummary] = useState<QualityRuleSummary>(EMPTY_SUMMARY);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<QualityRule>();
   const [submitting, setSubmitting] = useState(false);
@@ -127,7 +112,8 @@ const DataQualityPage = () => {
   const [schemaLoading, setSchemaLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [columnLoading, setColumnLoading] = useState(false);
-  const requestSequence = useRef(0);
+
+  const listRequestSequence = useRef(0);
   const activeDataSourceId = useRef<string>();
   const activeDatabaseName = useRef<string>();
   const activeSchemaName = useRef<string>();
@@ -138,7 +124,7 @@ const DataQualityPage = () => {
       currentFilters: QualityRuleFilters,
       silent = false,
     ) => {
-      const sequence = ++requestSequence.current;
+      const sequence = ++listRequestSequence.current;
       if (!silent) setListLoading(true);
       try {
         const result = ensureSuccess<QualityRulePageResult>(
@@ -149,17 +135,17 @@ const DataQualityPage = () => {
             pageSize,
           }),
         );
-        if (sequence !== requestSequence.current) return;
+        if (sequence !== listRequestSequence.current) return;
         setRules(result.records || []);
         setTotal(result.total || 0);
         setSummary(result.summary || EMPTY_SUMMARY);
       } catch (error) {
-        if (sequence !== requestSequence.current) return;
+        if (sequence !== listRequestSequence.current) return;
         message.error(
           error instanceof Error ? error.message : '质量规则加载失败',
         );
       } finally {
-        if (sequence === requestSequence.current && !silent) {
+        if (sequence === listRequestSequence.current && !silent) {
           setListLoading(false);
         }
       }
@@ -186,9 +172,7 @@ const DataQualityPage = () => {
         ),
       );
     } catch (error) {
-      message.error(
-        error instanceof Error ? error.message : '数据源加载失败',
-      );
+      message.error(error instanceof Error ? error.message : '数据源加载失败');
     } finally {
       setDataSourceLoading(false);
     }
@@ -198,22 +182,21 @@ const DataQualityPage = () => {
     activeDataSourceId.current = dataSourceId;
     activeDatabaseName.current = undefined;
     activeSchemaName.current = undefined;
-    setDatabaseLoading(true);
     setDatabases([]);
     setSchemas([]);
     setTables([]);
     setColumns([]);
+    setDatabaseLoading(true);
     try {
       const response = await qualityCatalogApi.databases(dataSourceId);
-      const values = ensureSuccess(response) || [];
-      if (activeDataSourceId.current !== dataSourceId) return [];
       let options = uniqueOptions(
-        values
+        (ensureSuccess(response) || [])
           .filter(Boolean)
           .map((value) => ({ label: value, value })),
       );
+      if (activeDataSourceId.current !== dataSourceId) return [];
 
-      // 某些 JDBC 驱动只暴露 Schema，不暴露 Catalog。
+      // PostgreSQL 等驱动可能仅暴露 Schema，不返回 Catalog。
       if (!options.length) {
         const schemaResponse = await qualityCatalogApi.schemas(dataSourceId);
         options = uniqueOptions(
@@ -222,11 +205,8 @@ const DataQualityPage = () => {
             .map((value) => ({ label: value, value })),
         );
       }
-
       setDatabases(options);
-      if (!options.length) {
-        message.warning('当前数据源没有返回可用的数据库');
-      }
+      if (!options.length) message.warning('当前数据源没有返回可用的数据库');
       return options;
     } catch (error) {
       message.error(
@@ -245,10 +225,10 @@ const DataQualityPage = () => {
       activeDataSourceId.current = dataSourceId;
       activeDatabaseName.current = databaseName;
       activeSchemaName.current = undefined;
-      setSchemaLoading(true);
       setSchemas([]);
       setTables([]);
       setColumns([]);
+      setSchemaLoading(true);
       try {
         const response = await qualityCatalogApi.schemas(
           dataSourceId,
@@ -266,8 +246,8 @@ const DataQualityPage = () => {
           setSchemas(options);
         }
         return options;
-      } catch (error) {
-        // 并不是所有数据库都支持独立 Schema，失败时仍允许按 Catalog 加载表。
+      } catch {
+        // MySQL/Doris 不一定有独立 Schema，继续使用数据库加载表。
         setSchemas([]);
         return [];
       } finally {
@@ -291,9 +271,9 @@ const DataQualityPage = () => {
       activeDataSourceId.current = dataSourceId;
       activeDatabaseName.current = databaseName;
       activeSchemaName.current = schemaName;
-      setTableLoading(true);
       setTables([]);
       setColumns([]);
+      setTableLoading(true);
       try {
         const response = await qualityCatalogApi.tables(
           dataSourceId,
@@ -310,9 +290,7 @@ const DataQualityPage = () => {
         }
         return options;
       } catch (error) {
-        message.error(
-          error instanceof Error ? error.message : '数据表加载失败',
-        );
+        message.error(error instanceof Error ? error.message : '数据表加载失败');
         return [];
       } finally {
         if (
@@ -334,8 +312,8 @@ const DataQualityPage = () => {
       schemaName: string | undefined,
       tableName: string,
     ) => {
-      setColumnLoading(true);
       setColumns([]);
+      setColumnLoading(true);
       try {
         const response = await qualityCatalogApi.columns(
           dataSourceId,
@@ -353,9 +331,7 @@ const DataQualityPage = () => {
         }
         return options;
       } catch (error) {
-        message.error(
-          error instanceof Error ? error.message : '字段加载失败',
-        );
+        message.error(error instanceof Error ? error.message : '字段加载失败');
         return [];
       } finally {
         setColumnLoading(false);
@@ -375,15 +351,23 @@ const DataQualityPage = () => {
     return () => window.clearTimeout(timer);
   }, [filters, loadRules, page]);
 
+  useEffect(() => {
+    if (!rules.some((item) => item.lastResult === 'RUNNING')) return undefined;
+    const timer = window.setInterval(() => {
+      void loadRules(page, filters, true);
+    }, 1500);
+    return () => window.clearInterval(timer);
+  }, [filters, loadRules, page, rules]);
+
   const openCreate = () => {
     setEditingRule(undefined);
+    activeDataSourceId.current = undefined;
+    activeDatabaseName.current = undefined;
+    activeSchemaName.current = undefined;
     setDatabases([]);
     setSchemas([]);
     setTables([]);
     setColumns([]);
-    activeDataSourceId.current = undefined;
-    activeDatabaseName.current = undefined;
-    activeSchemaName.current = undefined;
     setDrawerOpen(true);
   };
 
@@ -411,15 +395,14 @@ const DataQualityPage = () => {
     setSubmitting(true);
     try {
       const dataSourceName =
-        dataSources.find((item) => item.value === values.dataSourceId)
-          ?.label || values.dataSourceId;
+        dataSources.find((item) => item.value === values.dataSourceId)?.label ||
+        values.dataSourceId;
       const payload: QualityRuleFormValues = {
         ...values,
         name: values.name.trim(),
         description: values.description?.trim(),
         dataSourceName,
         catalogName: values.catalogName || values.databaseName,
-        schemaName: values.schemaName,
       };
       const response = editingRule
         ? await qualityRuleApi.update(editingRule.id, payload)
@@ -428,11 +411,9 @@ const DataQualityPage = () => {
       message.success(editingRule ? '规则已更新' : '规则已创建');
       setDrawerOpen(false);
       setEditingRule(undefined);
-      if (!editingRule && page !== 1) {
-        setPage(1);
-      } else {
-        await loadRules(editingRule ? page : 1, filters);
-      }
+      const nextPage = editingRule ? page : 1;
+      if (nextPage !== page) setPage(nextPage);
+      else await loadRules(nextPage, filters);
     } catch (error) {
       message.error(
         error instanceof Error ? error.message : '质量规则保存失败',
@@ -442,19 +423,26 @@ const DataQualityPage = () => {
     }
   };
 
+  const handleRun = async (record: QualityRule) => {
+    try {
+      const execution = ensureSuccess(await qualityRuleApi.run(record.id));
+      message.success(`质量检查已提交：${execution.id}`);
+      await loadRules(page, filters, true);
+    } catch (error) {
+      message.error(
+        error instanceof Error ? error.message : '质量检查提交失败',
+      );
+    }
+  };
+
   const handleCopy = async (record: QualityRule) => {
     try {
       ensureSuccess(await qualityRuleApi.copy(record.id));
       message.success('规则已复制');
-      if (page !== 1) {
-        setPage(1);
-      } else {
-        await loadRules(1, filters);
-      }
+      if (page !== 1) setPage(1);
+      else await loadRules(1, filters);
     } catch (error) {
-      message.error(
-        error instanceof Error ? error.message : '规则复制失败',
-      );
+      message.error(error instanceof Error ? error.message : '规则复制失败');
     }
   };
 
@@ -462,7 +450,7 @@ const DataQualityPage = () => {
     Modal.confirm({
       centered: true,
       title: '删除质量规则',
-      content: `确认删除“${record.name}”吗？历史执行记录将在后续阶段保留。`,
+      content: `确认删除“${record.name}”吗？历史执行记录将继续保留。`,
       okText: '删除',
       cancelText: '取消',
       okButtonProps: { danger: true },
@@ -470,13 +458,9 @@ const DataQualityPage = () => {
         try {
           ensureSuccess(await qualityRuleApi.delete(record.id));
           message.success('规则已删除');
-          const nextPage =
-            rules.length === 1 && page > 1 ? page - 1 : page;
-          if (nextPage !== page) {
-            setPage(nextPage);
-          } else {
-            await loadRules(nextPage, filters);
-          }
+          const nextPage = rules.length === 1 && page > 1 ? page - 1 : page;
+          if (nextPage !== page) setPage(nextPage);
+          else await loadRules(nextPage, filters);
         } catch (error) {
           message.error(
             error instanceof Error ? error.message : '规则删除失败',
@@ -487,10 +471,7 @@ const DataQualityPage = () => {
     });
   };
 
-  const handleToggle = async (
-    record: QualityRule,
-    enabled: boolean,
-  ) => {
+  const handleToggle = async (record: QualityRule, enabled: boolean) => {
     try {
       ensureSuccess(await qualityRuleApi.setEnabled(record.id, enabled));
       message.success(enabled ? '规则已启用' : '规则已停用');
@@ -530,11 +511,7 @@ const DataQualityPage = () => {
                 >
                   刷新
                 </Button>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={openCreate}
-                >
+                <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
                   新建规则
                 </Button>
               </>
@@ -558,18 +535,19 @@ const DataQualityPage = () => {
           <QualityRuleTable
             records={rules}
             loading={listLoading}
-            onRun={() => {
-              message.info('规则执行引擎将在第 2 步接入');
-            }}
+            onRun={(record) => void handleRun(record)}
             onEdit={(record) => void openEdit(record)}
             onCopy={(record) => void handleCopy(record)}
             onDelete={handleDelete}
-            onToggle={(record, enabled) =>
-              void handleToggle(record, enabled)
-            }
+            onToggle={(record, enabled) => void handleToggle(record, enabled)}
           />
 
-          <div className="flex items-center justify-between border-t border-[#eceef2] bg-white px-4 py-3 text-[12px] text-[#98a2b3]">
+          <div
+            className={
+              'flex items-center justify-between border-t border-[#eceef2] ' +
+              'bg-white px-4 py-3 text-[12px] text-[#98a2b3]'
+            }
+          >
             <span>共 {total} 条规则</span>
             <Pagination
               size="small"
@@ -597,17 +575,12 @@ const DataQualityPage = () => {
         schemaLoading={schemaLoading}
         tableLoading={tableLoading}
         columnLoading={columnLoading}
-        onDataSourceChange={(dataSourceId) => {
-          void loadDatabases(dataSourceId);
-        }}
+        onDataSourceChange={(dataSourceId) => void loadDatabases(dataSourceId)}
         onDatabaseChange={(databaseName) => {
           const dataSourceId = activeDataSourceId.current;
           if (!dataSourceId) return;
           void (async () => {
-            const nextSchemas = await loadSchemas(
-              dataSourceId,
-              databaseName,
-            );
+            const nextSchemas = await loadSchemas(dataSourceId, databaseName);
             if (!nextSchemas.length) {
               await loadTables(dataSourceId, databaseName);
             }
@@ -624,12 +597,11 @@ const DataQualityPage = () => {
         onTableChange={(tableName) => {
           const dataSourceId = activeDataSourceId.current;
           const databaseName = activeDatabaseName.current;
-          const schemaName = activeSchemaName.current;
           if (dataSourceId && databaseName) {
             void loadColumns(
               dataSourceId,
               databaseName,
-              schemaName,
+              activeSchemaName.current,
               tableName,
             );
           }

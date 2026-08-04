@@ -93,7 +93,7 @@ public class QualityRuleRepository {
   }
 
   public RuleSummary summary() {
-    return jdbcTemplate.queryForObject(
+    long[] values = jdbcTemplate.queryForObject(
         """
         SELECT COUNT(*) AS total,
                SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled_count,
@@ -103,11 +103,24 @@ public class QualityRuleRepository {
         WHERE deleted = 0
         """,
         new MapSqlParameterSource(),
-        (rs, rowNum) -> new RuleSummary(
+        (rs, rowNum) -> new long[] {
             rs.getLong("total"),
             rs.getLong("enabled_count"),
-            0L,
-            rs.getLong("attention_count")));
+            rs.getLong("attention_count")
+        });
+    Long todayRuns = jdbcTemplate.queryForObject(
+        """
+        SELECT COUNT(*)
+        FROM yak_quality_execution
+        WHERE queued_at >= CURRENT_DATE()
+        """,
+        new MapSqlParameterSource(),
+        Long.class);
+    return new RuleSummary(
+        values == null ? 0L : values[0],
+        values == null ? 0L : values[1],
+        todayRuns == null ? 0L : todayRuns,
+        values == null ? 0L : values[2]);
   }
 
   public Optional<RuleView> findById(long id) {
@@ -115,6 +128,18 @@ public class QualityRuleRepository {
       return Optional.ofNullable(jdbcTemplate.queryForObject(
           "SELECT " + SELECT_COLUMNS
               + " FROM yak_quality_rule WHERE id = :id AND deleted = 0",
+          new MapSqlParameterSource("id", id),
+          rowMapper));
+    } catch (EmptyResultDataAccessException ignored) {
+      return Optional.empty();
+    }
+  }
+
+  public Optional<RuleView> findByIdForUpdate(long id) {
+    try {
+      return Optional.ofNullable(jdbcTemplate.queryForObject(
+          "SELECT " + SELECT_COLUMNS
+              + " FROM yak_quality_rule WHERE id = :id AND deleted = 0 FOR UPDATE",
           new MapSqlParameterSource("id", id),
           rowMapper));
     } catch (EmptyResultDataAccessException ignored) {
@@ -193,6 +218,44 @@ public class QualityRuleRepository {
         "UPDATE yak_quality_rule SET deleted = 1, enabled = 0"
             + " WHERE id = :id AND deleted = 0",
         new MapSqlParameterSource("id", id)) == 1;
+  }
+
+  public boolean markExecutionStarted(long id, LocalDateTime startedAt) {
+    return jdbcTemplate.update(
+        """
+        UPDATE yak_quality_rule
+        SET last_result = 'RUNNING',
+            last_metric = NULL,
+            last_run_time = :startedAt,
+            last_duration_ms = NULL
+        WHERE id = :id AND deleted = 0
+        """,
+        new MapSqlParameterSource()
+            .addValue("id", id)
+            .addValue("startedAt", Timestamp.valueOf(startedAt))) == 1;
+  }
+
+  public boolean updateExecutionResult(
+      long id,
+      RuleResult result,
+      String metric,
+      LocalDateTime runTime,
+      long durationMs) {
+    return jdbcTemplate.update(
+        """
+        UPDATE yak_quality_rule
+        SET last_result = :lastResult,
+            last_metric = :lastMetric,
+            last_run_time = :lastRunTime,
+            last_duration_ms = :durationMs
+        WHERE id = :id AND deleted = 0
+        """,
+        new MapSqlParameterSource()
+            .addValue("id", id)
+            .addValue("lastResult", result.name())
+            .addValue("lastMetric", metric)
+            .addValue("lastRunTime", Timestamp.valueOf(runTime))
+            .addValue("durationMs", durationMs)) == 1;
   }
 
   private MapSqlParameterSource parameters(RuleWrite write) {
