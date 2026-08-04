@@ -20,15 +20,22 @@ import ResourceView from './components/ResourceView';
 import RightPanel from './components/RightPanel';
 import RightRail from './components/RightRail';
 import StatusBar from './components/StatusBar';
+import WorkbenchResizeHandle from './components/WorkbenchResizeHandle';
 import WorkbenchToolbar from './components/WorkbenchToolbar';
 import type { ResourceType } from './core/types';
 import { useWorkbenchStore } from './store/workbench.store';
 
+const EXPLORER_MIN_WIDTH = 300;
+const EXPLORER_MAX_WIDTH = 720;
+const EXPLORER_DEFAULT_WIDTH = 460;
+
 const WorkbenchPage = () => {
   const explorerVisible = useWorkbenchStore((state) => state.explorerVisible);
+  const explorerWidth = useWorkbenchStore((state) => state.explorerWidth);
   const fullscreen = useWorkbenchStore((state) => state.fullscreen);
   const splitResourceId = useWorkbenchStore((state) => state.splitResourceId);
   const resourcesById = useWorkbenchStore((state) => state.resourcesById);
+  const setExplorerWidth = useWorkbenchStore((state) => state.setExplorerWidth);
   const setFullscreen = useWorkbenchStore((state) => state.setFullscreen);
   const setSplitResource = useWorkbenchStore(
     (state) => state.setSplitResource,
@@ -98,7 +105,22 @@ const WorkbenchPage = () => {
 
         <div className="flex min-h-0 flex-1">
           {explorerVisible && !fullscreen && (
-            <ExplorerPanel onCreate={openCreateModal} />
+            <>
+              <div
+                style={{ width: explorerWidth }}
+                className="h-full min-w-0 shrink-0 overflow-hidden"
+              >
+                <ExplorerPanel onCreate={openCreateModal} />
+              </div>
+              <WorkbenchResizeHandle
+                value={explorerWidth}
+                min={EXPLORER_MIN_WIDTH}
+                max={EXPLORER_MAX_WIDTH}
+                defaultValue={EXPLORER_DEFAULT_WIDTH}
+                ariaLabel="调整项目目录宽度"
+                onChange={setExplorerWidth}
+              />
+            </>
           )}
 
           <main className="flex min-w-0 flex-1 flex-col bg-white">

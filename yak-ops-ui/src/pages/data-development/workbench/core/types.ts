@@ -86,6 +86,7 @@ export interface DevelopmentResource {
   name: string;
   description?: string;
   owner: ResourceOwner;
+  updatedBy: string;
   favorite?: boolean;
   engine: string;
   status: ResourceStatus;

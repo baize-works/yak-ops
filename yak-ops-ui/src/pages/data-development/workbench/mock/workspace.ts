@@ -14,6 +14,7 @@ const pluginByType = new Map<string, NodePluginDefinition>(
 );
 
 const now = '2026-08-04 10:20';
+const currentUserName = 'aliyun0124584470';
 
 const createResource = (
   id: string,
@@ -34,6 +35,7 @@ const createResource = (
     name,
     description: plugin.metadata.description,
     owner: 'me',
+    updatedBy: currentUserName,
     favorite: false,
     engine: plugin.metadata.defaultEngine,
     status: 'DRAFT',
@@ -83,19 +85,25 @@ export const createMockWorkspaceSnapshot = (): WorkspaceSnapshot => {
     }),
     createResource('user-behavior-agg', 'user_behavior_agg.sql', 'SQL', {
       engine: 'Spark SQL',
+      updatedBy: 'data_admin',
       updatedAt: '2026-08-04 08:46',
     }),
     createResource('dim-user-profile', 'dim_user_profile.sql', 'SQL', {
       engine: 'Hive',
       owner: 'other',
+      updatedBy: 'zhangsan',
       favorite: true,
     }),
-    createResource('ods-to-dwd-flink', 'ods_to_dwd_flink.sql', 'FLINK_SQL'),
+    createResource('ods-to-dwd-flink', 'ods_to_dwd_flink.sql', 'FLINK_SQL', {
+      updatedBy: 'realtime_owner',
+      updatedAt: '2026-08-04 08:35',
+    }),
     createResource('udf-string-masking', 'udf_string_masking.py', 'PYTHON', {
       favorite: true,
       updatedAt: '2026-08-03 16:21',
     }),
     createResource('shell-clean-log', 'shell_clean_log.sh', 'SHELL', {
+      updatedBy: 'ops_admin',
       updatedAt: '2026-08-03 17:20',
     }),
     createResource(
@@ -104,6 +112,7 @@ export const createMockWorkspaceSnapshot = (): WorkspaceSnapshot => {
       'NOTEBOOK',
       {
         favorite: true,
+        updatedBy: 'analyst_01',
         updatedAt: '2026-08-03 18:45',
       },
     ),
@@ -111,10 +120,19 @@ export const createMockWorkspaceSnapshot = (): WorkspaceSnapshot => {
       'sync-odps-odps',
       'sync_odps_to_odps_20260803',
       'DATA_INTEGRATION',
-      { favorite: true },
+      {
+        favorite: true,
+        updatedAt: '2026-08-04 08:54',
+      },
     ),
-    createResource('http-user-profile', 'fetch_user_profile_api', 'HTTP'),
-    createResource('dev-env', 'dev.env', 'RESOURCE'),
+    createResource('http-user-profile', 'fetch_user_profile_api', 'HTTP', {
+      updatedBy: 'api_owner',
+      updatedAt: '2026-08-04 08:28',
+    }),
+    createResource('dev-env', 'dev.env', 'RESOURCE', {
+      updatedBy: 'platform_admin',
+      updatedAt: '2026-08-02 14:10',
+    }),
   ];
 
   const documents = resources.map((resource) => {
@@ -222,23 +240,30 @@ export const createNewResource = (
   const rawName = name.trim();
   const extension = plugin.metadata.extension ?? '';
   const normalizedName =
-    extension && !rawName.endsWith(extension) ? `${rawName}${extension}` : rawName;
+    extension && !rawName.endsWith(extension)
+      ? `${rawName}${extension}`
+      : rawName;
   const id = `${plugin.type.toLowerCase()}-${timestamp}`;
   const updatedAt = dayjs().format('YYYY-MM-DD HH:mm');
 
   const resource = createResource(id, normalizedName, plugin.type, {
     folderId: plugin.metadata.folderId,
     engine: plugin.metadata.defaultEngine,
+    updatedBy: currentUserName,
     updatedAt,
     createdAt: updatedAt,
     latestRevision: 0,
   });
 
-  const document = createDocument(resource, plugin.authoring.createDefaultContent(normalizedName), {
-    revision: 0,
-    dirty: true,
-    updatedAt,
-  });
+  const document = createDocument(
+    resource,
+    plugin.authoring.createDefaultContent(normalizedName),
+    {
+      revision: 0,
+      dirty: true,
+      updatedAt,
+    },
+  );
 
   return { resource, document };
 };
