@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @ConditionalOnDataDevelopmentEnabled
 @RestControllerAdvice(assignableTypes = {
     DataDevelopmentController.class,
-    DataDevelopmentPlatformController.class
+    DataDevelopmentPlatformController.class,
+    WorkflowTaskLibraryController.class
 })
 public class DataDevelopmentExceptionHandler {
 
