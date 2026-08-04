@@ -25,6 +25,9 @@ class QualityRuleServiceTest {
         new BigDecimal("99"),
         null,
         null,
+        null,
+        ScheduleMode.MANUAL,
+        null,
         null);
 
     assertThrows(
@@ -41,6 +44,9 @@ class QualityRuleServiceTest {
         new BigDecimal("100"),
         new BigDecimal("10"),
         "age",
+        null,
+        ScheduleMode.MANUAL,
+        null,
         null);
 
     assertThrows(
@@ -57,7 +63,29 @@ class QualityRuleServiceTest {
         BigDecimal.ZERO,
         null,
         null,
+        null,
+        ScheduleMode.MANUAL,
+        null,
         null);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.create(request, "tester"));
+    verifyNoInteractions(repository);
+  }
+
+  @Test
+  void rejectsInvalidCustomCronBeforePersistence() {
+    SaveRuleRequest request = request(
+        RuleType.TABLE_ROW_COUNT,
+        ">",
+        BigDecimal.ZERO,
+        null,
+        null,
+        null,
+        ScheduleMode.SCHEDULE,
+        "CUSTOM",
+        "not-a-cron");
 
     assertThrows(
         IllegalArgumentException.class,
@@ -71,7 +99,10 @@ class QualityRuleServiceTest {
       BigDecimal threshold,
       BigDecimal thresholdEnd,
       String columnName,
-      String customSql) {
+      String customSql,
+      ScheduleMode scheduleMode,
+      String schedulePreset,
+      String cronExpression) {
     return new SaveRuleRequest(
         "测试规则",
         null,
@@ -87,9 +118,9 @@ class QualityRuleServiceTest {
         operator,
         threshold,
         thresholdEnd,
-        ScheduleMode.MANUAL,
-        null,
-        null,
+        scheduleMode,
+        schedulePreset,
+        cronExpression,
         true,
         customSql);
   }
