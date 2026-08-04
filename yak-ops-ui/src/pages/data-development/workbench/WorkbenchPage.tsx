@@ -23,6 +23,7 @@ import StatusBar from './components/StatusBar';
 import WorkbenchResizeHandle from './components/WorkbenchResizeHandle';
 import WorkbenchToolbar from './components/WorkbenchToolbar';
 import type { ResourceType } from './core/types';
+import ExecutionBottomPanel from './execution/components/ExecutionBottomPanel';
 import { useWorkbenchStore } from './store/workbench.store';
 
 const EXPLORER_MIN_WIDTH = 300;
@@ -127,37 +128,41 @@ const WorkbenchPage = () => {
             <EditorTabs onCreate={openCreateModal} />
             <WorkbenchToolbar />
 
-            <div className="flex min-h-0 flex-1 overflow-hidden">
-              <section className="min-w-0 flex-1 overflow-hidden">
-                <ResourceView onCreate={() => openCreateModal('SQL')} />
-              </section>
-
-              {splitResource && !fullscreen && (
-                <section className="flex min-w-[360px] flex-1 flex-col border-l border-[#dfe2e6] bg-white">
-                  <div className="flex h-9 shrink-0 items-center justify-between border-b border-[#e7e9ec] bg-[#fafbfc] px-3">
-                    <button
-                      type="button"
-                      className="flex min-w-0 items-center gap-2 border-0 bg-transparent p-0 text-left text-[12px] text-[rgba(22,24,35,0.72)]"
-                      onClick={() => setActiveResource(splitResource.id)}
-                    >
-                      <Columns2 size={14} />
-                      <span className="truncate">{splitResource.name}</span>
-                    </button>
-                    <Tooltip title="关闭拆分编辑器">
-                      <Button
-                        type="text"
-                        size="small"
-                        className="!h-7 !w-7 !px-0"
-                        icon={<X size={14} />}
-                        onClick={() => setSplitResource(undefined)}
-                      />
-                    </Tooltip>
-                  </div>
-                  <div className="min-h-0 flex-1 overflow-hidden">
-                    <ResourceView resourceId={splitResource.id} />
-                  </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="flex min-h-0 flex-1 overflow-hidden">
+                <section className="min-w-0 flex-1 overflow-hidden">
+                  <ResourceView onCreate={() => openCreateModal('SQL')} />
                 </section>
-              )}
+
+                {splitResource && !fullscreen && (
+                  <section className="flex min-w-[360px] flex-1 flex-col border-l border-[#dfe2e6] bg-white">
+                    <div className="flex h-9 shrink-0 items-center justify-between border-b border-[#e7e9ec] bg-[#fafbfc] px-3">
+                      <button
+                        type="button"
+                        className="flex min-w-0 items-center gap-2 border-0 bg-transparent p-0 text-left text-[12px] text-[rgba(22,24,35,0.72)]"
+                        onClick={() => setActiveResource(splitResource.id)}
+                      >
+                        <Columns2 size={14} />
+                        <span className="truncate">{splitResource.name}</span>
+                      </button>
+                      <Tooltip title="关闭拆分编辑器">
+                        <Button
+                          type="text"
+                          size="small"
+                          className="!h-7 !w-7 !px-0"
+                          icon={<X size={14} />}
+                          onClick={() => setSplitResource(undefined)}
+                        />
+                      </Tooltip>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-hidden">
+                      <ResourceView resourceId={splitResource.id} />
+                    </div>
+                  </section>
+                )}
+              </div>
+
+              <ExecutionBottomPanel />
             </div>
 
             <StatusBar />
