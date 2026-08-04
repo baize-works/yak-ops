@@ -24,6 +24,8 @@ yak:
     enabled: false
   data-development:
     enabled: false
+  quality:
+    enabled: false
   resource:
     enabled: false
     storage:
