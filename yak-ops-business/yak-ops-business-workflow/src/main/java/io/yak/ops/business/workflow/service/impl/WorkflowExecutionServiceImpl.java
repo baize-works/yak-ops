@@ -95,6 +95,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       throw new IllegalStateException(
           "已发布的工作流版本不存在：" + workflowId + "/" + definition.getCurrentVersion());
     }
+    if (version.getSchemaVersion() != 1) {
+      throw new IllegalStateException(
+          "Workflow V2 执行将在统一 Task Execution Gateway 阶段启用：" + workflowId);
+    }
 
     Date now = new Date();
     WorkflowInstancePO instancePO = new WorkflowInstancePO();
