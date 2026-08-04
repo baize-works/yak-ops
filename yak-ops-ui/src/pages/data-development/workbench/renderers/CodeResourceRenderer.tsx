@@ -31,29 +31,73 @@ import {
   type ViewUpdate,
 } from '@codemirror/view';
 import { useEffect, useRef } from 'react';
+import { commandRegistry } from '../core/registry';
 import type { ResourceRendererProps } from '../core/types';
+import { useWorkbenchStore } from '../store/workbench.store';
+import {
+  createSqlStatementExtensions,
+  type SqlStatementRange,
+} from './sql/sqlStatementExtension';
 
 const CodeResourceRenderer = ({
+  resource,
   document,
+  plugin,
   onChange,
 }: ResourceRendererProps) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | undefined>(undefined);
   const onChangeRef = useRef(onChange);
   const documentRef = useRef(document);
+  const resourceRef = useRef(resource);
+  const pluginRef = useRef(plugin);
 
   const content = document.content.kind === 'text' ? document.content : undefined;
 
   useEffect(() => {
     onChangeRef.current = onChange;
     documentRef.current = document;
-  }, [document, onChange]);
+    resourceRef.current = resource;
+    pluginRef.current = plugin;
+  }, [document, onChange, plugin, resource]);
 
   useEffect(() => {
     if (!hostRef.current || !content) return undefined;
 
     const languageExtensions: Extension[] =
       content.language === 'sql' ? [sql()] : [];
+
+    const runSqlStatement = (statement: SqlStatementRange) => {
+      const currentDocument = documentRef.current;
+      const currentResource = resourceRef.current;
+      const currentPlugin = pluginRef.current;
+
+      if (currentDocument.content.kind !== 'text') return;
+
+      const statementDocument = {
+        ...currentDocument,
+        content: {
+          ...currentDocument.content,
+          value: statement.sql,
+        },
+      };
+      const executionStatus =
+        useWorkbenchStore.getState().executionStatusByResourceId[
+          currentResource.id
+        ] ?? 'IDLE';
+
+      void commandRegistry.execute('sql.run-statement', {
+        resource: currentResource,
+        document: statementDocument,
+        plugin: currentPlugin,
+        executionStatus,
+      });
+    };
+
+    const sqlStatementExtensions: Extension[] =
+      content.language === 'sql'
+        ? createSqlStatementExtensions(runSqlStatement)
+        : [];
 
     const state = EditorState.create({
       doc: content.value,
@@ -80,6 +124,7 @@ const CodeResourceRenderer = ({
           indentWithTab,
         ]),
         ...languageExtensions,
+        ...sqlStatementExtensions,
         highlightActiveLine(),
         EditorView.contentAttributes.of({ 'aria-label': '代码编辑器' }),
         EditorView.updateListener.of((update: ViewUpdate) => {
