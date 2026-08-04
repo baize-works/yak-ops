@@ -1,20 +1,11 @@
 import { API_SUCCESS_CODE } from '@/services/http/response';
 import { BRAND_CSS_VARIABLES, BRAND_THEME } from '@/styles/brand';
 import { history, useParams } from '@umijs/max';
-import {
-  Button,
-  ConfigProvider,
-  message,
-  Popconfirm,
-  Spin,
-  Tag,
-  Tooltip,
-} from 'antd';
+import { Button, ConfigProvider, message, Spin, Tag } from 'antd';
 import {
   ArrowLeft,
   CheckCircle2,
   CloudUpload,
-  GitBranch,
   Save,
   Trash2,
   Workflow,
@@ -40,7 +31,6 @@ import {
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type DragEvent,
@@ -60,7 +50,6 @@ import {
   createInitialWorkflowV2Dag,
   createTaskFlowNode,
   decodeTaskDragPayload,
-  isControlNode,
   toFlowEdges,
   toFlowNodes,
   toWorkflowV2Dag,
@@ -90,11 +79,6 @@ const WorkflowV2DesignerContent = () => {
   const [nodes, setNodes, onNodesChangeBase] =
     useNodesState<WorkflowV2CanvasNodeData>([]);
   const [edges, setEdges, onEdgesChangeBase] = useEdgesState([]);
-
-  const selectedNode = useMemo(
-    () => nodes.find((node) => node.id === selectedNodeId),
-    [nodes, selectedNodeId],
-  );
 
   const load = useCallback(async () => {
     if (!workflowId || workflowId === 'create') return;
@@ -246,27 +230,6 @@ const WorkflowV2DesignerContent = () => {
     [insertTask, reactFlow],
   );
 
-  const removeNode = useCallback(
-    (nodeId: string) => {
-      const node = nodes.find((item) => item.id === nodeId);
-      if (!node) return;
-      if (isControlNode(node)) {
-        message.info('开始和结束节点不能删除');
-        return;
-      }
-      setNodes((current) => current.filter((item) => item.id !== nodeId));
-      setEdges((current) =>
-        current.filter(
-          (edge) => edge.source !== nodeId && edge.target !== nodeId,
-        ),
-      );
-      setSelectedNodeId(undefined);
-      setSelectedEdgeId(undefined);
-      markDirty();
-    },
-    [markDirty, nodes, setEdges, setNodes],
-  );
-
   const removeEdge = useCallback(
     (edgeId: string) => {
       setEdges((current) => current.filter((edge) => edge.id !== edgeId));
@@ -348,15 +311,6 @@ const WorkflowV2DesignerContent = () => {
         void saveDraft();
         return;
       }
-      if (['Delete', 'Backspace'].includes(event.key)) {
-        if (selectedNodeId) {
-          event.preventDefault();
-          removeNode(selectedNodeId);
-        } else if (selectedEdgeId) {
-          event.preventDefault();
-          removeEdge(selectedEdgeId);
-        }
-      }
       if (event.key === 'Escape') {
         setSelectedNodeId(undefined);
         setSelectedEdgeId(undefined);
@@ -364,7 +318,7 @@ const WorkflowV2DesignerContent = () => {
     };
     window.addEventListener('keydown', keydown);
     return () => window.removeEventListener('keydown', keydown);
-  }, [removeEdge, removeNode, saveDraft, selectedEdgeId, selectedNodeId]);
+  }, [saveDraft]);
 
   const onMoveEnd = useCallback<OnMoveEnd>(() => markDirty(), [markDirty]);
 
@@ -397,7 +351,10 @@ const WorkflowV2DesignerContent = () => {
               <strong className="max-w-[360px] truncate text-[13px] font-semibold text-[#161823]">
                 {workflow?.name ?? 'Workflow V2'}
               </strong>
-              <Tag bordered={false} className="!m-0 !bg-[#f2f4f7] !text-[10px] !text-[#667085]">
+              <Tag
+                bordered={false}
+                className="!m-0 !bg-[#f2f4f7] !text-[10px] !text-[#667085]"
+              >
                 Schema V2
               </Tag>
               {dirty && (
@@ -454,6 +411,15 @@ const WorkflowV2DesignerContent = () => {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onMoveEnd={onMoveEnd}
+            onNodesDelete={() => {
+              setSelectedNodeId(undefined);
+              setSelectedEdgeId(undefined);
+              markDirty();
+            }}
+            onEdgesDelete={() => {
+              setSelectedEdgeId(undefined);
+              markDirty();
+            }}
             onNodeClick={(_: unknown, node: WorkflowV2FlowNode) => {
               setSelectedNodeId(node.id);
               setSelectedEdgeId(undefined);
@@ -468,7 +434,7 @@ const WorkflowV2DesignerContent = () => {
             }}
             minZoom={0.25}
             maxZoom={2}
-            deleteKeyCode={null}
+            deleteKeyCode={['Backspace', 'Delete']}
             selectionOnDrag
             selectionMode={SelectionMode.Partial}
             multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
@@ -500,7 +466,8 @@ const WorkflowV2DesignerContent = () => {
           </ReactFlow>
 
           <div className="pointer-events-none absolute left-4 top-4 rounded-lg border border-[#e4e7ec] bg-white/92 px-3 py-2 text-[10px] leading-4 text-[#667085] shadow-[0_4px_14px_rgba(16,24,40,0.06)] backdrop-blur">
-            从左侧拖入已发布任务。灰色出口表示成功，红色出口表示失败。
+            从左侧拖入已发布任务。点击节点仅选中，按 Delete 删除任务节点。
+            灰色出口表示成功，红色出口表示失败。
           </div>
 
           {selectedEdgeId && (
@@ -515,39 +482,6 @@ const WorkflowV2DesignerContent = () => {
               >
                 删除
               </Button>
-            </div>
-          )}
-
-          {selectedNode?.data.kind === 'TASK' && (
-            <div className="absolute right-4 top-4 flex min-w-[270px] items-center gap-3 rounded-lg border border-[#e4e7ec] bg-white px-3 py-2.5 shadow-[0_7px_20px_rgba(16,24,40,0.10)]">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--yak-brand-color-soft)] text-[var(--yak-brand-color)]">
-                <GitBranch size={15} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <strong className="block truncate text-[12px] text-[#344054]">
-                  {selectedNode.data.title}
-                </strong>
-                <span className="block truncate text-[10px] text-[#98a2b3]">
-                  {selectedNode.data.taskRef?.taskType} · v
-                  {selectedNode.data.taskRef?.taskVersionNumber}
-                </span>
-              </div>
-              <Popconfirm
-                title="删除任务节点"
-                description="关联连线也会一起删除。"
-                okText="删除"
-                cancelText="取消"
-                onConfirm={() => removeNode(selectedNode.id)}
-              >
-                <Tooltip title="删除节点">
-                  <Button
-                    danger
-                    type="text"
-                    size="small"
-                    icon={<Trash2 size={14} />}
-                  />
-                </Tooltip>
-              </Popconfirm>
             </div>
           )}
         </main>
