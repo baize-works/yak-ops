@@ -29,6 +29,7 @@ import type {
   QualityRule,
   QualityRuleFormValues,
   QualityRuleType,
+  QualityTriggerType,
 } from '../types';
 
 interface QualityRuleDrawerProps {
@@ -120,10 +121,15 @@ const QualityRuleDrawer = ({
   onSubmit,
 }: QualityRuleDrawerProps) => {
   const [form] = Form.useForm<QualityRuleFormValues>();
-  const ruleType = Form.useWatch('ruleType', form) || DEFAULT_VALUES.ruleType;
-  const operator = Form.useWatch('operator', form) || DEFAULT_VALUES.operator;
+  const ruleType =
+    (Form.useWatch('ruleType', form) as QualityRuleType | undefined) ||
+    DEFAULT_VALUES.ruleType;
+  const operator =
+    (Form.useWatch('operator', form) as QualityOperator | undefined) ||
+    DEFAULT_VALUES.operator;
   const scheduleMode =
-    Form.useWatch('scheduleMode', form) || DEFAULT_VALUES.scheduleMode;
+    (Form.useWatch('scheduleMode', form) as QualityTriggerType | undefined) ||
+    DEFAULT_VALUES.scheduleMode;
   const schedulePreset = Form.useWatch('schedulePreset', form);
   const databaseName = Form.useWatch('databaseName', form);
   const tableName = Form.useWatch('tableName', form);
