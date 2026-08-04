@@ -1,4 +1,5 @@
 import { message } from 'antd';
+import { useExecutionPanelStore } from '../execution/store/execution-panel.store';
 import { useWorkbenchStore } from '../store/workbench.store';
 import type {
   DevelopmentDocument,
@@ -21,19 +22,31 @@ const runResource = (
   context: WorkbenchActionContext,
   successText: string,
 ) => {
-  const store = useWorkbenchStore.getState();
+  const workbenchStore = useWorkbenchStore.getState();
+  const executionPanelStore = useExecutionPanelStore.getState();
   const resourceId = context.resource.id;
+  const executionId = executionPanelStore.startExecution(
+    context.resource,
+    context.plugin,
+  );
 
-  store.setExecutionStatus(resourceId, 'RUNNING');
+  workbenchStore.setExecutionStatus(resourceId, 'RUNNING');
   message.loading({
     content: `${successText}：${context.resource.name}`,
     key: `run-${resourceId}`,
   });
 
   window.setTimeout(() => {
+    const currentSession =
+      useExecutionPanelStore.getState().sessionsById[executionId];
+    if (!currentSession || currentSession.status !== 'RUNNING') return;
+
     useWorkbenchStore.getState().setExecutionStatus(resourceId, 'SUCCESS');
+    useExecutionPanelStore
+      .getState()
+      .completeExecution(executionId, context.resource);
     message.success({
-      content: '运行请求已提交，结果将进入底部运行面板',
+      content: '运行完成，结果已进入底部运行面板',
       key: `run-${resourceId}`,
     });
   }, 1100);
@@ -60,6 +73,7 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
     id: 'execution.stop',
     execute: ({ resource }) => {
       useWorkbenchStore.getState().setExecutionStatus(resource.id, 'STOPPED');
+      useExecutionPanelStore.getState().stopExecution(resource.id);
       message.success('停止请求已提交');
     },
   },
@@ -114,7 +128,10 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
   },
   {
     id: 'document.validate',
-    execute: ({ plugin }) => {
+    execute: ({ resource, plugin }) => {
+      useExecutionPanelStore
+        .getState()
+        .openForResource(resource.id, 'validation');
       message.success(`${plugin.metadata.label} 语法、依赖与运行参数检查通过`);
     },
   },
@@ -126,6 +143,7 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
         status: 'PUBLISHED',
         publishedVersion: (resource.publishedVersion ?? 0) + 1,
       });
+      useExecutionPanelStore.getState().openForResource(resource.id, 'publish');
       message.success('已创建不可变发布版本');
     },
   },
@@ -183,8 +201,9 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
   },
   {
     id: 'http.show-response',
-    execute: () => {
-      message.info('最近一次响应：200 OK · 1.2 KB · 286 ms');
+    execute: ({ resource }) => {
+      useExecutionPanelStore.getState().openForResource(resource.id, 'result');
+      message.info('已打开最近一次 HTTP 响应');
     },
   },
 ];

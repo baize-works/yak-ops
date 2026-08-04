@@ -1,3 +1,9 @@
+import { registerExecutionPanelExtensions } from '../execution/bootstrap';
+import { BUILTIN_NODE_PLUGINS } from '../plugins';
+import CodeResourceRenderer from '../renderers/CodeResourceRenderer';
+import IntegrationRenderer from '../renderers/IntegrationRenderer';
+import NotebookRenderer from '../renderers/NotebookRenderer';
+import SchemaFormRenderer from '../renderers/SchemaFormRenderer';
 import { BUILTIN_ACTIONS } from './actions';
 import { BUILTIN_COMMANDS } from './commands';
 import {
@@ -6,11 +12,6 @@ import {
   nodePluginRegistry,
   rendererRegistry,
 } from './registry';
-import { BUILTIN_NODE_PLUGINS } from '../plugins';
-import CodeResourceRenderer from '../renderers/CodeResourceRenderer';
-import IntegrationRenderer from '../renderers/IntegrationRenderer';
-import NotebookRenderer from '../renderers/NotebookRenderer';
-import SchemaFormRenderer from '../renderers/SchemaFormRenderer';
 
 let registered = false;
 
@@ -34,4 +35,6 @@ export const registerWorkbenchExtensions = () => {
   BUILTIN_COMMANDS.forEach((command) =>
     commandRegistry.register(command.id, command),
   );
+
+  registerExecutionPanelExtensions();
 };
