@@ -126,7 +126,11 @@ export interface QualityCatalogTable {
   value?: string;
   label?: string;
   comment?: string;
+  remarks?: string;
   description?: string;
+  database?: string;
+  schema?: string;
+  type?: string;
 }
 
 export interface QualityCatalogColumn {
@@ -135,8 +139,10 @@ export interface QualityCatalogColumn {
   value?: string;
   label?: string;
   comment?: string;
+  remarks?: string;
   description?: string;
   dataType?: string;
+  typeName?: string;
   type?: string;
 }
 
