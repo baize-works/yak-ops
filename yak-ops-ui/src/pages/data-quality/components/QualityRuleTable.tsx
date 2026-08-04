@@ -163,7 +163,7 @@ const QualityRuleTable = ({
           <Switch
             size="small"
             checked={enabled}
-            onChange={(checked) => onToggle(record, checked)}
+            onChange={(checked: boolean) => onToggle(record, checked)}
           />
         </Tooltip>
       ),
@@ -200,7 +200,7 @@ const QualityRuleTable = ({
               trigger={['click']}
               menu={{
                 items,
-                onClick: ({ key }) => {
+                onClick: ({ key }: { key: string }) => {
                   if (key === 'edit') onEdit(record);
                   if (key === 'copy') onCopy(record);
                   if (key === 'delete') onDelete(record);
