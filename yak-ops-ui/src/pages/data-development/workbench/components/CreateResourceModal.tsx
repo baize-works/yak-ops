@@ -11,18 +11,21 @@ import { useWorkbenchStore } from '../store/workbench.store';
 
 interface CreateResourceValues {
   resourceType: ResourceType;
+  engineType: string;
   name: string;
 }
 
 interface CreateResourceModalProps {
   open: boolean;
   initialResourceType?: ResourceType;
+  initialEngineType?: string;
   onClose: () => void;
 }
 
 const CreateResourceModal = ({
   open,
   initialResourceType,
+  initialEngineType,
   onClose,
 }: CreateResourceModalProps) => {
   const [form] = Form.useForm<CreateResourceValues>();
@@ -32,6 +35,8 @@ const CreateResourceModal = ({
     (state) => state.supportedTaskTypes,
   );
   const createResource = useWorkbenchStore((state) => state.createResource);
+  const selectedResourceType = Form.useWatch('resourceType', form);
+
   const plugins = useMemo(() => {
     const supported = new Set(supportedTaskTypes);
     return nodePluginRegistry
@@ -45,21 +50,47 @@ const CreateResourceModal = ({
       );
   }, [supportedTaskTypes]);
 
+  const selectedPlugin = selectedResourceType
+    ? nodePluginRegistry.get(selectedResourceType)
+    : undefined;
+  const engineOptions = selectedPlugin
+    ? selectedPlugin.metadata.engineOptions ?? [
+        {
+          label: selectedPlugin.metadata.defaultEngine,
+          value: selectedPlugin.metadata.defaultEngine,
+        },
+      ]
+    : [];
+
   useEffect(() => {
     if (!open) return;
-    const requested = plugins.some(
-      (plugin) => plugin.type === initialResourceType,
+
+    const requestedPlugin =
+      plugins.find((plugin) => plugin.type === initialResourceType) ?? plugins[0];
+    const requestedEngineOptions = requestedPlugin
+      ? requestedPlugin.metadata.engineOptions ?? [
+          {
+            label: requestedPlugin.metadata.defaultEngine,
+            value: requestedPlugin.metadata.defaultEngine,
+          },
+        ]
+      : [];
+    const requestedEngine = requestedEngineOptions.some(
+      (option) => option.value === initialEngineType,
     )
-      ? initialResourceType
-      : plugins[0]?.type;
+      ? initialEngineType
+      : requestedPlugin?.metadata.defaultEngine;
+
     form.setFieldsValue({
-      resourceType: requested,
+      resourceType: requestedPlugin?.type,
+      engineType: requestedEngine,
       name: '',
     });
-  }, [form, initialResourceType, open, plugins]);
+  }, [form, initialEngineType, initialResourceType, open, plugins]);
 
   const handleCreate = async ({
     resourceType,
+    engineType,
     name,
   }: CreateResourceValues) => {
     const plugin = nodePluginRegistry.get(resourceType);
@@ -78,7 +109,7 @@ const CreateResourceModal = ({
         projectId,
         resourceType,
         name,
-        plugin.metadata.defaultEngine,
+        engineType || plugin.metadata.defaultEngine,
       );
       createResource(resource, document);
       message.success(`${plugin.metadata.label} 已创建并保存`);
@@ -113,6 +144,14 @@ const CreateResourceModal = ({
         layout="vertical"
         requiredMark={false}
         onFinish={handleCreate}
+        onValuesChange={(changedValues) => {
+          if (!('resourceType' in changedValues)) return;
+          const nextResourceType = changedValues.resourceType;
+          const plugin = nextResourceType
+            ? nodePluginRegistry.get(nextResourceType)
+            : undefined;
+          form.setFieldValue('engineType', plugin?.metadata.defaultEngine);
+        }}
         className="pt-3"
       >
         <Form.Item
@@ -130,6 +169,14 @@ const CreateResourceModal = ({
               label: `${plugin.metadata.category} / ${plugin.metadata.label}`,
             }))}
           />
+        </Form.Item>
+
+        <Form.Item
+          name="engineType"
+          label="执行引擎"
+          rules={[{ required: true, message: '请选择执行引擎' }]}
+        >
+          <Select variant="filled" options={engineOptions} />
         </Form.Item>
 
         <Form.Item
