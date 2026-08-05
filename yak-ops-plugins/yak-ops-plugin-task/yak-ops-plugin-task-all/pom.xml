@@ -6,10 +6,10 @@
     <parent><groupId>io.yak.ops</groupId><artifactId>yak-ops-plugin-task</artifactId><version>1.0.0</version><relativePath>../pom.xml</relativePath></parent>
     <artifactId>yak-ops-plugin-task-all</artifactId>
     <name>Yak Ops Supported Task Plugins</name>
-    <description>Runtime aggregation of the phase-one SQL and HTTP task plugins</description>
+    <description>Runtime aggregation of the phase-one MySQL and HTTP task plugins</description>
     <dependencies>
         <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-plugin-task-http</artifactId></dependency>
-        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-plugin-task-jdbc-sql</artifactId></dependency>
+        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-plugin-task-mysql</artifactId></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
     </dependencies>
 </project>
