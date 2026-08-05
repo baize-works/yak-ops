@@ -34,6 +34,15 @@ export interface ProjectFolder {
   updatedAt: string;
 }
 
+export interface ProjectFolderPath {
+  id: string;
+  parentId: string | null;
+  name: string;
+  path: string;
+  depth: number;
+  sortOrder: number;
+}
+
 const unwrap = <T>(response: ApiResponse<T>): T => {
   if (response.code !== 0 && response.code !== 200) {
     throw new Error(response.message ?? response.msg ?? '目录接口调用失败');
@@ -53,11 +62,64 @@ const mapFolder = (resource: ApiResource): ProjectFolder => ({
   updatedAt: resource.updatedAt,
 });
 
-const sortFolders = (folders: ProjectFolder[]) =>
+export const sortProjectFolders = (folders: ProjectFolder[]) =>
   folders.slice().sort((left, right) => {
     const order = left.sortOrder - right.sortOrder;
     return order || left.name.localeCompare(right.name);
   });
+
+export const buildProjectFolderPaths = (
+  folders: ProjectFolder[],
+): ProjectFolderPath[] => {
+  const sorted = sortProjectFolders(folders);
+  const childrenByParent = new Map<string | null, ProjectFolder[]>();
+  sorted.forEach((folder) => {
+    const siblings = childrenByParent.get(folder.parentId) ?? [];
+    siblings.push(folder);
+    childrenByParent.set(folder.parentId, siblings);
+  });
+
+  const result: ProjectFolderPath[] = [];
+  const visited = new Set<string>();
+
+  const visit = (
+    parentId: string | null,
+    parentPath: string,
+    depth: number,
+  ) => {
+    const children = childrenByParent.get(parentId) ?? [];
+    children.forEach((folder) => {
+      if (visited.has(folder.id)) return;
+      visited.add(folder.id);
+      const path = `${parentPath}/${folder.name}`.replaceAll('//', '/');
+      result.push({
+        id: folder.id,
+        parentId: folder.parentId,
+        name: folder.name,
+        path,
+        depth,
+        sortOrder: folder.sortOrder,
+      });
+      visit(folder.id, path, depth + 1);
+    });
+  };
+
+  visit(null, '', 0);
+
+  sorted.forEach((folder) => {
+    if (visited.has(folder.id)) return;
+    result.push({
+      id: folder.id,
+      parentId: folder.parentId,
+      name: folder.name,
+      path: `/${folder.name}`,
+      depth: 0,
+      sortOrder: folder.sortOrder,
+    });
+  });
+
+  return result;
+};
 
 export const projectFolderRepository = {
   async list(projectId: string): Promise<ProjectFolder[]> {
@@ -66,19 +128,23 @@ export const projectFolderRepository = {
         `${API_PREFIX}/projects/${projectId}/resources`,
       ),
     );
-    return sortFolders(
+    return sortProjectFolders(
       resources
         .filter((resource) => resource.resourceKind === 'FOLDER')
         .map(mapFolder),
     );
   },
 
-  async create(projectId: string, name: string): Promise<ProjectFolder> {
+  async create(
+    projectId: string,
+    name: string,
+    parentId: string | null = null,
+  ): Promise<ProjectFolder> {
     const resource = unwrap(
       await HttpUtils.post<ApiResource>(
         `${API_PREFIX}/projects/${projectId}/folders`,
         {
-          parentId: null,
+          parentId: parentId ? Number(parentId) : null,
           name: name.trim(),
           description: '',
           sortOrder: 0,
