@@ -8,6 +8,7 @@ import {
 
 import type {
   WorkflowPublishedTask,
+  WorkflowPublishedTaskVersion,
 } from '../repository/workflow-task-library.repository';
 import {
   WORKFLOW_V2_SCHEMA_VERSION,
@@ -31,6 +32,8 @@ export interface WorkflowV2CanvasTaskMeta {
   publishedAt?: string;
   inputSchema?: Record<string, unknown>;
   outputSchema?: Record<string, unknown>;
+  schemaStatus?: 'loading' | 'ready' | 'error';
+  schemaError?: string;
 }
 
 export interface WorkflowV2CanvasNodeData {
@@ -127,6 +130,7 @@ export const createTaskFlowNode = (
       publishedAt: task.publishedAt,
       inputSchema: copyJson(task.inputSchema),
       outputSchema: copyJson(task.outputSchema),
+      schemaStatus: 'ready',
     },
     inputBindings: [],
     outputBindings: {},
@@ -155,6 +159,7 @@ export const toFlowNodes = (dag: WorkflowV2Dag): WorkflowV2FlowNode[] =>
               pluginVersion: undefined,
               projectName: undefined,
               folderName: undefined,
+              schemaStatus: 'loading',
             }
           : undefined,
       inputBindings: copyJson(node.inputBindings ?? []),
@@ -164,6 +169,41 @@ export const toFlowNodes = (dag: WorkflowV2Dag): WorkflowV2FlowNode[] =>
       ),
     },
   }));
+
+export const applyPublishedTaskVersion = (
+  node: WorkflowV2FlowNode,
+  version: WorkflowPublishedTaskVersion,
+): WorkflowV2FlowNode => ({
+  ...node,
+  data: {
+    ...node.data,
+    taskMeta: {
+      ...node.data.taskMeta,
+      projectName: version.projectName,
+      pluginVersion: version.pluginVersion,
+      publishedAt: version.publishedAt,
+      inputSchema: copyJson(version.inputSchema),
+      outputSchema: copyJson(version.outputSchema),
+      schemaStatus: 'ready',
+      schemaError: undefined,
+    },
+  },
+});
+
+export const markTaskSchemaError = (
+  node: WorkflowV2FlowNode,
+  error: unknown,
+): WorkflowV2FlowNode => ({
+  ...node,
+  data: {
+    ...node.data,
+    taskMeta: {
+      ...node.data.taskMeta,
+      schemaStatus: 'error',
+      schemaError: error instanceof Error ? error.message : '任务 Schema 加载失败',
+    },
+  },
+});
 
 const edgeStyle = (port: WorkflowV2Edge['fromPort']) =>
   port === 'FAILURE'
