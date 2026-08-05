@@ -108,6 +108,7 @@ export const createTaskFlowNode = (
   id: uniqueTaskNodeKey(task.taskId),
   type: 'workflowV2Node',
   position,
+  deletable: true,
   data: {
     title: task.name,
     description: task.description,
@@ -141,6 +142,7 @@ export const toFlowNodes = (dag: WorkflowV2Dag): WorkflowV2FlowNode[] =>
       x: node.positionX ?? 120 + index * 300,
       y: node.positionY ?? 220,
     },
+    deletable: node.kind === 'TASK',
     data: {
       title: node.name,
       description: node.description,
