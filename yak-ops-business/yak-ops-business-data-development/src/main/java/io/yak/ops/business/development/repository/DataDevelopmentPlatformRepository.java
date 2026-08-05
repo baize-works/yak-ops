@@ -28,7 +28,7 @@ import org.springframework.stereotype.Repository;
 /** JDBC persistence for platform environments, secrets, templates, engines and audit. */
 @ConditionalOnDataDevelopmentEnabled
 @Repository
-public final class DataDevelopmentPlatformRepository {
+public class DataDevelopmentPlatformRepository {
 
   private final NamedParameterJdbcTemplate jdbc;
   private final DataDevelopmentJsonCodec json;
