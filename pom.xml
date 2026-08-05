@@ -42,7 +42,6 @@
         <module>yak-ops-business</module>
         <module>yak-ops-plugins/yak-ops-plugin-datasource</module>
         <module>yak-ops-plugins/yak-ops-plugin-storage</module>
-        <module>yak-ops-plugins/yak-ops-plugin-task</module>
         <module>yak-ops-boot</module>
         <module>yak-ops-ui</module>
         <module>yak-ops-dist</module>
@@ -100,17 +99,7 @@
             </dependency>
             <dependency>
                 <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-business-data-development</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
                 <artifactId>yak-ops-business-job</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-business-quality</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -121,11 +110,6 @@
             <dependency>
                 <groupId>io.yak.ops</groupId>
                 <artifactId>yak-ops-business-sync-offline</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-business-sync-realtime</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -176,26 +160,6 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-plugin-task-api</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-plugin-task-http</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-plugin-task-mysql</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.yak.ops</groupId>
-                <artifactId>yak-ops-plugin-task-all</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <dependency>
                 <groupId>io.yak.ops</groupId>
                 <artifactId>yak-ops-boot</artifactId>

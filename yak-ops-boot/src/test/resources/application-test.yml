@@ -22,10 +22,6 @@ yak:
       enabled: false
   datasource:
     enabled: false
-  data-development:
-    enabled: false
-  quality:
-    enabled: false
   resource:
     enabled: false
     storage:
@@ -37,8 +33,6 @@ yak:
         enabled: false
   sync:
     offline:
-      enabled: false
-    realtime:
       enabled: false
   schedule:
     enabled: false
