@@ -23,7 +23,7 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     group: 'primary',
     order: 10,
     visible: ({ plugin, executionStatus }) =>
-      plugin.type === 'SQL' && !isExecutionActive(executionStatus),
+      plugin.type === 'MYSQL' && !isExecutionActive(executionStatus),
     enabled: ({ document }) => document.loadStatus === 'READY',
   },
   {
