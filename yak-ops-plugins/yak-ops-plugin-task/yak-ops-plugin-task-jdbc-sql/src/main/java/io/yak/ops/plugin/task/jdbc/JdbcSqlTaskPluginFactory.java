@@ -1,11 +1,14 @@
 package io.yak.ops.plugin.task.jdbc;
 
+import io.yak.ops.plugin.task.api.TaskConfiguration;
+import io.yak.ops.plugin.task.api.TaskExecutor;
 import io.yak.ops.plugin.task.api.TaskPluginFactory;
 import io.yak.ops.plugin.task.api.TaskPluginType;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-/** Authoring contract for JDBC SQL tasks. */
+/** JDBC SQL task authoring, validation, compilation and executor factory. */
 public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
 
   private static final Descriptor DESCRIPTOR = new Descriptor(
@@ -48,6 +51,7 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
     Map<String, Object> envelope = TaskPluginFactory.super.normalizeDefinition(definition);
     Map<String, Object> config = new LinkedHashMap<>();
     merge(config, envelope.get("config"));
+
     Object content = envelope.get("content");
     if (content instanceof Map<?, ?> contentMap
         && "text".equals(String.valueOf(contentMap.get("kind")))) {
@@ -57,6 +61,7 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
     if (envelope.get("runtime") instanceof Map<?, ?> runtime) {
       merge(config, runtime.get("specific"));
     }
+
     Map<String, Object> normalized = JdbcSqlTaskSupport.normalize(config);
     envelope.put("config", normalized);
     envelope.put("content", Map.of(
@@ -85,6 +90,11 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
             "configuration", normalized.get("config")),
         descriptor().inputSchema(),
         descriptor().outputSchema());
+  }
+
+  @Override
+  public TaskExecutor createExecutor() {
+    return new JdbcSqlTaskExecutor();
   }
 
   private static Map<String, Object> definition(
@@ -133,5 +143,70 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
         target.put(String.valueOf(key), value);
       }
     });
+  }
+}
+
+final class JdbcSqlTaskSupport {
+
+  private JdbcSqlTaskSupport() {
+  }
+
+  static Map<String, Object> normalize(Map<String, Object> configuration) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("statement", TaskConfiguration.requiredString(configuration, "statement"));
+    result.put("jdbcUrl", TaskConfiguration.requiredString(configuration, "jdbcUrl"));
+    result.put("username", TaskConfiguration.string(configuration, "username", ""));
+    result.put("password", TaskConfiguration.string(configuration, "password", ""));
+    result.put(
+        "driverClassName",
+        TaskConfiguration.string(configuration, "driverClassName", ""));
+    result.put(
+        "maxRows",
+        TaskConfiguration.positiveInteger(configuration, "maxRows", 1000));
+    result.put(
+        "fetchSize",
+        TaskConfiguration.positiveInteger(configuration, "fetchSize", 200));
+    result.put(
+        "queryTimeoutSeconds",
+        TaskConfiguration.positiveInteger(configuration, "queryTimeoutSeconds", 60));
+    result.put(
+        "readOnly",
+        bool(configuration == null ? null : configuration.get("readOnly"), true));
+    return result;
+  }
+
+  static Map<String, Object> runtimeSchema() {
+    return Map.of(
+        "fields",
+        List.of(
+            field("jdbcUrl", "string", true, "JDBC 连接地址", null),
+            field("username", "string", false, "数据库用户名", ""),
+            field("password", "password", false, "数据库密码", ""),
+            field("driverClassName", "string", false, "JDBC 驱动类", ""),
+            field("maxRows", "integer", false, "最大返回行数", 1000),
+            field("fetchSize", "integer", false, "JDBC Fetch Size", 200),
+            field("queryTimeoutSeconds", "integer", false, "查询超时秒数", 60),
+            field("readOnly", "boolean", false, "只读连接", true)));
+  }
+
+  private static Map<String, Object> field(
+      String key,
+      String type,
+      boolean required,
+      String description,
+      Object defaultValue) {
+    Map<String, Object> field = new LinkedHashMap<>();
+    field.put("key", key);
+    field.put("type", type);
+    field.put("required", required);
+    field.put("description", description);
+    if (defaultValue != null) {
+      field.put("defaultValue", defaultValue);
+    }
+    return field;
+  }
+
+  private static boolean bool(Object value, boolean fallback) {
+    return value == null ? fallback : Boolean.parseBoolean(String.valueOf(value));
   }
 }
