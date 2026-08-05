@@ -2,26 +2,28 @@ package io.yak.ops.plugin.task.all;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
-import java.util.List;
+import io.yak.ops.plugin.task.api.TaskPluginCatalog;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class TaskPluginAssemblyTest {
 
   @Test
-  void shouldDiscoverHttpAndShellProviders() {
-    WorkflowTaskExecutorRegistry registry = new WorkflowTaskExecutorRegistry(List.of());
+  void discoversOnlyPhaseOnePlugins() {
+    TaskPluginCatalog catalog = new TaskPluginCatalog();
 
-    assertThat(registry.types()).contains("HTTP", "SHELL");
-    assertThat(registry.descriptor("HTTP").getName()).isEqualTo("HTTP 请求");
-    assertThat(registry.descriptor("SHELL").getConfigurationSchema()).containsKey("fields");
+    assertThat(catalog.types()).isEqualTo(Set.of("HTTP", "SQL"));
+    assertThat(catalog.descriptor("HTTP").name()).isEqualTo("HTTP 请求");
+    assertThat(catalog.descriptor("SQL").resultKind().name()).isEqualTo("TABLE");
   }
 
   @Test
-  void shouldCreateAttemptScopedExecutors() {
-    WorkflowTaskExecutorRegistry registry = new WorkflowTaskExecutorRegistry(List.of());
+  void createsAttemptScopedExecutors() {
+    TaskPluginCatalog catalog = new TaskPluginCatalog();
 
-    assertThat(registry.require("HTTP")).isNotSameAs(registry.require("HTTP"));
-    assertThat(registry.require("SHELL")).isNotSameAs(registry.require("SHELL"));
+    assertThat(catalog.createExecutor("HTTP"))
+        .isNotSameAs(catalog.createExecutor("HTTP"));
+    assertThat(catalog.createExecutor("SQL"))
+        .isNotSameAs(catalog.createExecutor("SQL"));
   }
 }
