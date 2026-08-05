@@ -139,28 +139,28 @@ const errorHandler = (error: any): Response | undefined => {
 
     const errorText = codeMessage[status] || response.statusText || "请求失败";
 
-    notifyOnce(`http:${status}:${url || ""}`, {
-      type: "error",
-      title: `请求错误 ${status}`,
-      description: (
-        <div>
-          <div>{errorText}</div>
-          {url ? (
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 12,
-                color: "rgba(23, 32, 51, 0.45)",
-              }}
-            >
-              {url}
-            </div>
-          ) : null}
-        </div>
-      ),
-      meta: "服务端返回异常",
-      duration: 3.5,
-    });
+    // notifyOnce(`http:${status}:${url || ""}`, {
+    //   type: "error",
+    //   title: `请求错误 ${status}`,
+    //   description: (
+    //     <div>
+    //       <div>{errorText}</div>
+    //       {url ? (
+    //         <div
+    //           style={{
+    //             marginTop: 6,
+    //             fontSize: 12,
+    //             color: "rgba(23, 32, 51, 0.45)",
+    //           }}
+    //         >
+    //           {url}
+    //         </div>
+    //       ) : null}
+    //     </div>
+    //   ),
+    //   meta: "服务端返回异常",
+    //   duration: 3.5,
+    // });
 
     return response;
   }

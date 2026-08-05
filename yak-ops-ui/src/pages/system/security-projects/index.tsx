@@ -113,9 +113,7 @@ export default function SecurityProjectsPage() {
     try {
       setDetail(await getSecurityProject(project.id));
     } catch (error) {
-      message.error(
-        errorText(error, '项目详情加载失败'),
-      );
+      
     } finally {
       setDetailLoading(false);
     }
@@ -148,9 +146,7 @@ export default function SecurityProjectsPage() {
       });
     } catch (error) {
       setCandidates([]);
-      message.error(
-        errorText(error, '用户候选列表加载失败'),
-      );
+      
     } finally {
       setCandidateLoading(false);
     }
@@ -183,9 +179,7 @@ export default function SecurityProjectsPage() {
           message.success('状态已更新');
           reload();
         } catch (error) {
-          message.error(
-            errorText(error, '项目状态更新失败'),
-          );
+          
           throw error;
         }
       },
@@ -239,17 +233,13 @@ export default function SecurityProjectsPage() {
             message.success('项目已删除');
             reload();
           } catch (error) {
-            message.error(
-              errorText(error, '项目删除失败'),
-            );
+            
             throw error;
           }
         },
       });
     } catch (error) {
-      message.error(
-        errorText(error, '项目删除检查失败'),
-      );
+      
     }
   };
 
@@ -416,9 +406,7 @@ export default function SecurityProjectsPage() {
               success: true,
             };
           } catch (error) {
-            message.error(
-              errorText(error, '项目列表加载失败'),
-            );
+           
 
             return {
               data: [],
@@ -478,9 +466,7 @@ export default function SecurityProjectsPage() {
               resetForm();
               reload();
             } catch (error) {
-              message.error(
-                errorText(error, '项目保存失败'),
-              );
+              
             } finally {
               setSaving(false);
             }
@@ -572,9 +558,7 @@ export default function SecurityProjectsPage() {
             setCandidates([]);
             reload();
           } catch (error) {
-            message.error(
-              errorText(error, '项目用户分配失败'),
-            );
+            
             throw error;
           }
         }}

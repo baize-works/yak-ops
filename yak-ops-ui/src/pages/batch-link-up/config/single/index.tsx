@@ -36,7 +36,7 @@ const SECTION_ITEMS = [
   },
   {
     key: 'runtime-params',
-    label: '运行参数',
+    label: '通道配置',
   },
   {
     key: 'field-mapping',
@@ -586,12 +586,7 @@ export default function SingleBatchLinkUpConfigPage() {
         );
 
       if (!isApiSuccess(response)) {
-        message.error(
-          responseMessage(
-            response,
-            '保存同步任务失败',
-          ),
-        );
+        
 
         return null;
       }
@@ -610,10 +605,7 @@ export default function SingleBatchLinkUpConfigPage() {
 
       return savedEditor;
     } catch (error: any) {
-      message.error(
-        error?.message ||
-          '保存同步任务失败',
-      );
+      
 
       return null;
     } finally {

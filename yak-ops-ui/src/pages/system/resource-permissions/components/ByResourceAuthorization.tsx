@@ -149,7 +149,7 @@ export default function ByResourceAuthorization({
       if (sequence !== pageRequestRef.current) return;
       setRows([]);
       setPagination((current) => ({ ...current, total: 0 }));
-      message.error(errorText(error, '资源授权列表加载失败'));
+      
     } finally {
       if (sequence === pageRequestRef.current) {
         setPageLoading(false);
@@ -222,7 +222,7 @@ export default function ByResourceAuthorization({
       setUsers([]);
       setSelectedUserIds([]);
       setPartialUserIds([]);
-      message.error(errorText(error, '资源用户授权数据加载失败'));
+      
     } finally {
       if (sequence === userRequestRef.current) {
         setUsersLoading(false);
@@ -307,7 +307,7 @@ export default function ByResourceAuthorization({
       await Promise.all([loadUsers(), loadPage()]);
       onAuthorizationChanged?.();
     } catch (error) {
-      message.error(errorText(error, '用户授权保存失败'));
+      
     } finally {
       setSaving(false);
     }

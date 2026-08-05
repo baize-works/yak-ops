@@ -45,7 +45,7 @@ export default function ChannelConfigSection({
   };
 
   return (
-    <EditorSection title="运行参数">
+    <EditorSection title="通道控制">
       <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
         <Field label="Channel 并发数">
           <InputNumber

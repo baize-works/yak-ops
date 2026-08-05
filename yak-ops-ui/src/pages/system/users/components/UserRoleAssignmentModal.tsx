@@ -81,9 +81,7 @@ const UserRoleAssignmentModal = forwardRef<
           .filter(Number.isFinite),
       );
     } catch (error) {
-      message.error(
-        errorText(error, '角色分配信息加载失败'),
-      );
+      
     } finally {
       setLoading(false);
     }
@@ -122,9 +120,7 @@ const UserRoleAssignmentModal = forwardRef<
 
       onSuccess();
     } catch (error) {
-      message.error(
-        errorText(error, '角色分配失败'),
-      );
+      
     } finally {
       setSaving(false);
     }

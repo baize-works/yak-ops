@@ -63,7 +63,7 @@ export default function UserRowActions({
       message.success('用户已删除');
       onDeleted();
     } catch (error) {
-      message.error(errorText(error, '用户删除失败'));
+      
       throw error;
     }
   };

@@ -149,7 +149,7 @@ export default function PermissionsPage() {
     } catch (error) {
       if (sequence !== requestSequenceRef.current) return;
       setRoot(undefined);
-      message.error(errorText(error, "权限树加载失败"));
+      
     } finally {
       if (sequence === requestSequenceRef.current) {
         setLoading(false);
@@ -274,7 +274,7 @@ export default function PermissionsPage() {
             setSelectedId(undefined);
             await loadTree();
           } catch (error) {
-            message.error(errorText(error, "权限删除失败"));
+            
             throw error;
           }
         },

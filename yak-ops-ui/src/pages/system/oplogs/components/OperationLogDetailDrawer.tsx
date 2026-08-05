@@ -75,9 +75,7 @@ const OperationLogDetailDrawer = forwardRef<
       }
     } catch (error) {
       if (sequence === requestSequenceRef.current) {
-        message.error(
-          errorText(error, '操作日志详情加载失败'),
-        );
+        
       }
     } finally {
       if (sequence === requestSequenceRef.current) {

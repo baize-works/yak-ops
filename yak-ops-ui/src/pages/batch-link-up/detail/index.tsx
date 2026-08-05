@@ -889,15 +889,7 @@ export default function BatchLinkUpExecutionDetailPage() {
               </div>
             </div>
 
-            <Button
-              size="small"
-              icon={<ReloadOutlined />}
-              loading={pageLoading}
-              className="!h-8"
-              onClick={() => void loadPage()}
-            >
-              刷新
-            </Button>
+         
           </header>
 
           <div className="grid min-h-0 flex-1 grid-cols-[286px_minmax(0,1fr)]">

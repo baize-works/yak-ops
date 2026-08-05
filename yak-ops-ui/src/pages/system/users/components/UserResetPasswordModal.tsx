@@ -93,9 +93,7 @@ const UserResetPasswordModal =
         setTarget(undefined);
         form.resetFields();
       } catch (error) {
-        message.error(
-          errorText(error, '密码重置失败'),
-        );
+        
       } finally {
         setSaving(false);
       }

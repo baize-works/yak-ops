@@ -112,7 +112,7 @@ const UserEditorModal = forwardRef<
 
         setOpen(true);
       } catch (error) {
-        message.error(errorText(error, '用户详情加载失败'));
+        
       }
     },
     [form],
@@ -191,12 +191,7 @@ const UserEditorModal = forwardRef<
 
       onSuccess();
     } catch (error) {
-      message.error(
-        errorText(
-          error,
-          editing ? '用户更新失败' : '用户创建失败',
-        ),
-      );
+      
     } finally {
       setSaving(false);
     }

@@ -38,7 +38,7 @@ const UserDetailDrawer = forwardRef<UserDetailDrawerRef>((_, ref) => {
     try {
       setDetail(await getUserDetail(row.id));
     } catch (error) {
-      message.error(errorText(error, '用户详情加载失败'));
+      
     } finally {
       setLoading(false);
     }

@@ -288,12 +288,7 @@ function RoleEditorDrawer({
         }
       } catch (error) {
         if (active) {
-          message.error(
-            errorText(
-              error,
-              role ? '角色详情加载失败' : '权限树加载失败',
-            ),
-          );
+          
         }
       } finally {
         if (active) setLoading(false);
@@ -330,12 +325,7 @@ function RoleEditorDrawer({
       onClose();
       onSuccess();
     } catch (error) {
-      message.error(
-        errorText(
-          error,
-          role ? '角色更新失败' : '角色创建失败',
-        ),
-      );
+      
     } finally {
       setSaving(false);
     }
@@ -442,7 +432,7 @@ function RoleDetailDrawer({
       })
       .catch((error) => {
         if (active) {
-          message.error(errorText(error, '角色详情加载失败'));
+          
         }
       })
       .finally(() => {
@@ -591,9 +581,7 @@ function RoleUserAssignmentDrawer({
       })
       .catch((error) => {
         if (active) {
-          message.error(
-            errorText(error, '用户分配信息加载失败'),
-          );
+          
         }
       })
       .finally(() => {
@@ -622,7 +610,7 @@ function RoleUserAssignmentDrawer({
       onClose();
       onSuccess();
     } catch (error) {
-      message.error(errorText(error, '用户分配失败'));
+      
     } finally {
       setSaving(false);
     }
@@ -882,7 +870,7 @@ export default function RolesPage() {
           },
         });
       } catch (error) {
-        message.error(errorText(error, '角色删除检查失败'));
+        
       }
     },
     [reload],

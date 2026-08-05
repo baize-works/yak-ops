@@ -42,7 +42,7 @@ export default function ResourcePermissionsPage() {
       setViewControlEnabled(await getResourceViewControlStatus());
     } catch (error) {
       setViewControlEnabled(false);
-      message.error(errorText(error, '查看权限控制状态加载失败'));
+      
     } finally {
       setStatusLoading(false);
     }
@@ -65,7 +65,7 @@ export default function ResourcePermissionsPage() {
           : '查看权限控制已关闭，未授予管理权限的用户默认可查看资源',
       );
     } catch (error) {
-      message.error(errorText(error, '查看权限控制状态更新失败'));
+      
     } finally {
       setStatusSaving(false);
     }
