@@ -2,10 +2,10 @@
 
 第一阶段只保留两类可执行 Task Plugin：
 
-| Task Type | 执行方式 | 结果类型 | 取消方式 |
-| --- | --- | --- | --- |
-| `SQL` | 标准 JDBC | `TABLE` | `Statement.cancel()` |
-| `HTTP` | JDK HTTP Client | `JSON` | 取消异步请求 |
+| Task Type | 节点插件 | 执行方式 | 结果类型 | 取消方式 |
+| --- | --- | --- | --- | --- |
+| `MYSQL` | MySQL | MySQL JDBC Driver | `TABLE` | `Statement.cancel()` |
+| `HTTP` | HTTP 节点 | JDK HTTP Client | `JSON` | 取消异步请求 |
 
 Shell、Python、Flink SQL、Notebook 与数据集成节点已从前后端移除。后续是否重新引入，必须基于新的插件边界单独设计。
 
@@ -33,18 +33,19 @@ TaskLogger
 
 这些契约位于 `yak-ops-plugin-task-api`，不依赖 Workflow 模块。数据开发通过 `TaskPluginCatalog` 发现插件并创建独立执行器。
 
-## JDBC SQL
+## MySQL
 
-JDBC SQL 支持查询和 DML：
+MySQL 插件支持查询和 DML：
 
+- 节点类型固定为 `MYSQL`，不再把 JDBC 当作用户可见的节点类型；
 - SQL 正文保存在 `content.value`；
-- 运行配置包括 JDBC URL、账号、驱动类、最大行数、Fetch Size 和查询超时；
+- 运行配置包括 MySQL 地址、账号、驱动类、最大行数、Fetch Size 和查询超时；
 - 查询返回列定义和行数据；
 - DML 返回 `affectedRows`；
 - 超过 `maxRows` 时设置 `truncated=true`；
-- 取消调用 JDBC `Statement.cancel()`。
+- 取消调用 JDBC Driver 的 `Statement.cancel()`。
 
-数据库驱动必须位于 Yak Ops 运行时 Classpath。当前 Boot 自带 MySQL 驱动，其他数据库按部署环境补充。
+JDBC 只是 MySQL 插件内部的执行实现，不再出现在节点类型和创建流程中。为兼容历史数据，`SQL` 查询会在 `TaskPluginCatalog` 中映射到 `MYSQL`。
 
 ## HTTP
 
@@ -61,7 +62,7 @@ HTTP 插件支持 URL、Method、Headers、Body、请求超时、自定义成功
 
 后续阶段优先处理：
 
-1. SQL 任务改为引用统一数据源 ID，避免在 Definition 中保存连接凭据；
-2. 增加 SQL 只读策略、语句审计和大结果 Dataset 分页；
+1. MySQL 节点改为引用统一数据源 ID，避免在 Definition 中保存连接凭据；
+2. 增加只读策略、语句审计和大结果 Dataset 分页；
 3. 增加分布式 Worker、资源隔离和运行容量管理；
 4. 基于不可变任务版本重新设计独立 Workflow 编排层。
