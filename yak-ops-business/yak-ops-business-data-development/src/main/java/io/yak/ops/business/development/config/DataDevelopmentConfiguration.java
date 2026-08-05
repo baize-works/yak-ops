@@ -5,9 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.yak.ops.business.development.repository.DataDevelopmentExecutionRepository;
 import io.yak.ops.business.development.repository.DataDevelopmentRepository;
 import io.yak.ops.business.development.service.DataDevelopmentJsonCodec;
-import io.yak.ops.core.workflow.WorkflowTaskExecutorRegistry;
 import io.yak.ops.plugin.task.api.TaskPluginCatalog;
-import java.util.List;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
@@ -67,11 +65,6 @@ public class DataDevelopmentConfiguration {
   @Bean
   public TaskPluginCatalog dataDevelopmentTaskPluginCatalog() {
     return new TaskPluginCatalog();
-  }
-
-  @Bean(name = "dataDevelopmentTaskExecutorRegistry")
-  public WorkflowTaskExecutorRegistry dataDevelopmentTaskExecutorRegistry() {
-    return new WorkflowTaskExecutorRegistry(List.of());
   }
 
   @Bean

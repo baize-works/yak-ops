@@ -1,9 +1,9 @@
 package io.yak.ops.business.development.execution;
 
 import io.yak.ops.business.development.config.ConditionalOnDataDevelopmentEnabled;
-import io.yak.ops.spi.workflow.WorkflowCancellationToken;
-import io.yak.ops.spi.workflow.WorkflowTaskContext;
-import io.yak.ops.spi.workflow.WorkflowTaskExecutor;
+import io.yak.ops.plugin.task.api.TaskCancellationToken;
+import io.yak.ops.plugin.task.api.TaskExecutionContext;
+import io.yak.ops.plugin.task.api.TaskExecutor;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,8 +24,8 @@ public class DataDevelopmentExecutionRuntimeRegistry {
       long executionId,
       long attemptId,
       CancellationSignal signal,
-      WorkflowTaskExecutor executor,
-      WorkflowTaskContext context) {
+      TaskExecutor executor,
+      TaskExecutionContext context) {
     RunningExecution value = new RunningExecution(
         attemptId,
         signal,
@@ -61,7 +61,7 @@ public class DataDevelopmentExecutionRuntimeRegistry {
     return value == null ? null : value.attemptId();
   }
 
-  public static final class CancellationSignal implements WorkflowCancellationToken {
+  public static final class CancellationSignal implements TaskCancellationToken {
 
     private final AtomicBoolean canceled = new AtomicBoolean();
 
@@ -78,8 +78,8 @@ public class DataDevelopmentExecutionRuntimeRegistry {
   private record RunningExecution(
       long attemptId,
       CancellationSignal signal,
-      WorkflowTaskExecutor executor,
-      WorkflowTaskContext context,
+      TaskExecutor executor,
+      TaskExecutionContext context,
       Thread thread) {
   }
 }
