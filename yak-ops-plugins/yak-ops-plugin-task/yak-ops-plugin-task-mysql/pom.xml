@@ -7,5 +7,8 @@
     <artifactId>yak-ops-plugin-task-mysql</artifactId>
     <name>Yak Ops MySQL Task Plugin</name>
     <description>MySQL task authoring and execution plugin</description>
-    <dependencies><dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-plugin-task-api</artifactId></dependency></dependencies>
+    <dependencies>
+        <dependency><groupId>io.yak.ops</groupId><artifactId>yak-ops-plugin-task-api</artifactId></dependency>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+    </dependencies>
 </project>
