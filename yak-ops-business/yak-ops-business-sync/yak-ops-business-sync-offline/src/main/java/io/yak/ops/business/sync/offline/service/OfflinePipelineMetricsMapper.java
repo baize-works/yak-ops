@@ -20,6 +20,7 @@ final class OfflinePipelineMetricsMapper {
     for (JsonNode pipeline : pipelines) {
       JsonNode source = pipeline.path("source");
       JsonNode sink = pipeline.path("sink");
+      JsonNode tableDdl = pipeline.path("tableDdl");
 
       ObjectNode row = result.addObject();
       row.put(
@@ -61,6 +62,28 @@ final class OfflinePipelineMetricsMapper {
       row.put("writeQps", decimal(sink, "averageQps", 0D));
       row.put("sourceReadBytes", number(source, "readBytes", 0L));
       row.put("sinkWrittenBytes", number(sink, "writtenBytes", 0L));
+
+      if (tableDdl.isObject()) {
+        row.set("tableDdl", tableDdl.deepCopy());
+        putNullable(row, "ddlDialect", text(tableDdl, "dialect", null));
+        putNullable(row, "createTableSql", text(tableDdl, "createTableSql", null));
+        row.put("ddlExecuted", bool(tableDdl, "executed", false));
+        putNullable(row, "ddlStatus", text(tableDdl, "status", null));
+        putNullable(row, "ddlReason", text(tableDdl, "reason", null));
+        row.put("ddlDurationMillis", number(tableDdl, "durationMillis", 0L));
+        putNullable(row, "ddlErrorCode", text(tableDdl, "errorCode", null));
+        putNullable(row, "ddlErrorMessage", text(tableDdl, "errorMessage", null));
+      } else {
+        row.putNull("tableDdl");
+        row.putNull("ddlDialect");
+        row.putNull("createTableSql");
+        row.put("ddlExecuted", false);
+        row.putNull("ddlStatus");
+        row.putNull("ddlReason");
+        row.put("ddlDurationMillis", 0L);
+        row.putNull("ddlErrorCode");
+        row.putNull("ddlErrorMessage");
+      }
       index++;
     }
     return result;
@@ -86,6 +109,17 @@ final class OfflinePipelineMetricsMapper {
     return com.fasterxml.jackson.databind.node.MissingNode.getInstance();
   }
 
+  private static void putNullable(
+      ObjectNode target,
+      String field,
+      String value) {
+    if (value == null) {
+      target.putNull(field);
+    } else {
+      target.put(field, value);
+    }
+  }
+
   private static String text(JsonNode node, String field, String fallback) {
     JsonNode value = node == null ? null : node.get(field);
     if (value == null || value.isNull() || !value.isValueNode()) {
@@ -107,5 +141,12 @@ final class OfflinePipelineMetricsMapper {
     return value == null || !value.isNumber()
         ? fallback
         : value.asDouble(fallback);
+  }
+
+  private static boolean bool(JsonNode node, String field, boolean fallback) {
+    JsonNode value = node == null ? null : node.get(field);
+    return value == null || !value.isBoolean()
+        ? fallback
+        : value.asBoolean(fallback);
   }
 }
