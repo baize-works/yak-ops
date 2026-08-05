@@ -1,5 +1,6 @@
 import { message } from 'antd';
 import { useExecutionPanelStore } from '../execution/store/execution-panel.store';
+import type { ExecutionSession } from '../execution/types';
 import {
   isWorkbenchConflict,
   workbenchErrorMessage,
@@ -7,7 +8,6 @@ import {
 } from '../repository/workbench.repository';
 import { useWorkbenchControlStore } from '../store/workbench-control.store';
 import { useWorkbenchStore } from '../store/workbench.store';
-import type { ExecutionSession } from '../execution/types';
 import type {
   DevelopmentDocument,
   ResourceContent,
@@ -121,10 +121,6 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
   {
     id: 'http.test',
     execute: (context) => runResource(context, '正在提交测试请求'),
-  },
-  {
-    id: 'notebook.run-all',
-    execute: (context) => runResource(context, '正在提交全部 Cell'),
   },
   {
     id: 'execution.stop',
@@ -266,52 +262,6 @@ export const BUILTIN_COMMANDS: WorkbenchCommandDefinition[] = [
       url.searchParams.set('resourceId', resource.id);
       await navigator.clipboard.writeText(url.toString());
       message.success('分享链接已复制');
-    },
-  },
-  {
-    id: 'notebook.clear-output',
-    execute: ({ resource, document }) => {
-      if (document.content.kind !== 'notebook') return;
-      const notebookContent = document.content;
-
-      useWorkbenchStore.getState().updateDocument(resource.id, (current) =>
-        updateContent(current, {
-          ...notebookContent,
-          cells: notebookContent.cells.map((cell) => ({
-            ...cell,
-            output: undefined,
-          })),
-        }),
-      );
-      message.success('Notebook 输出已清空');
-    },
-  },
-  {
-    id: 'integration.auto-layout',
-    execute: ({ resource, document }) => {
-      if (document.content.kind !== 'graph') return;
-      const graphContent = document.content;
-
-      useWorkbenchStore.getState().updateDocument(resource.id, (current) =>
-        updateContent(current, {
-          ...graphContent,
-          nodes: graphContent.nodes.map((node, index) => ({
-            ...node,
-            position: { x: 120 + index * 420, y: 180 },
-          })),
-        }),
-      );
-      message.success('画布已自动布局');
-    },
-  },
-  {
-    id: 'integration.preview',
-    execute: ({ document }) => {
-      const count =
-        document.content.kind === 'graph'
-          ? document.content.nodes.length
-          : 0;
-      message.info(`当前任务包含 ${count} 个节点，预览配置已生成`);
     },
   },
   {
