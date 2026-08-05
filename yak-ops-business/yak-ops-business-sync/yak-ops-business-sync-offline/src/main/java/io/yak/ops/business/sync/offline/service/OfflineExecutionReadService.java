@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.yak.framework.common.PagingData;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
+import io.yak.ops.business.sync.offline.domain.OfflineExecutionStatus;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository.ExecutionEventRecord;
@@ -93,11 +94,13 @@ public class OfflineExecutionReadService {
   public JsonNode tableMetrics(Long id) {
     OfflineJobExecutionPO execution = require(id);
 
-    JsonNode snapshotPipelines = snapshotPipelines(execution);
-    if (snapshotPipelines.isArray() && !snapshotPipelines.isEmpty()) {
-      return OfflinePipelineMetricsMapper.flatten(
-          objectMapper,
-          snapshotPipelines);
+    if (!OfflineExecutionStatus.isActive(execution.getStatus())) {
+      JsonNode snapshotPipelines = snapshotPipelines(execution);
+      if (snapshotPipelines.isArray() && !snapshotPipelines.isEmpty()) {
+        return OfflinePipelineMetricsMapper.flatten(
+            objectMapper,
+            snapshotPipelines);
+      }
     }
 
     if (!StringUtils.hasText(execution.getEngineJobId())) {
