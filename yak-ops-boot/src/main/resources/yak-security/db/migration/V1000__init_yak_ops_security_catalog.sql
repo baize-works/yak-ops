@@ -184,6 +184,8 @@ INSERT INTO yak_security_menu
 (menu_code, menu_name, parent_code, route_path, icon_key, menu_type,
  sort_order, visible, active, required_permission_code, description, app_name)
 VALUES
+('home', '首页', NULL, '/', 'home', 2,
+ 0, 1, 1, NULL, 'Yak Ops 首页', '${appName}'),
 ('integration', '数据集成', NULL, NULL, 'sync', 1,
  10, 1, 1, NULL, '数据同步任务入口', '${appName}'),
 ('batch-link-up', '离线同步', 'integration', '/sync/batch-link-up', 'sync', 2,
