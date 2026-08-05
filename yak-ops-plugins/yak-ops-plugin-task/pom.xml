@@ -3,28 +3,15 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>io.yak.ops</groupId>
-        <artifactId>yak-ops</artifactId>
-        <version>1.0.0</version>
-        <relativePath>../../pom.xml</relativePath>
-    </parent>
-
+    <parent><groupId>io.yak.ops</groupId><artifactId>yak-ops</artifactId><version>1.0.0</version><relativePath>../../pom.xml</relativePath></parent>
     <artifactId>yak-ops-plugin-task</artifactId>
     <packaging>pom</packaging>
-
     <name>Yak Ops Task Plugins</name>
-    <description>Yak Ops workflow task-plugin module aggregation</description>
-
+    <description>Yak Ops data-development task-plugin module aggregation</description>
     <modules>
         <module>yak-ops-plugin-task-api</module>
         <module>yak-ops-plugin-task-http</module>
-        <module>yak-ops-plugin-task-shell</module>
         <module>yak-ops-plugin-task-jdbc-sql</module>
-        <module>yak-ops-plugin-task-flink-sql</module>
-        <module>yak-ops-plugin-task-python</module>
-        <module>yak-ops-plugin-task-notebook</module>
         <module>yak-ops-plugin-task-all</module>
     </modules>
 </project>
