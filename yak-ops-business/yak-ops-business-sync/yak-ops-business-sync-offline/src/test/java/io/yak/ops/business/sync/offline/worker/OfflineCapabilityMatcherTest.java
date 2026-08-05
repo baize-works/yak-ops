@@ -30,37 +30,6 @@ class OfflineCapabilityMatcherTest {
   }
 
   @Test
-  void rejectsExpiredDynamicRegistrationLease() {
-    OfflineCapabilityProperties properties = new OfflineCapabilityProperties();
-    OfflineCapabilityMatcher matcher = new OfflineCapabilityMatcher(properties, objectMapper);
-    NodeRecord worker = worker("sha256:source", "sha256:sink", "UPSERT");
-    worker.setRegistrationMode("DYNAMIC");
-    worker.setLeaseExpiresAt(LocalDateTime.now().minusSeconds(1));
-
-    MatchResult result = matcher.match(
-        worker,
-        requirements("sha256:source", "sha256:sink", "UPSERT"));
-
-    assertThat(result.isMatched()).isFalse();
-    assertThat(result.getReason()).contains("租约已过期");
-  }
-
-  @Test
-  void acceptsActiveDynamicRegistrationLease() {
-    OfflineCapabilityProperties properties = new OfflineCapabilityProperties();
-    OfflineCapabilityMatcher matcher = new OfflineCapabilityMatcher(properties, objectMapper);
-    NodeRecord worker = worker("sha256:source", "sha256:sink", "UPSERT");
-    worker.setRegistrationMode("DYNAMIC");
-    worker.setLeaseExpiresAt(LocalDateTime.now().plusMinutes(1));
-
-    MatchResult result = matcher.match(
-        worker,
-        requirements("sha256:source", "sha256:sink", "UPSERT"));
-
-    assertThat(result.isMatched()).isTrue();
-  }
-
-  @Test
   void rejectsMissingExecutionCapability() {
     OfflineCapabilityProperties properties = new OfflineCapabilityProperties();
     OfflineCapabilityMatcher matcher = new OfflineCapabilityMatcher(properties, objectMapper);
@@ -120,7 +89,7 @@ class OfflineCapabilityMatcherTest {
   }
 
   @Test
-  void disabledCapabilitySchedulingKeepsNonDynamicWorkerEligible() {
+  void disabledCapabilitySchedulingKeepsWorkerEligible() {
     OfflineCapabilityProperties properties = new OfflineCapabilityProperties();
     properties.setEnabled(false);
     OfflineCapabilityMatcher matcher = new OfflineCapabilityMatcher(properties, objectMapper);

@@ -142,9 +142,6 @@ public class OfflineWorkerService {
     if ("CONFIG".equalsIgnoreCase(existing.getRegistrationMode()) && addressChanged) {
       throw new IllegalStateException("默认 Worker 地址由 application.yml 管理，不能在页面修改");
     }
-    if ("DYNAMIC".equalsIgnoreCase(existing.getRegistrationMode()) && addressChanged) {
-      throw new IllegalStateException("动态 Worker 地址由 Worker 注册心跳维护，不能在页面修改");
-    }
 
     NodeRecord updated;
     if (addressChanged) {
@@ -184,10 +181,7 @@ public class OfflineWorkerService {
   }
 
   public WorkerView refresh(String nodeId) {
-    NodeRecord node = require(nodeId);
-    if (!"DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())) {
-      registry.refresh(nodeId, true);
-    }
+    registry.refresh(nodeId, true);
     return get(nodeId);
   }
 
@@ -198,7 +192,7 @@ public class OfflineWorkerService {
     if (!repository.updateSchedulingStatus(node.getNodeId(), status, enabled)) {
       throw new IllegalStateException("Worker 调度状态更新失败：" + nodeId);
     }
-    if (enabled && !"DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())) {
+    if (enabled) {
       registry.refresh(nodeId, false);
     }
     return get(nodeId);
@@ -209,10 +203,6 @@ public class OfflineWorkerService {
     if ("CONFIG".equalsIgnoreCase(node.getRegistrationMode())
         || nodeId.equals(properties.getEngine().getNodeId())) {
       throw new IllegalStateException("默认 Worker 不能删除，可将其设置为排空或禁用");
-    }
-    if ("DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())
-        && "ACTIVE".equals(leaseStatus(node))) {
-      throw new IllegalStateException("动态 Worker 租约仍有效，请先撤销租约再删除");
     }
     return repository.delete(nodeId);
   }
@@ -227,8 +217,6 @@ public class OfflineWorkerService {
           .label(worker.getNodeName())
           .status(worker.getStatus())
           .schedulingStatus(worker.getSchedulingStatus())
-          .registrationMode(worker.getRegistrationMode())
-          .leaseStatus(worker.getLeaseStatus())
           .runningJobs(worker.getRunningJobs())
           .maxConcurrentJobs(worker.getMaxConcurrentJobs())
           .queuedJobs(worker.getQueuedJobs())
@@ -253,12 +241,6 @@ public class OfflineWorkerService {
             ? requestedName : first(response.getNodeName(), response.getNodeId()))
         .baseUrl(baseUrl)
         .registrationMode(registrationMode)
-        .registrationLeaseId(null)
-        .registrationInstanceId(null)
-        .registrationProtocolVersion(null)
-        .leaseExpiresAt(null)
-        .lastRegistrationTime(null)
-        .heartbeatSequence(0L)
         .enabled(true)
         .schedulingStatus("ENABLED")
         .weight(weight)
@@ -276,7 +258,6 @@ public class OfflineWorkerService {
         .lastSuccessTime(now)
         .consecutiveFailures(0)
         .lastErrorMessage(null)
-        .capabilityStatus("UNKNOWN")
         .createTime(now)
         .updateTime(now)
         .build();
@@ -288,12 +269,6 @@ public class OfflineWorkerService {
         .nodeName(source.getNodeName())
         .baseUrl(source.getBaseUrl())
         .registrationMode(source.getRegistrationMode())
-        .registrationLeaseId(source.getRegistrationLeaseId())
-        .registrationInstanceId(source.getRegistrationInstanceId())
-        .registrationProtocolVersion(source.getRegistrationProtocolVersion())
-        .leaseExpiresAt(source.getLeaseExpiresAt())
-        .lastRegistrationTime(source.getLastRegistrationTime())
-        .heartbeatSequence(source.getHeartbeatSequence())
         .enabled(source.getEnabled())
         .schedulingStatus(source.getSchedulingStatus())
         .weight(source.getWeight())
@@ -311,11 +286,6 @@ public class OfflineWorkerService {
         .lastSuccessTime(source.getLastSuccessTime())
         .consecutiveFailures(source.getConsecutiveFailures())
         .lastErrorMessage(source.getLastErrorMessage())
-        .capabilityStatus(source.getCapabilityStatus())
-        .capabilityDigest(source.getCapabilityDigest())
-        .connectorSchemasJson(source.getConnectorSchemasJson())
-        .capabilitySyncedAt(source.getCapabilitySyncedAt())
-        .capabilityErrorMessage(source.getCapabilityErrorMessage())
         .createTime(source.getCreateTime())
         .updateTime(source.getUpdateTime())
         .build();
@@ -330,24 +300,15 @@ public class OfflineWorkerService {
     int maxRunning = Math.max(1, value(node.getMaxConcurrentJobs(), 1));
     int maxQueued = Math.max(0, value(node.getMaxQueuedJobs(), 0));
     int capacity = Math.max(1, maxRunning + maxQueued);
-    String leaseStatus = leaseStatus(node);
-    boolean leaseReady = !"DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())
-        || "ACTIVE".equals(leaseStatus);
     boolean available = Boolean.TRUE.equals(node.getEnabled())
         && "ENABLED".equalsIgnoreCase(node.getSchedulingStatus())
         && "UP".equalsIgnoreCase(node.getStatus())
-        && leaseReady
         && !(running >= maxRunning && queued >= maxQueued);
     return WorkerView.builder()
         .nodeId(node.getNodeId())
         .nodeName(node.getNodeName())
         .baseUrl(node.getBaseUrl())
         .registrationMode(node.getRegistrationMode())
-        .leaseStatus(leaseStatus)
-        .leaseExpiresAt(node.getLeaseExpiresAt())
-        .lastRegistrationTime(node.getLastRegistrationTime())
-        .heartbeatSequence(node.getHeartbeatSequence())
-        .registrationProtocolVersion(node.getRegistrationProtocolVersion())
         .enabled(node.getEnabled())
         .schedulingStatus(node.getSchedulingStatus())
         .weight(node.getWeight())
@@ -373,16 +334,6 @@ public class OfflineWorkerService {
         .build();
   }
 
-  private String leaseStatus(NodeRecord node) {
-    if (!"DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())) {
-      return "NOT_APPLICABLE";
-    }
-    if (!StringUtils.hasText(node.getRegistrationLeaseId()) || node.getLeaseExpiresAt() == null) {
-      return "UNKNOWN";
-    }
-    return node.getLeaseExpiresAt().isAfter(LocalDateTime.now()) ? "ACTIVE" : "EXPIRED";
-  }
-
   private boolean matches(NodeRecord node, QueryRequest query) {
     if (query.getEnabled() != null
         && query.getEnabled() != Boolean.TRUE.equals(node.getEnabled())) {
@@ -396,10 +347,6 @@ public class OfflineWorkerService {
         && !query.getSchedulingStatus().trim().equalsIgnoreCase(node.getSchedulingStatus())) {
       return false;
     }
-    if (StringUtils.hasText(query.getRegistrationMode())
-        && !query.getRegistrationMode().trim().equalsIgnoreCase(node.getRegistrationMode())) {
-      return false;
-    }
     if (!StringUtils.hasText(query.getKeyword())) {
       return true;
     }
@@ -408,7 +355,6 @@ public class OfflineWorkerService {
         || contains(node.getNodeName(), keyword)
         || contains(node.getBaseUrl(), keyword)
         || contains(node.getEngineVersion(), keyword)
-        || contains(node.getRegistrationInstanceId(), keyword)
         || contains(node.getLabelsJson(), keyword);
   }
 

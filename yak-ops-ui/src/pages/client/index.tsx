@@ -3,7 +3,6 @@ import {
   ClockCircleOutlined,
   CloudServerOutlined,
   DeleteOutlined,
-  DisconnectOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
   EyeOutlined,
@@ -55,32 +54,6 @@ const filters: Array<{ key: WorkerFilter; label: string }> = [
 
 const normalize = (value?: string) => value?.trim().toLowerCase() || '';
 
-const registrationLabel = (worker: LinkupClient) => {
-  if (worker.registrationMode === 'CONFIG') return '配置托管';
-  if (worker.registrationMode === 'DYNAMIC') return '动态注册';
-  return '手工注册';
-};
-
-const leaseMeta = (worker: LinkupClient) => {
-  if (worker.registrationMode !== 'DYNAMIC') return null;
-  if (worker.leaseStatus === 'ACTIVE') {
-    return {
-      label: '租约有效',
-      className: '!border-[#abefc6] !bg-[#ecfdf3] !text-[#067647]',
-    };
-  }
-  if (worker.leaseStatus === 'EXPIRED') {
-    return {
-      label: '租约已过期',
-      className: '!border-[#fecdca] !bg-[#fef3f2] !text-[#b42318]',
-    };
-  }
-  return {
-    label: '租约未知',
-    className: '!border-[#fedf89] !bg-[#fffaeb] !text-[#b54708]',
-  };
-};
-
 const capabilityMeta = (worker: LinkupClient) => {
   if (worker.capabilityStatus === 'READY') {
     return {
@@ -107,17 +80,6 @@ const healthMeta = (worker: LinkupClient) => {
       label: '已禁用',
       dot: 'bg-[#98a2b3]',
       tag: '!border-[#e4e7ec] !bg-[#f2f4f7] !text-[#667085]',
-    };
-  }
-  if (
-    worker.registrationMode === 'DYNAMIC' &&
-    worker.leaseStatus !== 'ACTIVE'
-  ) {
-    return {
-      filter: 'offline' as const,
-      label: worker.leaseStatus === 'EXPIRED' ? '租约已过期' : '租约未就绪',
-      dot: 'bg-[#f04438]',
-      tag: '!border-[#fecdca] !bg-[#fef3f2] !text-[#b42318]',
     };
   }
   if (worker.status === 'UP' && worker.schedulingStatus === 'DRAINING') {
@@ -180,32 +142,25 @@ const WorkerRow = ({
   worker,
   refreshing,
   statusLoading,
-  leaseLoading,
   deleting,
   onRefresh,
   onEdit,
   onStatus,
-  onRevokeLease,
   onDelete,
 }: {
   worker: LinkupClient;
   refreshing: boolean;
   statusLoading: boolean;
-  leaseLoading: boolean;
   deleting: boolean;
   onRefresh: () => void;
   onEdit: () => void;
   onStatus: (status: WorkerSchedulingStatus) => void;
-  onRevokeLease: () => void;
   onDelete: () => void;
 }) => {
   const meta = healthMeta(worker);
   const capability = capabilityMeta(worker);
-  const lease = leaseMeta(worker);
   const loadPercent = Math.round(Math.max(0, Math.min(1, worker.loadRatio || 0)) * 100);
   const configManaged = worker.registrationMode === 'CONFIG';
-  const dynamicManaged = worker.registrationMode === 'DYNAMIC';
-  const activeDynamicLease = dynamicManaged && worker.leaseStatus === 'ACTIVE';
 
   const statusItems: MenuProps['items'] = [
     {
@@ -256,13 +211,8 @@ const WorkerRow = ({
                 <Tag className={`!m-0 !rounded-md !px-2 ${capability.className}`}>
                   {capability.label}
                 </Tag>
-                {lease ? (
-                  <Tag className={`!m-0 !rounded-md !px-2 ${lease.className}`}>
-                    {lease.label}
-                  </Tag>
-                ) : null}
                 <Tag className="!m-0 !rounded-md !border-[#e4e7ec] !bg-[#f8f9fb] !text-[#667085]">
-                  {registrationLabel(worker)}
+                  {configManaged ? '配置托管' : '手工注册'}
                 </Tag>
                 {worker.engineVersion ? (
                   <Tag className="!m-0 !rounded-md !border-[#e4e7ec] !bg-white !text-[#667085]">
@@ -274,9 +224,6 @@ const WorkerRow = ({
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-6 text-[#98a2b3]">
                 <span>nodeId：{worker.nodeId}</span>
                 <span>最近心跳：{formatTime(worker.lastHeartbeatTime)}</span>
-                {dynamicManaged ? (
-                  <span>租约到期：{formatTime(worker.leaseExpiresAt)}</span>
-                ) : null}
                 <span>能力同步：{formatTime(worker.capabilitySyncedAt)}</span>
                 <span>连续失败：{worker.consecutiveFailures || 0}</span>
               </div>
@@ -304,9 +251,7 @@ const WorkerRow = ({
               >
                 详情
               </Button>
-              <Tooltip
-                title={dynamicManaged ? '读取当前动态注册状态与能力快照' : '刷新节点心跳与 Connector 能力'}
-              >
+              <Tooltip title="刷新节点心跳与 Connector 能力">
                 <Button
                   type="text"
                   icon={<ReloadOutlined spin={refreshing} />}
@@ -330,21 +275,7 @@ const WorkerRow = ({
                   状态
                 </Button>
               </Dropdown>
-              {activeDynamicLease ? (
-                <Popconfirm
-                  title="撤销动态注册租约"
-                  description="撤销后节点立即离线；Worker 会重新发起注册，除非同步关闭 Worker 侧动态注册。"
-                  okText="撤销租约"
-                  cancelText="取消"
-                  okButtonProps={{ danger: true, loading: leaseLoading }}
-                  onConfirm={onRevokeLease}
-                >
-                  <Button danger type="text" loading={leaseLoading} icon={<DisconnectOutlined />}>
-                    撤销租约
-                  </Button>
-                </Popconfirm>
-              ) : null}
-              {!configManaged && !activeDynamicLease ? (
+              {!configManaged ? (
                 <Popconfirm
                   title="删除执行节点"
                   description="只删除 Yak Ops 中的登记信息，不会停止 Link-Up 进程。"
@@ -366,7 +297,7 @@ const WorkerRow = ({
               className="mt-3"
               type="error"
               showIcon
-              message={dynamicManaged ? '动态注册状态异常' : '最近一次心跳失败'}
+              message="最近一次心跳失败"
               description={worker.lastErrorMessage}
             />
           ) : null}
@@ -421,7 +352,6 @@ const ClientPage = () => {
     deleteLoadingId,
     refreshLoadingIds,
     statusLoadingIds,
-    leaseLoadingIds,
     form,
     handleOpenCreate,
     handleOpenEdit,
@@ -431,7 +361,6 @@ const ClientPage = () => {
     handleVerifyWorker,
     handleRefreshWorker,
     handleChangeSchedulingStatus,
-    handleRevokeLease,
     loadClients,
   } = useClientPageState();
 
@@ -457,9 +386,6 @@ const ClientPage = () => {
         result.queueCapacity += Number(worker.maxQueuedJobs || 0);
         result.connectors += Number(worker.connectorCount || 0);
         if (worker.available) result.available += 1;
-        if (worker.registrationMode === 'DYNAMIC' && worker.leaseStatus === 'ACTIVE') {
-          result.dynamic += 1;
-        }
         return result;
       },
       {
@@ -468,7 +394,6 @@ const ClientPage = () => {
         queueCapacity: 0,
         connectors: 0,
         available: 0,
-        dynamic: 0,
       },
     );
   }, [clients]);
@@ -484,8 +409,6 @@ const ClientPage = () => {
         worker.baseUrl,
         worker.engineVersion,
         worker.capabilityStatus,
-        worker.registrationMode,
-        worker.leaseStatus,
         JSON.stringify(worker.labels || {}),
       ].some((item) => normalize(item).includes(value));
     });
@@ -500,6 +423,9 @@ const ClientPage = () => {
               <h1 className="m-0 text-[22px] font-semibold leading-8 text-[#161823]">
                 执行节点
               </h1>
+              <p className="m-0 mt-1 text-[13px] leading-6 text-[#8a8f99]">
+                管理 Link-Up Worker 的注册、心跳、容量、Connector 能力和调度状态。
+              </p>
             </div>
             <Space size={8} wrap>
               <Button
@@ -519,7 +445,7 @@ const ClientPage = () => {
             {[
               { label: '登记节点', value: total, icon: <CloudServerOutlined /> },
               { label: '能力可用', value: summary.available, icon: <CheckCircleOutlined /> },
-              { label: '动态租约', value: summary.dynamic, icon: <ClockCircleOutlined /> },
+              { label: '活跃任务', value: summary.activeJobs, icon: <ClockCircleOutlined /> },
               {
                 label: 'Connector 能力',
                 value: summary.connectors,
@@ -561,9 +487,9 @@ const ClientPage = () => {
                 allowClear
                 variant="filled"
                 prefix={<SearchOutlined className="text-[#98a2b3]" />}
-                placeholder="搜索名称、nodeId、地址、注册模式、租约或标签"
+                placeholder="搜索名称、nodeId、地址、能力状态或标签"
                 value={keyword}
-                className="w-full lg:w-[340px]"
+                className="w-full lg:w-[320px]"
                 onChange={(event) => setKeyword(event.target.value)}
               />
             </div>
@@ -583,14 +509,12 @@ const ClientPage = () => {
                   worker={worker}
                   refreshing={refreshLoadingIds.has(worker.nodeId)}
                   statusLoading={statusLoadingIds.has(worker.nodeId)}
-                  leaseLoading={leaseLoadingIds.has(worker.nodeId)}
                   deleting={deleteLoadingId === worker.nodeId}
                   onRefresh={() => void handleRefreshWorker(worker.nodeId)}
                   onEdit={() => handleOpenEdit(worker)}
                   onStatus={(status) =>
                     void handleChangeSchedulingStatus(worker.nodeId, status)
                   }
-                  onRevokeLease={() => void handleRevokeLease(worker.nodeId)}
                   onDelete={() => void handleDeleteClient(worker)}
                 />
               ))

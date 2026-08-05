@@ -3,24 +3,24 @@ package io.yak.ops.business.sync.offline.worker;
 import io.yak.ops.business.sync.offline.config.ConditionalOnOfflineSyncEnabled;
 import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
 import io.yak.ops.business.sync.offline.domain.OfflineExecutionStatus;
-import io.yak.ops.business.sync.offline.repository.OfflineWorkerRestartTakeoverRepository;
+import io.yak.ops.business.sync.offline.repository.OfflineWorkerInstanceRecoveryRepository;
 import io.yak.ops.business.sync.offline.service.OfflineJobExecutionService;
 import io.yak.ops.common.bean.po.sync.offline.OfflineJobExecutionPO;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-/** 将被新 Link-Up 进程替代的旧实例执行立即转为 LOST。 */
+/** Worker 进程实例变化后，将旧实例上的活动执行标记为 LOST。 */
 @ConditionalOnOfflineSyncEnabled
 @Service
-public class OfflineWorkerRestartRecoveryService {
+public class OfflineWorkerInstanceRecoveryService {
 
-  private final OfflineWorkerRestartTakeoverRepository repository;
+  private final OfflineWorkerInstanceRecoveryRepository repository;
   private final OfflineJobExecutionDao executionDao;
   private final OfflineJobExecutionService executionService;
 
-  public OfflineWorkerRestartRecoveryService(
-      OfflineWorkerRestartTakeoverRepository repository,
+  public OfflineWorkerInstanceRecoveryService(
+      OfflineWorkerInstanceRecoveryRepository repository,
       OfflineJobExecutionDao executionDao,
       OfflineJobExecutionService executionService) {
     this.repository = repository;
@@ -48,8 +48,8 @@ public class OfflineWorkerRestartRecoveryService {
       }
       executionService.markLost(
           execution,
-          "Link-Up Worker " + nodeId + " 已由新实例 " + currentInstanceId
-              + " 接管；旧实例 " + previousInstanceId + " 的执行无法继续确认");
+          "Link-Up Worker " + nodeId + " 的进程实例已变化："
+              + previousInstanceId + " -> " + currentInstanceId);
       recovered++;
     }
     return recovered;

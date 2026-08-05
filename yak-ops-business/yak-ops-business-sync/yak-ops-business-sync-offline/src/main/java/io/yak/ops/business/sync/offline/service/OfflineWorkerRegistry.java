@@ -6,6 +6,7 @@ import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpNodeResponse;
 import io.yak.ops.business.sync.offline.engine.LinkUpWorkerProbeClient;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository;
 import io.yak.ops.business.sync.offline.repository.OfflineNodeRepository.NodeRecord;
+import io.yak.ops.business.sync.offline.worker.OfflineWorkerInstanceRecoveryService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +19,7 @@ import org.springframework.util.StringUtils;
 /**
  * Link-Up Worker 注册表、定时心跳和默认节点选择器。
  *
- * <p>CONFIG/MANUAL 节点由 Yak Ops 主动探测；DYNAMIC 节点由 Worker 主动续租。
+ * <p>Yak Ops 主动探测固定地址；Worker 不再反向注册、续租或注销。
  *
  * @author weifuwan
  */
@@ -31,6 +32,7 @@ public class OfflineWorkerRegistry {
   private final LinkUpWorkerProbeClient probeClient;
   private final OfflineNodeRepository repository;
   private final OfflineSyncProperties properties;
+  private final OfflineWorkerInstanceRecoveryService instanceRecoveryService;
 
   @Scheduled(
       initialDelayString = "${yak.sync.offline.control.heartbeat-delay-millis:10000}",
@@ -43,7 +45,6 @@ public class OfflineWorkerRegistry {
     try {
       ensureConfiguredWorker();
     } catch (RuntimeException exception) {
-      // 默认配置错误不能阻断其他手工登记 Worker 的健康检查。
       log.warn("初始化默认 Link-Up Worker 失败：{}", message(exception));
     }
     List<NodeRecord> targets = repository.listHeartbeatTargets();
@@ -56,9 +57,6 @@ public class OfflineWorkerRegistry {
     NodeRecord node = repository.find(nodeId);
     if (node == null) {
       throw new IllegalArgumentException("Link-Up Worker 不存在：" + nodeId);
-    }
-    if ("DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())) {
-      return node;
     }
     return refresh(node, failFast);
   }
@@ -104,13 +102,11 @@ public class OfflineWorkerRegistry {
         ? engine.getNodeName().trim() : nodeId;
     String baseUrl = probeClient.normalizeBaseUrl(engine.getBaseUrl());
     NodeRecord existing = repository.find(nodeId);
-    if (existing != null && !"CONFIG".equalsIgnoreCase(existing.getRegistrationMode())) {
-      throw new IllegalStateException(
-          "默认 Worker nodeId 已由 " + existing.getRegistrationMode() + " 模式管理：" + nodeId);
-    }
     String nodeName = existing != null && StringUtils.hasText(existing.getNodeName())
         ? existing.getNodeName() : configuredNodeName;
-    if (existing != null && baseUrl.equals(existing.getBaseUrl())) {
+    if (existing != null
+        && "CONFIG".equalsIgnoreCase(existing.getRegistrationMode())
+        && baseUrl.equals(existing.getBaseUrl())) {
       return existing;
     }
 
@@ -123,13 +119,6 @@ public class OfflineWorkerRegistry {
     configured.setNodeName(nodeName);
     configured.setBaseUrl(baseUrl);
     configured.setRegistrationMode("CONFIG");
-    configured.setRegistrationLeaseId(null);
-    configured.setRegistrationInstanceId(null);
-    configured.setRegistrationProtocolVersion(null);
-    configured.setLeaseExpiresAt(null);
-    configured.setLastRegistrationTime(null);
-    configured.setHeartbeatSequence(0L);
-    // 页面设置的排空/禁用状态必须跨定时心跳保留。
     configured.setEnabled(existing == null
         ? true : !Boolean.FALSE.equals(existing.getEnabled()));
     configured.setSchedulingStatus(existing == null
@@ -150,7 +139,6 @@ public class OfflineWorkerRegistry {
     configured.setUpdateTime(now);
     repository.upsert(configured);
     if (addressChanged) {
-      // 新地址必须重新证明 Connector 能力，不能沿用原地址的 READY 快照。
       repository.resetCapabilities(nodeId);
     }
     return repository.find(nodeId);
@@ -160,7 +148,8 @@ public class OfflineWorkerRegistry {
     try {
       LinkUpNodeResponse response = probeClient.node(node.getBaseUrl());
       validate(node, response);
-      boolean runtimeChanged = runtimeChanged(node, response);
+      boolean instanceChanged = instanceChanged(node, response);
+      boolean runtimeChanged = instanceChanged || versionChanged(node, response);
       NodeRecord heartbeat = NodeRecord.builder()
           .nodeId(node.getNodeId())
           .nodeName(StringUtils.hasText(node.getNodeName())
@@ -176,8 +165,11 @@ public class OfflineWorkerRegistry {
           .lastHeartbeatTime(LocalDateTime.now())
           .build();
       repository.updateHeartbeatSuccess(heartbeat);
+      if (instanceChanged) {
+        instanceRecoveryService.recover(
+            node.getNodeId(), node.getWorkerInstanceId(), response.getInstanceId());
+      }
       if (runtimeChanged) {
-        // 同一 nodeId 的新进程或新版本必须重新证明 Connector 能力。
         repository.resetCapabilities(node.getNodeId());
       }
       return repository.find(node.getNodeId());
@@ -190,14 +182,16 @@ public class OfflineWorkerRegistry {
     }
   }
 
-  private boolean runtimeChanged(NodeRecord previous, LinkUpNodeResponse current) {
-    boolean instanceChanged = StringUtils.hasText(previous.getWorkerInstanceId())
+  private boolean instanceChanged(NodeRecord previous, LinkUpNodeResponse current) {
+    return StringUtils.hasText(previous.getWorkerInstanceId())
         && StringUtils.hasText(current.getInstanceId())
         && !Objects.equals(previous.getWorkerInstanceId(), current.getInstanceId());
-    boolean versionChanged = StringUtils.hasText(previous.getEngineVersion())
+  }
+
+  private boolean versionChanged(NodeRecord previous, LinkUpNodeResponse current) {
+    return StringUtils.hasText(previous.getEngineVersion())
         && StringUtils.hasText(current.getVersion())
         && !Objects.equals(previous.getEngineVersion(), current.getVersion());
-    return instanceChanged || versionChanged;
   }
 
   private void validate(NodeRecord expected, LinkUpNodeResponse response) {
