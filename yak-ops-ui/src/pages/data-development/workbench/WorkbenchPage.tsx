@@ -48,18 +48,13 @@ const WorkbenchPage = () => {
   const setActiveResource = useWorkbenchStore((state) => state.setActiveResource);
   const [createOpen, setCreateOpen] = useState(false);
   const [createType, setCreateType] = useState<ResourceType>('HTTP');
-  const [createEngineType, setCreateEngineType] = useState<string>();
 
   useEffect(() => {
     void initialize();
   }, [initialize]);
 
-  const openCreateModal = (
-    resourceType: ResourceType = 'HTTP',
-    engineType?: string,
-  ) => {
+  const openCreateModal = (resourceType: ResourceType = 'HTTP') => {
     setCreateType(resourceType);
-    setCreateEngineType(engineType);
     setCreateOpen(true);
   };
 
@@ -149,7 +144,7 @@ const WorkbenchPage = () => {
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="flex min-h-0 flex-1 overflow-hidden">
                 <section className="min-w-0 flex-1 overflow-hidden">
-                  <ResourceView onCreate={() => openCreateModal('HTTP', 'HTTP')} />
+                  <ResourceView onCreate={() => openCreateModal('HTTP')} />
                 </section>
 
                 {splitResource && !fullscreen && (
@@ -191,7 +186,6 @@ const WorkbenchPage = () => {
         <CreateResourceModal
           open={createOpen}
           initialResourceType={createType}
-          initialEngineType={createEngineType}
           onClose={() => setCreateOpen(false)}
         />
       </div>
