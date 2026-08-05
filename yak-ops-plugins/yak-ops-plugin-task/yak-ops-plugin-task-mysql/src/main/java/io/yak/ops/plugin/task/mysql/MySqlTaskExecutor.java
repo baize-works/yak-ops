@@ -1,4 +1,4 @@
-package io.yak.ops.plugin.task.jdbc;
+package io.yak.ops.plugin.task.mysql;
 
 import io.yak.ops.plugin.task.api.TaskExecutionContext;
 import io.yak.ops.plugin.task.api.TaskExecutionResult;
@@ -19,24 +19,24 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Executes one JDBC SQL task attempt. */
-final class JdbcSqlTaskExecutor implements TaskExecutor {
+/** Executes one MySQL task attempt through the standard JDBC driver. */
+final class MySqlTaskExecutor implements TaskExecutor {
 
   private final Map<Long, Statement> runningStatements = new ConcurrentHashMap<>();
 
   @Override
   public String type() {
-    return TaskPluginType.SQL;
+    return TaskPluginType.MYSQL;
   }
 
   @Override
   public void validate(Map<String, Object> configuration) {
-    JdbcSqlTaskSupport.normalize(configuration);
+    MySqlTaskSupport.normalize(configuration);
   }
 
   @Override
   public TaskExecutionResult execute(TaskExecutionContext context) throws Exception {
-    Map<String, Object> configuration = JdbcSqlTaskSupport.normalize(
+    Map<String, Object> configuration = MySqlTaskSupport.normalize(
         TaskParameterResolver.resolveConfiguration(
             context.configuration(),
             context.parameters()));
@@ -57,7 +57,7 @@ final class JdbcSqlTaskExecutor implements TaskExecutor {
 
     int maxRows = ((Number) configuration.get("maxRows")).intValue();
     context.logger().log(
-        "Connecting JDBC: " + maskJdbcUrl(String.valueOf(configuration.get("jdbcUrl"))));
+        "Connecting MySQL: " + maskJdbcUrl(String.valueOf(configuration.get("jdbcUrl"))));
     try (Connection connection = DriverManager.getConnection(
             String.valueOf(configuration.get("jdbcUrl")),
             properties);
@@ -70,7 +70,7 @@ final class JdbcSqlTaskExecutor implements TaskExecutor {
       runningStatements.put(context.attemptId(), statement);
       context.cancellationToken().throwIfCancellationRequested();
 
-      context.logger().log("Executing JDBC SQL");
+      context.logger().log("Executing MySQL statement");
       boolean query = statement.execute(String.valueOf(configuration.get("statement")));
       context.cancellationToken().throwIfCancellationRequested();
 
@@ -79,9 +79,9 @@ final class JdbcSqlTaskExecutor implements TaskExecutor {
           : updateResult(statement.getUpdateCount());
       context.logger().log(
           query
-              ? "JDBC query returned " + outputs.get("rowCount") + " row(s)"
-              : "JDBC statement affected " + outputs.get("affectedRows") + " row(s)");
-      return TaskExecutionResult.succeeded(null, outputs, "JDBC SQL 执行完成");
+              ? "MySQL query returned " + outputs.get("rowCount") + " row(s)"
+              : "MySQL statement affected " + outputs.get("affectedRows") + " row(s)");
+      return TaskExecutionResult.succeeded(null, outputs, "MySQL 执行完成");
     } finally {
       runningStatements.remove(context.attemptId());
     }

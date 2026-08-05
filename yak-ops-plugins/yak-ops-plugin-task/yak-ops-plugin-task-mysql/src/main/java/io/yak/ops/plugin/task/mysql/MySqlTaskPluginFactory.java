@@ -1,4 +1,4 @@
-package io.yak.ops.plugin.task.jdbc;
+package io.yak.ops.plugin.task.mysql;
 
 import io.yak.ops.plugin.task.api.TaskConfiguration;
 import io.yak.ops.plugin.task.api.TaskExecutor;
@@ -6,22 +6,23 @@ import io.yak.ops.plugin.task.api.TaskPluginFactory;
 import io.yak.ops.plugin.task.api.TaskPluginType;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
-/** JDBC SQL task authoring, validation, compilation and executor factory. */
-public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
+/** MySQL task authoring, validation, compilation and executor factory. */
+public final class MySqlTaskPluginFactory implements TaskPluginFactory {
 
   private static final Descriptor DESCRIPTOR = new Descriptor(
-      TaskPluginType.SQL,
-      "JDBC SQL",
-      "通过标准 JDBC 执行查询或 DML，并返回结构化表格结果。",
-      "DATA_DEVELOPMENT",
+      TaskPluginType.MYSQL,
+      "MySQL",
+      "执行 MySQL 查询或 DML，并返回结构化表格结果。",
+      "DATABASE",
       "1.0.0",
       1,
       new Capabilities(true, true, true, true, true, true, false),
       ResultKind.TABLE,
       Map.of("renderer", "code", "language", "sql"),
-      JdbcSqlTaskSupport.runtimeSchema(),
+      MySqlTaskSupport.runtimeSchema(),
       Map.of("parameters", "object"),
       Map.of("kind", "table"));
 
@@ -33,7 +34,7 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
   @Override
   public Map<String, Object> defaultDefinition() {
     String statement = "SELECT 1 AS yak_ops_ready;";
-    Map<String, Object> config = JdbcSqlTaskSupport.normalize(Map.of(
+    Map<String, Object> config = MySqlTaskSupport.normalize(Map.of(
         "statement", statement,
         "jdbcUrl", "jdbc:mysql://127.0.0.1:3306/yak_security",
         "username", "root",
@@ -62,7 +63,8 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
       merge(config, runtime.get("specific"));
     }
 
-    Map<String, Object> normalized = JdbcSqlTaskSupport.normalize(config);
+    Map<String, Object> normalized = MySqlTaskSupport.normalize(config);
+    envelope.put("taskType", TaskPluginType.MYSQL);
     envelope.put("config", normalized);
     envelope.put("content", Map.of(
         "kind", "text",
@@ -85,7 +87,7 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
     return new CompiledDefinition(
         normalized,
         Map.of(
-            "taskType", TaskPluginType.SQL,
+            "taskType", TaskPluginType.MYSQL,
             "pluginVersion", descriptor().pluginVersion(),
             "configuration", normalized.get("config")),
         descriptor().inputSchema(),
@@ -94,7 +96,7 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
 
   @Override
   public TaskExecutor createExecutor() {
-    return new JdbcSqlTaskExecutor();
+    return new MySqlTaskExecutor();
   }
 
   private static Map<String, Object> definition(
@@ -102,7 +104,7 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
       Map<String, Object> config) {
     Map<String, Object> definition = new LinkedHashMap<>();
     definition.put("schemaVersion", 1);
-    definition.put("taskType", TaskPluginType.SQL);
+    definition.put("taskType", TaskPluginType.MYSQL);
     definition.put("pluginVersion", "1.0.0");
     definition.put("content", Map.of(
         "kind", "text",
@@ -146,20 +148,27 @@ public final class JdbcSqlTaskPluginFactory implements TaskPluginFactory {
   }
 }
 
-final class JdbcSqlTaskSupport {
+final class MySqlTaskSupport {
 
-  private JdbcSqlTaskSupport() {
+  private MySqlTaskSupport() {
   }
 
   static Map<String, Object> normalize(Map<String, Object> configuration) {
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("statement", TaskConfiguration.requiredString(configuration, "statement"));
-    result.put("jdbcUrl", TaskConfiguration.requiredString(configuration, "jdbcUrl"));
+    String jdbcUrl = TaskConfiguration.requiredString(configuration, "jdbcUrl");
+    if (!jdbcUrl.toLowerCase(Locale.ROOT).startsWith("jdbc:mysql:")) {
+      throw new IllegalArgumentException("MySQL 地址必须以 jdbc:mysql: 开头");
+    }
+    result.put("jdbcUrl", jdbcUrl);
     result.put("username", TaskConfiguration.string(configuration, "username", ""));
     result.put("password", TaskConfiguration.string(configuration, "password", ""));
     result.put(
         "driverClassName",
-        TaskConfiguration.string(configuration, "driverClassName", ""));
+        TaskConfiguration.string(
+            configuration,
+            "driverClassName",
+            "com.mysql.cj.jdbc.Driver"));
     result.put(
         "maxRows",
         TaskConfiguration.positiveInteger(configuration, "maxRows", 1000));
@@ -179,12 +188,17 @@ final class JdbcSqlTaskSupport {
     return Map.of(
         "fields",
         List.of(
-            field("jdbcUrl", "string", true, "JDBC 连接地址", null),
-            field("username", "string", false, "数据库用户名", ""),
-            field("password", "password", false, "数据库密码", ""),
-            field("driverClassName", "string", false, "JDBC 驱动类", ""),
+            field("jdbcUrl", "string", true, "MySQL 连接地址", null),
+            field("username", "string", false, "MySQL 用户名", ""),
+            field("password", "password", false, "MySQL 密码", ""),
+            field(
+                "driverClassName",
+                "string",
+                false,
+                "MySQL 驱动类",
+                "com.mysql.cj.jdbc.Driver"),
             field("maxRows", "integer", false, "最大返回行数", 1000),
-            field("fetchSize", "integer", false, "JDBC Fetch Size", 200),
+            field("fetchSize", "integer", false, "Fetch Size", 200),
             field("queryTimeoutSeconds", "integer", false, "查询超时秒数", 60),
             field("readOnly", "boolean", false, "只读连接", true)));
   }

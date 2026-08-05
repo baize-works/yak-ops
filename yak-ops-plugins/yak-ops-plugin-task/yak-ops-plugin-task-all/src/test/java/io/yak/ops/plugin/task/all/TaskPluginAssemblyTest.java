@@ -12,18 +12,20 @@ class TaskPluginAssemblyTest {
   void discoversOnlyPhaseOnePlugins() {
     TaskPluginCatalog catalog = new TaskPluginCatalog();
 
-    assertThat(catalog.types()).isEqualTo(Set.of("HTTP", "SQL"));
+    assertThat(catalog.types()).isEqualTo(Set.of("HTTP", "MYSQL"));
     assertThat(catalog.descriptor("HTTP").name()).isEqualTo("HTTP 请求");
-    assertThat(catalog.descriptor("SQL").resultKind().name()).isEqualTo("TABLE");
+    assertThat(catalog.descriptor("MYSQL").name()).isEqualTo("MySQL");
+    assertThat(catalog.descriptor("MYSQL").resultKind().name()).isEqualTo("TABLE");
   }
 
   @Test
-  void createsAttemptScopedExecutors() {
+  void createsAttemptScopedExecutorsAndKeepsLegacySqlLookup() {
     TaskPluginCatalog catalog = new TaskPluginCatalog();
 
     assertThat(catalog.createExecutor("HTTP"))
         .isNotSameAs(catalog.createExecutor("HTTP"));
-    assertThat(catalog.createExecutor("SQL"))
-        .isNotSameAs(catalog.createExecutor("SQL"));
+    assertThat(catalog.createExecutor("MYSQL"))
+        .isNotSameAs(catalog.createExecutor("MYSQL"));
+    assertThat(catalog.descriptor("SQL").taskType()).isEqualTo("MYSQL");
   }
 }

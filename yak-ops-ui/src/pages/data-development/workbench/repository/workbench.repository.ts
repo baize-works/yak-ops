@@ -13,6 +13,7 @@ import {
 const API_PREFIX = '/api/v1/data-development';
 const DEFAULT_PROJECT_CODE = 'default';
 const DEFAULT_PROJECT_NAME = '用户数据平台';
+const ROOT_FOLDER_ID = 'root';
 
 interface ApiResponse<T> {
   code: number;
@@ -135,8 +136,10 @@ const unwrap = <T>(response: ApiResponse<T>): T => {
 const formatDateTime = (value?: string) =>
   value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-';
 
-const folderIdFor = (taskType: string) =>
-  taskType.trim().toLowerCase().replaceAll('_', '-');
+const normalizeTaskType = (taskType: string) => {
+  const normalized = taskType.trim().toUpperCase();
+  return normalized === 'SQL' ? 'MYSQL' : normalized;
+};
 
 const cloneJson = <T>(value: T): T => structuredClone(value);
 
@@ -304,6 +307,7 @@ const mapTaskDetail = (
   detail: ApiTaskDetail,
 ): { resource: DevelopmentResource; document: DevelopmentDocument } => {
   const { resource: source, task, draft } = detail;
+  const taskType = normalizeTaskType(task.taskType);
   const definition = asRecord(draft.definition);
   const runtime = asRecord(definition.runtime);
   const config = asRecord(definition.config);
@@ -315,15 +319,15 @@ const mapTaskDetail = (
     id: String(source.id),
     projectId: String(source.projectId),
     parentId: source.parentId ? String(source.parentId) : null,
-    folderId: folderIdFor(task.taskType),
+    folderId: source.parentId ? String(source.parentId) : ROOT_FOLDER_ID,
     nodeType: 'ARTIFACT',
-    resourceType: task.taskType,
+    resourceType: taskType,
     name: source.name,
     description: source.description,
     owner: 'me',
     updatedBy: source.updatedBy ?? source.ownerId ?? 'system',
     favorite: false,
-    engine: task.engineType ?? task.taskType,
+    engine: taskType,
     status: task.status,
     schemaVersion: task.schemaVersion,
     latestRevision: task.draftRevision,
@@ -336,7 +340,7 @@ const mapTaskDetail = (
     resourceId: String(source.id),
     revision: draft.revision,
     schemaVersion: draft.schemaVersion,
-    content: toEditorContent(task.taskType, content, config),
+    content: toEditorContent(taskType, content, config),
     config: {
       ...config,
       pluginVersion: draft.pluginVersion,
@@ -348,7 +352,7 @@ const mapTaskDetail = (
         ...DEFAULT_COMMON_RUNTIME,
         ...asRecord(runtime.common),
       },
-      specific: toEditorRuntimeSpecific(task.taskType, {
+      specific: toEditorRuntimeSpecific(taskType, {
         ...config,
         ...asRecord(runtime.specific),
       }),
@@ -431,7 +435,9 @@ export const workbenchRepository = {
 
     return {
       project: workspace.project,
-      supportedTaskTypes: plugins.map((plugin) => plugin.taskType),
+      supportedTaskTypes: Array.from(
+        new Set(plugins.map((plugin) => normalizeTaskType(plugin.taskType))),
+      ),
       snapshot: {
         resources,
         documents,
@@ -445,16 +451,18 @@ export const workbenchRepository = {
     projectId: string,
     taskType: string,
     name: string,
-    engineType: string,
+    engineType?: string,
+    parentId?: string | null,
   ) {
+    const normalizedTaskType = normalizeTaskType(taskType);
     const detail = unwrap(
       await HttpUtils.post<ApiTaskDetail>(
         `${API_PREFIX}/projects/${projectId}/tasks`,
         {
-          parentId: null,
+          parentId: parentId ? Number(parentId) : null,
           name: name.trim(),
-          taskType,
-          engineType,
+          taskType: normalizedTaskType,
+          engineType: normalizeTaskType(engineType ?? normalizedTaskType),
           sortOrder: 0,
         },
       ),

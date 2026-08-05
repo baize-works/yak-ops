@@ -111,6 +111,7 @@ public final class TaskPluginCatalog {
     if (taskType == null || taskType.isBlank()) {
       throw new IllegalArgumentException("Task type must not be blank");
     }
-    return taskType.trim().toUpperCase(Locale.ROOT);
+    String normalized = taskType.trim().toUpperCase(Locale.ROOT);
+    return TaskPluginType.SQL.equals(normalized) ? TaskPluginType.MYSQL : normalized;
   }
 }

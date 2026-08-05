@@ -21,7 +21,13 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react';
 import { nodePluginRegistry } from '../core/registry';
 import type {
   ExplorerFilter,
@@ -29,7 +35,9 @@ import type {
   WorkbenchFolderDefinition,
 } from '../core/types';
 import {
+  buildProjectFolderPaths,
   projectFolderRepository,
+  sortProjectFolders,
   type ProjectFolder,
 } from '../repository/project-folder.repository';
 import { workbenchErrorMessage } from '../repository/workbench.repository';
@@ -38,8 +46,10 @@ import { useWorkbenchStore } from '../store/workbench.store';
 import CreateFolderModal from './CreateFolderModal';
 import ResourceContextMenu from './ResourceContextMenu';
 
+const ROOT_FOLDER_ID = 'root';
+
 interface ExplorerPanelProps {
-  onCreate: (resourceType: ResourceType, engineType?: string) => void;
+  onCreate: (resourceType: ResourceType) => void;
 }
 
 const QUICK_CREATE_MENU_CLASS = [
@@ -87,12 +97,6 @@ const QUICK_CREATE_SUBMENU_CLASS = [
   '[&_.ant-dropdown-menu-submenu-title:hover]:!text-[var(--yak-brand-color)]',
 ].join(' ');
 
-const sortProjectFolders = (folders: ProjectFolder[]) =>
-  folders.slice().sort((left, right) => {
-    const order = left.sortOrder - right.sortOrder;
-    return order || left.name.localeCompare(right.name);
-  });
-
 const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
   const projectId = useWorkbenchControlStore((state) => state.projectId);
   const projectName = useWorkbenchControlStore((state) => state.projectName);
@@ -128,25 +132,11 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
   const [projectFolders, setProjectFolders] = useState<ProjectFolder[]>([]);
 
   const plugins = useMemo(() => {
-    const supported = new Set(supportedTaskTypes);
+    const supported = new Set(supportedTaskTypes.map((type) => type.toUpperCase()));
     return nodePluginRegistry
       .list()
       .filter((plugin) => supported.has(plugin.type.toUpperCase()));
   }, [supportedTaskTypes]);
-
-  const pluginFolders = useMemo(() => {
-    const folderMap = new Map<string, WorkbenchFolderDefinition>();
-    plugins.forEach((plugin) => {
-      folderMap.set(plugin.metadata.folderId, {
-        id: plugin.metadata.folderId,
-        label: plugin.metadata.folderLabel,
-        order: plugin.metadata.folderOrder,
-      });
-    });
-    return Array.from(folderMap.values()).sort(
-      (left, right) => left.order - right.order,
-    );
-  }, [plugins]);
 
   useEffect(() => {
     if (!projectId) {
@@ -173,32 +163,27 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
     () => new Set(plugins.map((plugin) => plugin.type.toUpperCase())),
     [plugins],
   );
-  const sqlSupported = supportedTypeSet.has('SQL');
+  const mysqlSupported = supportedTypeSet.has('MYSQL');
   const httpSupported = supportedTypeSet.has('HTTP');
 
   const createMenuItems: MenuProps['items'] = [
     {
       key: 'create-node',
       label: '新建节点',
-      disabled: !sqlSupported && !httpSupported,
+      disabled: !mysqlSupported && !httpSupported,
       popupClassName: QUICK_CREATE_SUBMENU_CLASS,
       children: [
         {
           key: 'database',
           label: '数据库',
           icon: <Database size={14} />,
-          disabled: !sqlSupported,
+          disabled: !mysqlSupported,
           popupClassName: QUICK_CREATE_SUBMENU_CLASS,
           children: [
             {
-              key: 'create-sql-mysql',
+              key: 'create-mysql',
               label: 'MySQL',
-              disabled: !sqlSupported,
-            },
-            {
-              key: 'create-sql-oracle',
-              label: 'ORACLE',
-              disabled: !sqlSupported,
+              disabled: !mysqlSupported,
             },
           ],
         },
@@ -230,16 +215,12 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
   ];
 
   const handleCreateMenuClick: MenuProps['onClick'] = ({ key }) => {
-    if (key === 'create-sql-mysql') {
-      onCreate('SQL', 'MySQL');
-      return;
-    }
-    if (key === 'create-sql-oracle') {
-      onCreate('SQL', 'Oracle');
+    if (key === 'create-mysql') {
+      onCreate('MYSQL');
       return;
     }
     if (key === 'create-http') {
-      onCreate('HTTP', 'HTTP');
+      onCreate('HTTP');
       return;
     }
     if (key === 'create-folder') {
@@ -262,10 +243,62 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
     })
     .map((resource) => resource.id);
   const visibleResourceIdSet = new Set(visibleResourceIds);
-  const visibleProjectFolders = projectFolders.filter(
-    (folder) =>
-      !normalizedKeyword || folder.name.toLowerCase().includes(normalizedKeyword),
+
+  const foldersByParentId = useMemo(() => {
+    const result = new Map<string, ProjectFolder[]>();
+    sortProjectFolders(projectFolders).forEach((folder) => {
+      const parentId = folder.parentId ?? ROOT_FOLDER_ID;
+      result.set(parentId, [...(result.get(parentId) ?? []), folder]);
+    });
+    return result;
+  }, [projectFolders]);
+
+  const folderPathDefinitions = useMemo<WorkbenchFolderDefinition[]>(
+    () => [
+      { id: ROOT_FOLDER_ID, label: '/', order: -1 },
+      ...buildProjectFolderPaths(projectFolders).map((folder, index) => ({
+        id: folder.id,
+        label: folder.path,
+        order: index,
+      })),
+    ],
+    [projectFolders],
   );
+
+  const visibleFolderIds = useMemo(() => {
+    if (!normalizedKeyword) {
+      return new Set(projectFolders.map((folder) => folder.id));
+    }
+
+    const result = new Set<string>();
+    const folderById = new Map(projectFolders.map((folder) => [folder.id, folder]));
+    const markParents = (folderId: string | null) => {
+      let currentId = folderId;
+      const visited = new Set<string>();
+      while (currentId && !visited.has(currentId)) {
+        visited.add(currentId);
+        result.add(currentId);
+        currentId = folderById.get(currentId)?.parentId ?? null;
+      }
+    };
+
+    projectFolders.forEach((folder) => {
+      if (folder.name.toLowerCase().includes(normalizedKeyword)) {
+        result.add(folder.id);
+        markParents(folder.parentId);
+      }
+    });
+
+    visibleResourceIds.forEach((resourceId) => {
+      const resource = resourcesById[resourceId];
+      if (resource?.parentId) {
+        result.add(resource.parentId);
+        markParents(folderById.get(resource.parentId)?.parentId ?? null);
+      }
+    });
+
+    return result;
+  }, [normalizedKeyword, projectFolders, resourcesById, visibleResourceIds]);
 
   const showUpdatedBy = explorerWidth >= 360;
   const showUpdatedAt = explorerWidth >= 450;
@@ -290,7 +323,7 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
       <ResourceContextMenu
         key={resource.id}
         resource={resource}
-        folders={pluginFolders}
+        folders={folderPathDefinitions}
         projectLabel={projectName}
       >
         <button
@@ -342,6 +375,62 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
       </ResourceContextMenu>
     );
   };
+
+  const renderFolder = (folder: ProjectFolder): ReactNode => {
+    if (!visibleFolderIds.has(folder.id)) return null;
+
+    const childFolders = foldersByParentId.get(folder.id) ?? [];
+    const resourceIds = (resourceIdsByFolder[folder.id] ?? []).filter((id) =>
+      visibleResourceIdSet.has(id),
+    );
+    const expanded = expandedFolderIds[folder.id] ?? true;
+    const hasChildren = childFolders.length > 0 || resourceIds.length > 0;
+
+    return (
+      <div key={folder.id} className="mb-0.5">
+        <button
+          type="button"
+          onClick={() => toggleFolder(folder.id)}
+          className="flex h-8 w-full items-center gap-1.5 rounded-[5px] border-0 bg-transparent px-1.5 text-left text-[12px] font-medium text-[rgba(22,24,35,0.76)] hover:bg-[#f2f3f4]"
+        >
+          {hasChildren ? (
+            expanded ? (
+              <ChevronDown size={13} />
+            ) : (
+              <ChevronRight size={13} />
+            )
+          ) : (
+            <span className="w-[13px]" />
+          )}
+          {expanded ? (
+            <FolderOpen size={15} className="text-[#f2a800]" />
+          ) : (
+            <Folder size={15} className="text-[#f2a800]" />
+          )}
+          <span className="min-w-0 flex-1 truncate" title={folder.name}>
+            {folder.name}
+          </span>
+          <span className="text-[10px] font-normal text-[rgba(22,24,35,0.3)]">
+            {resourceIds.length}
+          </span>
+        </button>
+
+        {expanded && hasChildren && (
+          <div className="ml-[20px] border-l border-[#e6e8eb] pl-1.5">
+            {resourceIds.map(renderResourceRow)}
+            {childFolders.map(renderFolder)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const rootResourceIds = (resourceIdsByFolder[ROOT_FOLDER_ID] ?? []).filter(
+    (id) => visibleResourceIdSet.has(id),
+  );
+  const rootFolders = foldersByParentId.get(ROOT_FOLDER_ID) ?? [];
+  const hasVisibleContent =
+    rootResourceIds.length > 0 || rootFolders.some((folder) => visibleFolderIds.has(folder.id));
 
   return (
     <>
@@ -430,65 +519,14 @@ const ExplorerPanel = ({ onCreate }: ExplorerPanelProps) => {
             项目目录
           </div>
 
-          {visibleProjectFolders.map((folder) => (
-            <button
-              key={folder.id}
-              type="button"
-              className="flex h-8 w-full items-center gap-1.5 rounded-[5px] border-0 bg-transparent px-1.5 text-left text-[12px] font-medium text-[rgba(22,24,35,0.76)] hover:bg-[#f2f3f4]"
-            >
-              <ChevronRight size={13} className="text-[rgba(22,24,35,0.34)]" />
-              <Folder size={15} className="text-[#f2a800]" />
-              <span className="min-w-0 flex-1 truncate" title={folder.name}>
-                {folder.name}
-              </span>
-            </button>
-          ))}
+          {rootResourceIds.map(renderResourceRow)}
+          {rootFolders.map(renderFolder)}
 
-          {pluginFolders.map((folder) => {
-            const resourceIds = (resourceIdsByFolder[folder.id] ?? []).filter(
-              (id) => visibleResourceIdSet.has(id),
-            );
-            const expanded = expandedFolderIds[folder.id] ?? true;
-
-            if (resourceIds.length === 0 && explorerKeyword) return null;
-
-            return (
-              <div key={folder.id} className="mb-0.5">
-                <button
-                  type="button"
-                  onClick={() => toggleFolder(folder.id)}
-                  className="flex h-8 w-full items-center gap-1.5 rounded-[5px] border-0 bg-transparent px-1.5 text-left text-[12px] font-medium text-[rgba(22,24,35,0.76)] hover:bg-[#f2f3f4]"
-                >
-                  {expanded ? (
-                    <ChevronDown size={13} />
-                  ) : (
-                    <ChevronRight size={13} />
-                  )}
-                  {expanded ? (
-                    <FolderOpen size={15} className="text-[#f2a800]" />
-                  ) : (
-                    <Folder size={15} className="text-[#f2a800]" />
-                  )}
-                  <span className="min-w-0 flex-1 truncate">{folder.label}</span>
-                  <span className="text-[10px] font-normal text-[rgba(22,24,35,0.3)]">
-                    {resourceIds.length}
-                  </span>
-                </button>
-
-                {expanded && (
-                  <div className="ml-[20px] border-l border-[#e6e8eb] pl-1.5">
-                    {resourceIds.length > 0 ? (
-                      resourceIds.map(renderResourceRow)
-                    ) : (
-                      <div className="px-2 py-1 text-[11px] text-[rgba(22,24,35,0.32)]">
-                        暂无节点
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {!hasVisibleContent && (
+            <div className="px-2 py-5 text-center text-[11px] text-[rgba(22,24,35,0.34)]">
+              暂无节点或目录
+            </div>
+          )}
         </div>
 
         <div className="flex h-9 shrink-0 items-center justify-between border-t border-[#e7e9ec] px-3 text-[11px] text-[rgba(22,24,35,0.46)]">

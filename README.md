@@ -63,7 +63,7 @@ yak-ops
 │   ├── yak-ops-plugin-storage
 │   └── yak-ops-plugin-task
 │       ├── yak-ops-plugin-task-api
-│       ├── yak-ops-plugin-task-jdbc-sql
+│       ├── yak-ops-plugin-task-mysql
 │       ├── yak-ops-plugin-task-http
 │       └── yak-ops-plugin-task-all
 ├── yak-ops-boot
@@ -89,8 +89,8 @@ It is independent from workflow orchestration. Task execution is discovered dire
 The first refactoring phase supports only:
 
 ```text
-SQL  -> JDBC SQL -> TABLE result
-HTTP -> JDK HTTP -> JSON result
+MYSQL -> MySQL task plugin -> TABLE result
+HTTP  -> JDK HTTP Client  -> JSON result
 ```
 
 A `TaskPluginFactory` owns metadata, default definitions, normalization, validation, compilation and creation of an attempt-scoped `TaskExecutor`.
@@ -105,17 +105,19 @@ TaskPluginCatalog
 Data Development Execution Gateway
 ```
 
+JDBC remains an internal implementation detail of the MySQL plugin and is no longer exposed as a task type. Legacy `SQL` task lookups are mapped to `MYSQL` for compatibility.
+
 Shell, Python, Flink SQL, Notebook and data-integration development nodes have been removed from the phase-one runtime.
 
 ### Workflow boundary
 
-The previous Workflow frontend, backend business module, SPI and executor registry have been removed. Workflow will be redesigned as an independent orchestration domain that references immutable Task Versions instead of embedding SQL, HTTP or other plugin configuration.
+The previous Workflow frontend, backend business module, SPI and executor registry have been removed. Workflow will be redesigned as an independent orchestration domain that references immutable Task Versions instead of embedding MySQL, HTTP or other plugin configuration.
 
 Historical workflow database tables are not automatically dropped, so existing deployments can retain audit data and decide on migration separately.
 
 ### Datasource plugins
 
-Datasource plugins continue to provide connection normalization, connection tests and Catalog metadata capabilities. The next task-plugin phase should make SQL tasks reference managed datasource IDs instead of persisting independent JDBC credentials in task definitions.
+Datasource plugins continue to provide connection normalization, connection tests and Catalog metadata capabilities. The next task-plugin phase should make MySQL tasks reference managed datasource IDs instead of persisting independent connection credentials in task definitions.
 
 ## Security note
 

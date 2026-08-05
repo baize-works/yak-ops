@@ -1,6 +1,6 @@
 # Yak Ops 数据开发后端架构
 
-数据开发是独立的任务开发与执行域，不承担工作流编排职责。Phase One 只支持 JDBC SQL 与 HTTP 两类任务。
+数据开发是独立的任务开发与执行域，不承担工作流编排职责。Phase One 只支持 MySQL 与 HTTP 两类节点。
 
 ## 1. 领域边界
 
@@ -30,12 +30,12 @@ Task Execution
 当前链路：
 
 ```text
-SQL / HTTP TaskPluginFactory
-             ↓ ServiceLoader
-       TaskPluginCatalog
-        ├─ Authoring
-        └─ TaskExecutor
-             ↓
+MySQL / HTTP TaskPluginFactory
+               ↓ ServiceLoader
+         TaskPluginCatalog
+          ├─ Authoring
+          └─ TaskExecutor
+               ↓
 Data Development Execution Gateway
 ```
 
@@ -71,7 +71,7 @@ Execution 支持：
 
 - `DRAFT_REVISION`：执行已保存草稿；
 - `PUBLISHED_VERSION`：执行不可变发布版本；
-- `EPHEMERAL_SNAPSHOT`：执行未保存内容或 SQL 当前语句。
+- `EPHEMERAL_SNAPSHOT`：执行未保存内容或当前 SQL 语句。
 
 `DataDevelopmentExecutionWorker` 通过 `TaskPluginCatalog.createExecutor(taskType)` 创建物理执行器，并使用通用运行契约：
 
@@ -88,9 +88,11 @@ TaskLogger
 ## 6. 当前插件范围
 
 ```text
-SQL  -> JDBC SQL -> TABLE Result
-HTTP -> JDK HTTP -> JSON Result
+MYSQL -> MySQL Task Plugin -> TABLE Result
+HTTP  -> JDK HTTP Client    -> JSON Result
 ```
+
+JDBC 只作为 MySQL 插件的内部实现细节，不再作为节点类型。历史 `SQL` 类型通过 Catalog 兼容映射到 `MYSQL`。
 
 Shell、Python、Flink SQL、Notebook 与数据集成插件不属于 Phase One，相关前后端实现已移除。
 
@@ -98,11 +100,11 @@ Shell、Python、Flink SQL、Notebook 与数据集成插件不属于 Phase One�
 
 旧 Workflow 前端、后端模块、SPI、执行 Registry 和数据库迁移已从运行时代码中移除。历史数据库表暂不主动删除，便于审计或后续迁移。
 
-后续 Workflow 应作为独立编排域重新设计，只引用不可变 Task Version，并负责依赖、输入输出映射、成功失败路由、重试、超时和调度策略；不得复制 SQL/HTTP 专属配置。
+后续 Workflow 应作为独立编排域重新设计，只引用不可变 Task Version，并负责依赖、输入输出映射、成功失败路由、重试、超时和调度策略；不得复制 MySQL/HTTP 专属配置。
 
 ## 8. 后续阶段
 
-1. SQL 任务改为引用统一数据源 ID；
+1. MySQL 节点改为引用统一数据源 ID；
 2. 数据源凭据仅在 Worker 执行前解析，不进入任务版本和执行快照；
 3. 增加 SQL 审计、只读策略和 Dataset 分页；
 4. 增加分布式 Worker 与资源隔离；

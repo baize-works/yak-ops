@@ -1,4 +1,4 @@
-import { Braces } from 'lucide-react';
+import { Database } from 'lucide-react';
 import type { NodePluginDefinition } from '../core/types';
 import {
   CODE_CAPABILITIES,
@@ -6,27 +6,20 @@ import {
   joinLines,
 } from './shared';
 
-export const sqlPlugin: NodePluginDefinition = {
-  type: 'SQL',
+export const mysqlPlugin: NodePluginDefinition = {
+  type: 'MYSQL',
   version: 1,
   metadata: {
-    label: 'JDBC SQL',
-    description: '通过 JDBC 执行查询或 DML，并返回结构化表格结果。',
-    category: '数据开发',
-    folderId: 'sql',
-    folderLabel: 'SQL',
+    label: 'MySQL',
+    description: '执行 MySQL 查询或 DML，并返回结构化表格结果。',
+    category: '数据库',
+    folderId: 'mysql',
+    folderLabel: 'MySQL',
     folderOrder: 10,
-    icon: Braces,
-    iconClassName: 'text-[#22a447]',
+    icon: Database,
+    iconClassName: 'text-[var(--yak-brand-color)]',
     extension: '.sql',
-    defaultEngine: 'JDBC SQL',
-    engineOptions: [
-      { label: 'MySQL', value: 'MySQL' },
-      { label: 'ORACLE', value: 'Oracle' },
-      { label: 'PostgreSQL', value: 'PostgreSQL' },
-      { label: 'Doris', value: 'Doris' },
-      { label: '通用 JDBC', value: 'JDBC SQL' },
-    ],
+    defaultEngine: 'MYSQL',
   },
   capabilities: CODE_CAPABILITIES,
   authoring: {
@@ -36,8 +29,8 @@ export const sqlPlugin: NodePluginDefinition = {
         'sql',
         joinLines(
           '-- ================================================================',
-          '-- Yak Ops 数据开发 - JDBC SQL',
-          `-- 任务名称: ${name}`,
+          '-- Yak Ops 数据开发 - MySQL',
+          `-- 节点名称: ${name}`,
           '-- ================================================================',
           '',
           'SELECT 1 AS yak_ops_ready;',
@@ -50,7 +43,7 @@ export const sqlPlugin: NodePluginDefinition = {
       fields: [
         {
           key: 'jdbcUrl',
-          label: 'JDBC 地址',
+          label: 'MySQL 地址',
           type: 'text',
           required: true,
           placeholder: 'jdbc:mysql://127.0.0.1:3306/yak_security',
@@ -68,7 +61,7 @@ export const sqlPlugin: NodePluginDefinition = {
         },
         {
           key: 'driverClassName',
-          label: '驱动类',
+          label: 'MySQL 驱动类',
           type: 'text',
           placeholder: 'com.mysql.cj.jdbc.Driver',
         },
