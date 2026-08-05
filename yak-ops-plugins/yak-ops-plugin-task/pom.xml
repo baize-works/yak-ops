@@ -11,7 +11,7 @@
     <modules>
         <module>yak-ops-plugin-task-api</module>
         <module>yak-ops-plugin-task-http</module>
-        <module>yak-ops-plugin-task-jdbc-sql</module>
+        <module>yak-ops-plugin-task-mysql</module>
         <module>yak-ops-plugin-task-all</module>
     </modules>
 </project>
