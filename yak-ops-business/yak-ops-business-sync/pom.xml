@@ -15,10 +15,9 @@
     <packaging>pom</packaging>
 
     <name>Yak Ops Business Sync</name>
-    <description>Offline and realtime data synchronization module aggregation</description>
+    <description>Offline data synchronization module aggregation</description>
 
     <modules>
         <module>yak-ops-business-sync-offline</module>
-        <module>yak-ops-business-sync-realtime</module>
     </modules>
 </project>

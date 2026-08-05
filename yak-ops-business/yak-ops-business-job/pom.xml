@@ -14,7 +14,7 @@
     <artifactId>yak-ops-business-job</artifactId>
 
     <name>Yak Ops Business Job</name>
-    <description>Business scheduling aggregation and task registration capabilities</description>
+    <description>Offline synchronization scheduling aggregation</description>
 
     <dependencies>
         <dependency>
@@ -24,10 +24,6 @@
         <dependency>
             <groupId>io.yak.ops</groupId>
             <artifactId>yak-ops-business-sync-offline</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.yak.ops</groupId>
-            <artifactId>yak-ops-business-quality</artifactId>
         </dependency>
         <dependency>
             <groupId>io.yak.framework</groupId>

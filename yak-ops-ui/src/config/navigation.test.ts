@@ -26,7 +26,10 @@ describe('permission-aware navigation', () => {
     expect(getQuickCreateRoutes([...batchRead, 'task:batch:create']).map((route) => route.id)).toEqual(['batch-link-up']);
   });
 
-  it('keeps explicitly public navigation available', () => {
-    expect(getActiveNavigationId('/home', [])).toBe('home');
+  it('does not expose removed modules', () => {
+    expect(getActiveNavigationId('/home', [])).toBeUndefined();
+    expect(getActiveNavigationId('/sync/realtime-link-up', ['task:realtime:read'])).toBeUndefined();
+    expect(getActiveNavigationId('/data-development/workbench', batchRead)).toBeUndefined();
+    expect(getActiveNavigationId('/data-quality', ['quality:rule:read'])).toBeUndefined();
   });
 });

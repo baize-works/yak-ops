@@ -3,16 +3,23 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent><groupId>io.yak.ops</groupId><artifactId>yak-ops</artifactId><version>1.0.0</version><relativePath>../pom.xml</relativePath></parent>
+
+    <parent>
+        <groupId>io.yak.ops</groupId>
+        <artifactId>yak-ops</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <artifactId>yak-ops-business</artifactId>
     <packaging>pom</packaging>
+
     <name>Yak Ops Business</name>
     <description>Yak Ops business-domain module aggregation</description>
+
     <modules>
         <module>yak-ops-business-datasource</module>
-        <module>yak-ops-business-data-development</module>
         <module>yak-ops-business-job</module>
-        <module>yak-ops-business-quality</module>
         <module>yak-ops-business-resource</module>
         <module>yak-ops-business-sync</module>
     </modules>

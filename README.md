@@ -9,8 +9,19 @@
 <h1 align="center">Yak Ops</h1>
 
 <p align="center">
-  A modern, visual, and production-oriented data operations platform.
+  A focused data operations platform for datasource management, offline synchronization, resources, and system administration.
 </p>
+
+## Current scope
+
+Yak Ops currently keeps a deliberately small and maintainable feature set:
+
+- datasource management;
+- offline synchronization under Data Integration;
+- resource management, including files, clients, and connectors;
+- system management and security administration.
+
+Data Development, realtime synchronization, and Data Quality have been removed from the active codebase. These domains can be redesigned independently before being introduced again.
 
 ## Quick start
 
@@ -53,72 +64,40 @@ yak-ops
 ├── yak-ops-core
 ├── yak-ops-business
 │   ├── yak-ops-business-datasource
-│   ├── yak-ops-business-data-development
 │   ├── yak-ops-business-job
-│   ├── yak-ops-business-quality
 │   ├── yak-ops-business-resource
 │   └── yak-ops-business-sync
+│       └── yak-ops-business-sync-offline
 ├── yak-ops-plugins
 │   ├── yak-ops-plugin-datasource
-│   ├── yak-ops-plugin-storage
-│   └── yak-ops-plugin-task
-│       ├── yak-ops-plugin-task-api
-│       ├── yak-ops-plugin-task-mysql
-│       ├── yak-ops-plugin-task-http
-│       └── yak-ops-plugin-task-all
+│   └── yak-ops-plugin-storage
 ├── yak-ops-boot
 ├── yak-ops-ui
 └── yak-ops-dist
 ```
 
-### Data development
+### Offline synchronization
 
-Data Development owns:
-
-```text
-Project / Folder / Task
-Draft Revision
-Immutable Task Version
-Execution / Attempt / Event / Result
-```
-
-It is independent from workflow orchestration. Task execution is discovered directly through `TaskPluginCatalog` and the generic contracts in `yak-ops-plugin-task-api`.
-
-### Task Plugin Phase One
-
-The first refactoring phase supports only:
-
-```text
-MYSQL -> MySQL task plugin -> TABLE result
-HTTP  -> JDK HTTP Client  -> JSON result
-```
-
-A `TaskPluginFactory` owns metadata, default definitions, normalization, validation, compilation and creation of an attempt-scoped `TaskExecutor`.
-
-```text
-TaskPluginFactory
-       ↓ ServiceLoader
-TaskPluginCatalog
-       ├─ Authoring / Validation / Compilation
-       └─ TaskExecutor
-              ↓
-Data Development Execution Gateway
-```
-
-JDBC remains an internal implementation detail of the MySQL plugin and is no longer exposed as a task type. Legacy `SQL` task lookups are mapped to `MYSQL` for compatibility.
-
-Shell, Python, Flink SQL, Notebook and data-integration development nodes have been removed from the phase-one runtime.
-
-### Workflow boundary
-
-The previous Workflow frontend, backend business module, SPI and executor registry have been removed. Workflow will be redesigned as an independent orchestration domain that references immutable Task Versions instead of embedding MySQL, HTTP or other plugin configuration.
-
-Historical workflow database tables are not automatically dropped, so existing deployments can retain audit data and decide on migration separately.
+Offline synchronization keeps task definition management, Link-Up engine integration, worker registration, execution reconciliation, and scheduling support.
 
 ### Datasource plugins
 
-Datasource plugins continue to provide connection normalization, connection tests and Catalog metadata capabilities. The next task-plugin phase should make MySQL tasks reference managed datasource IDs instead of persisting independent connection credentials in task definitions.
+Datasource plugins provide connection normalization, connection tests, and catalog metadata capabilities.
+
+### Resource management
+
+Resource management supports managed files and pluggable Local, MinIO, and HDFS storage backends.
+
+## Removed domains and data
+
+The following runtime modules and frontend pages are no longer assembled:
+
+- Data Development and its task plugins;
+- realtime synchronization;
+- Data Quality and its scheduling integration.
+
+Existing database tables are not automatically dropped. Deployments that already contain historical data can retain it for audit or migrate it separately.
 
 ## Security note
 
-HTTP requests and SQL statements can access external systems. Production deployments should apply project permissions, network restrictions, SQL audit rules and secret management before granting task execution access.
+Datasource connections and offline synchronization can access external systems. Production deployments should apply project permissions, network restrictions, audit rules, and secret management before granting access.
