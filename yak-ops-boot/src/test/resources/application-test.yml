@@ -20,6 +20,8 @@ yak:
       enabled: false
     bootstrap:
       enabled: false
+  database:
+    enabled: false
   datasource:
     enabled: false
   resource:
