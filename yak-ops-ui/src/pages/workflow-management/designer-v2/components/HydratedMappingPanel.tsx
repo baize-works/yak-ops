@@ -90,13 +90,15 @@ const HydratedMappingPanel = ({
     hydratedNodes.find((current) => current.id === node.id) ?? node;
 
   return (
-    <MappingPanel
-      node={hydratedNode}
-      nodes={hydratedNodes}
-      edges={edges}
-      onChange={onChange}
-      onClose={onClose}
-    />
+    <div className="flex h-full">
+      <MappingPanel
+        node={hydratedNode}
+        nodes={hydratedNodes}
+        edges={edges}
+        onChange={onChange}
+        onClose={onClose}
+      />
+    </div>
   );
 };
 
