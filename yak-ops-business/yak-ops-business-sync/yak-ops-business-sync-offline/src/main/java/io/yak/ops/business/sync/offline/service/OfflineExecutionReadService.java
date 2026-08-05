@@ -92,11 +92,36 @@ public class OfflineExecutionReadService {
 
   public JsonNode tableMetrics(Long id) {
     OfflineJobExecutionPO execution = require(id);
+
+    JsonNode snapshotPipelines = snapshotPipelines(execution);
+    if (snapshotPipelines.isArray() && !snapshotPipelines.isEmpty()) {
+      return OfflinePipelineMetricsMapper.flatten(
+          objectMapper,
+          snapshotPipelines);
+    }
+
     if (!StringUtils.hasText(execution.getEngineJobId())) {
       throw new IllegalStateException("当前执行实例尚未获得 Link-Up jobId");
     }
     JsonNode pipelines = linkUpClient.pipelines(execution.getEngineJobId());
     return OfflinePipelineMetricsMapper.flatten(objectMapper, pipelines);
+  }
+
+  private JsonNode snapshotPipelines(OfflineJobExecutionPO execution) {
+    if (execution == null
+        || !StringUtils.hasText(execution.getEngineSnapshotJson())) {
+      return objectMapper.createArrayNode();
+    }
+    try {
+      JsonNode snapshot =
+          objectMapper.readTree(execution.getEngineSnapshotJson());
+      JsonNode pipelines = snapshot.path("pipelines");
+      return pipelines.isArray()
+          ? pipelines
+          : objectMapper.createArrayNode();
+    } catch (Exception ignored) {
+      return objectMapper.createArrayNode();
+    }
   }
 
   public String logs(Long id) {
