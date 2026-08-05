@@ -1,20 +1,24 @@
 import {
   DatabaseOutlined,
+  EyeOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
 import {
+  Button,
   Input,
   Segmented,
   Select,
   Spin,
   Switch,
 } from 'antd';
-import type { ChangeEvent, ReactNode } from 'react';
+import { useState, type ChangeEvent, type ReactNode } from 'react';
 
 import type { DataSourceColumnOption } from '../hooks/useDataSourceColumns';
 import EditorSection from './EditorSection';
+import SingleTablePreviewModal from './SingleTablePreviewModal';
 
 interface SingleTableConfigSectionProps {
+  sourceDataSourceId?: string | number;
   sourceConfig: Record<string, any>;
   sinkConfig: Record<string, any>;
   sourceTables: string[];
@@ -67,6 +71,7 @@ const splitPrimaryKeys = (value: unknown): string[] =>
     .filter(Boolean);
 
 export default function SingleTableConfigSection({
+  sourceDataSourceId,
   sourceConfig,
   sinkConfig,
   sourceTables,
@@ -82,6 +87,14 @@ export default function SingleTableConfigSection({
   onSourceChange,
   onSinkChange,
 }: SingleTableConfigSectionProps) {
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const sourceReadMode = sourceConfig.readMode === 'sql' ? 'sql' : 'table';
+  const previewDisabled =
+    !sourceDataSourceId ||
+    (sourceReadMode === 'sql'
+      ? !String(sourceConfig.sql || '').trim()
+      : !String(sourceConfig.table || '').trim());
+
   return (
     <EditorSection title="单表同步配置">
       <div className="grid grid-cols-2 items-start gap-5 max-lg:grid-cols-1">
@@ -134,6 +147,15 @@ export default function SingleTableConfigSection({
               />
             </div>
           )}
+
+          <Button
+            block
+            icon={<EyeOutlined />}
+            disabled={previewDisabled}
+            onClick={() => setPreviewOpen(true)}
+          >
+            数据预览
+          </Button>
 
           {sourceExtraParameters}
         </EndpointPanel>
@@ -239,6 +261,13 @@ export default function SingleTableConfigSection({
           {sinkExtraParameters}
         </EndpointPanel>
       </div>
+
+      <SingleTablePreviewModal
+        open={previewOpen}
+        dataSourceId={sourceDataSourceId}
+        sourceConfig={sourceConfig}
+        onCancel={() => setPreviewOpen(false)}
+      />
     </EditorSection>
   );
 }
