@@ -7,7 +7,7 @@ import {
   Play,
   Route,
 } from 'lucide-react';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Handle,
@@ -18,16 +18,14 @@ import {
   type NodeProps,
 } from 'reactflow';
 
-import { workflowTaskLibraryRepository } from '../../repository/workflow-task-library.repository';
 import { inputMappingProgress } from '../mapping';
-import {
-  applyPublishedTaskVersion,
-  markTaskSchemaError,
-  type WorkflowV2CanvasNodeData,
-  type WorkflowV2FlowEdge,
-  type WorkflowV2FlowNode,
+import type {
+  WorkflowV2CanvasNodeData,
+  WorkflowV2FlowEdge,
+  WorkflowV2FlowNode,
 } from '../model';
-import MappingPanel from './MappingPanel';
+import { usePublishedTaskSchema } from '../task-schema';
+import HydratedMappingPanel from './HydratedMappingPanel';
 
 const iconFor = (kind: WorkflowV2CanvasNodeData['kind']) => {
   if (kind === 'START') return <Play size={16} />;
@@ -92,7 +90,8 @@ const WorkflowV2NodeCard = ({
   selected,
 }: NodeProps<WorkflowV2CanvasNodeData>) => {
   const task = data.taskRef;
-  const meta = data.taskMeta;
+  const hydratedMeta = usePublishedTaskSchema(task, data.taskMeta);
+  const meta = hydratedMeta;
   const reactFlow = useReactFlow<WorkflowV2CanvasNodeData>();
   const nodes = useNodes<WorkflowV2CanvasNodeData>() as WorkflowV2FlowNode[];
   const edges = useEdges() as WorkflowV2FlowEdge[];
@@ -102,50 +101,10 @@ const WorkflowV2NodeCard = ({
         '已发布任务'
       : data.description;
 
-  useEffect(() => {
-    if (
-      data.kind !== 'TASK' ||
-      !task ||
-      data.taskMeta?.schemaStatus !== 'loading'
-    ) {
-      return;
-    }
-
-    let active = true;
-    workflowTaskLibraryRepository
-      .getPublishedVersion(task.taskId, task.taskVersionId)
-      .then((version) => {
-        if (!active) return;
-        reactFlow.setNodes((current) =>
-          current.map((node) =>
-            node.id === id
-              ? applyPublishedTaskVersion(node as WorkflowV2FlowNode, version)
-              : node,
-          ),
-        );
-      })
-      .catch((error: unknown) => {
-        if (!active) return;
-        reactFlow.setNodes((current) =>
-          current.map((node) =>
-            node.id === id
-              ? markTaskSchemaError(node as WorkflowV2FlowNode, error)
-              : node,
-          ),
-        );
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [
-    data.kind,
-    data.taskMeta?.schemaStatus,
-    id,
-    reactFlow,
-    task?.taskId,
-    task?.taskVersionId,
-  ]);
+  const effectiveData: WorkflowV2CanvasNodeData = {
+    ...data,
+    taskMeta: hydratedMeta,
+  };
 
   const updateData = useCallback(
     (nextData: WorkflowV2CanvasNodeData) => {
@@ -178,12 +137,12 @@ const WorkflowV2NodeCard = ({
               event.stopPropagation()
             }
           >
-            <MappingPanel
+            <HydratedMappingPanel
               node={{
                 id,
                 type: 'workflowV2Node',
                 position: { x: 0, y: 0 },
-                data,
+                data: effectiveData,
               }}
               nodes={nodes}
               edges={edges}
@@ -261,7 +220,7 @@ const WorkflowV2NodeCard = ({
                   输出契约
                 </span>
               )}
-              <MappingStatus data={data} />
+              <MappingStatus data={effectiveData} />
             </div>
           )}
 
