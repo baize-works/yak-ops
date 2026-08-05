@@ -126,7 +126,7 @@ export default function MultiTableConfigSection({
 
   return (
     <EditorSection title="多表同步配置">
-      <div className="grid grid-cols-2 items-start gap-5 max-lg:grid-cols-1">
+      <div className="grid grid-cols-2 items-start gap-5 max-lg:grid-cols-1" style={{height: 500}}>
         <EndpointPanel
           icon={<DatabaseOutlined />}
           title="Source 来源配置"

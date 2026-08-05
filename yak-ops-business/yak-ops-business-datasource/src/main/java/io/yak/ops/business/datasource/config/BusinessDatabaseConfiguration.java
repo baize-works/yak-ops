@@ -7,7 +7,9 @@ import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.yak.ops.common.mybatis.MybatisPlusFactorySupport;
+
 import javax.sql.DataSource;
+
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,94 +17,102 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
-/** Yak Ops 业务模块共享的数据源、MyBatis 与事务基础设施。 */
+/**
+ * Yak Ops 业务模块共享的数据源、MyBatis 与事务基础设施。
+ */
+
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(
-    prefix = "yak.database",
-    name = "enabled",
-    havingValue = "true",
-    matchIfMissing = true)
+        prefix = "yak.database",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true)
 @EnableConfigurationProperties(BusinessDatabaseProperties.class)
 public class BusinessDatabaseConfiguration {
 
-  @Bean(
-      name = {
-          "yakBusinessDataSource",
-          "opsDataSource",
-          "opsResourceDataSource",
-          "offlineSyncDataSource"
-      },
-      destroyMethod = "close")
-  public HikariDataSource yakBusinessDataSource(BusinessDatabaseProperties properties) {
-    HikariConfig config = new HikariConfig();
-    config.setPoolName("YakBusinessDatabasePool");
-    config.setJdbcUrl(properties.getUrl());
-    config.setUsername(properties.getUsername());
-    config.setPassword(properties.getPassword());
-    config.setDriverClassName(properties.getDriverClassName());
-    config.setMinimumIdle(properties.getMinimumIdle());
-    config.setMaximumPoolSize(properties.getMaximumPoolSize());
-    config.setAutoCommit(true);
-    return new HikariDataSource(config);
-  }
-
-  @Bean(
-      name = {
-          "yakBusinessTransactionManager",
-          "opsDataSourceTransactionManager",
-          "opsResourceTransactionManager",
-          "offlineSyncTransactionManager"
-      })
-  public PlatformTransactionManager yakBusinessTransactionManager(
-      @Qualifier("yakBusinessDataSource") DataSource dataSource) {
-    return new DataSourceTransactionManager(dataSource);
-  }
-
-  @Bean(
-      name = {
-          "yakBusinessSqlSessionFactory",
-          "opsDataSourceSqlSessionFactory",
-          "opsResourceSqlSessionFactory",
-          "offlineSyncSqlSessionFactory"
-      })
-  public SqlSessionFactory yakBusinessSqlSessionFactory(
-      @Qualifier("yakBusinessDataSource") DataSource dataSource) throws Exception {
-    MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
-    factory.setDataSource(dataSource);
-    factory.setTypeAliasesPackage(
-        "io.yak.ops.common.bean.po.datasource,"
-            + "io.yak.ops.common.bean.po.resource,"
-            + "io.yak.ops.common.bean.po.sync.offline");
-
-    Resource[] mapperLocations = new PathMatchingResourcePatternResolver()
-        .getResources("classpath*:mapper/datasource/*.xml");
-    if (mapperLocations.length > 0) {
-      factory.setMapperLocations(mapperLocations);
+    @Primary
+    @Bean(
+            name = {
+                    "yakBusinessDataSource",
+                    "opsDataSource",
+                    "opsResourceDataSource",
+                    "offlineSyncDataSource"
+            },
+            destroyMethod = "close")
+    public HikariDataSource yakBusinessDataSource(BusinessDatabaseProperties properties) {
+        HikariConfig config = new HikariConfig();
+        config.setPoolName("YakBusinessDatabasePool");
+        config.setJdbcUrl(properties.getUrl());
+        config.setUsername(properties.getUsername());
+        config.setPassword(properties.getPassword());
+        config.setDriverClassName(properties.getDriverClassName());
+        config.setMinimumIdle(properties.getMinimumIdle());
+        config.setMaximumPoolSize(properties.getMaximumPoolSize());
+        config.setAutoCommit(true);
+        return new HikariDataSource(config);
     }
 
-    factory.setConfiguration(MybatisPlusFactorySupport.createConfiguration());
-    factory.setGlobalConfig(MybatisPlusFactorySupport.createGlobalConfig());
+    @Primary
+    @Bean(
+            name = {
+                    "yakBusinessTransactionManager",
+                    "opsDataSourceTransactionManager",
+                    "opsResourceTransactionManager",
+                    "offlineSyncTransactionManager"
+            })
+    public PlatformTransactionManager yakBusinessTransactionManager(
+            @Qualifier("yakBusinessDataSource") DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
 
-    MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
-    interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
-    factory.setPlugins(interceptor);
-    return factory.getObject();
-  }
+    @Primary
+    @Bean(
+            name = {
+                    "yakBusinessSqlSessionFactory",
+                    "opsDataSourceSqlSessionFactory",
+                    "opsResourceSqlSessionFactory",
+                    "offlineSyncSqlSessionFactory"
+            })
+    public SqlSessionFactory yakBusinessSqlSessionFactory(
+            @Qualifier("yakBusinessDataSource") DataSource dataSource) throws Exception {
+        MybatisSqlSessionFactoryBean factory = new MybatisSqlSessionFactoryBean();
+        factory.setDataSource(dataSource);
+        factory.setTypeAliasesPackage(
+                "io.yak.ops.common.bean.po.datasource,"
+                        + "io.yak.ops.common.bean.po.resource,"
+                        + "io.yak.ops.common.bean.po.sync.offline");
 
-  @Bean(
-      name = {
-          "yakBusinessSqlSessionTemplate",
-          "opsDataSourceSqlSessionTemplate",
-          "opsResourceSqlSessionTemplate",
-          "offlineSyncSqlSessionTemplate"
-      })
-  public SqlSessionTemplate yakBusinessSqlSessionTemplate(
-      @Qualifier("yakBusinessSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
-    return new SqlSessionTemplate(sqlSessionFactory);
-  }
+        Resource[] mapperLocations = new PathMatchingResourcePatternResolver()
+                .getResources("classpath*:mapper/datasource/*.xml");
+        if (mapperLocations.length > 0) {
+            factory.setMapperLocations(mapperLocations);
+        }
+
+        factory.setConfiguration(MybatisPlusFactorySupport.createConfiguration());
+        factory.setGlobalConfig(MybatisPlusFactorySupport.createGlobalConfig());
+
+        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
+        factory.setPlugins(interceptor);
+        return factory.getObject();
+    }
+
+    @Primary
+    @Bean(
+            name = {
+                    "yakBusinessSqlSessionTemplate",
+                    "opsDataSourceSqlSessionTemplate",
+                    "opsResourceSqlSessionTemplate",
+                    "offlineSyncSqlSessionTemplate"
+            })
+    public SqlSessionTemplate yakBusinessSqlSessionTemplate(
+            @Qualifier("yakBusinessSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        return new SqlSessionTemplate(sqlSessionFactory);
+    }
 }
