@@ -38,14 +38,6 @@ public class OfflineCapabilityMatcher {
   }
 
   public MatchResult match(NodeRecord node, String requirementsJson) {
-    if (node == null) {
-      return MatchResult.reject("Worker 不存在");
-    }
-    if ("DYNAMIC".equalsIgnoreCase(node.getRegistrationMode())
-        && (node.getLeaseExpiresAt() == null
-            || !node.getLeaseExpiresAt().isAfter(LocalDateTime.now()))) {
-      return MatchResult.reject("动态注册租约已过期");
-    }
     if (!properties.isEnabled()) {
       return MatchResult.accept("能力调度已关闭", "{}");
     }
@@ -53,6 +45,9 @@ public class OfflineCapabilityMatcher {
     JsonNode endpoints = requirements.path("endpoints");
     if (!endpoints.isArray() || endpoints.isEmpty()) {
       return MatchResult.accept("任务没有显式能力要求", "{}");
+    }
+    if (node == null) {
+      return MatchResult.reject("Worker 不存在");
     }
     if (!"READY".equalsIgnoreCase(node.getCapabilityStatus())) {
       return MatchResult.reject("Connector 能力状态为 " + text(node.getCapabilityStatus(), "UNKNOWN"));
@@ -208,8 +203,16 @@ public class OfflineCapabilityMatcher {
       return new MatchResult(false, reason, null);
     }
 
-    public boolean isMatched() { return matched; }
-    public String getReason() { return reason; }
-    public String getAssignedCapabilitiesJson() { return assignedCapabilitiesJson; }
+    public boolean isMatched() {
+      return matched;
+    }
+
+    public String getReason() {
+      return reason;
+    }
+
+    public String getAssignedCapabilitiesJson() {
+      return assignedCapabilitiesJson;
+    }
   }
 }

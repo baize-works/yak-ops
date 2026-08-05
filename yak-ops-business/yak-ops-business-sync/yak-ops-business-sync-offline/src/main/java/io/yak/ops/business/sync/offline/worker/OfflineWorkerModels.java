@@ -76,7 +76,6 @@ public final class OfflineWorkerModels {
     private String keyword;
     private String status;
     private String schedulingStatus;
-    private String registrationMode;
     private Boolean enabled;
   }
 
@@ -93,12 +92,6 @@ public final class OfflineWorkerModels {
   }
 
   @Data
-  @NoArgsConstructor
-  public static class LeaseRevokeRequest {
-    private String reason;
-  }
-
-  @Data
   @Builder
   @NoArgsConstructor
   @AllArgsConstructor
@@ -108,11 +101,6 @@ public final class OfflineWorkerModels {
     private String nodeName;
     private String baseUrl;
     private String registrationMode;
-    private String leaseStatus;
-    private LocalDateTime leaseExpiresAt;
-    private LocalDateTime lastRegistrationTime;
-    private Long heartbeatSequence;
-    private String registrationProtocolVersion;
     private Boolean enabled;
     private String schedulingStatus;
     private Integer weight;
@@ -165,8 +153,6 @@ public final class OfflineWorkerModels {
     private String label;
     private String status;
     private String schedulingStatus;
-    private String registrationMode;
-    private String leaseStatus;
     private Integer runningJobs;
     private Integer maxConcurrentJobs;
     private Integer queuedJobs;

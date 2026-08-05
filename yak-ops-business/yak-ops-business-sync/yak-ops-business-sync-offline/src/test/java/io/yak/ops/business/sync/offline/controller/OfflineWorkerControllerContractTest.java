@@ -3,7 +3,6 @@ package io.yak.ops.business.sync.offline.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.CreateRequest;
-import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.LeaseRevokeRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.QueryRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.SchedulingRequest;
 import io.yak.ops.business.sync.offline.worker.OfflineWorkerModels.UpdateRequest;
@@ -19,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 class OfflineWorkerControllerContractTest {
 
   @Test
-  void exposesWorkerManagementCapabilityAndLeaseClosure() throws Exception {
+  void exposesWorkerManagementAndCapabilityClosure() throws Exception {
     RequestMapping root = OfflineWorkerController.class.getAnnotation(RequestMapping.class);
     assertThat(root.value()).containsExactly("/api/v1/offline/workers");
 
@@ -30,15 +29,14 @@ class OfflineWorkerControllerContractTest {
     assertPost("page", new Class<?>[] {QueryRequest.class}, "/page");
     assertGet("options", new Class<?>[0], "/options");
     assertPost("refresh", new Class<?>[] {String.class}, "/{nodeId}/refresh");
-    assertGet("capabilities", new Class<?>[] {String.class}, "/{nodeId}/capabilities");
+    assertGet(
+        "capabilities",
+        new Class<?>[] {String.class},
+        "/{nodeId}/capabilities");
     assertPost(
         "refreshCapabilities",
         new Class<?>[] {String.class},
         "/{nodeId}/capabilities/refresh");
-    assertPost(
-        "revokeLease",
-        new Class<?>[] {String.class, LeaseRevokeRequest.class},
-        "/{nodeId}/lease/revoke");
     assertPut(
         "schedulingStatus",
         new Class<?>[] {String.class, SchedulingRequest.class},
