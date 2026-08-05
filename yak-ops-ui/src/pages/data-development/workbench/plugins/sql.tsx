@@ -22,6 +22,7 @@ export const sqlPlugin: NodePluginDefinition = {
     defaultEngine: 'JDBC SQL',
     engineOptions: [
       { label: 'MySQL', value: 'MySQL' },
+      { label: 'ORACLE', value: 'Oracle' },
       { label: 'PostgreSQL', value: 'PostgreSQL' },
       { label: 'Doris', value: 'Doris' },
       { label: '通用 JDBC', value: 'JDBC SQL' },
