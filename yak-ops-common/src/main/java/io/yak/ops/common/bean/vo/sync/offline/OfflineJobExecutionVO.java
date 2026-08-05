@@ -6,7 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /** 离线同步执行实例展示对象。 */
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class OfflineJobExecutionVO {
   private Long id;
   private Long jobDefinitionId;
@@ -23,9 +26,17 @@ public class OfflineJobExecutionVO {
   private Boolean cancellationRequested;
   private String errorMessage;
   private long sourceRecordCount;
+  private long sinkAttemptedRecordCount;
   private long sinkSuccessRecordCount;
+  private long sinkCommittedRecordCount;
   private long sourceReadBytes;
   private long sinkWrittenBytes;
+  private double sourceAverageQps;
+  private double sinkAverageQps;
+  private long failedRecordCount;
+  private long skippedRecordCount;
+  private long databaseCommitMillis;
+  private long sqlExecutionMillis;
   private double qps;
   private long durationMillis;
   private String createTime;

@@ -11,7 +11,8 @@ import lombok.ToString;
 @Data
 @TableName("yak_offline_job_execution")
 public class OfflineJobExecutionPO {
-  @TableId(type = IdType.AUTO) private Long id;
+  @TableId(type = IdType.AUTO)
+  private Long id;
   private Long jobDefinitionId;
   private Integer definitionVersion;
   private String engineBaseUrl;
@@ -28,14 +29,29 @@ public class OfflineJobExecutionPO {
   private Boolean retryCreated;
   private LocalDateTime nextRetryTime;
   private String configDigest;
-  @ToString.Exclude private String definitionSnapshotJson;
-  @ToString.Exclude private String submittedConfig;
-  @ToString.Exclude private String engineSnapshotJson;
+
+  @ToString.Exclude
+  private String definitionSnapshotJson;
+
+  @ToString.Exclude
+  private String submittedConfig;
+
+  @ToString.Exclude
+  private String engineSnapshotJson;
+
   private String errorMessage;
   private Long sourceRecordCount;
+  private Long sinkAttemptedRecordCount;
   private Long sinkSuccessRecordCount;
+  private Long sinkCommittedRecordCount;
   private Long sourceReadBytes;
   private Long sinkWrittenBytes;
+  private Double sourceAverageQps;
+  private Double sinkAverageQps;
+  private Long failedRecordCount;
+  private Long skippedRecordCount;
+  private Long databaseCommitMillis;
+  private Long sqlExecutionMillis;
   private Double qps;
   private Long durationMillis;
   private LocalDateTime createTime;
