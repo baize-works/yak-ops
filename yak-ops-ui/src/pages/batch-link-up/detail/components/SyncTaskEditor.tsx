@@ -93,6 +93,7 @@ export default function SyncTaskEditor({
           />
         ) : (
           <SingleTableConfigSection
+            sourceDataSourceId={sourceId}
             sourceConfig={sourceConfig}
             sinkConfig={sinkConfig}
             sourceTables={sourceCatalog.tables}
