@@ -1,8 +1,6 @@
 import {
   CheckCircle2,
-  Eraser,
   Eye,
-  LayoutGrid,
   Play,
   RefreshCw,
   Save,
@@ -25,7 +23,7 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     group: 'primary',
     order: 10,
     visible: ({ plugin, executionStatus }) =>
-      plugin.capabilities.runnable && !isExecutionActive(executionStatus),
+      plugin.type === 'SQL' && !isExecutionActive(executionStatus),
     enabled: ({ document }) => document.loadStatus === 'READY',
   },
   {
@@ -37,16 +35,6 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     order: 10,
     visible: ({ plugin, executionStatus }) =>
       plugin.type === 'HTTP' && !isExecutionActive(executionStatus),
-  },
-  {
-    id: 'notebook.run-all',
-    label: '运行全部',
-    icon: Play,
-    command: 'notebook.run-all',
-    group: 'primary',
-    order: 10,
-    visible: ({ plugin, executionStatus }) =>
-      plugin.type === 'NOTEBOOK' && !isExecutionActive(executionStatus),
   },
   {
     id: 'execution.stop',
@@ -88,24 +76,6 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     order: 30,
   },
   {
-    id: 'notebook.clear-output',
-    label: '清空输出',
-    icon: Eraser,
-    command: 'notebook.clear-output',
-    group: 'resource',
-    order: 10,
-    visible: ({ plugin }) => plugin.type === 'NOTEBOOK',
-  },
-  {
-    id: 'integration.auto-layout',
-    label: '自动布局',
-    icon: LayoutGrid,
-    command: 'integration.auto-layout',
-    group: 'resource',
-    order: 10,
-    visible: ({ plugin }) => plugin.type === 'DATA_INTEGRATION',
-  },
-  {
     id: 'document.validate',
     label: '深度检查',
     icon: CheckCircle2,
@@ -113,15 +83,6 @@ export const BUILTIN_ACTIONS: WorkbenchActionDefinition[] = [
     group: 'resource',
     order: 20,
     visible: ({ plugin }) => plugin.capabilities.validatable,
-  },
-  {
-    id: 'integration.preview',
-    label: '预览配置',
-    icon: Eye,
-    command: 'integration.preview',
-    group: 'resource',
-    order: 30,
-    visible: ({ plugin }) => plugin.type === 'DATA_INTEGRATION',
   },
   {
     id: 'http.show-response',
