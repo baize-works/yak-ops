@@ -95,6 +95,9 @@ const WorkflowV2NodeCard = ({
   const reactFlow = useReactFlow<WorkflowV2CanvasNodeData>();
   const nodes = useNodes<WorkflowV2CanvasNodeData>() as WorkflowV2FlowNode[];
   const edges = useEdges() as WorkflowV2FlowEdge[];
+  const mappingOwnerId = nodes.find(
+    (node) => node.selected && node.data.kind !== 'START',
+  )?.id;
   const subtitle =
     data.kind === 'TASK'
       ? [meta?.projectName, meta?.folderName].filter(Boolean).join(' / ') ||
@@ -126,7 +129,10 @@ const WorkflowV2NodeCard = ({
   }, [reactFlow]);
 
   const mappingPanel =
-    selected && data.kind !== 'START' && typeof document !== 'undefined'
+    selected &&
+    mappingOwnerId === id &&
+    data.kind !== 'START' &&
+    typeof document !== 'undefined'
       ? createPortal(
           <div
             className="nodrag nopan nowheel fixed bottom-0 right-0 top-[52px] z-[150]"
