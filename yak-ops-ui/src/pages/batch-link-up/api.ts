@@ -100,6 +100,51 @@ export interface OfflineJobExecutionDetailVO extends OfflineJobExecutionVO {
   metrics?: Record<string, unknown>;
 }
 
+export interface OfflineTableDdl {
+  dialect?: string;
+  sourceTable?: string;
+  targetTable?: string;
+  createTableSql?: string;
+  executed: boolean;
+  status?: 'SUCCEEDED' | 'SKIPPED' | string;
+  reason?: string;
+  durationMillis: number;
+  errorCode?: string;
+  errorMessage?: string;
+}
+
+export interface OfflineTableMetric {
+  id: string;
+  pipelineId?: string;
+  dataSetId?: string;
+  status: string;
+  sourceTable: string;
+  sinkTable: string;
+  sourceConnector?: string;
+  sinkConnector?: string;
+  sourceTaskCount: number;
+  sinkTaskCount: number;
+  readRowCount: number;
+  writeRowCount: number;
+  sinkAttemptedRecordCount: number;
+  sinkCommittedRecordCount: number;
+  failedRecordCount: number;
+  unknownStateRecordCount: number;
+  readQps: number;
+  writeQps: number;
+  sourceReadBytes: number;
+  sinkWrittenBytes: number;
+  tableDdl?: OfflineTableDdl;
+  ddlDialect?: string;
+  createTableSql?: string;
+  ddlExecuted: boolean;
+  ddlStatus?: string;
+  ddlReason?: string;
+  ddlDurationMillis: number;
+  ddlErrorCode?: string;
+  ddlErrorMessage?: string;
+}
+
 export interface OfflineBatchOperationError {
   jobDefinitionId?: string | number;
   message?: string;
@@ -268,7 +313,7 @@ export const batchJobInstanceApi = {
     HttpUtils.get(`/api/v1/job/batch-instance/${id}`),
   tableMetrics: (
     instanceId: string | number,
-  ): Promise<ApiResponse<unknown>> =>
+  ): Promise<ApiResponse<OfflineTableMetric[]>> =>
     HttpUtils.get(
       `/api/v1/job/batch-instance/${instanceId}/table-metrics`,
     ),
