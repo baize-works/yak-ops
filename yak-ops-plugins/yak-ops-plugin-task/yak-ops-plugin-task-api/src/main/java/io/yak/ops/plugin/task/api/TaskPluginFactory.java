@@ -5,18 +5,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/**
- * Generic task-plugin contract shared by data development and future orchestration runtimes.
- *
- * <p>The plugin owns definition normalization, validation and compilation. Execution remains a
- * separate concern so the data-development control plane can persist immutable runnable snapshots
- * without depending on a concrete worker implementation.
- */
+/** Stable task authoring and execution plugin contract, independent from workflow orchestration. */
 public interface TaskPluginFactory {
 
   Descriptor descriptor();
 
-  /** Creates the canonical initial definition used by the data-development editor. */
   default Map<String, Object> defaultDefinition() {
     Descriptor descriptor = descriptor();
     Map<String, Object> definition = new LinkedHashMap<>();
@@ -31,7 +24,6 @@ public interface TaskPluginFactory {
     return definition;
   }
 
-  /** Normalizes editor JSON into the canonical durable definition envelope. */
   default Map<String, Object> normalizeDefinition(Map<String, Object> definition) {
     Map<String, Object> normalized = definition == null
         ? new LinkedHashMap<>()
@@ -48,12 +40,10 @@ public interface TaskPluginFactory {
     return normalized;
   }
 
-  /** Validates one normalized task definition. */
   default void validateDefinition(Map<String, Object> definition) {
     normalizeDefinition(definition);
   }
 
-  /** Compiles the editable definition into an immutable execution specification. */
   default CompiledDefinition compile(Map<String, Object> definition) {
     Map<String, Object> normalized = normalizeDefinition(definition);
     validateDefinition(normalized);
@@ -64,12 +54,15 @@ public interface TaskPluginFactory {
         descriptor().outputSchema());
   }
 
+  /** Creates a fresh executor for one physical attempt. */
+  default TaskExecutor createExecutor() {
+    throw new UnsupportedOperationException(
+        "Task plugin is not executable: " + descriptor().taskType());
+  }
+
   enum ResultKind {
     TABLE,
     JSON,
-    TERMINAL,
-    NOTEBOOK,
-    PIPELINE,
     TEXT
   }
 
@@ -81,10 +74,6 @@ public interface TaskPluginFactory {
       boolean outputCapable,
       boolean statementRunnable,
       boolean streaming) {
-
-    public static Capabilities runnable(boolean cancellable, boolean outputCapable) {
-      return new Capabilities(true, true, cancellable, true, outputCapable, false, false);
-    }
   }
 
   record Descriptor(
