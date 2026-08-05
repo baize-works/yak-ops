@@ -13,7 +13,7 @@ const pluginByType = new Map<string, NodePluginDefinition>(
   BUILTIN_NODE_PLUGINS.map((plugin) => [plugin.type, plugin]),
 );
 
-const now = '2026-08-04 10:20';
+const now = '2026-08-05 09:30';
 const currentUserName = 'aliyun0124584470';
 
 const createResource = (
@@ -75,160 +75,26 @@ const createDocument = (
 
 export const createMockWorkspaceSnapshot = (): WorkspaceSnapshot => {
   const resources: DevelopmentResource[] = [
-    createResource('mysql-sql-etl', 'mysql_sql_etl.sql', 'FLINK_SQL', {
+    createResource('sql-user-profile', 'user_profile.sql', 'SQL', {
       favorite: true,
-      description: '从 MySQL 读取用户行为数据，清洗后写入 ODPS。',
       status: 'PUBLISHED',
-      publishedVersion: 7,
-      latestRevision: 8,
-      updatedAt: '2026-08-04 09:20',
+      publishedVersion: 3,
+      latestRevision: 4,
+      updatedAt: '2026-08-05 09:20',
     }),
-    createResource('user-behavior-agg', 'user_behavior_agg.sql', 'SQL', {
-      engine: 'Spark SQL',
-      updatedBy: 'data_admin',
-      updatedAt: '2026-08-04 08:46',
-    }),
-    createResource('dim-user-profile', 'dim_user_profile.sql', 'SQL', {
-      engine: 'Hive',
-      owner: 'other',
-      updatedBy: 'zhangsan',
-      favorite: true,
-    }),
-    createResource('ods-to-dwd-flink', 'ods_to_dwd_flink.sql', 'FLINK_SQL', {
-      updatedBy: 'realtime_owner',
-      updatedAt: '2026-08-04 08:35',
-    }),
-    createResource('udf-string-masking', 'udf_string_masking.py', 'PYTHON', {
-      favorite: true,
-      updatedAt: '2026-08-03 16:21',
-    }),
-    createResource('shell-clean-log', 'shell_clean_log.sh', 'SHELL', {
-      updatedBy: 'ops_admin',
-      updatedAt: '2026-08-03 17:20',
-    }),
-    createResource(
-      'notebook-user-profile',
-      'notebook_user_profile.ipynb',
-      'NOTEBOOK',
-      {
-        favorite: true,
-        updatedBy: 'analyst_01',
-        updatedAt: '2026-08-03 18:45',
-      },
-    ),
-    createResource(
-      'sync-odps-odps',
-      'sync_odps_to_odps_20260803',
-      'DATA_INTEGRATION',
-      {
-        favorite: true,
-        updatedAt: '2026-08-04 08:54',
-      },
-    ),
     createResource('http-user-profile', 'fetch_user_profile_api', 'HTTP', {
       updatedBy: 'api_owner',
-      updatedAt: '2026-08-04 08:28',
-    }),
-    createResource('dev-env', 'dev.env', 'RESOURCE', {
-      updatedBy: 'platform_admin',
-      updatedAt: '2026-08-02 14:10',
+      updatedAt: '2026-08-05 09:10',
     }),
   ];
 
-  const documents = resources.map((resource) => {
-    if (resource.id === 'mysql-sql-etl') {
-      return createDocument(resource, {
-        kind: 'text',
-        language: 'sql',
-        value: [
-          '-- ================================================================',
-          '-- Yak-ops 数据开发 - Flink SQL 脚本',
-          '-- 任务名称: mysql_sql_etl',
-          '-- 创建人: admin',
-          '-- 描述: 从 MySQL 读取用户行为数据，清洗后写入 ODPS',
-          '-- ================================================================',
-          '',
-          "SET 'execution.checkpointing.interval' = '60s';",
-          "SET 'parallelism.default' = '4';",
-          '',
-          'CREATE TABLE src_user_behavior (',
-          '  user_id BIGINT,',
-          '  event_type STRING,',
-          '  event_time TIMESTAMP(3),',
-          '  event_value STRING,',
-          '  dt STRING',
-          ') WITH (',
-          "  'connector' = 'mysql-cdc',",
-          "  'hostname' = 'rm-bp1abcd123.mysql.rds.aliyuncs.com',",
-          "  'port' = '3306',",
-          "  'username' = 'yakops',",
-          "  'password' = '******',",
-          "  'database-name' = 'user_db',",
-          "  'table-name' = 'user_behavior',",
-          "  'server-time-zone' = 'Asia/Shanghai'",
-          ');',
-          '',
-          '-- 清洗与转换',
-          'INSERT INTO dwd_user_behavior',
-          'SELECT',
-          '  user_id,',
-          '  UPPER(event_type) AS event_type,',
-          '  event_time,',
-          '  event_value,',
-          "  DATE_FORMAT(event_time, 'yyyyMMdd') AS dt",
-          'FROM src_user_behavior;',
-        ].join('\n'),
-      });
-    }
-
-    if (resource.id === 'udf-string-masking') {
-      return createDocument(resource, {
-        kind: 'text',
-        language: 'python',
-        value: [
-          'from typing import Optional',
-          '',
-          '',
-          'def mask_phone(value: Optional[str]) -> str:',
-          '    """Mask a mobile number while retaining both ends."""',
-          '    if not value or len(value) < 7:',
-          '        return value or ""',
-          '    return f"{value[:3]}****{value[-4:]}"',
-        ].join('\n'),
-      });
-    }
-
-    if (resource.id === 'shell-clean-log') {
-      return createDocument(resource, {
-        kind: 'text',
-        language: 'shell',
-        value: [
-          '#!/usr/bin/env bash',
-          'set -euo pipefail',
-          '',
-          'LOG_DIR="/data/yak-ops/logs"',
-          'RETENTION_DAYS=14',
-          '',
-          'find "$LOG_DIR" -type f -name "*.log" -mtime +$RETENTION_DAYS -delete',
-          'echo "expired logs cleaned"',
-        ].join('\n'),
-      });
-    }
-
-    return createDocument(resource);
-  });
+  const documents = resources.map((resource) => createDocument(resource));
 
   return {
     resources,
     documents,
-    openResourceIds: [
-      'mysql-sql-etl',
-      'sync-odps-odps',
-      'notebook-user-profile',
-      'http-user-profile',
-      'shell-clean-log',
-    ],
-    activeResourceId: 'mysql-sql-etl',
+    openResourceIds: ['sql-user-profile', 'http-user-profile'],
+    activeResourceId: 'sql-user-profile',
   };
 };
 

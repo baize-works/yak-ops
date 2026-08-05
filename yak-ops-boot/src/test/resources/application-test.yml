@@ -43,5 +43,3 @@ yak:
   schedule:
     enabled: false
     web-enabled: false
-  workflow:
-    enabled: false

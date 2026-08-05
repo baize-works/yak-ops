@@ -5,12 +5,11 @@ server:
 spring:
   application:
     name: yak-ops
-  # Yak Security、Yak Datasource、Yak Resource 和 Yak Workflow 分别维护自己的数据源与事务管理器。
+  # 各业务模块分别维护自己的数据源与事务管理器。
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
-  # 各业务模块自行创建并执行 Flyway。
   flyway:
     enabled: false
   servlet:
@@ -46,9 +45,6 @@ yak:
     authentication-enabled: true
     audit-enabled: true
     application-name: ${YAK_SECURITY_APPLICATION_NAME:${spring.application.name}}
-
-    # Keep startup verification, signed Worker registration and API documentation public.
-    # Dynamic registration performs its own HMAC authentication and replay protection.
     public-paths:
       - /api/test/ping
       - /api/v1/offline/worker-registration/**
@@ -57,16 +53,13 @@ yak:
       - /v3/api-docs/**
       - /swagger-ui/**
       - /swagger-ui.html
-
     permission-registration:
       enabled: true
-
     bootstrap:
       enabled: true
       username: ${YAK_SECURITY_BOOTSTRAP_USERNAME:root}
       password: ${YAK_SECURITY_BOOTSTRAP_PASSWORD:Root@123456}
       real-name: ${YAK_SECURITY_BOOTSTRAP_REAL_NAME:系统管理员}
-
     datasource:
       enabled: true
       url: ${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}
@@ -175,26 +168,6 @@ yak:
   schedule:
     enabled: true
     web-enabled: false
-
-  workflow:
-    enabled: true
-    datasource:
-      url: ${YAK_WORKFLOW_DATASOURCE_URL:${YAK_SECURITY_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/yak_security?useUnicode=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai}}
-      username: ${YAK_WORKFLOW_DATASOURCE_USERNAME:${YAK_SECURITY_DATASOURCE_USERNAME:root}}
-      password: ${YAK_WORKFLOW_DATASOURCE_PASSWORD:${YAK_SECURITY_DATASOURCE_PASSWORD:123456}}
-      driver-class-name: ${YAK_WORKFLOW_DATASOURCE_DRIVER:com.mysql.cj.jdbc.Driver}
-      minimum-idle: 1
-      maximum-pool-size: 8
-    executor:
-      core-pool-size: ${YAK_WORKFLOW_CORE_POOL_SIZE:8}
-      maximum-pool-size: ${YAK_WORKFLOW_MAX_POOL_SIZE:32}
-      queue-capacity: ${YAK_WORKFLOW_QUEUE_CAPACITY:500}
-      default-workflow-parallelism: 4
-      thread-name-prefix: yak-workflow-
-    recovery:
-      enabled: true
-      initial-delay-millis: 5000
-      fixed-delay-millis: 10000
 
 logging:
   level:

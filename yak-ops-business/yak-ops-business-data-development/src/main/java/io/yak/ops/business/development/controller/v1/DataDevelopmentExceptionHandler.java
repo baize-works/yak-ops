@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @ConditionalOnDataDevelopmentEnabled
 @RestControllerAdvice(assignableTypes = {
     DataDevelopmentController.class,
-    DataDevelopmentPlatformController.class,
-    WorkflowTaskLibraryController.class
+    DataDevelopmentPlatformController.class
 })
 public class DataDevelopmentExceptionHandler {
 
   @ExceptionHandler(IllegalStateException.class)
-  public ResponseEntity<Map<String, Object>> handleConflict(IllegalStateException exception) {
+  public ResponseEntity<Map<String, Object>> handleConflict(
+      IllegalStateException exception) {
     return response(HttpStatus.CONFLICT, exception.getMessage());
   }
 
@@ -26,16 +26,20 @@ public class DataDevelopmentExceptionHandler {
   public ResponseEntity<Map<String, Object>> handleInvalidRequest(
       IllegalArgumentException exception) {
     HttpStatus status = isConflict(exception.getMessage())
-        ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+        ? HttpStatus.CONFLICT
+        : HttpStatus.BAD_REQUEST;
     return response(status, exception.getMessage());
   }
 
   private static boolean isConflict(String message) {
     return message != null && (message.contains("revision")
-        || message.contains("draftRevision") || message.contains("其他用户更新"));
+        || message.contains("draftRevision")
+        || message.contains("其他用户更新"));
   }
 
-  private static ResponseEntity<Map<String, Object>> response(HttpStatus status, String message) {
+  private static ResponseEntity<Map<String, Object>> response(
+      HttpStatus status,
+      String message) {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("code", status.value());
     body.put("message", message);

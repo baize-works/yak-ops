@@ -10,8 +10,6 @@ export type NavigationIconKey =
   | 'realtime'
   | 'client'
   | 'connector'
-  | 'workflow'
-  | 'project'
   | 'instance'
   | 'quality'
   | 'report'
@@ -22,13 +20,6 @@ export type NavigationIconKey =
   | 'insight'
   | 'system';
 
-/**
- * 主菜单业务区域：
- *
- * task：任务创建、数据同步、数据开发和流程编排；
- * management：资源、质量及运行管理；
- * system：系统与权限管理。
- */
 export type NavigationSectionKey = 'task' | 'management' | 'system';
 
 interface NavigationRouteBase {
@@ -45,11 +36,6 @@ interface NavigationRouteBase {
   quickCreateRequirement?: PermissionRequirement;
 }
 
-/**
- * A route is either explicitly public, explicitly protected, or a child that
- * inherits its parent route's requirement. There is deliberately no implicit
- * default for new root routes, so migrations cannot accidentally expose them.
- */
 export type NavigationRoute = NavigationRouteBase &
   (PermissionRequirement | { parentId: string; mode?: never });
 
@@ -65,31 +51,11 @@ export interface NavigationGroupWithRoutes extends NavigationGroup {
   routes: NavigationRoute[];
 }
 
-const sortByOrder = <T extends { order?: number }>(left: T, right: T) =>
-  (left.order ?? 0) - (right.order ?? 0);
-
 const DATA_DEVELOPMENT_READ_PERMISSIONS = [
   'task:batch:read',
   'task:realtime:read',
 ] as const;
 
-/**
- * 主菜单顺序：
- *
- * 首页
- * ────────────────
- * 数据集成
- * 数据开发
- * 流程编排
- * ────────────────
- * 资源管理
- * 数据质量
- * 运维中心
- * 系统管理
- *
- * 尚未包含页面的分组不会展示。
- * 后续只需增加对应路由，菜单分组便会自动出现。
- */
 export const navigationGroups: readonly NavigationGroup[] = [
   {
     id: 'integration',
@@ -104,13 +70,6 @@ export const navigationGroups: readonly NavigationGroup[] = [
     iconKey: 'api',
     section: 'task',
     order: 20,
-  },
-  {
-    id: 'workflow',
-    title: '流程编排',
-    iconKey: 'workflow',
-    section: 'task',
-    order: 30,
   },
   {
     id: 'resources',
@@ -142,12 +101,6 @@ export const navigationGroups: readonly NavigationGroup[] = [
   },
 ];
 
-/**
- * 路由、菜单和快速创建共用一份元数据。
- *
- * 没有 menuGroup 且未隐藏的路由，会作为一级独立菜单展示，
- * 例如首页。
- */
 export const appRoutes: readonly NavigationRoute[] = [
   {
     id: 'home',
@@ -158,11 +111,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     iconKey: 'home',
     order: 0,
   },
-
-  // ---------------------------------------------------------------------------
-  // 数据集成
-  // ---------------------------------------------------------------------------
-
   {
     id: 'batch-link-up',
     mode: 'one',
@@ -243,11 +191,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'realtime-link-up',
   },
-
-  // ---------------------------------------------------------------------------
-  // 数据开发
-  // ---------------------------------------------------------------------------
-
   {
     id: 'data-development-workbench',
     mode: 'any',
@@ -289,86 +232,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'data-development-workbench',
   },
-
-  // ---------------------------------------------------------------------------
-  // 流程编排
-  // ---------------------------------------------------------------------------
-
-  {
-    id: 'workflow-project',
-    mode: 'one',
-    permission: 'workflow:project:read',
-    path: '/workflow-project',
-    title: '工作流项目',
-    component: './workflow-project',
-    iconKey: 'project',
-    menuGroup: 'workflow',
-    order: 10,
-  },
-  {
-    id: 'workflow-project-detail',
-    path: '/workflow-project/:id/detail',
-    title: '工作流项目详情',
-    component: './workflow-project/detail',
-    hidden: true,
-    parentId: 'workflow-project',
-  },
-  {
-    id: 'workflow-management',
-    mode: 'one',
-    permission: 'workflow:definition:read',
-    path: '/workflow-management',
-    title: '工作流管理',
-    component: './workflow-management',
-    iconKey: 'workflow',
-    menuGroup: 'workflow',
-    order: 20,
-    quickCreateRequirement: {
-      mode: 'one',
-      permission: 'workflow:definition:create',
-    },
-    quickCreateLabel: '新建工作流',
-  },
-  {
-    id: 'workflow-designer',
-    path: '/workflow-management/:id/designer',
-    title: '工作流设计',
-    component: './workflow-management/designer',
-    hidden: true,
-    parentId: 'workflow-management',
-  },
-  {
-    id: 'workflow-detail',
-    path: '/workflow-management/:id/detail',
-    title: '工作流详情',
-    component: './workflow-management/detail',
-    hidden: true,
-    parentId: 'workflow-management',
-  },
-  {
-    id: 'workflow-instance',
-    mode: 'one',
-    permission: 'workflow:instance:read',
-    path: '/workflow-instance',
-    title: '工作流实例',
-    component: './workflow-instance',
-    iconKey: 'instance',
-    menuGroup: 'workflow',
-    order: 30,
-  },
-  {
-    id: 'workflow-instance-detail',
-    path: '/workflow-instance/:id/detail',
-    title: '工作流实例详情',
-    component: './workflow-instance/detail',
-    hidden: true,
-    parentId: 'workflow-instance',
-  },
-
-  // ---------------------------------------------------------------------------
-  // 资源管理
-  // ---------------------------------------------------------------------------
-
   {
     id: 'data-source',
     mode: 'one',
@@ -428,11 +291,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'connector',
   },
-
-  // ---------------------------------------------------------------------------
-  // 数据质量
-  // ---------------------------------------------------------------------------
-
   {
     id: 'data-quality',
     mode: 'one',
@@ -471,11 +329,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     hidden: true,
     parentId: 'data-quality-report',
   },
-
-  // ---------------------------------------------------------------------------
-  // 运维中心
-  // ---------------------------------------------------------------------------
-
   {
     id: 'metrics',
     mode: 'one',
@@ -506,11 +359,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     menuGroup: 'operations',
     order: 20,
   },
-
-  // ---------------------------------------------------------------------------
-  // 非主菜单页面
-  // ---------------------------------------------------------------------------
-
   {
     id: 'knowledge-management',
     mode: 'one',
@@ -521,11 +369,6 @@ export const appRoutes: readonly NavigationRoute[] = [
     iconKey: 'knowledge',
     hidden: true,
   },
-
-  // ---------------------------------------------------------------------------
-  // 系统管理（权限编码来自阶段 0 合同矩阵）
-  // ---------------------------------------------------------------------------
-
   {
     id: 'system-users',
     mode: 'one',
@@ -626,12 +469,11 @@ export const appRoutes: readonly NavigationRoute[] = [
   },
 ];
 
+const sortByOrder = <T extends { order?: number }>(left: T, right: T) =>
+  (left.order ?? 0) - (right.order ?? 0);
+
 const routeMap = new Map(appRoutes.map((route) => [route.id, route]));
 
-/**
- * Applies the same permission decision to routes and their parent navigation
- * item. This prevents a permitted child from activating an inaccessible parent.
- */
 export const canAccessNavigationRoute = (
   route: NavigationRoute,
   permissionCodes: readonly string[] | null | undefined,
@@ -657,6 +499,36 @@ export const canAccessNavigationRoute = (
 
   return true;
 };
+
+export const getNavigationGroups = (
+  permissionCodes?: readonly string[] | null,
+): NavigationGroupWithRoutes[] =>
+  navigationGroups
+    .map((group) => ({
+      ...group,
+      routes: appRoutes
+        .filter(
+          (route) =>
+            route.menuGroup === group.id &&
+            !route.hidden &&
+            canAccessNavigationRoute(route, permissionCodes),
+        )
+        .sort(sortByOrder),
+    }))
+    .filter((group) => group.routes.length > 0)
+    .sort(sortByOrder);
+
+export const getStandaloneNavigationRoutes = (
+  permissionCodes?: readonly string[] | null,
+) =>
+  appRoutes
+    .filter(
+      (route) =>
+        !route.menuGroup &&
+        !route.hidden &&
+        canAccessNavigationRoute(route, permissionCodes),
+    )
+    .sort(sortByOrder);
 
 const normalizePath = (path: string) =>
   path.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
@@ -694,61 +566,5 @@ export const getActiveNavigationGroupId = (
   permissionCodes?: readonly string[] | null,
 ) => {
   const activeId = getActiveNavigationId(pathname, permissionCodes);
-
   return activeId ? routeMap.get(activeId)?.menuGroup : undefined;
 };
-
-/**
- * 首页等独立一级菜单。
- */
-export const getStandaloneNavigationRoutes = (
-  permissionCodes?: readonly string[] | null,
-) =>
-  appRoutes
-    .filter(
-      (route) =>
-        !route.hidden &&
-        !route.menuGroup &&
-        canAccessNavigationRoute(route, permissionCodes),
-    )
-    .sort(sortByOrder);
-
-/**
- * 分组菜单。
- */
-export const getMainNavigationGroups = (
-  permissionCodes?: readonly string[] | null,
-): NavigationGroupWithRoutes[] =>
-  [...navigationGroups]
-    .sort(sortByOrder)
-    .map((group) => ({
-      ...group,
-      routes: appRoutes
-        .filter(
-          (route) =>
-            !route.hidden &&
-            route.menuGroup === group.id &&
-            canAccessNavigationRoute(route, permissionCodes),
-        )
-        .sort(sortByOrder),
-    }))
-    .filter((group) => group.routes.length > 0);
-
-/**
- * 快速创建下拉菜单。
- */
-export const getQuickCreateRoutes = (
-  permissionCodes?: readonly string[] | null,
-) =>
-  appRoutes
-    .filter(
-      (route) =>
-        Boolean(route.quickCreateLabel) &&
-        canAccessNavigationRoute(route, permissionCodes) &&
-        (!route.quickCreateRequirement ||
-          satisfiesPermissionRequirement(
-            permissionCodes,
-            route.quickCreateRequirement,
-          )),
-    )
-    .sort(sortByOrder);

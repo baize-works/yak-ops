@@ -2,14 +2,15 @@
 
 ## 目标
 
-第二阶段在第一阶段控制面之上补齐单机执行闭环，复用现有 HTTP、Shell Task Plugin，不把插件逻辑复制到数据开发模块。
+数据开发通过统一 Task Plugin 完成单机执行闭环。Phase One 只支持 JDBC SQL 与 HTTP，不依赖 Workflow 模块。
 
 ```text
 Workbench
   -> POST Execution Snapshot
   -> Execution Gateway
   -> bounded local queue
-  -> Task Plugin Worker
+  -> TaskPluginCatalog
+  -> TaskExecutor
   -> Attempt / Event / Result
   -> SSE + execution detail API
   -> Workbench result panel / instance list
@@ -39,12 +40,13 @@ Execution 是用户提交的一次稳定快照；Attempt 是 Worker 的一次物
 
 ## 插件执行
 
-Worker 通过 `WorkflowTaskExecutorRegistry` 创建真实插件执行器：
+Worker 通过 `TaskPluginCatalog.createExecutor(taskType)` 创建 Attempt 级执行器：
 
+- SQL 使用标准 JDBC，返回 Table Result，并通过 `Statement.cancel()` 取消；
 - HTTP 使用 JDK HttpClient，支持取消、超时、响应头和响应体输出；
-- Shell 使用 ProcessBuilder，支持进程树终止和逐行日志；
-- runtime parameters 与 execution input 合并到插件参数命名空间；
-- 插件结果转换为统一 `yak_dev_execution_result`。
+- runtime parameters 与 execution input 合并到统一参数命名空间；
+- 插件结果转换为 `yak_dev_execution_result`；
+- 执行链不读取 Workflow 定义，也不依赖 Workflow Registry。
 
 ## 实时事件
 
@@ -72,4 +74,4 @@ POST /api/v1/data-development/executions/{id}/cancel
 
 ## 当前边界
 
-本阶段完成 HTTP、Shell 的单机执行闭环。SQL、Flink SQL、Python、Notebook、分布式 Worker、结果 Dataset 分页和多 Attempt 重试策略留在后续阶段。
+本阶段只完成 SQL 与 HTTP 的单机执行闭环。分布式 Worker、结果 Dataset 分页、数据源 ID 引用、SQL 审计和多 Attempt 重试策略留在后续阶段。Workflow 将作为独立编排域重新设计。

@@ -1,8 +1,6 @@
 import { registerExecutionPanelExtensions } from '../execution/bootstrap';
 import { BUILTIN_NODE_PLUGINS } from '../plugins';
 import CodeResourceRenderer from '../renderers/CodeResourceRenderer';
-import IntegrationRenderer from '../renderers/IntegrationRenderer';
-import NotebookRenderer from '../renderers/NotebookRenderer';
 import SchemaFormRenderer from '../renderers/SchemaFormRenderer';
 import { BUILTIN_ACTIONS } from './actions';
 import { BUILTIN_COMMANDS } from './commands';
@@ -25,8 +23,6 @@ export const registerWorkbenchExtensions = () => {
 
   rendererRegistry.register('code', CodeResourceRenderer);
   rendererRegistry.register('schema-form', SchemaFormRenderer);
-  rendererRegistry.register('notebook', NotebookRenderer);
-  rendererRegistry.register('integration', IntegrationRenderer);
 
   BUILTIN_ACTIONS.forEach((action) =>
     actionRegistry.register(action.id, action),

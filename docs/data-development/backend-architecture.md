@@ -1,12 +1,12 @@
 # Yak Ops 数据开发后端架构
 
-本文档定义数据开发控制面的后端边界。当前阶段不处理工作流和 Cron 调度，专注完成项目目录、任务开发、草稿、发布版本和测试运行快照。
+数据开发是独立的任务开发与执行域，不承担工作流编排职责。Phase One 只支持 JDBC SQL 与 HTTP 两类任务。
 
 ## 1. 领域边界
 
 ```text
 Resource Workspace
-  Project -> Folder / Task / Asset
+  Project -> Folder / Task
 
 Task Authoring
   Task -> Draft Revision -> Immutable Task Version
@@ -15,28 +15,29 @@ Task Execution
   Execution -> Attempt -> Event / Result
 ```
 
-资源树只保存名称、目录关系、负责人和排序；任务正文、运行参数、版本和执行结果不进入 `yak_dev_resource`。
+资源树只保存名称、目录关系、负责人和排序；任务正文、运行参数、版本和执行结果由任务领域独立持久化。
 
 ## 2. Task Plugin 统一入口
 
-新增通用 `TaskPluginFactory` 和 `TaskPluginCatalog`：
+`TaskPluginFactory` 和 `TaskPluginCatalog` 是数据开发的唯一插件入口：
 
-- 新插件可以直接通过 Java `ServiceLoader` 实现通用 Factory；
-- 现有 `WorkflowTaskPluginFactory` 会被自动适配，因此 HTTP / Shell 不需要复制实现；
-- 数据开发与未来编排层可以共享同一个 `taskType`、插件版本和配置规范；
-- 插件负责默认定义、规范化、校验和编译；控制面只负责生命周期与持久化。
+- 插件通过 Java `ServiceLoader` 注册；
+- 插件负责元数据、默认 Definition、规范化、校验和编译；
+- 同一个 Factory 通过 `createExecutor()` 创建 Attempt 级执行器；
+- 数据开发只负责任务生命周期、快照、调度到本地 Gateway 和结果持久化；
+- 插件 API 不依赖 Workflow、Spring 或具体业务模块。
 
-当前适配链路：
+当前链路：
 
 ```text
-HTTP / Shell WorkflowTaskPluginFactory
-                ↓ adapter
-         TaskPluginCatalog
-                ↓
-     Data Development Service
+SQL / HTTP TaskPluginFactory
+             ↓ ServiceLoader
+       TaskPluginCatalog
+        ├─ Authoring
+        └─ TaskExecutor
+             ↓
+Data Development Execution Gateway
 ```
-
-后续新增 SQL、Flink SQL、Python、Notebook 和数据集成插件时，应优先直接实现通用 `TaskPluginFactory`。
 
 ## 3. 统一任务信封
 
@@ -53,68 +54,56 @@ HTTP / Shell WorkflowTaskPluginFactory
 }
 ```
 
-插件可以把可视化内容编译成不同的执行 Spec。任务版本同时保存：
+任务版本同时保存：
 
 - `definition_snapshot`：用于回看和重新编辑；
 - `compiled_spec`：用于稳定执行；
-- 输入输出 Schema；
+- Input / Output Schema；
 - 内容 SHA-256。
 
 ## 4. 草稿与发布
 
-草稿使用乐观锁：
+草稿使用乐观锁，禁止静默覆盖。发布过程在单个事务中锁定 Task 与 Draft，校验 Revision，调用插件编译，创建不可变版本，再更新当前发布版本指针。历史发布版本只新增、不修改。
 
-```text
-PUT draft(baseRevision = 12)
-  -> UPDATE ... WHERE revision = 12
-  -> revision = 13
-```
+## 5. 执行模型
 
-更新行数为 0 时返回冲突，不允许静默覆盖其他用户的修改。
-
-发布过程在单个事务中完成：锁定 Task / Draft，校验 revision，插件编译，创建不可变版本，再更新当前发布版本指针。发布版本只新增，不更新历史快照。
-
-## 5. 测试运行来源
-
-`yak_dev_execution.source_type` 支持：
+Execution 支持：
 
 - `DRAFT_REVISION`：执行已保存草稿；
 - `PUBLISHED_VERSION`：执行不可变发布版本；
 - `EPHEMERAL_SNAPSHOT`：执行未保存内容或 SQL 当前语句。
 
-Execution 保存完整 definition、compiled spec、runtime 和 input 快照。本 PR 先创建执行账本并提供查询、列表和取消接口，不在控制面进程内直接运行 Shell / Python；真正执行由后续 Execution Gateway / Worker 接管。
-
-## 6. 数据表
-
-第一版 Flyway 创建 `yak_dev_project`、`yak_dev_resource`、`yak_dev_task`、`yak_dev_task_draft`、`yak_dev_task_version`、`yak_dev_execution`、`yak_dev_execution_attempt`、`yak_dev_execution_event`、`yak_dev_execution_result` 和 `yak_dev_user_favorite`。
-
-其中 `resource.id == task.id`，工作台、版本和执行统一使用一个稳定 Task ID。
-
-## 7. API
+`DataDevelopmentExecutionWorker` 通过 `TaskPluginCatalog.createExecutor(taskType)` 创建物理执行器，并使用通用运行契约：
 
 ```text
-GET  /api/v1/data-development/task-plugins
-POST /api/v1/data-development/projects
-GET  /api/v1/data-development/projects
-GET  /api/v1/data-development/projects/{projectId}/resources
-POST /api/v1/data-development/projects/{projectId}/folders
-POST /api/v1/data-development/projects/{projectId}/tasks
-GET  /api/v1/data-development/tasks/{taskId}
-PUT  /api/v1/data-development/tasks/{taskId}/draft
-POST /api/v1/data-development/tasks/{taskId}/validate
-POST /api/v1/data-development/tasks/{taskId}/versions
-GET  /api/v1/data-development/tasks/{taskId}/versions
-POST /api/v1/data-development/tasks/{taskId}/executions
-GET  /api/v1/data-development/tasks/{taskId}/executions
-GET  /api/v1/data-development/executions/{executionId}
-POST /api/v1/data-development/executions/{executionId}/cancel
+TaskExecutionContext
+TaskExecutor
+TaskExecutionResult
+TaskCancellationToken
+TaskLogger
 ```
+
+执行器不再通过 Workflow Registry 发现，也不读取 Workflow 定义或数据表。
+
+## 6. 当前插件范围
+
+```text
+SQL  -> JDBC SQL -> TABLE Result
+HTTP -> JDK HTTP -> JSON Result
+```
+
+Shell、Python、Flink SQL、Notebook 与数据集成插件不属于 Phase One，相关前后端实现已移除。
+
+## 7. Workflow 边界
+
+旧 Workflow 前端、后端模块、SPI、执行 Registry 和数据库迁移已从运行时代码中移除。历史数据库表暂不主动删除，便于审计或后续迁移。
+
+后续 Workflow 应作为独立编排域重新设计，只引用不可变 Task Version，并负责依赖、输入输出映射、成功失败路由、重试、超时和调度策略；不得复制 SQL/HTTP 专属配置。
 
 ## 8. 后续阶段
 
-1. 前端 Workbench 从 Mock Repository 切换到上述资源、草稿和插件目录 API。
-2. 增加执行 Gateway、Attempt 状态机和 Worker 隔离。
-3. 增加 SSE 事件流，对接底部运行结果面板。
-4. SQL 表格结果使用分页 Dataset，不将大结果直接写入 MySQL。
-5. 插件增加 schema migration，支持历史任务定义升级。
-6. 增加资源权限、收藏、审计和版本 Diff。
+1. SQL 任务改为引用统一数据源 ID；
+2. 数据源凭据仅在 Worker 执行前解析，不进入任务版本和执行快照；
+3. 增加 SQL 审计、只读策略和 Dataset 分页；
+4. 增加分布式 Worker 与资源隔离；
+5. 基于不可变 Task Version 重新设计 Workflow。

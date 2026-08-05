@@ -1,119 +1,67 @@
-# Yak Ops 数据开发引擎
+# Yak Ops 数据开发引擎（Phase One）
 
-第三阶段在既有控制面与执行闭环上增加四种可运行的数据开发引擎。所有引擎继续复用统一的 Task Plugin、Execution、Attempt、Event、Result 和 SSE 协议。
-
-## 引擎清单
+第一阶段只保留两类可执行 Task Plugin：
 
 | Task Type | 执行方式 | 结果类型 | 取消方式 |
 | --- | --- | --- | --- |
 | `SQL` | 标准 JDBC | `TABLE` | `Statement.cancel()` |
-| `FLINK_SQL` | Flink SQL Gateway REST API | `TABLE` | Gateway Operation Cancel |
-| `PYTHON` | 本地 Python 子进程 | `TERMINAL` | 终止进程树 |
-| `NOTEBOOK` | 顺序执行 Python / Shell / Markdown Cell | `NOTEBOOK` | 终止当前 Cell 进程树 |
+| `HTTP` | JDK HTTP Client | `JSON` | 取消异步请求 |
 
-HTTP 与 Shell 引擎保持原有实现。
+Shell、Python、Flink SQL、Notebook 与数据集成节点已从前后端移除。后续是否重新引入，必须基于新的插件边界单独设计。
 
-## 双 Factory 设计
+## 统一插件契约
 
-每个新引擎同时提供两个 ServiceLoader Provider：
+Task Plugin 同时负责编辑与执行能力：
 
 ```text
 TaskPluginFactory
-  -> 默认 Definition
-  -> Definition 规范化
-  -> 校验和编译
-  -> Workbench 插件目录
-
-WorkflowTaskPluginFactory
-  -> Attempt 级 Executor
-  -> 参数解析
-  -> 执行与取消
+  -> Descriptor / 默认 Definition
+  -> Definition 规范化与校验
+  -> 不可变 Compiled Spec
+  -> 创建 Attempt 级 TaskExecutor
 ```
 
-这样数据开发控制面可以得到正确的代码或 Notebook 默认内容，而执行网关仍然通过现有 `WorkflowTaskExecutorRegistry` 创建独立 Executor。
+运行时统一使用：
+
+```text
+TaskExecutionContext
+TaskExecutor
+TaskExecutionResult
+TaskCancellationToken
+TaskLogger
+```
+
+这些契约位于 `yak-ops-plugin-task-api`，不依赖 Workflow 模块。数据开发通过 `TaskPluginCatalog` 发现插件并创建独立执行器。
 
 ## JDBC SQL
 
 JDBC SQL 支持查询和 DML：
 
-- SQL 正文保存在统一 Definition 的 `content.value`；
+- SQL 正文保存在 `content.value`；
 - 运行配置包括 JDBC URL、账号、驱动类、最大行数、Fetch Size 和查询超时；
 - 查询返回列定义和行数据；
 - DML 返回 `affectedRows`；
 - 超过 `maxRows` 时设置 `truncated=true`；
 - 取消调用 JDBC `Statement.cancel()`。
 
-数据库驱动必须位于 Yak Ops 运行时 Classpath。Boot 当前自带 MySQL 驱动，其他数据库需要按部署环境补充对应驱动。
+数据库驱动必须位于 Yak Ops 运行时 Classpath。当前 Boot 自带 MySQL 驱动，其他数据库按部署环境补充。
 
-## Flink SQL Gateway
+## HTTP
 
-Flink SQL 通过 SQL Gateway v1 API 执行：
+HTTP 插件支持 URL、Method、Headers、Body、请求超时、自定义成功状态码和响应体大小限制。未配置成功状态码时默认接受 `200-299`。
 
-```text
-POST /v1/sessions
-POST /v1/sessions/{session}/statements
-GET  /v1/sessions/{session}/operations/{operation}/result/{token}
-DELETE /v1/sessions/{session}/operations/{operation}/cancel
-DELETE /v1/sessions/{session}
-```
+## 架构边界
 
-引擎支持 Session Properties、请求超时、轮询间隔和最大结果行数。Gateway 返回的列和行会转换为工作台的标准 Table Result。
-
-## Python
-
-Python 引擎将代码写入一次性临时文件，并使用配置的 Python 可执行文件启动子进程：
-
-- 支持命令行参数；
-- 支持工作目录；
-- 支持 `KEY=VALUE` 环境变量；
-- stdout 与 stderr 分开保存；
-- 输出行数受 `maxOutputLines` 限制；
-- 取消会终止整个进程树；
-- 临时脚本在执行结束后删除。
-
-该引擎不会自动安装 requirements。Python 环境和依赖应由部署侧预先准备，后续可扩展独立虚拟环境和依赖缓存。
-
-## Notebook
-
-Notebook 按 Cell 顺序执行，当前支持：
-
-- `markdown`：直接作为成功结果；
-- `python`：通过 Python 子进程执行；
-- `shell`：通过系统 Shell 执行。
-
-每个 Cell 返回 ID、标题、状态、耗时和输出。可以配置单 Cell 超时、失败后继续和最大输出行数。Notebook 的失败结果也会持久化已经完成的 Cell 输出，便于排查。
-
-## 前端结果协议
-
-工作台继续复用已有 Renderer：
-
-```text
-SQL / FLINK_SQL -> TableExecutionResult
-PYTHON          -> TerminalExecutionResult
-NOTEBOOK        -> NotebookExecutionResult
-```
-
-运行面板不依赖具体引擎实现，只读取持久化的 `result_kind` 和 `payload_json`。
-
-## 安全边界
-
-Python、Shell 和 Notebook 会在 Yak Ops 主机执行本地进程，只应开放给可信用户，并建议后续增加：
-
-1. 独立 Worker 用户和文件系统沙箱；
-2. 容器化执行；
-3. CPU、内存、进程数和网络限制；
-4. 数据源凭证引用，不在 Definition 中保存明文密码；
-5. SQL 只读策略和语句审计；
-6. Flink Gateway 的认证与 TLS。
+- 数据开发负责任务、草稿、发布版本、执行快照、Attempt、事件和结果；
+- Task Plugin 负责任务定义、校验、编译和一次物理执行；
+- Workflow 已从当前代码库中移除，后续以独立编排模型重新设计；
+- Task Plugin 不得依赖 Workflow SPI、Workflow Registry 或 Workflow 数据表。
 
 ## 后续范围
 
-本阶段不包含：
+后续阶段优先处理：
 
-- 分布式 Worker 和资源调度；
-- Python requirements 自动安装；
-- JDBC 大结果 Dataset 分页；
-- Flink 长期流式 Job 的运维托管；
-- Notebook 共享内核；
-- Spark SQL、Trino、Hive 等独立引擎；
-- 引擎级重试策略。
+1. SQL 任务改为引用统一数据源 ID，避免在 Definition 中保存连接凭据；
+2. 增加 SQL 只读策略、语句审计和大结果 Dataset 分页；
+3. 增加分布式 Worker、资源隔离和运行容量管理；
+4. 基于不可变任务版本重新设计独立 Workflow 编排层。
