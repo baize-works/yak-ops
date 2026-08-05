@@ -518,6 +518,24 @@ export const getNavigationGroups = (
     .filter((group) => group.routes.length > 0)
     .sort(sortByOrder);
 
+export const getMainNavigationGroups = getNavigationGroups;
+
+export const getQuickCreateRoutes = (
+  permissionCodes?: readonly string[] | null,
+) =>
+  appRoutes
+    .filter(
+      (route) =>
+        Boolean(route.quickCreateLabel) &&
+        canAccessNavigationRoute(route, permissionCodes) &&
+        (!route.quickCreateRequirement ||
+          satisfiesPermissionRequirement(
+            permissionCodes,
+            route.quickCreateRequirement,
+          )),
+    )
+    .sort(sortByOrder);
+
 export const getStandaloneNavigationRoutes = (
   permissionCodes?: readonly string[] | null,
 ) =>
