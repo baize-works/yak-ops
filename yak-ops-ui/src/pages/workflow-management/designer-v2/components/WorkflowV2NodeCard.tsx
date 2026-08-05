@@ -5,13 +5,11 @@ import {
   DatabaseZap,
   GitBranch,
   Play,
+  Route,
 } from 'lucide-react';
-import {
-  Handle,
-  Position,
-  type NodeProps,
-} from 'reactflow';
+import { Handle, Position, type NodeProps } from 'reactflow';
 
+import { inputMappingProgress } from '../mapping';
 import type { WorkflowV2CanvasNodeData } from '../model';
 
 const iconFor = (kind: WorkflowV2CanvasNodeData['kind']) => {
@@ -35,6 +33,41 @@ const iconClass = (kind: WorkflowV2CanvasNodeData['kind']) => {
 
 const handleClass =
   '!h-3 !w-3 !border-[2px] !border-white !shadow-[0_0_0_1px_rgba(16,24,40,0.18)]';
+
+const MappingStatus = ({ data }: { data: WorkflowV2CanvasNodeData }) => {
+  if (data.kind === 'END') {
+    const count = Object.keys(data.outputBindings).length;
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] text-[#667085]">
+        <Route size={11} />
+        {count ? `${count} 个工作流输出` : '未定义工作流输出'}
+      </span>
+    );
+  }
+  if (data.kind !== 'TASK') return null;
+  if (data.taskMeta?.schemaStatus === 'loading') {
+    return <span className="text-[9px] text-[#98a2b3]">正在加载 Schema</span>;
+  }
+  if (data.taskMeta?.schemaStatus === 'error') {
+    return <span className="text-[9px] text-[#d92d20]">Schema 加载失败</span>;
+  }
+  const progress = inputMappingProgress({ data });
+  if (!progress.declared) {
+    return <span className="text-[9px] text-[#98a2b3]">无声明输入</span>;
+  }
+  const complete = progress.requiredMapped === progress.required;
+  return (
+    <span
+      className={[
+        'inline-flex items-center gap-1 text-[9px]',
+        complete ? 'text-[#027a48]' : 'text-[#d92d20]',
+      ].join(' ')}
+    >
+      <Route size={11} />
+      {progress.mapped}/{progress.declared} 输入已映射
+    </span>
+  );
+};
 
 const WorkflowV2NodeCard = ({
   data,
@@ -100,12 +133,25 @@ const WorkflowV2NodeCard = ({
           {subtitle || '暂无描述'}
         </p>
 
-        {data.kind === 'TASK' && task && (
+        {(data.kind === 'TASK' || data.kind === 'END') && (
           <div className="mt-2 flex items-center justify-between gap-2 border-t border-[#f2f4f7] pt-2">
-            <span className="inline-flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-[#475467]">
-              <Braces size={12} className="shrink-0" />
-              <span className="truncate">{task.taskType}</span>
-            </span>
+            {data.kind === 'TASK' && task ? (
+              <span className="inline-flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-[#475467]">
+                <Braces size={12} className="shrink-0" />
+                <span className="truncate">{task.taskType}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] text-[#475467]">
+                <Braces size={12} />
+                输出契约
+              </span>
+            )}
+            <MappingStatus data={data} />
+          </div>
+        )}
+
+        {data.kind === 'TASK' && task && (
+          <div className="mt-1.5 flex justify-end">
             <span className="inline-flex items-center gap-1 text-[9px] text-[#98a2b3]">
               <Check size={11} />
               固定发布版本
