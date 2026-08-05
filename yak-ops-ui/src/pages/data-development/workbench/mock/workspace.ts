@@ -29,7 +29,7 @@ const createResource = (
     id,
     projectId: 'user-data-platform',
     parentId: null,
-    folderId: plugin.metadata.folderId,
+    folderId: 'root',
     nodeType: 'ARTIFACT',
     resourceType,
     name,
@@ -75,7 +75,7 @@ const createDocument = (
 
 export const createMockWorkspaceSnapshot = (): WorkspaceSnapshot => {
   const resources: DevelopmentResource[] = [
-    createResource('sql-user-profile', 'user_profile.sql', 'SQL', {
+    createResource('mysql-user-profile', 'user_profile.sql', 'MYSQL', {
       favorite: true,
       status: 'PUBLISHED',
       publishedVersion: 3,
@@ -93,8 +93,8 @@ export const createMockWorkspaceSnapshot = (): WorkspaceSnapshot => {
   return {
     resources,
     documents,
-    openResourceIds: ['sql-user-profile', 'http-user-profile'],
-    activeResourceId: 'sql-user-profile',
+    openResourceIds: ['mysql-user-profile', 'http-user-profile'],
+    activeResourceId: 'mysql-user-profile',
   };
 };
 
@@ -113,7 +113,7 @@ export const createNewResource = (
   const updatedAt = dayjs().format('YYYY-MM-DD HH:mm');
 
   const resource = createResource(id, normalizedName, plugin.type, {
-    folderId: plugin.metadata.folderId,
+    folderId: 'root',
     engine: plugin.metadata.defaultEngine,
     updatedBy: currentUserName,
     updatedAt,
