@@ -26,7 +26,7 @@ import org.springframework.util.StringUtils;
 /** Application service for platform configuration, governance and observability. */
 @ConditionalOnDataDevelopmentEnabled
 @Service
-public final class DataDevelopmentPlatformService {
+public  class DataDevelopmentPlatformService {
 
   private final DataDevelopmentPlatformRepository repository;
   private final DataDevelopmentJsonCodec json;

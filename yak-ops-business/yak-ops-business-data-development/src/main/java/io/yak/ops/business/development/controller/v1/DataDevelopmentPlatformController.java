@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @ConditionalOnDataDevelopmentEnabled
 @RestController
 @RequestMapping("/api/v1/data-development/platform")
-public final class DataDevelopmentPlatformController {
+public  class DataDevelopmentPlatformController {
 
   private final DataDevelopmentPlatformService service;
 
