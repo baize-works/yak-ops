@@ -1,17 +1,10 @@
 import type { DataSourceRecord } from '@/pages/data-source/types';
 
-import { connectorIdForDataSourceType } from '../form-schema/valueAdapter';
 import useDataSourceColumns from '../hooks/useDataSourceColumns';
 import useDataSourceTables from '../hooks/useDataSourceTables';
-import {
-  updateEndpointConfig,
-  type SyncEditorState,
-} from '../model';
+import { updateEndpointConfig, type SyncEditorState } from '../model';
 import ChannelConfigSection from './ChannelConfigSection';
-import ConnectorExtraParams from './ConnectorExtraParams';
-import FieldMappingSection, {
-  type FieldMappingValue,
-} from './FieldMappingSection';
+import FieldMappingSection, { type FieldMappingValue } from './FieldMappingSection';
 import MultiTableConfigSection from './MultiTableConfigSection';
 import ScheduleConfigSection from './ScheduleConfigSection';
 import SingleTableConfigSection from './SingleTableConfigSection';
@@ -24,38 +17,12 @@ interface SyncTaskEditorProps {
   onChange: (value: SyncEditorState) => void;
 }
 
-const SOURCE_MANAGED_KEYS = [
-  'table_path',
-  'table_list',
-  'query',
-];
-
-const SINK_MANAGED_KEYS = [
-  'table_path',
-  'schema_save_mode',
-  'data_save_mode',
-  'write_mode',
-  'primary_keys',
-  'batch_size',
-  'dirty_data_policy',
-  'dirty_data_max_count',
-];
-
-const normalizeMappings = (
-  value: unknown,
-): FieldMappingValue[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
+const normalizeMappings = (value: unknown): FieldMappingValue[] => {
+  if (!Array.isArray(value)) return [];
   return value
     .map((item: any) => ({
-      source: String(
-        item?.source ?? item?.sourceField ?? '',
-      ).trim(),
-      target: String(
-        item?.target ?? item?.targetField ?? '',
-      ).trim(),
+      source: String(item?.source ?? item?.sourceField ?? '').trim(),
+      target: String(item?.target ?? item?.targetField ?? '').trim(),
     }))
     .filter((item) => item.source && item.target);
 };
@@ -70,32 +37,18 @@ export default function SyncTaskEditor({
   const sinkConfig = editor.sink.config || {};
   const sourceId = editor.source.dataSourceId;
   const targetId = editor.sink.dataSourceId;
-  const mappingColumns = normalizeMappings(
-    editor.mapping?.columns,
-  );
+  const mappingColumns = normalizeMappings(editor.mapping?.columns);
 
   const sourceCatalog = useDataSourceTables(sourceId);
   const targetCatalog = useDataSourceTables(targetId);
-
   const sourceColumnRequest = sourceConfig.readMode === 'sql'
-    ? sourceConfig.sql?.trim()
-      ? { query: sourceConfig.sql }
-      : undefined
-    : sourceConfig.table
-      ? { table_path: sourceConfig.table }
-      : undefined;
+    ? sourceConfig.sql?.trim() ? { query: sourceConfig.sql } : undefined
+    : sourceConfig.table ? { table_path: sourceConfig.table } : undefined;
   const targetColumnRequest = !sinkConfig.autoCreateTable && sinkConfig.table
     ? { table_path: sinkConfig.table }
     : undefined;
-
-  const sourceColumnCatalog = useDataSourceColumns(
-    sourceId,
-    sourceColumnRequest,
-  );
-  const targetColumnCatalog = useDataSourceColumns(
-    targetId,
-    targetColumnRequest,
-  );
+  const sourceColumnCatalog = useDataSourceColumns(sourceId, sourceColumnRequest);
+  const targetColumnCatalog = useDataSourceColumns(targetId, targetColumnRequest);
   const primaryKeyCatalog = sinkConfig.autoCreateTable
     ? sourceColumnCatalog
     : targetColumnCatalog;
@@ -106,50 +59,12 @@ export default function SyncTaskEditor({
     ? sourceColumnCatalog.loading
     : targetColumnCatalog.loading;
 
-  const updateSource = (patch: Record<string, any>) => {
+  const updateSource = (patch: Record<string, any>) =>
     onChange(updateEndpointConfig(editor, 'source', patch));
-  };
-
-  const updateSink = (patch: Record<string, any>) => {
+  const updateSink = (patch: Record<string, any>) =>
     onChange(updateEndpointConfig(editor, 'sink', patch));
-  };
-
-  const updateMapping = (columns: FieldMappingValue[]) => {
-    onChange({
-      ...editor,
-      mapping: {
-        columns,
-      },
-    });
-  };
-
-  const sourceConnectorId =
-    editor.source.connectorId ||
-    connectorIdForDataSourceType(editor.source.dbType);
-  const sinkConnectorId =
-    editor.sink.connectorId ||
-    connectorIdForDataSourceType(editor.sink.dbType);
-
-  const sourceExtraParameters = (
-    <ConnectorExtraParams
-      connectorId={sourceConnectorId}
-      role="SOURCE"
-      dataSourceId={sourceId}
-      config={sourceConfig}
-      excludeKeys={SOURCE_MANAGED_KEYS}
-      onChange={updateSource}
-    />
-  );
-  const sinkExtraParameters = (
-    <ConnectorExtraParams
-      connectorId={sinkConnectorId}
-      role="SINK"
-      dataSourceId={targetId}
-      config={sinkConfig}
-      excludeKeys={SINK_MANAGED_KEYS}
-      onChange={updateSink}
-    />
-  );
+  const updateMapping = (columns: FieldMappingValue[]) =>
+    onChange({ ...editor, mapping: { columns } });
 
   return (
     <div className="space-y-5">
@@ -171,8 +86,8 @@ export default function SyncTaskEditor({
             sourceLoading={sourceCatalog.loading}
             sourceReady={Boolean(sourceId)}
             targetReady={Boolean(targetId)}
-            sourceExtraParameters={sourceExtraParameters}
-            sinkExtraParameters={sinkExtraParameters}
+            sourceExtraParameters={null}
+            sinkExtraParameters={null}
             onSourceChange={updateSource}
             onSinkChange={updateSink}
           />
@@ -188,8 +103,8 @@ export default function SyncTaskEditor({
             primaryKeyLoading={primaryKeyCatalog.loading}
             sourceReady={Boolean(sourceId)}
             targetReady={Boolean(targetId)}
-            sourceExtraParameters={sourceExtraParameters}
-            sinkExtraParameters={sinkExtraParameters}
+            sourceExtraParameters={null}
+            sinkExtraParameters={null}
             onSourceChange={updateSource}
             onSinkChange={updateSink}
           />
@@ -215,20 +130,14 @@ export default function SyncTaskEditor({
             sourceLoading={sourceColumnCatalog.loading}
             targetLoading={mappingTargetLoading}
             sourceReady={Boolean(sourceId && sourceColumnRequest)}
-            targetReady={Boolean(
-              targetId &&
-                (sinkConfig.autoCreateTable || targetColumnRequest),
-            )}
+            targetReady={Boolean(targetId && (sinkConfig.autoCreateTable || targetColumnRequest))}
             targetDerived={Boolean(sinkConfig.autoCreateTable)}
           />
         </div>
       ) : null}
 
       <div id="schedule-config" className="scroll-mt-6">
-        <ScheduleConfigSection
-          editor={editor}
-          onChange={onChange}
-        />
+        <ScheduleConfigSection editor={editor} onChange={onChange} />
       </div>
     </div>
   );

@@ -1,22 +1,13 @@
 package io.yak.ops.common.bean.vo.sync.offline;
 
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 离线同步任务定义展示对象。
- *
- * @author weifuwan
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+/** 离线同步任务定义展示对象。 */
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class OfflineJobDefinitionVO {
-
   private Long id;
   private String jobName;
   private String jobDesc;
@@ -31,10 +22,6 @@ public class OfflineJobDefinitionVO {
   private String sinkDatasourceName;
   private String sourceTable;
   private String sinkTable;
-  private String workerSelectMode;
-  private String workerNodeId;
-  private String workerNodeName;
-  private Map<String, String> workerRequiredLabels;
   private String lastJobStatus;
   private String lastErrorMessage;
   private Long instanceId;

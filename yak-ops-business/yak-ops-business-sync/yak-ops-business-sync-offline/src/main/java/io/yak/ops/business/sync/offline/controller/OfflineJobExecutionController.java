@@ -18,26 +18,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 离线执行命令和执行历史查询接口。
- *
- * @author weifuwan
- */
+/** 离线执行命令和执行历史查询接口。 */
 @ConditionalOnOfflineSyncEnabled
 @RestController
 @RequiredArgsConstructor
 public class OfflineJobExecutionController {
-
   private final OfflineJobExecutionService service;
   private final LinkUpClient linkUpClient;
 
   @GetMapping({"/api/v1/job/batch-execution/health", "/api/v1/executor/health"})
-  public Result<LinkUpNodeResponse> health() {
-    return Result.success(linkUpClient.node());
-  }
+  public Result<LinkUpNodeResponse> health() { return Result.success(linkUpClient.node()); }
 
   @PostMapping("/api/v1/job/batch-execution/{jobDefineId}/execute")
   public Result<OfflineJobExecutionVO> execute(@PathVariable Long jobDefineId) {
@@ -84,16 +76,6 @@ public class OfflineJobExecutionController {
 
   @GetMapping("/api/v1/job/batch-instance/{id}/log")
   public Result<String> instanceLog(@PathVariable Long id) {
-    return Result.success(service.logs(id));
-  }
-
-  @GetMapping("/api/v1/devops/client/instance/{id}/logs")
-  public Result<String> compatibilityLog(
-      @PathVariable Long id,
-      @RequestParam(defaultValue = "BATCH") String jobMode) {
-    if (!"BATCH".equalsIgnoreCase(jobMode)) {
-      throw new IllegalArgumentException("当前接口仅支持 BATCH 离线任务日志");
-    }
     return Result.success(service.logs(id));
   }
 }
