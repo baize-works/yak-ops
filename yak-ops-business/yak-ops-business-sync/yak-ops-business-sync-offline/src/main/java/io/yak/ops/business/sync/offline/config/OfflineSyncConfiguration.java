@@ -24,17 +24,12 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 
-/**
- * 离线同步控制面基础设施配置。
- *
- * @author weifuwan
- */
+/** 离线同步一期基础设施配置。 */
 @ConditionalOnOfflineSyncEnabled
 @Configuration(proxyBeanMethods = false)
 @EnableScheduling
 @EnableConfigurationProperties(OfflineSyncProperties.class)
-@MapperScan(
-    basePackages = "io.yak.ops.business.sync.offline.dao.mapper",
+@MapperScan(basePackages = "io.yak.ops.business.sync.offline.dao.mapper",
     sqlSessionFactoryRef = "offlineSyncSqlSessionFactory")
 public class OfflineSyncConfiguration {
 
@@ -49,7 +44,6 @@ public class OfflineSyncConfiguration {
     config.setDriverClassName(datasource.getDriverClassName());
     config.setMaximumPoolSize(datasource.getMaximumPoolSize());
     config.setMinimumIdle(datasource.getMinimumIdle());
-    config.setAutoCommit(true);
     return new HikariDataSource(config);
   }
 
@@ -75,17 +69,16 @@ public class OfflineSyncConfiguration {
 
   @Bean(name = "offlineSyncSqlSessionTemplate")
   public SqlSessionTemplate offlineSyncSqlSessionTemplate(
-      @Qualifier("offlineSyncSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
-    return new SqlSessionTemplate(sqlSessionFactory);
+      @Qualifier("offlineSyncSqlSessionFactory") SqlSessionFactory factory) {
+    return new SqlSessionTemplate(factory);
   }
 
   @Bean(initMethod = "migrate")
-  public Flyway offlineSyncFlyway(
-      @Qualifier("offlineSyncDataSource") DataSource dataSource) {
+  public Flyway offlineSyncFlyway(@Qualifier("offlineSyncDataSource") DataSource dataSource) {
     return Flyway.configure()
         .dataSource(dataSource)
         .locations("classpath:db/migration/yak-offline-sync")
-        .table("yak_offline_schema_history")
+        .table("yak_offline_core_schema_history")
         .baselineVersion(MigrationVersion.fromVersion("0"))
         .baselineOnMigrate(true)
         .load();
@@ -93,15 +86,12 @@ public class OfflineSyncConfiguration {
 
   @Bean(name = "offlineSyncJsonMapper")
   public ObjectMapper offlineSyncJsonMapper() {
-    return new ObjectMapper()
-        .findAndRegisterModules()
+    return new ObjectMapper().findAndRegisterModules()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   @Bean(name = "offlineSyncHttpClient")
   public HttpClient offlineSyncHttpClient(OfflineSyncProperties properties) {
-    return HttpClient.newBuilder()
-        .connectTimeout(properties.getEngine().getConnectTimeout())
-        .build();
+    return HttpClient.newBuilder().connectTimeout(properties.getEngine().getConnectTimeout()).build();
   }
 }

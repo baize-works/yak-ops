@@ -5,31 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 离线同步任务实例展示对象。
- *
- * @author weifuwan
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+/** 离线同步执行实例展示对象。 */
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class OfflineJobExecutionVO {
-
   private Long id;
   private Long jobDefinitionId;
-  private Long definitionVersionId;
   private Integer definitionVersion;
-  private String engineNodeId;
-  private String engineNodeBaseUrl;
+  private String engineBaseUrl;
   private String engineJobId;
   private String externalExecutionId;
   private String workerInstanceId;
-  private String assignmentMode;
-  private Double assignmentScore;
-  private String assignmentReason;
-  private String requiredCapabilitiesJson;
-  private String assignedCapabilitiesJson;
   private String status;
   private Long stateVersion;
   private Integer attemptNo;

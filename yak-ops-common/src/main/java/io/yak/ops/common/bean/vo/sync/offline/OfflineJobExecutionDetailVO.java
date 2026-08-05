@@ -6,23 +6,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * 离线同步任务实例详情。
- *
- * @author weifuwan
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+/** 离线同步执行详情。 */
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class OfflineJobExecutionDetailVO {
-
   private OfflineJobExecutionVO execution;
   private JsonNode job;
   private JsonNode pipelines;
   private JsonNode tasks;
   private JsonNode metrics;
-  private JsonNode requiredCapabilities;
-  private JsonNode assignedCapabilities;
-  private JsonNode assignmentCandidates;
 }

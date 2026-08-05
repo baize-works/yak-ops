@@ -9,86 +9,43 @@ import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.ToString;
 
-/**
- * 离线同步任务定义读模型；不可变版本保存在 yak_offline_job_version。
- *
- * @author weifuwan
- */
+/** 离线同步当前任务定义。 */
 @Data
 @TableName("yak_offline_job_definition")
 public class OfflineJobDefinitionPO {
-
   @TableId(type = IdType.INPUT)
   private Long id;
   private String jobName;
-
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String jobDesc;
-
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String jobDesc;
   private String mode;
-
-  @ToString.Exclude
-  private String definitionJson;
-
-  @ToString.Exclude
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String jobSpecJson;
-
-  /** 历史 HOCON 快照，仅用于兼容旧数据，不再生成或提交。 */
-  @Deprecated
-  @ToString.Exclude
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String hoconConfig;
-
+  @ToString.Exclude private String definitionJson;
+  @ToString.Exclude @TableField(updateStrategy = FieldStrategy.ALWAYS) private String jobSpecJson;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String configDigest;
   private String releaseState;
-
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String sourceType;
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String sinkType;
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private Long sourceDatasourceId;
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private Long sinkDatasourceId;
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String sourceTable;
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String sinkTable;
-
-  @ToString.Exclude
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String scheduleJson;
-  @ToString.Exclude
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String envJson;
-
-  private String workerSelectMode;
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String workerNodeId;
-  @ToString.Exclude
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String workerRequiredLabelsJson;
-
-  /** 根据不可变 JobSpec 派生的 Connector、Schema 和执行特性能力要求。 */
-  @ToString.Exclude
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String capabilityRequirementsJson;
-
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String sourceType;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String sinkType;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private Long sourceDatasourceId;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private Long sinkDatasourceId;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String sourceTable;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String sinkTable;
+  @ToString.Exclude @TableField(updateStrategy = FieldStrategy.ALWAYS) private String scheduleJson;
+  private Boolean scheduleEnabled;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String cronExpression;
+  private Integer retryMaxAttempts;
+  private Integer retryBackoffSeconds;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private LocalDateTime scheduleLastFireTime;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private LocalDateTime scheduleNextFireTime;
   private Integer version;
-  private Long currentVersionId;
-  private Long lastExecutionId;
-  private String lastEngineJobId;
-  private String lastJobStatus;
-
-  @TableField(updateStrategy = FieldStrategy.ALWAYS)
-  private String lastErrorMessage;
-
-  private Long lastDurationMillis;
-  private Long lastReadRowCount;
-  private Double lastQps;
-  private Long lastSyncBytes;
-  private LocalDateTime lastStartTime;
-  private LocalDateTime lastEndTime;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private Long lastExecutionId;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String lastEngineJobId;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String lastJobStatus;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private String lastErrorMessage;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private Long lastDurationMillis;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private Long lastReadRowCount;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private Double lastQps;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private Long lastSyncBytes;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private LocalDateTime lastStartTime;
+  @TableField(updateStrategy = FieldStrategy.ALWAYS) private LocalDateTime lastEndTime;
   private LocalDateTime createTime;
   private LocalDateTime updateTime;
 }
