@@ -256,6 +256,80 @@ export interface ExecutionPageView {
   pageSize: number;
 }
 
+export interface WorkspaceStats {
+  ruleCount: number;
+  enabledRuleCount: number;
+  executionCount: number;
+  issueExecutionCount: number;
+  latestExecutionTime?: string;
+}
+
+export interface MonitorWorkspaceView {
+  monitor: MonitorView;
+  settings: MonitorSettingsView;
+  stats: WorkspaceStats;
+}
+
+export interface ReportOverview {
+  totalRules: number;
+  enabledRules: number;
+  executedRules: number;
+  issueRules: number;
+  errorRules: number;
+  passRate: number;
+}
+
+export interface DimensionReport {
+  dimension: string;
+  total: number;
+  passed: number;
+  notPassed: number;
+  errors: number;
+  passRate: number;
+}
+
+export interface TrendPoint {
+  date: string;
+  dimension: string;
+  total: number;
+  passed: number;
+  issues: number;
+  passRate: number;
+}
+
+export interface ColumnReport {
+  columnName: string;
+  dimension: string;
+  total: number;
+  passed: number;
+  issues: number;
+  passRate: number;
+}
+
+export interface MonitorReportView {
+  reportDate: string;
+  trendStartDate: string;
+  overview: ReportOverview;
+  dimensions: DimensionReport[];
+  trend: TrendPoint[];
+  columns: ColumnReport[];
+}
+
+export interface OperationLogItem {
+  id: string;
+  operator: string;
+  operationTime: string;
+  actionType: string;
+  content: string;
+}
+
+export interface OperationLogPageView {
+  records: OperationLogItem[];
+  total: number;
+  current: number;
+  pageSize: number;
+}
+
 export interface CatalogTable {
   database?: string;
   schema?: string;

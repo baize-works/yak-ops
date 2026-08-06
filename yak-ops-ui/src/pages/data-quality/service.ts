@@ -4,8 +4,11 @@ import type {
   ExecutionPageView,
   ExecutionView,
   MonitorPageView,
+  MonitorReportView,
   MonitorSettingsView,
   MonitorView,
+  MonitorWorkspaceView,
+  OperationLogPageView,
   RegisterTablesPayload,
   RegisterTablesView,
   RunView,
@@ -77,6 +80,27 @@ export const qualityMonitorApi = {
     HttpUtils.delete<boolean>(`${PREFIX}/monitor/${id}`),
   run: (id: number | string): Promise<CommonApiResponse<RunView>> =>
     HttpUtils.post<RunView>(`${PREFIX}/monitor/${id}/run`, {}),
+};
+
+export const qualityWorkspaceApi = {
+  workspace: (
+    id: number | string,
+  ): Promise<CommonApiResponse<MonitorWorkspaceView>> =>
+    HttpUtils.get<MonitorWorkspaceView>(`${PREFIX}/monitor/${id}/workspace`),
+  report: (
+    id: number | string,
+    params: { date?: string } = {},
+  ): Promise<CommonApiResponse<MonitorReportView>> =>
+    HttpUtils.get<MonitorReportView>(
+      `${PREFIX}/monitor/${id}/report${queryString(params)}`,
+    ),
+  operationLogs: (
+    id: number | string,
+    params: { current?: number; pageSize?: number } = {},
+  ): Promise<CommonApiResponse<OperationLogPageView>> =>
+    HttpUtils.get<OperationLogPageView>(
+      `${PREFIX}/monitor/${id}/operation-log${queryString(params)}`,
+    ),
 };
 
 export const qualityExecutionApi = {
