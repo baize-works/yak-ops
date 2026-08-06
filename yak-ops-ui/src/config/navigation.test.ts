@@ -26,19 +26,28 @@ describe('permission-aware navigation', () => {
     expect(getQuickCreateRoutes([...batchRead, 'task:batch:create']).map((route) => route.id)).toEqual(['batch-link-up']);
   });
 
-  it('registers data quality as a top-level group with rule template library', () => {
-    const qualityRead = ['quality:template:read'];
-    const groups = getMainNavigationGroups(qualityRead);
+  it('registers the data-quality MVP pages and hidden monitor routes', () => {
+    const qualityPermissions = [
+      'quality:monitor:read',
+      'quality:execution:read',
+      'quality:template:read',
+    ];
+    const groups = getMainNavigationGroups(qualityPermissions);
     expect(groups.map((group) => group.id)).toEqual(['data-quality']);
-    expect(groups[0].title).toBe('数据质量');
     expect(groups[0].routes.map((route) => route.id)).toEqual([
+      'data-quality-table-config',
+      'data-quality-execution',
       'data-quality-rule-template',
     ]);
-    expect(groups[0].routes[0].title).toBe('规则模板库');
-    expect(getActiveNavigationId('/data-quality/rule-template', qualityRead)).toBe(
-      'data-quality-rule-template',
+    expect(getActiveNavigationId('/data-quality/monitor/create', qualityPermissions)).toBe(
+      'data-quality-table-config',
     );
-    expect(getActiveNavigationId('/data-quality/rule-template', [])).toBeUndefined();
+    expect(getActiveNavigationId('/data-quality/monitor/42', qualityPermissions)).toBe(
+      'data-quality-table-config',
+    );
+    expect(getActiveNavigationId('/data-quality/execution', qualityPermissions)).toBe(
+      'data-quality-execution',
+    );
   });
 
   it('does not expose removed modules', () => {

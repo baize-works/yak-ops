@@ -36,6 +36,8 @@ yak:
   sync:
     offline:
       enabled: false
+  quality:
+    enabled: false
   schedule:
     enabled: false
     web-enabled: false
