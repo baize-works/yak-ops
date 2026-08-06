@@ -48,13 +48,14 @@ declared = VALUES(declared),
 menu_code = VALUES(menu_code),
 is_delete = 0;
 
--- 3. 菜单层级：资源管理 -> 数据质量 -> 规则模板库。
+-- 3. 菜单层级：数据质量 -> 规则模板库。
+-- 数据质量与资源管理同为一级目录。
 INSERT INTO yak_security_menu
 (menu_code, menu_name, parent_code, route_path, icon_key, menu_type,
  sort_order, visible, active, required_permission_code, description, app_name)
 VALUES
-('data-quality', '数据质量', 'resources', NULL, 'quality', 1,
- 30, 1, 1, NULL, '数据质量页面目录', '${appName}'),
+('data-quality', '数据质量', NULL, NULL, 'quality', 1,
+ 30, 1, 1, NULL, '数据质量页面入口', '${appName}'),
 ('data-quality-rule-template', '规则模板库', 'data-quality',
  '/data-quality/rule-template', 'quality', 2,
  10, 1, 1, 'quality:template:read', '数据质量规则模板库', '${appName}')
@@ -92,7 +93,7 @@ WHERE role_permission.app_name = '${appName}'
   AND role_permission.is_delete = 0
 ON DUPLICATE KEY UPDATE is_delete = 0;
 
--- 5. 回填数据质量目录和资源管理根目录。
+-- 5. 回填规则模板库所属的数据质量一级目录。
 INSERT INTO yak_security_role_menu(role_id, menu_id, app_name)
 SELECT DISTINCT role_menu.role_id,
                 parent_menu.id,
@@ -112,26 +113,7 @@ WHERE role_menu.app_name = '${appName}'
   AND role_menu.is_delete = 0
 ON DUPLICATE KEY UPDATE is_delete = 0;
 
-INSERT INTO yak_security_role_menu(role_id, menu_id, app_name)
-SELECT DISTINCT role_menu.role_id,
-                parent_menu.id,
-                role_menu.app_name
-FROM yak_security_role_menu role_menu
-JOIN yak_security_menu child_menu
-  ON child_menu.id = role_menu.menu_id
- AND child_menu.menu_code = 'data-quality'
- AND child_menu.app_name = role_menu.app_name
- AND child_menu.is_delete = 0
-JOIN yak_security_menu parent_menu
-  ON parent_menu.menu_code = 'resources'
- AND parent_menu.app_name = role_menu.app_name
- AND parent_menu.is_delete = 0
- AND parent_menu.active = 1
-WHERE role_menu.app_name = '${appName}'
-  AND role_menu.is_delete = 0
-ON DUPLICATE KEY UPDATE is_delete = 0;
-
--- 6. root 角色直接获得新增的目录和页面菜单。
+-- 6. root 角色直接获得新增的数据质量目录和页面菜单。
 INSERT INTO yak_security_role_menu(role_id, menu_id, app_name)
 SELECT DISTINCT role_permission.role_id,
                 menu_row.id,
@@ -143,7 +125,7 @@ JOIN yak_security_permission permission_row
  AND permission_row.permission_code = 'security:root'
  AND permission_row.is_delete = 0
 JOIN yak_security_menu menu_row
-  ON menu_row.menu_code IN ('resources', 'data-quality', 'data-quality-rule-template')
+  ON menu_row.menu_code IN ('data-quality', 'data-quality-rule-template')
  AND menu_row.app_name = role_permission.app_name
  AND menu_row.is_delete = 0
  AND menu_row.active = 1

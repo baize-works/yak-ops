@@ -28,7 +28,8 @@ export interface NavigationGroupWithRoutes extends NavigationGroup {
 export const navigationGroups: readonly NavigationGroup[] = [
   { id: 'integration', title: '数据集成', iconKey: 'sync', section: 'task', order: 10 },
   { id: 'resources', title: '资源管理', iconKey: 'database', section: 'management', order: 20 },
-  { id: 'system', title: '系统管理', iconKey: 'system', section: 'system', order: 30 },
+  { id: 'data-quality', title: '数据质量', iconKey: 'quality', section: 'management', order: 30 },
+  { id: 'system', title: '系统管理', iconKey: 'system', section: 'system', order: 40 },
 ];
 
 export const appRoutes: readonly NavigationRoute[] = [
@@ -45,7 +46,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   { id: 'batch-link-up-multi', path: '/sync/batch-link-up/:id/config/multi', title: '多表同步配置', component: './batch-link-up/config/multi', hidden: true, parentId: 'batch-link-up' },
   { id: 'batch-link-up-script', path: '/sync/batch-link-up/:id/config/script', title: '脚本同步配置', component: './batch-link-up/config/script', hidden: true, parentId: 'batch-link-up' },
   { id: 'resource-management', mode: 'one', permission: 'resource:view', path: '/resource-management', title: '文件资源', component: './resource-management', iconKey: 'database', menuGroup: 'resources', order: 10 },
-  { id: 'data-quality-rule-template', mode: 'one', permission: 'quality:template:read', path: '/data-quality/rule-template', title: '数据质量', component: './data-quality/rule-template', iconKey: 'quality', menuGroup: 'resources', order: 20 },
+  { id: 'data-quality-rule-template', mode: 'one', permission: 'quality:template:read', path: '/data-quality/rule-template', title: '规则模板库', component: './data-quality/rule-template', iconKey: 'quality', menuGroup: 'data-quality', order: 10 },
   { id: 'system-users', mode: 'one', permission: 'security:user:read', path: '/system/users', title: '用户管理', component: './system/users', iconKey: 'system', menuGroup: 'system', order: 10 },
   { id: 'system-roles', mode: 'one', permission: 'security:role:read', path: '/system/roles', title: '角色管理', component: './system/roles', iconKey: 'system', menuGroup: 'system', order: 20 },
   { id: 'system-permissions', mode: 'one', permission: 'security:permission:read', path: '/system/permissions', title: '权限管理', component: './system/permissions', iconKey: 'system', menuGroup: 'system', order: 30 },
