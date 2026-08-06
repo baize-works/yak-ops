@@ -3,15 +3,15 @@
 INSERT INTO yak_security_permission
 (permission_code, permission_name, parent_id, leaf, level, description,
  active, declared, menu_code, app_name)
-SELECT permission_code,
-       permission_name,
+SELECT permissions.permission_code,
+       permissions.permission_name,
        parent.id,
        1,
        2,
-       description,
+       permissions.description,
        1,
        0,
-       menu_code,
+       permissions.menu_code,
        parent.app_name
 FROM yak_security_permission parent
 JOIN (
