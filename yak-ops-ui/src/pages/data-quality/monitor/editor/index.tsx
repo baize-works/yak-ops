@@ -7,6 +7,7 @@ import { API_SUCCESS_CODE } from '@/services/http/response';
 import { BRAND_THEME } from '@/styles/brand';
 import { history, useLocation, useModel, useParams } from '@umijs/max';
 import {
+  Alert,
   Button,
   ConfigProvider,
   Empty,
@@ -14,6 +15,7 @@ import {
   Input,
   InputNumber,
   Modal,
+  Radio,
   Select,
   Spin,
   Switch,
@@ -21,7 +23,14 @@ import {
   Tag,
   message,
 } from 'antd';
-import { Plus, Trash2 } from 'lucide-react';
+import {
+  BellRing,
+  CalendarClock,
+  CirclePlay,
+  Plus,
+  ShieldAlert,
+  Trash2,
+} from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -49,6 +58,12 @@ interface EditorRule extends SaveRulePayload {
   dimension: string;
 }
 
+type RunMode = 'MANUAL' | 'SCHEDULE';
+type ScheduleFrequency = 'DAILY' | 'WEEKLY' | 'CRON';
+type RuleFailureAction = 'CONTINUE' | 'STOP';
+type NotifyChannel = 'MESSAGE' | 'EMAIL' | 'WEBHOOK';
+type AlertLevel = 'WARNING' | 'CRITICAL';
+
 const OPERATORS: Array<{ value: ComparisonOperator; label: string }> = [
   { value: 'GT', label: '>' },
   { value: 'GTE', label: '>=' },
@@ -59,9 +74,10 @@ const OPERATORS: Array<{ value: ComparisonOperator; label: string }> = [
 ];
 
 const SECTION_ITEMS = [
-  { key: 'monitor-basic', label: '监控基础信息' },
-  { key: 'monitor-target', label: '监控对象' },
-  { key: 'quality-rules', label: '质量规则' },
+  { key: 'basic-config', label: '基本配置' },
+  { key: 'run-settings', label: '运行设置' },
+  { key: 'issue-strategy', label: '质量问题处理策略' },
+  { key: 'quality-rules', label: '选择质量规则' },
 ] as const;
 
 type SectionKey = (typeof SECTION_ITEMS)[number]['key'];
@@ -70,6 +86,21 @@ const LAST_SECTION_KEY = SECTION_ITEMS[SECTION_ITEMS.length - 1].key;
 const SCROLL_BOTTOM_THRESHOLD = 12;
 const SECTION_TOP_OFFSET = 24;
 const LOCATE_LOCK_DURATION = 650;
+
+const TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => {
+  const value = `${String(hour).padStart(2, '0')}:00`;
+  return { value, label: value };
+});
+
+const WEEKDAY_OPTIONS = [
+  { value: 'MON', label: '星期一' },
+  { value: 'TUE', label: '星期二' },
+  { value: 'WED', label: '星期三' },
+  { value: 'THU', label: '星期四' },
+  { value: 'FRI', label: '星期五' },
+  { value: 'SAT', label: '星期六' },
+  { value: 'SUN', label: '星期日' },
+];
 
 const unwrap = <T,>(response: {
   code: number;
@@ -180,7 +211,7 @@ const EditorField = ({
   hint,
   children,
 }: EditorFieldProps) => (
-  <div className="grid grid-cols-[116px_minmax(0,1fr)] items-start gap-5 max-md:grid-cols-1 max-md:gap-2">
+  <div className="grid grid-cols-[132px_minmax(0,1fr)] items-start gap-5 max-md:grid-cols-1 max-md:gap-2">
     <div className="pt-2.5 text-[13px] font-medium text-[#344054]">
       {label}
       {required ? (
@@ -265,6 +296,12 @@ const SectionNavigator = ({
   </nav>
 );
 
+const FrontendPreviewTag = () => (
+  <Tag className="!m-0 !border-0 !bg-[#f2f3f5] !text-[11px] !font-normal !text-[#8a8f99]">
+    后端待接入
+  </Tag>
+);
+
 const MonitorEditorPage = () => {
   const params = useParams<{ id?: string }>();
   const location = useLocation();
@@ -284,8 +321,6 @@ const MonitorEditorPage = () => {
   const locateTimerRef = useRef<number>();
 
   const [dataSources, setDataSources] = useState<DataSourceRecord[]>([]);
-  const [databases, setDatabases] = useState<string[]>([]);
-  const [schemas, setSchemas] = useState<string[]>([]);
   const [tables, setTables] = useState<
     Array<{ name: string; remarks?: string }>
   >([]);
@@ -296,12 +331,33 @@ const MonitorEditorPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] =
-    useState<SectionKey>('monitor-basic');
+    useState<SectionKey>('basic-config');
+
+  const [runMode, setRunMode] = useState<RunMode>('MANUAL');
+  const [scheduleFrequency, setScheduleFrequency] =
+    useState<ScheduleFrequency>('DAILY');
+  const [scheduleTime, setScheduleTime] = useState('09:00');
+  const [scheduleWeekday, setScheduleWeekday] = useState('MON');
+  const [cronExpression, setCronExpression] = useState('0 0 9 * * ?');
+
+  const [ruleFailureAction, setRuleFailureAction] =
+    useState<RuleFailureAction>('CONTINUE');
+  const [notifyEnabled, setNotifyEnabled] = useState(true);
+  const [notifyChannel, setNotifyChannel] =
+    useState<NotifyChannel>('MESSAGE');
+  const [notifyTarget, setNotifyTarget] = useState('');
+  const [alertLevel, setAlertLevel] = useState<AlertLevel>('WARNING');
 
   const dataSourceId = Form.useWatch('dataSourceId', form);
   const databaseName = Form.useWatch('databaseName', form);
   const schemaName = Form.useWatch('schemaName', form);
   const tableName = Form.useWatch('tableName', form);
+
+  const selectedSource = useMemo(
+    () =>
+      dataSources.find((item) => Number(item.id) === Number(dataSourceId)),
+    [dataSourceId, dataSources],
+  );
 
   const updateActiveSection = useCallback(() => {
     const container = pageRootRef.current;
@@ -463,36 +519,6 @@ const MonitorEditorPage = () => {
     params.id,
     query,
   ]);
-
-  useEffect(() => {
-    if (!dataSourceId) {
-      setDatabases([]);
-      setSchemas([]);
-      setTables([]);
-      return;
-    }
-
-    dataSourceCatalogApi
-      .listDatabases(dataSourceId)
-      .then((response) => setDatabases(unwrap(response)))
-      .catch((error) =>
-        message.error(error?.message || '数据库加载失败'),
-      );
-  }, [dataSourceId]);
-
-  useEffect(() => {
-    if (!dataSourceId) {
-      setSchemas([]);
-      return;
-    }
-
-    dataSourceCatalogApi
-      .listSchemas(dataSourceId, databaseName)
-      .then((response) => setSchemas(unwrap(response)))
-      .catch((error) =>
-        message.error(error?.message || 'Schema 加载失败'),
-      );
-  }, [dataSourceId, databaseName]);
 
   useEffect(() => {
     if (!dataSourceId) {
@@ -703,15 +729,28 @@ const MonitorEditorPage = () => {
           ref={pageRootRef}
           className="h-full overflow-y-auto overscroll-contain scroll-smooth"
         >
-          <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-6 px-6 pb-6 pt-6 max-xl:max-w-[1040px] xl:grid-cols-[minmax(0,1fr)_160px]">
+          <div className="mx-auto grid w-full max-w-[1280px] grid-cols-1 gap-6 px-6 pb-6 pt-6 max-xl:max-w-[1040px] xl:grid-cols-[minmax(0,1fr)_176px]">
             <div className="min-w-0">
               <Spin spinning={loading}>
                 <Form form={form} requiredMark={false}>
+                  <Form.Item name="dataSourceId" hidden>
+                    <Input />
+                  </Form.Item>
+                  <Form.Item name="dataSourceName" hidden>
+                    <Input />
+                  </Form.Item>
+                  <Form.Item name="databaseName" hidden>
+                    <Input />
+                  </Form.Item>
+                  <Form.Item name="schemaName" hidden>
+                    <Input />
+                  </Form.Item>
+
                   <main className="space-y-5 pb-4">
                     <EditorSection
-                      id="monitor-basic"
-                      title="监控基础信息"
-                      description="配置监控名称、负责人和启用状态。"
+                      id="basic-config"
+                      title="基本配置"
+                      description="配置质量监控的基本信息、监控对象和数据范围。"
                     >
                       <div className="space-y-5">
                         <EditorField label="监控名称" required>
@@ -746,6 +785,69 @@ const MonitorEditorPage = () => {
                           </Form.Item>
                         </EditorField>
 
+                        <EditorField label="监控对象" required>
+                          {dataSourceId ? (
+                            <Form.Item
+                              name="tableName"
+                              rules={[
+                                { required: true, message: '请选择数据表' },
+                              ]}
+                              className="!mb-0"
+                            >
+                              <Select
+                                variant="filled"
+                                showSearch
+                                optionFilterProp="label"
+                                placeholder="请选择需要监控的数据表"
+                                options={tables.map((item) => ({
+                                  value: item.name,
+                                  label: item.remarks
+                                    ? `${item.name} · ${item.remarks}`
+                                    : item.name,
+                                }))}
+                              />
+                            </Form.Item>
+                          ) : (
+                            <Alert
+                              type="warning"
+                              showIcon
+                              message="尚未指定监控对象"
+                              description="请先从按表配置页面选择数据表，再创建质量监控。"
+                              action={
+                                <Button
+                                  size="small"
+                                  onClick={() =>
+                                    history.push('/data-quality/table-config')
+                                  }
+                                >
+                                  返回按表配置
+                                </Button>
+                              }
+                            />
+                          )}
+                          {dataSourceId && selectedSource ? (
+                            <div className="mt-2 text-[11px] text-[#98a2b3]">
+                              已关联 {selectedSource.name || '当前数据源'}，数据库与
+                              Schema 路径已自动继承并隐藏。
+                            </div>
+                          ) : null}
+                        </EditorField>
+
+                        <EditorField
+                          label="数据范围"
+                          hint="仅填写 WHERE 后的条件；留空时检查整张表。"
+                        >
+                          <Form.Item name="whereClause" className="!mb-0">
+                            <Input.TextArea
+                              variant="filled"
+                              rows={4}
+                              maxLength={4000}
+                              showCount
+                              placeholder="例如：dt = '${bizdate}' AND status = 1"
+                            />
+                          </Form.Item>
+                        </EditorField>
+
                         <EditorField label="监控描述">
                           <Form.Item name="description" className="!mb-0">
                             <Input.TextArea
@@ -759,7 +861,7 @@ const MonitorEditorPage = () => {
                         </EditorField>
 
                         <EditorField label="启用状态">
-                          <div className="flex min-h-10 items-center justify-between rounded-lg bg-[#f5f5f6] px-3">
+                          <div className="flex min-h-12 items-center justify-between rounded-lg bg-[#f5f5f6] px-3 py-2">
                             <div>
                               <div className="text-[13px] font-medium text-[#344054]">
                                 创建后立即启用
@@ -781,125 +883,263 @@ const MonitorEditorPage = () => {
                     </EditorSection>
 
                     <EditorSection
-                      id="monitor-target"
-                      title="监控对象"
-                      description="选择需要质量管理的数据表，并设置本次检查的数据范围。"
+                      id="run-settings"
+                      title="运行设置"
+                      description="选择手动运行或按周期调度运行。"
+                      extra={<FrontendPreviewTag />}
                     >
                       <div className="space-y-5">
-                        <EditorField label="数据源" required>
-                          <Form.Item
-                            name="dataSourceId"
-                            rules={[
-                              { required: true, message: '请选择数据源' },
-                            ]}
-                            className="!mb-0"
+                        <EditorField label="触发方式" required>
+                          <Radio.Group
+                            value={runMode}
+                            onChange={(event) =>
+                              setRunMode(event.target.value as RunMode)
+                            }
+                            className="grid w-full grid-cols-2 gap-3 max-md:grid-cols-1"
                           >
-                            <Select
-                              variant="filled"
-                              showSearch
-                              optionFilterProp="label"
-                              placeholder="请选择已配置的数据源"
-                              options={dataSources.map((item) => ({
-                                value: Number(item.id),
-                                label: `${item.name} · ${item.dbType || '--'}`,
-                              }))}
-                              onChange={(value) => {
-                                const source = dataSources.find(
-                                  (item) => Number(item.id) === value,
-                                );
-                                form.setFieldsValue({
-                                  dataSourceName: source?.name,
-                                  databaseName: undefined,
-                                  schemaName: undefined,
-                                  tableName: undefined,
-                                });
-                              }}
-                            />
-                          </Form.Item>
+                            <label
+                              className={[
+                                'flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors',
+                                runMode === 'MANUAL'
+                                  ? 'border-[var(--yak-brand-color)] bg-[rgba(254,44,85,0.04)]'
+                                  : 'border-[#e4e7ec] bg-[#fcfcfd] hover:border-[#cfd3da]',
+                              ].join(' ')}
+                            >
+                              <Radio value="MANUAL" className="mt-0.5" />
+                              <CirclePlay
+                                size={18}
+                                className="mt-0.5 shrink-0 text-[#667085]"
+                              />
+                              <span>
+                                <span className="block text-[13px] font-medium text-[#344054]">
+                                  手动触发
+                                </span>
+                                <span className="mt-1 block text-[11px] leading-5 text-[#98a2b3]">
+                                  在按表配置或监控详情中由用户主动运行
+                                </span>
+                              </span>
+                            </label>
+
+                            <label
+                              className={[
+                                'flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors',
+                                runMode === 'SCHEDULE'
+                                  ? 'border-[var(--yak-brand-color)] bg-[rgba(254,44,85,0.04)]'
+                                  : 'border-[#e4e7ec] bg-[#fcfcfd] hover:border-[#cfd3da]',
+                              ].join(' ')}
+                            >
+                              <Radio value="SCHEDULE" className="mt-0.5" />
+                              <CalendarClock
+                                size={18}
+                                className="mt-0.5 shrink-0 text-[#667085]"
+                              />
+                              <span>
+                                <span className="block text-[13px] font-medium text-[#344054]">
+                                  调度触发
+                                </span>
+                                <span className="mt-1 block text-[11px] leading-5 text-[#98a2b3]">
+                                  按固定周期自动发起质量检查
+                                </span>
+                              </span>
+                            </label>
+                          </Radio.Group>
                         </EditorField>
 
-                        <EditorField label="数据库">
-                          <Form.Item name="databaseName" className="!mb-0">
-                            <Select
-                              allowClear
-                              variant="filled"
-                              showSearch
-                              placeholder="请选择数据库"
-                              options={databases.map((value) => ({
-                                value,
-                                label: value,
-                              }))}
-                              onChange={() =>
-                                form.setFieldsValue({
-                                  schemaName: undefined,
-                                  tableName: undefined,
-                                })
-                              }
-                            />
-                          </Form.Item>
-                        </EditorField>
+                        {runMode === 'SCHEDULE' ? (
+                          <div className="rounded-lg border border-[#ebecef] bg-[#fcfcfd] p-4">
+                            <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+                              <div>
+                                <div className="mb-1.5 text-xs font-medium text-[#667085]">
+                                  调度周期
+                                </div>
+                                <Select
+                                  variant="filled"
+                                  value={scheduleFrequency}
+                                  options={[
+                                    { value: 'DAILY', label: '每天' },
+                                    { value: 'WEEKLY', label: '每周' },
+                                    { value: 'CRON', label: 'Cron 表达式' },
+                                  ]}
+                                  onChange={(value) =>
+                                    setScheduleFrequency(
+                                      value as ScheduleFrequency,
+                                    )
+                                  }
+                                  className="w-full"
+                                />
+                              </div>
 
-                        <EditorField label="Schema">
-                          <Form.Item name="schemaName" className="!mb-0">
-                            <Select
-                              allowClear
-                              variant="filled"
-                              showSearch
-                              placeholder="请选择 Schema"
-                              options={schemas.map((value) => ({
-                                value,
-                                label: value,
-                              }))}
-                              onChange={() =>
-                                form.setFieldValue('tableName', undefined)
-                              }
-                            />
-                          </Form.Item>
-                        </EditorField>
+                              {scheduleFrequency === 'WEEKLY' ? (
+                                <div>
+                                  <div className="mb-1.5 text-xs font-medium text-[#667085]">
+                                    执行日期
+                                  </div>
+                                  <Select
+                                    variant="filled"
+                                    value={scheduleWeekday}
+                                    options={WEEKDAY_OPTIONS}
+                                    onChange={setScheduleWeekday}
+                                    className="w-full"
+                                  />
+                                </div>
+                              ) : null}
 
-                        <EditorField label="数据表" required>
-                          <Form.Item
-                            name="tableName"
-                            rules={[
-                              { required: true, message: '请选择数据表' },
-                            ]}
-                            className="!mb-0"
+                              {scheduleFrequency !== 'CRON' ? (
+                                <div>
+                                  <div className="mb-1.5 text-xs font-medium text-[#667085]">
+                                    执行时间
+                                  </div>
+                                  <Select
+                                    variant="filled"
+                                    value={scheduleTime}
+                                    options={TIME_OPTIONS}
+                                    onChange={setScheduleTime}
+                                    className="w-full"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="col-span-2 max-md:col-span-1">
+                                  <div className="mb-1.5 text-xs font-medium text-[#667085]">
+                                    Cron 表达式
+                                  </div>
+                                  <Input
+                                    variant="filled"
+                                    value={cronExpression}
+                                    placeholder="例如：0 0 9 * * ?"
+                                    onChange={(event) =>
+                                      setCronExpression(event.target.value)
+                                    }
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </EditorSection>
+
+                    <EditorSection
+                      id="issue-strategy"
+                      title="质量问题处理策略"
+                      description="配置规则失败后的执行行为和告警方式。"
+                      extra={<FrontendPreviewTag />}
+                    >
+                      <div className="space-y-5">
+                        <EditorField label="失败后处理" required>
+                          <Radio.Group
+                            value={ruleFailureAction}
+                            onChange={(event) =>
+                              setRuleFailureAction(
+                                event.target.value as RuleFailureAction,
+                              )
+                            }
+                            className="flex flex-wrap gap-3"
                           >
-                            <Select
-                              variant="filled"
-                              showSearch
-                              optionFilterProp="label"
-                              placeholder="请选择需要监控的数据表"
-                              options={tables.map((item) => ({
-                                value: item.name,
-                                label: item.remarks
-                                  ? `${item.name} · ${item.remarks}`
-                                  : item.name,
-                              }))}
-                            />
-                          </Form.Item>
+                            <Radio.Button value="CONTINUE">
+                              继续执行剩余规则
+                            </Radio.Button>
+                            <Radio.Button value="STOP">
+                              立即终止本次检查
+                            </Radio.Button>
+                          </Radio.Group>
                         </EditorField>
 
-                        <EditorField
-                          label="数据范围"
-                          hint="仅填写 WHERE 后的条件；留空时检查整张表。"
-                        >
-                          <Form.Item name="whereClause" className="!mb-0">
-                            <Input.TextArea
-                              variant="filled"
-                              rows={4}
-                              maxLength={4000}
-                              showCount
-                              placeholder="例如：dt = '${bizdate}' AND status = 1"
+                        <EditorField label="告警通知">
+                          <div className="flex min-h-12 items-center justify-between rounded-lg bg-[#f5f5f6] px-3 py-2">
+                            <div className="flex min-w-0 items-start gap-2.5">
+                              <BellRing
+                                size={16}
+                                className="mt-0.5 shrink-0 text-[#667085]"
+                              />
+                              <div>
+                                <div className="text-[13px] font-medium text-[#344054]">
+                                  质量检查异常时发送通知
+                                </div>
+                                <div className="mt-0.5 text-[11px] text-[#98a2b3]">
+                                  后续由后端接入消息、邮件和 Webhook 通道
+                                </div>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={notifyEnabled}
+                              onChange={setNotifyEnabled}
                             />
-                          </Form.Item>
+                          </div>
                         </EditorField>
+
+                        {notifyEnabled ? (
+                          <div className="rounded-lg border border-[#ebecef] bg-[#fcfcfd] p-4">
+                            <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+                              <div>
+                                <div className="mb-1.5 text-xs font-medium text-[#667085]">
+                                  告警级别
+                                </div>
+                                <Select
+                                  variant="filled"
+                                  value={alertLevel}
+                                  options={[
+                                    { value: 'WARNING', label: '警告' },
+                                    { value: 'CRITICAL', label: '严重' },
+                                  ]}
+                                  onChange={(value) =>
+                                    setAlertLevel(value as AlertLevel)
+                                  }
+                                  className="w-full"
+                                />
+                              </div>
+                              <div>
+                                <div className="mb-1.5 text-xs font-medium text-[#667085]">
+                                  通知方式
+                                </div>
+                                <Select
+                                  variant="filled"
+                                  value={notifyChannel}
+                                  options={[
+                                    { value: 'MESSAGE', label: '站内消息' },
+                                    { value: 'EMAIL', label: '邮件' },
+                                    { value: 'WEBHOOK', label: 'Webhook' },
+                                  ]}
+                                  onChange={(value) =>
+                                    setNotifyChannel(value as NotifyChannel)
+                                  }
+                                  className="w-full"
+                                />
+                              </div>
+                              <div className="col-span-2 max-md:col-span-1">
+                                <div className="mb-1.5 text-xs font-medium text-[#667085]">
+                                  接收对象
+                                </div>
+                                <Input
+                                  variant="filled"
+                                  value={notifyTarget}
+                                  placeholder={
+                                    notifyChannel === 'EMAIL'
+                                      ? '请输入邮箱，多个邮箱用逗号分隔'
+                                      : notifyChannel === 'WEBHOOK'
+                                        ? '请输入 Webhook 地址'
+                                        : '默认通知质量监控负责人，可补充接收人'
+                                  }
+                                  onChange={(event) =>
+                                    setNotifyTarget(event.target.value)
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        <div className="flex items-start gap-2 rounded-lg bg-[#fff8f0] px-3 py-2.5 text-[11px] leading-5 text-[#8a6a45]">
+                          <ShieldAlert size={15} className="mt-0.5 shrink-0" />
+                          <span>
+                            当前运行设置和问题处理策略仅完成前端交互，保存接口与执行逻辑将在后端阶段接入。
+                          </span>
+                        </div>
                       </div>
                     </EditorSection>
 
                     <EditorSection
                       id="quality-rules"
-                      title="质量规则"
+                      title="选择质量规则"
                       description="从规则模板添加检查项，一次运行会执行当前监控下的全部启用规则。"
                       extra={
                         <Button
@@ -934,7 +1174,7 @@ const MonitorEditorPage = () => {
                               className="rounded-lg border border-[#ebecef] bg-[#fcfcfd] p-4"
                             >
                               <div className="mb-4 flex items-start justify-between gap-4">
-                                <div className="flex min-w-0 flex-1 items-center gap-2">
+                                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#f2f3f5] text-xs font-medium text-[#667085]">
                                     {index + 1}
                                   </span>
@@ -1063,7 +1303,7 @@ const MonitorEditorPage = () => {
         </div>
 
         <Modal
-          width={760}
+          width={820}
           title="选择规则模板"
           open={templateOpen}
           footer={null}
@@ -1075,7 +1315,7 @@ const MonitorEditorPage = () => {
             pagination={false}
             dataSource={templates}
             columns={[
-              { title: '模板名称', dataIndex: 'name', width: 170 },
+              { title: '模板名称', dataIndex: 'name', width: 180 },
               { title: '质量维度', dataIndex: 'dimension', width: 100 },
               {
                 title: '范围',
