@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,10 +18,7 @@ public final class QualityApi {
   private QualityApi() {
   }
 
-  public enum RuleScope {
-    TABLE,
-    COLUMN
-  }
+  public enum RuleScope { TABLE, COLUMN }
 
   public enum RuleType {
     TABLE_ROW_COUNT(RuleScope.TABLE, "完整性", "行"),
@@ -40,36 +38,18 @@ public final class QualityApi {
       this.unit = unit;
     }
 
-    public RuleScope scope() {
-      return scope;
-    }
-
-    public String dimension() {
-      return dimension;
-    }
-
-    public String unit() {
-      return unit;
-    }
+    public RuleScope scope() { return scope; }
+    public String dimension() { return dimension; }
+    public String unit() { return unit; }
   }
 
   public enum ComparisonOperator {
-    GT(">"),
-    GTE(">="),
-    EQ("="),
-    LTE("<="),
-    LT("<"),
-    BETWEEN("BETWEEN");
+    GT(">"), GTE(">="), EQ("="), LTE("<="), LT("<"), BETWEEN("BETWEEN");
 
     private final String symbol;
 
-    ComparisonOperator(String symbol) {
-      this.symbol = symbol;
-    }
-
-    public String symbol() {
-      return symbol;
-    }
+    ComparisonOperator(String symbol) { this.symbol = symbol; }
+    public String symbol() { return symbol; }
 
     public static ComparisonOperator fromValue(String value) {
       if (value == null || value.isBlank()) {
@@ -85,26 +65,17 @@ public final class QualityApi {
     }
   }
 
-  public enum ExecutionStatus {
-    WAITING,
-    RUNNING,
-    SUCCESS,
-    FAILED
-  }
+  public enum ExecutionStatus { WAITING, RUNNING, SUCCESS, FAILED }
+  public enum CheckResult { PASSED, NOT_PASSED, ERROR, RUNNING, NOT_RUN }
+  public enum TriggerType { MANUAL, SCHEDULE }
+  public enum RunMode { MANUAL, SCHEDULE }
+  public enum ScheduleFrequency { DAILY, WEEKLY, CRON }
+  public enum ScheduleWeekday { MON, TUE, WED, THU, FRI, SAT, SUN }
+  public enum RuleFailureAction { CONTINUE, STOP }
+  public enum NotifyChannel { MESSAGE, EMAIL, WEBHOOK }
+  public enum AlertLevel { WARNING, CRITICAL }
 
-  public enum CheckResult {
-    PASSED,
-    NOT_PASSED,
-    ERROR,
-    RUNNING,
-    NOT_RUN
-  }
-
-  public record TemplateQuery(
-      String keyword,
-      String dimension,
-      RuleScope scope) {
-  }
+  public record TemplateQuery(String keyword, String dimension, RuleScope scope) {}
 
   public record TemplateView(
       Long id,
@@ -118,18 +89,10 @@ public final class QualityApi {
       boolean builtin,
       boolean enabled,
       long ruleCount,
-      int sortOrder) {
-  }
+      int sortOrder) {}
 
-  public record TemplateSummary(
-      long total,
-      Map<String, Long> dimensions) {
-  }
-
-  public record TemplateListView(
-      List<TemplateView> records,
-      TemplateSummary summary) {
-  }
+  public record TemplateSummary(long total, Map<String, Long> dimensions) {}
+  public record TemplateListView(List<TemplateView> records, TemplateSummary summary) {}
 
   public record MonitorPageRequest(
       @Min(1) Integer current,
@@ -141,14 +104,8 @@ public final class QualityApi {
       String tableName,
       Boolean enabled,
       CheckResult lastResult) {
-
-    public int normalizedCurrent() {
-      return current == null ? 1 : current;
-    }
-
-    public int normalizedPageSize() {
-      return pageSize == null ? 20 : pageSize;
-    }
+    public int normalizedCurrent() { return current == null ? 1 : current; }
+    public int normalizedPageSize() { return pageSize == null ? 20 : pageSize; }
   }
 
   public record SaveRuleRequest(
@@ -160,8 +117,33 @@ public final class QualityApi {
       BigDecimal thresholdEnd,
       List<@Size(max = 256) String> enumValues,
       @Size(max = 20000) String customSql,
-      Boolean enabled) {
-  }
+      Boolean enabled) {}
+
+  public record MonitorSettingsRequest(
+      RunMode runMode,
+      ScheduleFrequency scheduleFrequency,
+      @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$", message = "执行时间格式必须为 HH:mm")
+      String scheduleTime,
+      ScheduleWeekday scheduleWeekday,
+      @Size(max = 128) String cronExpression,
+      RuleFailureAction ruleFailureAction,
+      Boolean notifyEnabled,
+      NotifyChannel notifyChannel,
+      @Size(max = 1000) String notifyTarget,
+      AlertLevel alertLevel) {}
+
+  public record MonitorSettingsView(
+      RunMode runMode,
+      ScheduleFrequency scheduleFrequency,
+      String scheduleTime,
+      ScheduleWeekday scheduleWeekday,
+      String cronExpression,
+      LocalDateTime nextRunTime,
+      RuleFailureAction ruleFailureAction,
+      boolean notifyEnabled,
+      NotifyChannel notifyChannel,
+      String notifyTarget,
+      AlertLevel alertLevel) {}
 
   public record SaveMonitorRequest(
       @NotBlank @Size(max = 100) String name,
@@ -174,8 +156,8 @@ public final class QualityApi {
       @Size(max = 4000) String whereClause,
       @NotBlank @Size(max = 128) String owner,
       Boolean enabled,
-      @NotEmpty List<@Valid SaveRuleRequest> rules) {
-  }
+      @Valid MonitorSettingsRequest settings,
+      @NotEmpty List<@Valid SaveRuleRequest> rules) {}
 
   public record RuleView(
       Long id,
@@ -193,8 +175,7 @@ public final class QualityApi {
       List<String> enumValues,
       String customSql,
       boolean enabled,
-      int sortOrder) {
-  }
+      int sortOrder) {}
 
   public record MonitorListItem(
       Long id,
@@ -212,8 +193,7 @@ public final class QualityApi {
       String lastExecutionNo,
       LocalDateTime lastRunTime,
       LocalDateTime createTime,
-      LocalDateTime updateTime) {
-  }
+      LocalDateTime updateTime) {}
 
   public record MonitorView(
       Long id,
@@ -232,15 +212,13 @@ public final class QualityApi {
       LocalDateTime lastRunTime,
       LocalDateTime createTime,
       LocalDateTime updateTime,
-      List<RuleView> rules) {
-  }
+      List<RuleView> rules) {}
 
   public record MonitorPageView(
       List<MonitorListItem> records,
       long total,
       int current,
-      int pageSize) {
-  }
+      int pageSize) {}
 
   public record TableMonitorSummary(
       String tableName,
@@ -249,8 +227,7 @@ public final class QualityApi {
       int monitorCount,
       int ruleCount,
       CheckResult lastResult,
-      LocalDateTime lastRunTime) {
-  }
+      LocalDateTime lastRunTime) {}
 
   public record TableAssetPageRequest(
       @Min(1) Integer current,
@@ -259,14 +236,8 @@ public final class QualityApi {
       String databaseName,
       String schemaName,
       String keyword) {
-
-    public int normalizedCurrent() {
-      return current == null ? 1 : current;
-    }
-
-    public int normalizedPageSize() {
-      return pageSize == null ? 20 : pageSize;
-    }
+    public int normalizedCurrent() { return current == null ? 1 : current; }
+    public int normalizedPageSize() { return pageSize == null ? 20 : pageSize; }
   }
 
   public record TableAssetView(
@@ -285,56 +256,46 @@ public final class QualityApi {
       CheckResult lastResult,
       LocalDateTime lastRunTime,
       String registeredBy,
-      LocalDateTime registeredAt) {
-  }
+      LocalDateTime registeredAt) {}
 
   public record TableAssetPageView(
       List<TableAssetView> records,
       long total,
       int current,
-      int pageSize) {
-  }
+      int pageSize) {}
 
   public record TableCandidateView(
       String databaseName,
       String schemaName,
       String tableName,
       String tableType,
-      String remarks) {
-  }
+      String remarks) {}
 
   public record TableCandidatePageView(
       List<TableCandidateView> records,
       long total,
       int current,
-      int pageSize) {
-  }
+      int pageSize) {}
 
   public record RegisterTableItem(
       @Size(max = 128) String databaseName,
       @Size(max = 128) String schemaName,
       @NotBlank @Size(max = 256) String tableName,
       @Size(max = 40) String tableType,
-      @Size(max = 1000) String remarks) {
-  }
+      @Size(max = 1000) String remarks) {}
 
   public record RegisterTablesRequest(
       @NotNull Long dataSourceId,
       @NotBlank @Size(max = 128) String dataSourceName,
       @Size(max = 128) String databaseName,
-      @NotEmpty List<@Valid RegisterTableItem> tables) {
-  }
+      @NotEmpty List<@Valid RegisterTableItem> tables) {}
 
-  public record RegisterTablesView(
-      int requested,
-      int registered) {
-  }
+  public record RegisterTablesView(int requested, int registered) {}
 
   public record RunView(
       String executionNo,
       ExecutionStatus executionStatus,
-      CheckResult checkResult) {
-  }
+      CheckResult checkResult) {}
 
   public record ExecutionPageRequest(
       @Min(1) Integer current,
@@ -343,14 +304,8 @@ public final class QualityApi {
       Long monitorId,
       ExecutionStatus executionStatus,
       CheckResult checkResult) {
-
-    public int normalizedCurrent() {
-      return current == null ? 1 : current;
-    }
-
-    public int normalizedPageSize() {
-      return pageSize == null ? 20 : pageSize;
-    }
+    public int normalizedCurrent() { return current == null ? 1 : current; }
+    public int normalizedPageSize() { return pageSize == null ? 20 : pageSize; }
   }
 
   public record RuleExecutionView(
@@ -365,8 +320,7 @@ public final class QualityApi {
       String expectedValue,
       String executedSql,
       String errorMessage,
-      Long durationMs) {
-  }
+      Long durationMs) {}
 
   public record ExecutionListItem(
       String executionNo,
@@ -385,8 +339,7 @@ public final class QualityApi {
       LocalDateTime startedAt,
       LocalDateTime finishedAt,
       Long durationMs,
-      String errorMessage) {
-  }
+      String errorMessage) {}
 
   public record ExecutionView(
       String executionNo,
@@ -409,13 +362,11 @@ public final class QualityApi {
       LocalDateTime finishedAt,
       Long durationMs,
       String errorMessage,
-      List<RuleExecutionView> rules) {
-  }
+      List<RuleExecutionView> rules) {}
 
   public record ExecutionPageView(
       List<ExecutionListItem> records,
       long total,
       int current,
-      int pageSize) {
-  }
+      int pageSize) {}
 }

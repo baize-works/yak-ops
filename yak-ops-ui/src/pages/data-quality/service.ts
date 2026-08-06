@@ -4,6 +4,7 @@ import type {
   ExecutionPageView,
   ExecutionView,
   MonitorPageView,
+  MonitorSettingsView,
   MonitorView,
   RegisterTablesPayload,
   RegisterTablesView,
@@ -63,6 +64,8 @@ export const qualityMonitorApi = {
     ),
   detail: (id: number | string): Promise<CommonApiResponse<MonitorView>> =>
     HttpUtils.get<MonitorView>(`${PREFIX}/monitor/${id}`),
+  settings: (id: number | string): Promise<CommonApiResponse<MonitorSettingsView>> =>
+    HttpUtils.get<MonitorSettingsView>(`${PREFIX}/monitor/${id}/settings`),
   create: (payload: SaveMonitorPayload): Promise<CommonApiResponse<MonitorView>> =>
     HttpUtils.post<MonitorView>(`${PREFIX}/monitor`, payload),
   update: (

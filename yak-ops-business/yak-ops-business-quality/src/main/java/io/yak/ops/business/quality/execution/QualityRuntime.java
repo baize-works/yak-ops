@@ -1,6 +1,9 @@
 package io.yak.ops.business.quality.execution;
 
+import io.yak.ops.business.quality.api.QualityApi.AlertLevel;
 import io.yak.ops.business.quality.api.QualityApi.ComparisonOperator;
+import io.yak.ops.business.quality.api.QualityApi.NotifyChannel;
+import io.yak.ops.business.quality.api.QualityApi.RuleFailureAction;
 import io.yak.ops.business.quality.api.QualityApi.RuleScope;
 import io.yak.ops.business.quality.api.QualityApi.RuleType;
 import java.math.BigDecimal;
@@ -43,6 +46,28 @@ public final class QualityRuntime {
       long executionId,
       String executionNo,
       MonitorSnapshot monitor,
-      List<RuleSnapshot> rules) {
+      List<RuleSnapshot> rules,
+      RuleFailureAction ruleFailureAction,
+      boolean notifyEnabled,
+      NotifyChannel notifyChannel,
+      String notifyTarget,
+      AlertLevel alertLevel) {
+
+    public ExecutionJob(
+        long executionId,
+        String executionNo,
+        MonitorSnapshot monitor,
+        List<RuleSnapshot> rules) {
+      this(
+          executionId,
+          executionNo,
+          monitor,
+          rules,
+          RuleFailureAction.CONTINUE,
+          false,
+          NotifyChannel.MESSAGE,
+          null,
+          AlertLevel.WARNING);
+    }
   }
 }

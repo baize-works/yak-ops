@@ -13,10 +13,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnQualityEnabled
+@EnableScheduling
 @EnableConfigurationProperties(QualityProperties.class)
 @Import(BusinessDatabaseConfiguration.class)
 public class QualityConfiguration {
@@ -30,8 +32,6 @@ public class QualityConfiguration {
         .table("yak_quality_schema_history")
         .baselineVersion(MigrationVersion.fromVersion("0"))
         .baselineOnMigrate(true)
-        // 质量规则的自定义 SQL 使用 ${table}/${column}/${where} 作为运行时占位符。
-        // 这些文本需要原样写入模板描述，不能被 Flyway 当作迁移占位符解析。
         .placeholderReplacement(false)
         .load();
   }
@@ -66,8 +66,7 @@ public class QualityConfiguration {
     taskExecutor.setQueueCapacity(Math.max(1, executor.getQueueCapacity()));
     taskExecutor.setThreadNamePrefix("yak-quality-");
     taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
-    taskExecutor.setAwaitTerminationSeconds(
-        Math.max(1, executor.getShutdownWaitSeconds()));
+    taskExecutor.setAwaitTerminationSeconds(Math.max(1, executor.getShutdownWaitSeconds()));
     taskExecutor.initialize();
     return taskExecutor;
   }
