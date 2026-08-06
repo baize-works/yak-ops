@@ -5,8 +5,12 @@ import type {
   ExecutionView,
   MonitorPageView,
   MonitorView,
+  RegisterTablesPayload,
+  RegisterTablesView,
   RunView,
   SaveMonitorPayload,
+  TableAssetPageView,
+  TableCandidatePageView,
   TableMonitorSummary,
   TemplateListView,
 } from './types';
@@ -27,6 +31,23 @@ const queryString = (params: Record<string, unknown>) => {
 export const qualityTemplateApi = {
   list: (params: Record<string, unknown> = {}): Promise<CommonApiResponse<TemplateListView>> =>
     HttpUtils.get<TemplateListView>(`${PREFIX}/template${queryString(params)}`),
+};
+
+export const qualityTableAssetApi = {
+  page: (params: Record<string, unknown>): Promise<CommonApiResponse<TableAssetPageView>> =>
+    HttpUtils.post<TableAssetPageView>(`${PREFIX}/table-asset/page`, params),
+  candidates: (
+    params: Record<string, unknown>,
+  ): Promise<CommonApiResponse<TableCandidatePageView>> =>
+    HttpUtils.get<TableCandidatePageView>(
+      `${PREFIX}/table-asset/candidates${queryString(params)}`,
+    ),
+  register: (
+    payload: RegisterTablesPayload,
+  ): Promise<CommonApiResponse<RegisterTablesView>> =>
+    HttpUtils.post<RegisterTablesView>(`${PREFIX}/table-asset/register`, payload),
+  remove: (id: number | string): Promise<CommonApiResponse<boolean>> =>
+    HttpUtils.delete<boolean>(`${PREFIX}/table-asset/${id}`),
 };
 
 export const qualityMonitorApi = {
