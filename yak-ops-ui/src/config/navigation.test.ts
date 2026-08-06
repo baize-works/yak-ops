@@ -26,13 +26,15 @@ describe('permission-aware navigation', () => {
     expect(getQuickCreateRoutes([...batchRead, 'task:batch:create']).map((route) => route.id)).toEqual(['batch-link-up']);
   });
 
-  it('registers the rule template library below resource management', () => {
+  it('registers data quality as a top-level group with rule template library', () => {
     const qualityRead = ['quality:template:read'];
     const groups = getMainNavigationGroups(qualityRead);
-    expect(groups.map((group) => group.id)).toEqual(['resources']);
+    expect(groups.map((group) => group.id)).toEqual(['data-quality']);
+    expect(groups[0].title).toBe('数据质量');
     expect(groups[0].routes.map((route) => route.id)).toEqual([
       'data-quality-rule-template',
     ]);
+    expect(groups[0].routes[0].title).toBe('规则模板库');
     expect(getActiveNavigationId('/data-quality/rule-template', qualityRead)).toBe(
       'data-quality-rule-template',
     );
