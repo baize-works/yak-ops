@@ -9,7 +9,7 @@
 <h1 align="center">Yak Ops</h1>
 
 <p align="center">
-  A focused data operations platform for datasource management, offline synchronization, resources, and system administration.
+  A focused data operations platform for datasource management, offline synchronization, resources, data quality, and system administration.
 </p>
 
 ## Current scope
@@ -19,9 +19,10 @@ Yak Ops currently keeps a deliberately small and maintainable feature set:
 - datasource management;
 - offline synchronization under Data Integration;
 - resource management, including files, clients, and connectors;
+- data-quality rule templates, table monitors, manual checks, and execution results;
 - system management and security administration.
 
-Data Development, realtime synchronization, and Data Quality have been removed from the active codebase. These domains can be redesigned independently before being introduced again.
+Data Development and realtime synchronization remain outside the active codebase and can be redesigned independently before being introduced again.
 
 ## Quick start
 
@@ -65,6 +66,7 @@ yak-ops
 ├── yak-ops-business
 │   ├── yak-ops-business-datasource
 │   ├── yak-ops-business-job
+│   ├── yak-ops-business-quality
 │   ├── yak-ops-business-resource
 │   └── yak-ops-business-sync
 │       └── yak-ops-business-sync-offline
@@ -80,6 +82,17 @@ yak-ops
 
 Offline synchronization keeps task definition management, Link-Up engine integration, worker registration, execution reconciliation, and scheduling support.
 
+### Data quality
+
+The first data-quality milestone forms a small closed loop:
+
+```text
+select a table -> create a monitor -> add rules from templates
+-> run manually -> inspect execution results
+```
+
+The built-in templates cover table row count, column not-null ratio, column uniqueness, numeric range, enum membership, and custom read-only SQL.
+
 ### Datasource plugins
 
 Datasource plugins provide connection normalization, connection tests, and catalog metadata capabilities.
@@ -90,14 +103,14 @@ Resource management supports managed files and pluggable Local, MinIO, and HDFS 
 
 ## Removed domains and data
 
-The following runtime modules and frontend pages are no longer assembled:
+The following runtime modules and frontend pages are not assembled:
 
 - Data Development and its task plugins;
 - realtime synchronization;
-- Data Quality and its scheduling integration.
+- historical data-quality scheduling and alerting implementations.
 
 Existing database tables are not automatically dropped. Deployments that already contain historical data can retain it for audit or migrate it separately.
 
 ## Security note
 
-Datasource connections and offline synchronization can access external systems. Production deployments should apply project permissions, network restrictions, audit rules, and secret management before granting access.
+Datasource connections, offline synchronization, and data-quality checks can access external systems. Production deployments should apply project permissions, network restrictions, audit rules, query limits, and secret management before granting access.

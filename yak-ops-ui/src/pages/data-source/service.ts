@@ -116,6 +116,45 @@ export async function installDataSourcePlugin(
 }
 
 export const dataSourceCatalogApi = {
+  listDatabases: (id: DataSourceId): Promise<CommonApiResponse<string[]>> =>
+    HttpUtils.get<string[]>(`${DATA_SOURCE_CATALOG_API_PREFIX}/${id}/databases`),
+
+  listSchemas: (
+    id: DataSourceId,
+    database?: string,
+  ): Promise<CommonApiResponse<string[]>> =>
+    HttpUtils.get<string[]>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/${id}/schemas${queryString({ database })}`,
+    ),
+
+  listTables: (
+    id: DataSourceId,
+    database?: string,
+    schema?: string,
+    keyword?: string,
+  ): Promise<CommonApiResponse<any[]>> =>
+    HttpUtils.get<any[]>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/${id}/tables${queryString({
+        database,
+        schema,
+        keyword,
+      })}`,
+    ),
+
+  listColumns: (
+    id: DataSourceId,
+    database: string | undefined,
+    schema: string | undefined,
+    table: string,
+  ): Promise<CommonApiResponse<any[]>> =>
+    HttpUtils.get<any[]>(
+      `${DATA_SOURCE_CATALOG_API_PREFIX}/${id}/columns${queryString({
+        database,
+        schema,
+        table,
+      })}`,
+    ),
+
   listTable: (
     id: DataSourceId,
   ): Promise<CommonApiResponse<unknown[]>> =>
