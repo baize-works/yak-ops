@@ -17,10 +17,8 @@ const normalizeTableNames = (data: any): string[] => {
         .map((item: any) =>
           typeof item === 'string'
             ? item
-            : item?.tableName ||
-              item?.name ||
-              item?.label ||
-              item?.value,
+            : item?.value ||
+              item?.label,
         )
         .filter(Boolean)
         .map(String),

@@ -141,8 +141,8 @@ export default {
 
   'pages.job.schedule.cron': 'Cron：',
   'pages.job.schedule.status': '状态：',
-  'pages.job.schedule.lastRunTime': '上次运行时间：',
-  'pages.job.schedule.nextRunTime': '下次运行时间：',
+  'pages.job.schedule.lastRunTime': '上次时间：',
+  'pages.job.schedule.nextRunTime': '下次时间：',
   'pages.job.schedule.last5RunsTitle': '⏰ 最近 5 次运行时间',
 
   'pages.job.schedule.status.active': '启用',

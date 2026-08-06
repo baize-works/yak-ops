@@ -479,13 +479,6 @@ const DynamicDataSourceForm = ({
               基础信息
             </h3>
 
-            <p
-              className={
-                sectionDescriptionClass
-              }
-            >
-              设置数据源名称和所属环境
-            </p>
           </div>
 
           <div className="flex items-center gap-1.5 text-xs text-[#8a8f99]">
@@ -640,13 +633,6 @@ const DynamicDataSourceForm = ({
             连接参数
           </h3>
 
-          <p
-            className={
-              sectionDescriptionClass
-            }
-          >
-            填写当前数据源对应的连接信息
-          </p>
         </div>
 
         <Form

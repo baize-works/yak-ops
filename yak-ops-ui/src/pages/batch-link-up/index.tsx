@@ -586,7 +586,7 @@ const advancedFilterCount = [
     {
       title: "执行概况",
       dataIndex: "execution",
-      width: 200,
+      width: 300,
       render: (_value: any, record: any) => (
         <div className={compactContentClass}>
           <ExecutionStatus record={record} />

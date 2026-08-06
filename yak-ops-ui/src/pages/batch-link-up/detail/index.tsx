@@ -1243,9 +1243,9 @@ export default function BatchLinkUpExecutionDetailPage() {
                                     <TableOutlined />
                                     表级同步结果
                                   </div>
-                                  <div className="mt-0.5 text-[11px] leading-4 text-[#98a2b3]">
+                                  {/* <div className="mt-0.5 text-[11px] leading-4 text-[#98a2b3]">
                                     来源表、目标表及读取写入情况
-                                  </div>
+                                  </div> */}
                                 </div>
                                 <span className="text-[12px] text-[#667085]">
                                   {tableRows.length} 张表
