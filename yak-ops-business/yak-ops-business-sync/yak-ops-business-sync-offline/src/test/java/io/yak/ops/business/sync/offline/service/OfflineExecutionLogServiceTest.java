@@ -48,6 +48,8 @@ class OfflineExecutionLogServiceTest {
             eventTime);
     when(repository.listExecutionEventsAfter(3L, 0L, 100))
         .thenReturn(List.of(event));
+    when(repository.listExecutionEventsAfter(3L, 0L, 1000))
+        .thenReturn(List.of(event));
 
     LinkUpJobLogEntry linkEntry = new LinkUpJobLogEntry();
     linkEntry.setSequence(12L);
@@ -72,6 +74,8 @@ class OfflineExecutionLogServiceTest {
     linkPage.setCompleted(true);
     when(linkUpClient.logs("flux-3", 0L, 100))
         .thenReturn(linkPage);
+    when(linkUpClient.logs("flux-3", 0L, 1000))
+        .thenReturn(linkPage);
 
     OfflineExecutionLogPageVO result =
         service.logs(execution, "0:0", 100);
@@ -83,5 +87,10 @@ class OfflineExecutionLogServiceTest {
     assertTrue(result.isCompleted());
     assertTrue(result.isLinkUpAvailable());
     assertEquals("orders-1", result.getItems().get(1).getRunId());
+
+    String text = service.text(execution);
+    assertTrue(text.contains("2026-08-06 08:53:10.100"));
+    assertTrue(text.contains("[YAK_OPS]"));
+    assertTrue(text.contains("[LINK_UP]"));
   }
 }
