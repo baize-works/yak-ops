@@ -11,6 +11,8 @@ import io.yak.ops.business.quality.api.QualityApi.MonitorView;
 import io.yak.ops.business.quality.api.QualityApi.RuleScope;
 import io.yak.ops.business.quality.api.QualityApi.RuleType;
 import io.yak.ops.business.quality.api.QualityApi.RuleView;
+import io.yak.ops.business.quality.api.QualityApi.TableAssetPageRequest;
+import io.yak.ops.business.quality.api.QualityApi.TableAssetView;
 import io.yak.ops.business.quality.api.QualityApi.TableMonitorSummary;
 import io.yak.ops.business.quality.api.QualityApi.TemplateQuery;
 import io.yak.ops.business.quality.api.QualityApi.TemplateView;
@@ -22,20 +24,23 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
-/** Facade over the template, monitor and execution persistence components. */
+/** Facade over the template, registered-table, monitor and execution persistence components. */
 @ConditionalOnQualityEnabled
 @Repository
 public class QualityRepository {
 
   private final QualityTemplateRepository templates;
+  private final QualityTableAssetRepository tableAssets;
   private final QualityMonitorRepository monitors;
   private final QualityExecutionRepository executions;
 
   public QualityRepository(
       QualityTemplateRepository templates,
+      QualityTableAssetRepository tableAssets,
       QualityMonitorRepository monitors,
       QualityExecutionRepository executions) {
     this.templates = templates;
+    this.tableAssets = tableAssets;
     this.monitors = monitors;
     this.executions = executions;
   }
@@ -46,6 +51,36 @@ public class QualityRepository {
 
   public Optional<TemplateView> findTemplate(long id) {
     return templates.find(id);
+  }
+
+  public PageResult<TableAssetView> pageTableAssets(TableAssetPageRequest request) {
+    return tableAssets.page(request);
+  }
+
+  public List<TableAssetTarget> listTableAssetTargets(
+      long dataSourceId,
+      String databaseName) {
+    return tableAssets.listTargets(dataSourceId, databaseName);
+  }
+
+  public boolean existsTableAssetTarget(
+      long dataSourceId,
+      String databaseName,
+      String schemaName,
+      String tableName) {
+    return tableAssets.existsTarget(dataSourceId, databaseName, schemaName, tableName);
+  }
+
+  public int registerTableAssets(List<TableAssetWrite> writes) {
+    return tableAssets.register(writes);
+  }
+
+  public int countMonitorsForTableAsset(long assetId) {
+    return tableAssets.countMonitors(assetId);
+  }
+
+  public boolean deleteTableAsset(long assetId) {
+    return tableAssets.delete(assetId);
   }
 
   public PageResult<MonitorListItem> pageMonitors(MonitorPageRequest request) {
@@ -158,6 +193,23 @@ public class QualityRepository {
   }
 
   public record PageResult<T>(List<T> records, long total) {
+  }
+
+  public record TableAssetWrite(
+      long dataSourceId,
+      String dataSourceName,
+      String databaseName,
+      String schemaName,
+      String tableName,
+      String tableType,
+      String remarks,
+      String registeredBy) {
+  }
+
+  public record TableAssetTarget(
+      String databaseName,
+      String schemaName,
+      String tableName) {
   }
 
   public record MonitorWrite(

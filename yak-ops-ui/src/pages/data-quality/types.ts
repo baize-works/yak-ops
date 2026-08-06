@@ -118,6 +118,67 @@ export interface TableMonitorSummary {
   lastRunTime?: string;
 }
 
+export interface TableAssetView {
+  id: number;
+  dataSourceId: number;
+  dataSourceName: string;
+  databaseName?: string;
+  schemaName?: string;
+  tableName: string;
+  tableType?: string;
+  remarks?: string;
+  monitorId?: number;
+  monitorName?: string;
+  monitorCount: number;
+  ruleCount: number;
+  lastResult: CheckResult;
+  lastRunTime?: string;
+  registeredBy: string;
+  registeredAt: string;
+}
+
+export interface TableAssetPageView {
+  records: TableAssetView[];
+  total: number;
+  current: number;
+  pageSize: number;
+}
+
+export interface TableCandidateView {
+  databaseName?: string;
+  schemaName?: string;
+  tableName: string;
+  tableType?: string;
+  remarks?: string;
+}
+
+export interface TableCandidatePageView {
+  records: TableCandidateView[];
+  total: number;
+  current: number;
+  pageSize: number;
+}
+
+export interface RegisterTableItem {
+  databaseName?: string;
+  schemaName?: string;
+  tableName: string;
+  tableType?: string;
+  remarks?: string;
+}
+
+export interface RegisterTablesPayload {
+  dataSourceId: number;
+  dataSourceName: string;
+  databaseName?: string;
+  tables: RegisterTableItem[];
+}
+
+export interface RegisterTablesView {
+  requested: number;
+  registered: number;
+}
+
 export interface RunView {
   executionNo: string;
   executionStatus: ExecutionStatus;
