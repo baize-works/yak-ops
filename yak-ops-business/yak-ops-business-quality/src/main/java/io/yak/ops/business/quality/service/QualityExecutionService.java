@@ -1,12 +1,14 @@
 package io.yak.ops.business.quality.service;
 
-import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
+import io.yak.ops.business.quality.api.QualityApi.CheckResult;
 import io.yak.ops.business.quality.api.QualityApi.ExecutionPageRequest;
 import io.yak.ops.business.quality.api.QualityApi.ExecutionPageView;
 import io.yak.ops.business.quality.api.QualityApi.ExecutionStatus;
 import io.yak.ops.business.quality.api.QualityApi.ExecutionView;
 import io.yak.ops.business.quality.api.QualityApi.MonitorView;
 import io.yak.ops.business.quality.api.QualityApi.RunView;
+import io.yak.ops.business.quality.api.QualityApi.TriggerType;
+import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
 import io.yak.ops.business.quality.execution.QualityExecutionWorker;
 import io.yak.ops.business.quality.execution.QualityRuntime.ExecutionJob;
 import io.yak.ops.business.quality.repository.QualityRepository;
@@ -44,34 +46,12 @@ public class QualityExecutionService {
 
   @Transactional(transactionManager = "yakBusinessTransactionManager")
   public RunView run(long monitorId, String operator) {
-    repository.lockMonitor(monitorId);
-    MonitorView monitor = repository.findMonitor(monitorId)
-        .orElseThrow(() -> new IllegalArgumentException("质量监控不存在：" + monitorId));
-    if (!monitor.enabled()) {
-      throw new IllegalStateException("质量监控已停用，无法执行");
-    }
-    int enabledRules = (int) monitor.rules().stream()
-        .filter(io.yak.ops.business.quality.api.QualityApi.RuleView::enabled)
-        .count();
-    if (enabledRules == 0) {
-      throw new IllegalStateException("质量监控没有可执行规则");
-    }
-    if (repository.hasActiveExecution(monitorId)) {
-      throw new IllegalStateException("该质量监控已有运行中的检查任务");
-    }
+    return enqueue(monitorId, operator, TriggerType.MANUAL);
+  }
 
-    LocalDateTime queuedAt = LocalDateTime.now();
-    String executionNo = executionNo(queuedAt);
-    long executionId = repository.insertExecution(
-        executionNo,
-        monitor,
-        enabledRules,
-        normalizeOperator(operator),
-        queuedAt);
-    ExecutionJob job = repository.executionJob(monitorId, executionId, executionNo);
-    dispatchAfterCommit(job);
-    return new RunView(executionNo, ExecutionStatus.WAITING,
-        io.yak.ops.business.quality.api.QualityApi.CheckResult.RUNNING);
+  @Transactional(transactionManager = "yakBusinessTransactionManager")
+  public RunView runScheduled(long monitorId) {
+    return enqueue(monitorId, "quality-scheduler", TriggerType.SCHEDULE);
   }
 
   @Transactional(readOnly = true, transactionManager = "yakBusinessTransactionManager")
@@ -95,6 +75,37 @@ public class QualityExecutionService {
             () -> new IllegalArgumentException("质量执行记录不存在：" + executionNo));
   }
 
+  private RunView enqueue(long monitorId, String operator, TriggerType triggerType) {
+    repository.lockMonitor(monitorId);
+    MonitorView monitor = repository.findMonitor(monitorId)
+        .orElseThrow(() -> new IllegalArgumentException("质量监控不存在：" + monitorId));
+    if (!monitor.enabled()) {
+      throw new IllegalStateException("质量监控已停用，无法执行");
+    }
+    int enabledRules = (int) monitor.rules().stream()
+        .filter(io.yak.ops.business.quality.api.QualityApi.RuleView::enabled)
+        .count();
+    if (enabledRules == 0) {
+      throw new IllegalStateException("质量监控没有可执行规则");
+    }
+    if (repository.hasActiveExecution(monitorId)) {
+      throw new IllegalStateException("该质量监控已有运行中的检查任务");
+    }
+
+    LocalDateTime queuedAt = LocalDateTime.now();
+    String executionNo = executionNo(queuedAt);
+    long executionId = repository.insertExecution(
+        executionNo,
+        monitor,
+        enabledRules,
+        normalizeOperator(operator),
+        triggerType,
+        queuedAt);
+    ExecutionJob job = repository.executionJob(monitorId, executionId, executionNo);
+    dispatchAfterCommit(job);
+    return new RunView(executionNo, ExecutionStatus.WAITING, CheckResult.RUNNING);
+  }
+
   private void dispatchAfterCommit(ExecutionJob job) {
     Runnable dispatch = () -> {
       try {
@@ -105,7 +116,7 @@ public class QualityExecutionService {
         repository.updateMonitorResult(
             job.monitor().id(),
             job.executionNo(),
-            io.yak.ops.business.quality.api.QualityApi.CheckResult.ERROR,
+            CheckResult.ERROR,
             now);
       }
     };

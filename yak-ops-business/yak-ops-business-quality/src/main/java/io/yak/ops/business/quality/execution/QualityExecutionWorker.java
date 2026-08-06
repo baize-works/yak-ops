@@ -1,14 +1,16 @@
 package io.yak.ops.business.quality.execution;
 
-import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
 import io.yak.ops.business.datasource.service.DataSourceCatalogService;
 import io.yak.ops.business.quality.api.QualityApi.CheckResult;
+import io.yak.ops.business.quality.api.QualityApi.RuleFailureAction;
+import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
 import io.yak.ops.business.quality.execution.QualityMetricEvaluator.MetricMeasurement;
 import io.yak.ops.business.quality.execution.QualityRuntime.ExecutionJob;
 import io.yak.ops.business.quality.execution.QualityRuntime.RuleSnapshot;
 import io.yak.ops.business.quality.execution.QualitySqlCompiler.CompiledRule;
 import io.yak.ops.business.quality.repository.QualityRepository;
 import io.yak.ops.business.quality.repository.QualityRepository.RuleExecutionWrite;
+import io.yak.ops.business.quality.service.QualityAlertService;
 import io.yak.ops.common.bean.vo.datasource.DataSourceQueryResultVO;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -24,16 +26,19 @@ public class QualityExecutionWorker {
   private final QualitySqlCompiler compiler;
   private final QualityMetricEvaluator evaluator;
   private final DataSourceCatalogService catalogService;
+  private final QualityAlertService alertService;
 
   public QualityExecutionWorker(
       QualityRepository repository,
       QualitySqlCompiler compiler,
       QualityMetricEvaluator evaluator,
-      DataSourceCatalogService catalogService) {
+      DataSourceCatalogService catalogService,
+      QualityAlertService alertService) {
     this.repository = repository;
     this.compiler = compiler;
     this.evaluator = evaluator;
     this.catalogService = catalogService;
+    this.alertService = alertService;
   }
 
   public void execute(ExecutionJob job) {
@@ -46,13 +51,19 @@ public class QualityExecutionWorker {
     int failed = 0;
     int errors = 0;
     try {
-      for (RuleSnapshot rule : job.rules()) {
+      for (int index = 0; index < job.rules().size(); index++) {
+        RuleSnapshot rule = job.rules().get(index);
         RuleOutcome outcome = executeRule(job, rule);
         switch (outcome.result()) {
           case PASSED -> passed++;
           case NOT_PASSED -> failed++;
           case ERROR -> errors++;
           default -> throw new IllegalStateException("不支持的规则执行结果：" + outcome.result());
+        }
+        if (job.ruleFailureAction() == RuleFailureAction.STOP
+            && outcome.result() != CheckResult.PASSED) {
+          markRemainingRulesNotRun(job, index + 1);
+          break;
         }
       }
       LocalDateTime finishedAt = LocalDateTime.now();
@@ -72,6 +83,8 @@ public class QualityExecutionWorker {
           job.executionNo(),
           finalResult,
           finishedAt);
+      alertService.recordIfNecessary(
+          job, job.executionNo(), finalResult, passed, failed, errors);
     } catch (RuntimeException exception) {
       LocalDateTime finishedAt = LocalDateTime.now();
       repository.failExecution(
@@ -84,6 +97,8 @@ public class QualityExecutionWorker {
           job.executionNo(),
           CheckResult.ERROR,
           finishedAt);
+      alertService.recordIfNecessary(
+          job, job.executionNo(), CheckResult.ERROR, passed, failed, errors + 1);
     }
   }
 
@@ -141,6 +156,25 @@ public class QualityExecutionWorker {
           message(exception),
           durationMillis(startedAt, finishedAt)));
       return new RuleOutcome(CheckResult.ERROR);
+    }
+  }
+
+  private void markRemainingRulesNotRun(ExecutionJob job, int startIndex) {
+    for (int index = startIndex; index < job.rules().size(); index++) {
+      RuleSnapshot rule = job.rules().get(index);
+      repository.insertRuleExecution(new RuleExecutionWrite(
+          job.executionId(),
+          rule.id(),
+          rule.name(),
+          rule.templateCode(),
+          rule.ruleType(),
+          rule.columnName(),
+          CheckResult.NOT_RUN,
+          null,
+          null,
+          null,
+          "前序规则失败，已按监控策略停止执行",
+          0L));
     }
   }
 

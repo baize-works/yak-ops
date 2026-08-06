@@ -9,6 +9,13 @@ export type RuleType =
 export type ComparisonOperator = 'GT' | 'GTE' | 'EQ' | 'LTE' | 'LT' | 'BETWEEN';
 export type ExecutionStatus = 'WAITING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
 export type CheckResult = 'PASSED' | 'NOT_PASSED' | 'ERROR' | 'RUNNING' | 'NOT_RUN';
+export type TriggerType = 'MANUAL' | 'SCHEDULE';
+export type RunMode = 'MANUAL' | 'SCHEDULE';
+export type ScheduleFrequency = 'DAILY' | 'WEEKLY' | 'CRON';
+export type ScheduleWeekday = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+export type RuleFailureAction = 'CONTINUE' | 'STOP';
+export type NotifyChannel = 'MESSAGE' | 'EMAIL' | 'WEBHOOK';
+export type AlertLevel = 'WARNING' | 'CRITICAL';
 
 export interface CommonApiResponse<T> {
   code: number;
@@ -34,10 +41,7 @@ export interface TemplateView {
 
 export interface TemplateListView {
   records: TemplateView[];
-  summary: {
-    total: number;
-    dimensions: Record<string, number>;
-  };
+  summary: { total: number; dimensions: Record<string, number> };
 }
 
 export interface SaveRulePayload {
@@ -52,6 +56,23 @@ export interface SaveRulePayload {
   enabled?: boolean;
 }
 
+export interface MonitorSettingsPayload {
+  runMode: RunMode;
+  scheduleFrequency?: ScheduleFrequency;
+  scheduleTime?: string;
+  scheduleWeekday?: ScheduleWeekday;
+  cronExpression?: string;
+  ruleFailureAction: RuleFailureAction;
+  notifyEnabled: boolean;
+  notifyChannel: NotifyChannel;
+  notifyTarget?: string;
+  alertLevel: AlertLevel;
+}
+
+export interface MonitorSettingsView extends MonitorSettingsPayload {
+  nextRunTime?: string;
+}
+
 export interface SaveMonitorPayload {
   name: string;
   description?: string;
@@ -63,6 +84,7 @@ export interface SaveMonitorPayload {
   whereClause?: string;
   owner: string;
   enabled?: boolean;
+  settings: MonitorSettingsPayload;
   rules: SaveRulePayload[];
 }
 

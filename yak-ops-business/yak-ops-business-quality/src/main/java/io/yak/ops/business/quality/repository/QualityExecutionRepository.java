@@ -8,6 +8,7 @@ import io.yak.ops.business.quality.api.QualityApi.ExecutionView;
 import io.yak.ops.business.quality.api.QualityApi.MonitorView;
 import io.yak.ops.business.quality.api.QualityApi.RuleExecutionView;
 import io.yak.ops.business.quality.api.QualityApi.RuleType;
+import io.yak.ops.business.quality.api.QualityApi.TriggerType;
 import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
 import io.yak.ops.business.quality.repository.QualityRepository.PageResult;
 import io.yak.ops.business.quality.repository.QualityRepository.RuleExecutionWrite;
@@ -64,6 +65,7 @@ class QualityExecutionRepository {
       MonitorView monitor,
       int totalRules,
       String operator,
+      TriggerType triggerType,
       LocalDateTime queuedAt) {
     KeyHolder keyHolder = new GeneratedKeyHolder();
     jdbcTemplate.update(
@@ -76,7 +78,7 @@ class QualityExecutionRepository {
         ) VALUES (
           :executionNo, :monitorId, :monitorName, :dataSourceId,
           :dataSourceName, :databaseName, :schemaName, :tableName,
-          :objectName, 'MANUAL', 'WAITING', 'RUNNING',
+          :objectName, :triggerType, 'WAITING', 'RUNNING',
           :totalRules, :operatorName, :queuedAt
         )
         """,
@@ -91,6 +93,7 @@ class QualityExecutionRepository {
             .addValue("tableName", monitor.tableName())
             .addValue("objectName", QualityRepositorySupport.objectName(
                 monitor.databaseName(), monitor.schemaName(), monitor.tableName()))
+            .addValue("triggerType", triggerType.name())
             .addValue("totalRules", totalRules)
             .addValue("operatorName", operator)
             .addValue("queuedAt", Timestamp.valueOf(queuedAt)),

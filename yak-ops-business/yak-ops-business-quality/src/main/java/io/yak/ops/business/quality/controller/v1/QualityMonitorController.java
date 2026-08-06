@@ -7,6 +7,7 @@ import io.yak.framework.security.web.RequiresPermission;
 import io.yak.ops.business.quality.QualityPermissionCode;
 import io.yak.ops.business.quality.api.QualityApi.MonitorPageRequest;
 import io.yak.ops.business.quality.api.QualityApi.MonitorPageView;
+import io.yak.ops.business.quality.api.QualityApi.MonitorSettingsView;
 import io.yak.ops.business.quality.api.QualityApi.MonitorView;
 import io.yak.ops.business.quality.api.QualityApi.RunView;
 import io.yak.ops.business.quality.api.QualityApi.SaveMonitorRequest;
@@ -57,6 +58,12 @@ public class QualityMonitorController {
   @GetMapping("/{id}")
   public Result<MonitorView> detail(@PathVariable long id) {
     return Result.success(service.get(id));
+  }
+
+  @Operation(summary = "查询质量监控运行设置")
+  @GetMapping("/{id}/settings")
+  public Result<MonitorSettingsView> settings(@PathVariable long id) {
+    return Result.success(service.getSettings(id));
   }
 
   @Operation(summary = "创建质量监控")
