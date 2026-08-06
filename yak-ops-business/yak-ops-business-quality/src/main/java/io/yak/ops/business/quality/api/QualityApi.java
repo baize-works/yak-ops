@@ -252,6 +252,84 @@ public final class QualityApi {
       LocalDateTime lastRunTime) {
   }
 
+  public record TableAssetPageRequest(
+      @Min(1) Integer current,
+      @Min(1) @Max(100) Integer pageSize,
+      @NotNull Long dataSourceId,
+      String databaseName,
+      String schemaName,
+      String keyword) {
+
+    public int normalizedCurrent() {
+      return current == null ? 1 : current;
+    }
+
+    public int normalizedPageSize() {
+      return pageSize == null ? 20 : pageSize;
+    }
+  }
+
+  public record TableAssetView(
+      Long id,
+      Long dataSourceId,
+      String dataSourceName,
+      String databaseName,
+      String schemaName,
+      String tableName,
+      String tableType,
+      String remarks,
+      Long monitorId,
+      String monitorName,
+      int monitorCount,
+      int ruleCount,
+      CheckResult lastResult,
+      LocalDateTime lastRunTime,
+      String registeredBy,
+      LocalDateTime registeredAt) {
+  }
+
+  public record TableAssetPageView(
+      List<TableAssetView> records,
+      long total,
+      int current,
+      int pageSize) {
+  }
+
+  public record TableCandidateView(
+      String databaseName,
+      String schemaName,
+      String tableName,
+      String tableType,
+      String remarks) {
+  }
+
+  public record TableCandidatePageView(
+      List<TableCandidateView> records,
+      long total,
+      int current,
+      int pageSize) {
+  }
+
+  public record RegisterTableItem(
+      @Size(max = 128) String databaseName,
+      @Size(max = 128) String schemaName,
+      @NotBlank @Size(max = 256) String tableName,
+      @Size(max = 40) String tableType,
+      @Size(max = 1000) String remarks) {
+  }
+
+  public record RegisterTablesRequest(
+      @NotNull Long dataSourceId,
+      @NotBlank @Size(max = 128) String dataSourceName,
+      @Size(max = 128) String databaseName,
+      @NotEmpty List<@Valid RegisterTableItem> tables) {
+  }
+
+  public record RegisterTablesView(
+      int requested,
+      int registered) {
+  }
+
   public record RunView(
       String executionNo,
       ExecutionStatus executionStatus,
