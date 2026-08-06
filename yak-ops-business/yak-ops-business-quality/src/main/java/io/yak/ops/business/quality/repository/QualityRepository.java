@@ -63,6 +63,14 @@ public class QualityRepository {
     return tableAssets.listTargets(dataSourceId, databaseName);
   }
 
+  public boolean existsTableAssetTarget(
+      long dataSourceId,
+      String databaseName,
+      String schemaName,
+      String tableName) {
+    return tableAssets.existsTarget(dataSourceId, databaseName, schemaName, tableName);
+  }
+
   public int registerTableAssets(List<TableAssetWrite> writes) {
     return tableAssets.register(writes);
   }
