@@ -80,9 +80,9 @@ public class OfflineJobExecutionService {
     return readService.tableMetrics(id);
   }
 
-  /** 旧文本接口保留给历史页面和脚本。 */
+  /** 旧文本接口保留，并直接渲染新的统一时间线。 */
   public String logs(Long id) {
-    return readService.logs(id);
+    return logService.text(readService.require(id));
   }
 
   public OfflineExecutionLogPageVO logs(
