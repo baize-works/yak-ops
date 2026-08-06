@@ -1,6 +1,8 @@
 package io.yak.ops.business.sync.offline.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +12,7 @@ class OfflinePipelineMetricsMapperTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  void flattensSourceAndSinkPipelineMetrics() throws Exception {
+  void flattensSourceSinkAndTableDdl() throws Exception {
     JsonNode payload =
         objectMapper.readTree(
             """
@@ -38,6 +40,16 @@ class OfflinePipelineMetricsMapperTest {
                   "unknownStateRecordCount": 0,
                   "writtenBytes": 2048,
                   "averageQps": 3369.27223
+                },
+                "tableDdl": {
+                  "dialect": "MYSQL",
+                  "sourceTable": "test1.t_test_1w",
+                  "targetTable": "test1234123",
+                  "createTableSql": "CREATE TABLE `test1234123` (`id` BIGINT NOT NULL);",
+                  "executed": true,
+                  "status": "SUCCEEDED",
+                  "reason": "TARGET_TABLE_CREATED",
+                  "durationMillis": 12
                 }
               }
             ]
@@ -58,10 +70,21 @@ class OfflinePipelineMetricsMapperTest {
     assertEquals(1024L, row.path("sourceReadBytes").asLong());
     assertEquals(2048L, row.path("sinkWrittenBytes").asLong());
     assertEquals("SUCCEEDED", row.path("status").asText());
+    assertEquals("MYSQL", row.path("ddlDialect").asText());
+    assertEquals(
+        "CREATE TABLE `test1234123` (`id` BIGINT NOT NULL);",
+        row.path("createTableSql").asText());
+    assertTrue(row.path("ddlExecuted").asBoolean());
+    assertEquals("SUCCEEDED", row.path("ddlStatus").asText());
+    assertEquals("TARGET_TABLE_CREATED", row.path("ddlReason").asText());
+    assertEquals(12L, row.path("ddlDurationMillis").asLong());
+    assertEquals(
+        "CREATE TABLE `test1234123` (`id` BIGINT NOT NULL);",
+        row.path("tableDdl").path("createTableSql").asText());
   }
 
   @Test
-  void acceptsWrappedPipelinePayload() throws Exception {
+  void acceptsWrappedPipelinePayloadWithoutDdl() throws Exception {
     JsonNode payload =
         objectMapper.readTree(
             """
@@ -82,5 +105,7 @@ class OfflinePipelineMetricsMapperTest {
     assertEquals("orders", result.get(0).path("sourceTable").asText());
     assertEquals(3L, result.get(0).path("readRowCount").asLong());
     assertEquals(2L, result.get(0).path("writeRowCount").asLong());
+    assertFalse(result.get(0).path("ddlExecuted").asBoolean());
+    assertTrue(result.get(0).path("createTableSql").isNull());
   }
 }
