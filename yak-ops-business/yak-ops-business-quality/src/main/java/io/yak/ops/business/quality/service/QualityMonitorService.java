@@ -1,6 +1,5 @@
 package io.yak.ops.business.quality.service;
 
-import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
 import io.yak.ops.business.quality.api.QualityApi.ComparisonOperator;
 import io.yak.ops.business.quality.api.QualityApi.MonitorPageRequest;
 import io.yak.ops.business.quality.api.QualityApi.MonitorPageView;
@@ -12,6 +11,7 @@ import io.yak.ops.business.quality.api.QualityApi.SaveMonitorRequest;
 import io.yak.ops.business.quality.api.QualityApi.SaveRuleRequest;
 import io.yak.ops.business.quality.api.QualityApi.TableMonitorSummary;
 import io.yak.ops.business.quality.api.QualityApi.TemplateView;
+import io.yak.ops.business.quality.config.ConditionalOnQualityEnabled;
 import io.yak.ops.business.quality.repository.QualityRepository;
 import io.yak.ops.business.quality.repository.QualityRepository.MonitorWrite;
 import io.yak.ops.business.quality.repository.QualityRepository.PageResult;
@@ -107,12 +107,20 @@ public class QualityMonitorService {
     if (request.dataSourceId() == null || request.dataSourceId() <= 0) {
       throw new IllegalArgumentException("请选择有效的数据源");
     }
+    String tableName = request.tableName().trim();
+    if (!repository.existsTableAssetTarget(
+        request.dataSourceId(),
+        request.databaseName(),
+        request.schemaName(),
+        tableName)) {
+      throw new IllegalStateException("当前数据表尚未注册，请先在按表配置页面注册数据表");
+    }
     if (repository.existsMonitorForTarget(
         excludeId,
         request.dataSourceId(),
         request.databaseName(),
         request.schemaName(),
-        request.tableName().trim())) {
+        tableName)) {
       throw new IllegalStateException("当前数据表已经创建质量监控，请直接进入监控详情");
     }
     validateWhereClause(request.whereClause());
