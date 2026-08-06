@@ -119,6 +119,30 @@ class QualityTableAssetRepository {
             rs.getString("table_name")));
   }
 
+  boolean existsTarget(
+      long dataSourceId,
+      String databaseName,
+      String schemaName,
+      String tableName) {
+    Integer count = jdbcTemplate.queryForObject(
+        """
+        SELECT COUNT(*)
+        FROM yak_quality_table_asset
+        WHERE deleted = 0
+          AND data_source_id = :dataSourceId
+          AND database_name = :databaseName
+          AND schema_name = :schemaName
+          AND table_name = :tableName
+        """,
+        new MapSqlParameterSource()
+            .addValue("dataSourceId", dataSourceId)
+            .addValue("databaseName", blankToEmpty(databaseName))
+            .addValue("schemaName", blankToEmpty(schemaName))
+            .addValue("tableName", tableName),
+        Integer.class);
+    return count != null && count > 0;
+  }
+
   int register(List<TableAssetWrite> writes) {
     int registered = 0;
     for (TableAssetWrite write : writes) {
