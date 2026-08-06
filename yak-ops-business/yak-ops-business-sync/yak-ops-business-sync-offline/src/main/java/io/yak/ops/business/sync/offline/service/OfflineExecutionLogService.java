@@ -41,6 +41,47 @@ public class OfflineExecutionLogService {
     this.linkUpClient = linkUpClient;
   }
 
+  public String text(OfflineJobExecutionPO execution) {
+    String cursor = "0:0";
+    String warning = null;
+    StringBuilder result =
+        new StringBuilder("# Yak Ops + Link-Up Unified Timeline\n");
+    result.append("executionId: ")
+        .append(execution == null ? "-" : execution.getId())
+        .append('\n')
+        .append("externalExecutionId: ")
+        .append(execution == null ? "-" : text(execution.getExternalExecutionId()))
+        .append('\n')
+        .append("engineJobId: ")
+        .append(execution == null ? "-" : text(execution.getEngineJobId()))
+        .append("\n\n");
+
+    for (int pageIndex = 0; pageIndex < 20; pageIndex++) {
+      OfflineExecutionLogPageVO page = logs(execution, cursor, 1000);
+      warning = page.getWarning();
+      if (page.getItems() != null) {
+        for (OfflineExecutionLogEntryVO item : page.getItems()) {
+          appendTextLine(result, item);
+        }
+      }
+      if (page.isCompleted()
+          || !StringUtils.hasText(page.getNextCursor())
+          || page.getNextCursor().equals(cursor)) {
+        break;
+      }
+      cursor = page.getNextCursor();
+    }
+
+    if (StringUtils.hasText(warning)) {
+      result.append("\n")
+          .append("- WARN [YAK_OPS] [LOG_AGGREGATION] ")
+          .append(warning)
+          .append('\n');
+    }
+
+    return result.toString();
+  }
+
   public OfflineExecutionLogPageVO logs(
       OfflineJobExecutionPO execution,
       String cursorValue,
@@ -124,6 +165,39 @@ public class OfflineExecutionLogService {
         .linkUpAvailable(linkUpAvailable)
         .warning(warning)
         .build();
+  }
+
+  private void appendTextLine(
+      StringBuilder result,
+      OfflineExecutionLogEntryVO item) {
+    result.append(
+            StringUtils.hasText(item.getTimestamp())
+                ? item.getTimestamp()
+                : "-")
+        .append(' ')
+        .append(
+            StringUtils.hasText(item.getLevel())
+                ? item.getLevel()
+                : "INFO")
+        .append(" [")
+        .append(
+            StringUtils.hasText(item.getSource())
+                ? item.getSource()
+                : "UNKNOWN")
+        .append(']');
+
+    if (StringUtils.hasText(item.getStage())) {
+      result.append(" [")
+          .append(item.getStage())
+          .append(']');
+    }
+
+    result.append(' ')
+        .append(
+            StringUtils.hasText(item.getMessage())
+                ? item.getMessage()
+                : "-")
+        .append('\n');
   }
 
   private OfflineExecutionLogEntryVO toYakOpsEntry(
