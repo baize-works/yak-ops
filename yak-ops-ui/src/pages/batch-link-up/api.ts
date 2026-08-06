@@ -145,6 +145,29 @@ export interface OfflineTableMetric {
   ddlErrorMessage?: string;
 }
 
+export interface OfflineExecutionLogEntry {
+  sequence: number;
+  timestampMillis?: number;
+  timestamp?: string;
+  source: 'YAK_OPS' | 'LINK_UP' | string;
+  level: string;
+  stage?: string;
+  externalExecutionId?: string;
+  engineJobId?: string;
+  runId?: string;
+  thread?: string;
+  logger?: string;
+  message?: string;
+}
+
+export interface OfflineExecutionLogPage {
+  items: OfflineExecutionLogEntry[];
+  nextCursor: string;
+  completed: boolean;
+  linkUpAvailable: boolean;
+  warning?: string;
+}
+
 export interface OfflineBatchOperationError {
   jobDefinitionId?: string | number;
   message?: string;
@@ -275,6 +298,14 @@ export const linkupJobInstanceApi = {
     HttpUtils.get(`${instanceApiPrefix}/${id}`),
   getLog: (instanceId: string | number): Promise<ApiResponse<string>> =>
     HttpUtils.get(`${instanceApiPrefix}/${instanceId}/log`),
+  getLogs: (
+    instanceId: string | number,
+    cursor = '0:0',
+    limit = 500,
+  ): Promise<ApiResponse<OfflineExecutionLogPage>> =>
+    HttpUtils.get(
+      `${instanceApiPrefix}/${encodeURIComponent(instanceId)}/logs?cursor=${encodeURIComponent(cursor)}&limit=${limit}`,
+    ),
 };
 
 const linkupJobScheduleApiPrefix = '/api/v1/job/schedule';
@@ -319,4 +350,12 @@ export const batchJobInstanceApi = {
     ),
   log: (instanceId: string | number): Promise<ApiResponse<string>> =>
     HttpUtils.get(`/api/v1/job/batch-instance/${instanceId}/log`),
+  logs: (
+    instanceId: string | number,
+    cursor = '0:0',
+    limit = 500,
+  ): Promise<ApiResponse<OfflineExecutionLogPage>> =>
+    HttpUtils.get(
+      `/api/v1/job/batch-instance/${encodeURIComponent(instanceId)}/logs?cursor=${encodeURIComponent(cursor)}&limit=${limit}`,
+    ),
 };
