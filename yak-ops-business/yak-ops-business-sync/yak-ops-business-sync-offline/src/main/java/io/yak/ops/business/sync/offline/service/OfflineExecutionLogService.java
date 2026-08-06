@@ -56,7 +56,7 @@ public class OfflineExecutionLogService {
         .append(execution == null ? "-" : text(execution.getEngineJobId()))
         .append("\n\n");
 
-    for (int pageIndex = 0; pageIndex < 20; pageIndex++) {
+    for (int pageIndex = 0; pageIndex < 100; pageIndex++) {
       OfflineExecutionLogPageVO page = logs(execution, cursor, 1000);
       warning = page.getWarning();
       if (page.getItems() != null) {
@@ -99,42 +99,33 @@ public class OfflineExecutionLogService {
             execution.getId(),
             cursor.yakEventId,
             limit);
-
-    List<OfflineExecutionLogEntryVO> items = new ArrayList<>();
-    long nextYakEventId = cursor.yakEventId;
+    List<OfflineExecutionLogEntryVO> yakItems = new ArrayList<>();
     for (ExecutionEventRecord event : events) {
-      items.add(toYakOpsEntry(execution, event));
-      if (event.getId() != null) {
-        nextYakEventId = Math.max(nextYakEventId, event.getId());
-      }
+      yakItems.add(toYakOpsEntry(execution, event));
     }
 
-    long nextLinkCursor = cursor.linkCursor;
+    List<OfflineExecutionLogEntryVO> linkItems = new ArrayList<>();
+    LinkUpJobLogPageResponse linkResponse = null;
     boolean linkUpAvailable = true;
-    boolean linkUpCompleted = !StringUtils.hasText(execution.getEngineJobId());
     String warning = null;
 
     if (StringUtils.hasText(execution.getEngineJobId())) {
       try {
-        LinkUpJobLogPageResponse response =
+        linkResponse =
             linkUpClient.logs(
                 execution.getEngineJobId(),
                 cursor.linkCursor,
                 limit);
-        if (response != null) {
-          nextLinkCursor = value(response.getNextCursor(), cursor.linkCursor);
-          linkUpCompleted = Boolean.TRUE.equals(response.getCompleted());
-          if (response.getItems() != null) {
-            for (LinkUpJobLogEntry entry : response.getItems()) {
-              items.add(toLinkUpEntry(execution, response, entry));
-            }
+        if (linkResponse != null && linkResponse.getItems() != null) {
+          for (LinkUpJobLogEntry entry : linkResponse.getItems()) {
+            linkItems.add(toLinkUpEntry(execution, linkResponse, entry));
           }
         }
       } catch (LinkUpRequestException exception) {
         linkUpAvailable = false;
         warning =
             exception.getStatusCode() == 404 || exception.getStatusCode() == 405
-                ? "当前 Link-Up 版本尚未提供任务日志接口，请先升级 Worker"
+                ? "Link-Up 不支持任务日志接口，或该任务日志已不在 Worker 历史中"
                 : "Link-Up 日志请求失败：" + exception.getMessage();
       } catch (LinkUpTransportException | LinkUpProtocolException exception) {
         linkUpAvailable = false;
@@ -142,29 +133,77 @@ public class OfflineExecutionLogService {
       }
     }
 
-    items.sort(
-        Comparator.comparing(
-                OfflineExecutionLogEntryVO::getTimestampMillis,
-                Comparator.nullsLast(Long::compareTo))
-            .thenComparing(
-                OfflineExecutionLogEntryVO::getSource,
-                Comparator.nullsLast(String::compareTo))
-            .thenComparingLong(OfflineExecutionLogEntryVO::getSequence));
+    List<OfflineExecutionLogEntryVO> merged = new ArrayList<>();
+    merged.addAll(yakItems);
+    merged.addAll(linkItems);
+    merged.sort(logComparator());
+
+    List<OfflineExecutionLogEntryVO> selected =
+        new ArrayList<>(merged.subList(0, Math.min(limit, merged.size())));
+
+    int selectedYakCount = count(selected, "YAK_OPS");
+    int selectedLinkCount = count(selected, "LINK_UP");
+
+    long nextYakEventId = cursor.yakEventId;
+    if (selectedYakCount > 0) {
+      nextYakEventId =
+          yakItems.get(selectedYakCount - 1).getSequence();
+    }
+
+    long nextLinkCursor = cursor.linkCursor;
+    if (selectedLinkCount < linkItems.size()) {
+      nextLinkCursor =
+          linkItems.get(selectedLinkCount).getSequence();
+    } else if (linkResponse != null) {
+      nextLinkCursor =
+          value(linkResponse.getNextCursor(), cursor.linkCursor);
+    }
 
     boolean terminal = !OfflineExecutionStatus.isActive(execution.getStatus());
-    boolean yakCompleted = events.size() < limit;
-    boolean completed =
-        terminal
-            && yakCompleted
-            && (linkUpCompleted || !linkUpAvailable);
+    boolean yakCompleted =
+        selectedYakCount == yakItems.size()
+            && events.size() < limit;
+    boolean linkCompleted;
+    if (!StringUtils.hasText(execution.getEngineJobId())) {
+      linkCompleted = true;
+    } else if (!linkUpAvailable) {
+      linkCompleted = terminal;
+    } else {
+      linkCompleted =
+          selectedLinkCount == linkItems.size()
+              && linkResponse != null
+              && Boolean.TRUE.equals(linkResponse.getCompleted());
+    }
 
     return OfflineExecutionLogPageVO.builder()
-        .items(items)
+        .items(selected)
         .nextCursor(Cursor.encode(nextYakEventId, nextLinkCursor))
-        .completed(completed)
+        .completed(terminal && yakCompleted && linkCompleted)
         .linkUpAvailable(linkUpAvailable)
         .warning(warning)
         .build();
+  }
+
+  private Comparator<OfflineExecutionLogEntryVO> logComparator() {
+    return Comparator.comparing(
+            OfflineExecutionLogEntryVO::getTimestampMillis,
+            Comparator.nullsLast(Long::compareTo))
+        .thenComparing(
+            OfflineExecutionLogEntryVO::getSource,
+            Comparator.nullsLast(String::compareTo))
+        .thenComparingLong(OfflineExecutionLogEntryVO::getSequence);
+  }
+
+  private int count(
+      List<OfflineExecutionLogEntryVO> items,
+      String source) {
+    int result = 0;
+    for (OfflineExecutionLogEntryVO item : items) {
+      if (source.equals(item.getSource())) {
+        result++;
+      }
+    }
+    return result;
   }
 
   private void appendTextLine(
