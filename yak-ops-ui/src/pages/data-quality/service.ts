@@ -1,6 +1,7 @@
 import HttpUtils from '@/utils/HttpUtils';
 import type {
   CommonApiResponse,
+  CopyCustomTemplatePayload,
   ExecutionPageView,
   ExecutionView,
   MonitorPageView,
@@ -12,11 +13,15 @@ import type {
   RegisterTablesPayload,
   RegisterTablesView,
   RunView,
+  SaveCustomTemplatePayload,
   SaveMonitorPayload,
+  SaveTemplateFolderPayload,
   TableAssetPageView,
   TableCandidatePageView,
   TableMonitorSummary,
+  TemplateFolderView,
   TemplateListView,
+  TemplateView,
 } from './types';
 
 const PREFIX = '/api/v1/data-quality';
@@ -35,6 +40,35 @@ const queryString = (params: Record<string, unknown>) => {
 export const qualityTemplateApi = {
   list: (params: Record<string, unknown> = {}): Promise<CommonApiResponse<TemplateListView>> =>
     HttpUtils.get<TemplateListView>(`${PREFIX}/template${queryString(params)}`),
+  customList: (params: Record<string, unknown> = {}): Promise<CommonApiResponse<TemplateListView>> =>
+    HttpUtils.get<TemplateListView>(`${PREFIX}/template/custom${queryString(params)}`),
+  detail: (id: number | string): Promise<CommonApiResponse<TemplateView>> =>
+    HttpUtils.get<TemplateView>(`${PREFIX}/template/${id}`),
+  folders: (): Promise<CommonApiResponse<TemplateFolderView[]>> =>
+    HttpUtils.get<TemplateFolderView[]>(`${PREFIX}/template/folder`),
+  createFolder: (payload: SaveTemplateFolderPayload): Promise<CommonApiResponse<TemplateFolderView>> =>
+    HttpUtils.post<TemplateFolderView>(`${PREFIX}/template/folder`, payload),
+  updateFolder: (
+    id: number | string,
+    payload: SaveTemplateFolderPayload,
+  ): Promise<CommonApiResponse<TemplateFolderView>> =>
+    HttpUtils.put<TemplateFolderView>(`${PREFIX}/template/folder/${id}`, payload),
+  removeFolder: (id: number | string): Promise<CommonApiResponse<boolean>> =>
+    HttpUtils.delete<boolean>(`${PREFIX}/template/folder/${id}`),
+  createCustom: (payload: SaveCustomTemplatePayload): Promise<CommonApiResponse<TemplateView>> =>
+    HttpUtils.post<TemplateView>(`${PREFIX}/template/custom`, payload),
+  updateCustom: (
+    id: number | string,
+    payload: SaveCustomTemplatePayload,
+  ): Promise<CommonApiResponse<TemplateView>> =>
+    HttpUtils.put<TemplateView>(`${PREFIX}/template/custom/${id}`, payload),
+  copyCustom: (
+    id: number | string,
+    payload: CopyCustomTemplatePayload,
+  ): Promise<CommonApiResponse<TemplateView>> =>
+    HttpUtils.post<TemplateView>(`${PREFIX}/template/custom/${id}/copy`, payload),
+  removeCustom: (id: number | string): Promise<CommonApiResponse<boolean>> =>
+    HttpUtils.delete<boolean>(`${PREFIX}/template/custom/${id}`),
 };
 
 export const qualityTableAssetApi = {
