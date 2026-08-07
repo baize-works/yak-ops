@@ -136,7 +136,11 @@ public class WorkflowRuntimeService {
   }
 
   public SseEmitter subscribe(String executionId) {
-    return eventStreamService.subscribe(executionId, getInstance(executionId));
+    WorkflowInstanceVO snapshot = getInstance(executionId);
+    SseEmitter emitter = eventStreamService.subscribe(executionId, snapshot);
+    // 再推一次最新快照，覆盖“读取快照”和“注册订阅者”之间可能发生的状态变化。
+    eventStreamService.publish(getInstance(executionId));
+    return emitter;
   }
 
   private NodeDefinition toNodeDefinition(NodeRequest node) {
