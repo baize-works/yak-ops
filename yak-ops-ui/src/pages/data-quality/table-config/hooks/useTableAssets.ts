@@ -2,7 +2,7 @@ import type { DataSourceRecord } from '@/pages/data-source/types';
 import { history } from '@umijs/max';
 import { message } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { qualityMonitorApi, qualityTableAssetApi } from '../../service';
+import { qualityTableAssetApi } from '../../service';
 import type { TableAssetView, TableCandidateView } from '../../types';
 import {
   CANDIDATE_PAGE_SIZE,
@@ -245,49 +245,12 @@ export const useTableAssets = ({
     }
   };
 
-  const handleUnregister = async (record: TableAssetView) => {
-    try {
-      unwrap(await qualityTableAssetApi.remove(record.id));
-      message.success('已取消注册');
-      if (assets.length === 1 && assetCurrent > 1) {
-        setAssetCurrent((value) => value - 1);
-      } else if (dataSourceId) {
-        await requestAssets(dataSourceId, assetCurrent, queryKeyword);
-      }
-    } catch (error: any) {
-      message.error(error?.message || '取消注册失败');
-    }
-  };
-
-  const handleRun = async (record: TableAssetView) => {
-    if (!record.monitorId) return;
-    try {
-      unwrap(await qualityMonitorApi.run(record.monitorId));
-      message.success('质量检查已提交');
-      await requestAssets(
-        record.dataSourceId,
-        assetCurrent,
-        queryKeyword,
-      );
-    } catch (error: any) {
-      message.error(error?.message || '运行失败');
-    }
-  };
-
-  const openMonitorDetail = (record: TableAssetView) => {
+  const openRuleManagement = (record: TableAssetView) => {
     if (!record.monitorId) {
-      message.warning('当前数据表尚未创建质量监控');
+      message.warning('当前数据表暂无监控配置，请先新增监控');
       return;
     }
     history.push(`/data-quality/monitor/${record.monitorId}`);
-  };
-
-  const openMonitorEdit = (record: TableAssetView) => {
-    if (!record.monitorId) {
-      message.warning('当前数据表尚未创建质量监控');
-      return;
-    }
-    history.push(`/data-quality/monitor/${record.monitorId}/edit`);
   };
 
   const createMonitor = (record: TableAssetView) => {
@@ -330,10 +293,7 @@ export const useTableAssets = ({
     updateAllCandidateSelection,
     clearCandidateSelection,
     handleRegister,
-    handleUnregister,
-    handleRun,
-    openMonitorDetail,
-    openMonitorEdit,
+    openRuleManagement,
     createMonitor,
   };
 };
