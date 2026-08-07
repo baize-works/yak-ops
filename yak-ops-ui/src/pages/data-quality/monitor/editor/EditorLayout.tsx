@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 
 export const SECTION_ITEMS = [
   { key: 'basic-config', label: '基本配置' },
+  { key: 'quality-rules', label: '选择质量规则' },
   { key: 'run-settings', label: '运行设置' },
   { key: 'issue-strategy', label: '质量问题处理策略' },
-  { key: 'quality-rules', label: '选择质量规则' },
 ] as const;
 export type SectionKey = (typeof SECTION_ITEMS)[number]['key'];
 
