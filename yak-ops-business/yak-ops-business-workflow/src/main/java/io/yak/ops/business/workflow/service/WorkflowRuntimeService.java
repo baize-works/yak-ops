@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +40,8 @@ public class WorkflowRuntimeService {
 
   private final ExecutorService workerPool;
   private final DefaultWorkflowEngine engine;
+  private final ConcurrentLinkedQueue<NodeDispatch> pendingDispatches =
+      new ConcurrentLinkedQueue<>();
   private final Map<String, RunMetadata> metadata = new ConcurrentHashMap<>();
   private final ConcurrentLinkedDeque<String> executionOrder = new ConcurrentLinkedDeque<>();
 
@@ -52,8 +55,7 @@ public class WorkflowRuntimeService {
           thread.setDaemon(true);
           return thread;
         });
-    this.engine = DefaultWorkflowEngine.inMemory(
-        dispatch -> workerPool.execute(() -> executeNode(dispatch)));
+    this.engine = DefaultWorkflowEngine.inMemory(pendingDispatches::add);
   }
 
   public WorkflowInstanceVO run(WorkflowRunRequest request) {
@@ -88,6 +90,7 @@ public class WorkflowRuntimeService {
         request.name(),
         request.nodes().size(),
         request.edges().size());
+    drainDispatches();
     return toView(execution, runMetadata);
   }
 
@@ -137,6 +140,14 @@ public class WorkflowRuntimeService {
     return Map.copyOf(result);
   }
 
+  private void drainDispatches() {
+    NodeDispatch dispatch;
+    while ((dispatch = pendingDispatches.poll()) != null) {
+      NodeDispatch current = dispatch;
+      workerPool.execute(() -> executeNode(current));
+    }
+  }
+
   private void executeNode(NodeDispatch dispatch) {
     String type = String.valueOf(dispatch.nodeConfiguration().getOrDefault("type", "TASK"));
     log.info(
@@ -175,6 +186,8 @@ public class WorkflowRuntimeService {
             dispatch.nodeId(),
             callbackException.getMessage());
       }
+    } finally {
+      drainDispatches();
     }
   }
 
