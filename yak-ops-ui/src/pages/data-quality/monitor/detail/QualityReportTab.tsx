@@ -3,6 +3,7 @@ import {
   DatePicker,
   Empty,
   Progress,
+  Segmented,
   Spin,
   Table,
   message,
@@ -14,7 +15,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { dataQualityTableClassName } from '../../components/tableStyle';
 import type {
   ColumnReport,
-  DimensionReport,
   MonitorReportView,
   TrendPoint,
 } from '../../types';
@@ -56,7 +56,7 @@ const Sparkline = ({ values }: { values: number[] }) => {
       <polyline
         points={points}
         fill="none"
-        stroke="#6f5cff"
+        stroke="var(--yak-brand-color, #fe2c55)"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -202,7 +202,13 @@ const QualityReportTab = ({
       width: 150,
       render: (value) => (
         <div className="flex items-center gap-2">
-          <Progress percent={Number(value || 0)} showInfo={false} size="small" />
+          <Progress
+            percent={Number(value || 0)}
+            status="normal"
+            strokeColor="var(--yak-brand-color, #fe2c55)"
+            showInfo={false}
+            size="small"
+          />
           <span className="w-12 text-right text-xs">{percentText(value)}</span>
         </div>
       ),
@@ -213,34 +219,48 @@ const QualityReportTab = ({
   const dayBefore = dayjs().subtract(2, 'day').format('YYYY-MM-DD');
   const overview = report?.overview;
 
+  const quickDate =
+    reportDate === yesterday
+      ? 'YESTERDAY'
+      : reportDate === dayBefore
+        ? 'DAY_BEFORE'
+        : undefined;
+
   return (
-    <div className="min-h-0 flex-1 overflow-auto bg-[#f5f6f8] px-4 pb-6 pt-4">
-      <div className="mb-3 flex justify-end gap-2">
-        <Button
-          type={reportDate === yesterday ? 'primary' : 'default'}
-          onClick={() => onDateChange(yesterday)}
-        >
-          昨日
-        </Button>
-        <Button
-          type={reportDate === dayBefore ? 'primary' : 'default'}
-          onClick={() => onDateChange(dayBefore)}
-        >
-          前日
-        </Button>
-        <DatePicker
-          allowClear={false}
-          value={dayjs(reportDate)}
-          suffixIcon={<CalendarDays size={14} />}
-          onChange={(value) =>
-            value && onDateChange(value.format('YYYY-MM-DD'))
-          }
-        />
+    <div className="h-0 min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-white px-4 pb-6 pt-3">
+      <div className="sticky top-0 z-10 -mx-4 mb-3 border-b border-[#edf0f3] bg-white px-4 pb-3">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Segmented<'YESTERDAY' | 'DAY_BEFORE'>
+            value={quickDate}
+            options={[
+              { label: '昨日', value: 'YESTERDAY' },
+              { label: '前日', value: 'DAY_BEFORE' },
+            ]}
+            onChange={(value) => {
+              if (value === 'YESTERDAY') {
+                onDateChange(yesterday);
+                return;
+              }
+              onDateChange(dayBefore);
+            }}
+          />
+
+          <DatePicker
+            allowClear={false}
+            variant="filled"
+            value={dayjs(reportDate)}
+            suffixIcon={<CalendarDays size={14} />}
+            onChange={(value) =>
+              value && onDateChange(value.format('YYYY-MM-DD'))
+            }
+            className="w-[164px]"
+          />
+        </div>
       </div>
 
       <Spin spinning={loading}>
         <div className="grid grid-cols-2 gap-2 max-xl:grid-cols-1">
-          <section className="min-h-[326px] border border-[#dfe3e8] bg-white p-4">
+          <section className="min-h-[326px] border border-[#e7e9ed] bg-white p-4">
             <h2 className="m-0 text-[15px] font-semibold text-[#172033]">
               质量维度通过率
             </h2>
@@ -250,6 +270,8 @@ const QualityReportTab = ({
                   type="circle"
                   size={192}
                   percent={overview?.passRate || 0}
+                  status="normal"
+                  strokeColor="var(--yak-brand-color, #fe2c55)"
                   strokeWidth={9}
                   format={(value) => (
                     <div>
@@ -293,7 +315,7 @@ const QualityReportTab = ({
             </div>
           </section>
 
-          <section className="min-h-[326px] border border-[#dfe3e8] bg-white p-4">
+          <section className="min-h-[326px] border border-[#e7e9ed] bg-white p-4">
             <h2 className="m-0 text-[15px] font-semibold text-[#172033]">
               重点关注
             </h2>
@@ -322,26 +344,19 @@ const QualityReportTab = ({
           </section>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-0">
-          {['全部', ...dimensionNames].map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={[
-                'h-8 border border-[#dfe3e8] px-4 text-xs',
-                activeDimension === item
-                  ? 'border-[var(--yak-brand-color)] bg-[var(--yak-brand-color)] text-white'
-                  : 'bg-white text-[#43506a] hover:bg-[#f8f9fb]',
-              ].join(' ')}
-              onClick={() => setActiveDimension(item)}
-            >
-              {item}
-            </button>
-          ))}
+        <div className="mt-3 flex min-w-0 items-center border-b border-[#edf0f3] pb-3">
+          <Segmented<string>
+            value={activeDimension}
+            options={['全部', ...dimensionNames].map((item) => ({
+              label: item,
+              value: item,
+            }))}
+            onChange={setActiveDimension}
+          />
         </div>
 
-        <div className="mt-2 grid grid-cols-2 gap-2 max-xl:grid-cols-1">
-          <section className="min-h-[330px] border border-[#dfe3e8] bg-white p-4">
+        <div className="mt-2 grid grid-cols-2 gap-2 max-xl:grid-cols-1" style={{marginBottom: 120}}>
+          <section className="min-h-[330px] border border-[#e7e9ed] bg-white p-4">
             <h2 className="m-0 text-[15px] font-semibold text-[#172033]">
               各维度趋势分析
             </h2>
@@ -357,7 +372,7 @@ const QualityReportTab = ({
             />
           </section>
 
-          <section className="min-h-[330px] border border-[#dfe3e8] bg-white p-4">
+          <section className="min-h-[330px] border border-[#e7e9ed] bg-white p-4">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
                 <h2 className="m-0 text-[15px] font-semibold text-[#172033]">

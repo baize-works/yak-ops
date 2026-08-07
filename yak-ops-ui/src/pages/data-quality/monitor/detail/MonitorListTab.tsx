@@ -1,6 +1,16 @@
-import { Button, Dropdown, Empty, Input, Select, Table, Tag } from 'antd';
-import type { TableColumnsType } from 'antd';
-import { MoreHorizontal, RefreshCw, Search } from 'lucide-react';
+import {
+  Button,
+  Dropdown,
+  Empty,
+  Input,
+  Popover,
+  Segmented,
+  Select,
+  Table,
+  Tag,
+} from 'antd';
+import type { MenuProps, TableColumnsType } from 'antd';
+import { ListFilter, MoreHorizontal, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { MonitorWorkspaceView } from '../../types';
@@ -26,6 +36,22 @@ interface MonitorRecord {
   updateTime: string;
 }
 
+type MonitorStatusFilter = 'ALL' | 'ENABLED' | 'DISABLED';
+
+interface MonitorFilterState {
+  keyword: string;
+  owner?: string;
+  runMode?: string;
+  enabled?: boolean;
+}
+
+const createEmptyFilters = (): MonitorFilterState => ({
+  keyword: '',
+  owner: undefined,
+  runMode: undefined,
+  enabled: undefined,
+});
+
 const MonitorListTab = ({
   workspace,
   running,
@@ -35,9 +61,11 @@ const MonitorListTab = ({
   onOpenLog,
 }: MonitorListTabProps) => {
   const { monitor, settings, stats } = workspace;
-  const [keyword, setKeyword] = useState('');
-  const [owner, setOwner] = useState<string>();
-  const [runMode, setRunMode] = useState<string>();
+
+  const [filters, setFilters] = useState<MonitorFilterState>(createEmptyFilters);
+  const [draftFilters, setDraftFilters] =
+    useState<MonitorFilterState>(createEmptyFilters);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const records = useMemo<MonitorRecord[]>(() => {
     const source: MonitorRecord[] = [
@@ -52,7 +80,9 @@ const MonitorListTab = ({
         updateTime: monitor.updateTime,
       },
     ];
-    const normalized = keyword.trim().toLowerCase();
+
+    const normalized = filters.keyword.trim().toLowerCase();
+
     return source.filter((record) => {
       if (
         normalized &&
@@ -62,11 +92,67 @@ const MonitorListTab = ({
       ) {
         return false;
       }
-      if (owner && record.owner !== owner) return false;
-      if (runMode && settings.runMode !== runMode) return false;
+
+      if (filters.owner && record.owner !== filters.owner) return false;
+      if (filters.runMode && settings.runMode !== filters.runMode) return false;
+      if (filters.enabled !== undefined && record.enabled !== filters.enabled) {
+        return false;
+      }
+
       return true;
     });
-  }, [keyword, monitor, owner, runMode, settings.runMode, stats.ruleCount]);
+  }, [
+    filters,
+    monitor,
+    settings.runMode,
+    stats.ruleCount,
+  ]);
+
+  const statusFilter: MonitorStatusFilter =
+    filters.enabled === true
+      ? 'ENABLED'
+      : filters.enabled === false
+        ? 'DISABLED'
+        : 'ALL';
+
+  const applyFilters = () => {
+    setFilters({ ...draftFilters });
+  };
+
+  const resetFilters = () => {
+    const emptyFilters = createEmptyFilters();
+    setDraftFilters(emptyFilters);
+    setFilters(emptyFilters);
+    setAdvancedOpen(false);
+    onRefresh();
+  };
+
+  const changeStatusFilter = (value: MonitorStatusFilter) => {
+    const enabled =
+      value === 'ENABLED' ? true : value === 'DISABLED' ? false : undefined;
+
+    setDraftFilters((current) => ({
+      ...current,
+      enabled,
+    }));
+
+    setFilters((current) => ({
+      ...current,
+      enabled,
+    }));
+  };
+
+  const moreMenu: MenuProps = {
+    items: [
+      { key: 'log', label: '操作日志' },
+      { type: 'divider' },
+      { key: 'remove', label: '删除', danger: true },
+    ],
+    onClick: ({ key }) => {
+      if (key === 'log') onOpenLog();
+      if (key === 'remove') onRemove();
+    },
+  };
 
   const columns: TableColumnsType<MonitorRecord> = [
     {
@@ -77,9 +163,13 @@ const MonitorListTab = ({
           <div className="truncate text-[13px] font-medium text-[#172033]">
             {record.name}
           </div>
-          <div className="mt-1 text-[11px] text-[#98a2b3]">ID：{record.id}</div>
+
+          <div className="mt-1 text-[11px] text-[#98a2b3]">
+            ID：{record.id}
+          </div>
+
           {record.description ? (
-            <div className="mt-1 line-clamp-1 text-xs text-[#667085]">
+            <div className="mt-1 line-clamp-1 text-[12px] text-[#667085]">
               {record.description}
             </div>
           ) : null}
@@ -90,10 +180,12 @@ const MonitorListTab = ({
       title: '触发方式',
       width: 190,
       render: (_, record) => (
-        <div className="space-y-1 py-0.5">
-          <div className="text-[#344054]">{record.trigger}</div>
-          <div className="text-[11px] text-[#98a2b3]">
-            {settings.nextRunTime ? `下次：${settings.nextRunTime}` : '未配置下次运行'}
+        <div>
+          <div className="text-[13px] text-[#344054]">{record.trigger}</div>
+          <div className="mt-1 text-[11px] text-[#98a2b3]">
+            {settings.nextRunTime
+              ? `下次：${settings.nextRunTime}`
+              : '未配置下次运行'}
           </div>
         </div>
       ),
@@ -103,11 +195,11 @@ const MonitorListTab = ({
       width: 160,
       render: () => (
         <div className="flex items-baseline gap-1">
-          <span className="text-[15px] font-semibold text-[#245bdb]">
+          <span className="font-medium text-[#344054]">
             {stats.enabledRuleCount}
           </span>
           <span className="text-[#98a2b3]">/</span>
-          <span className="text-[#344054]">{stats.ruleCount}</span>
+          <span className="text-[#667085]">{stats.ruleCount}</span>
         </div>
       ),
     },
@@ -121,14 +213,16 @@ const MonitorListTab = ({
       title: '最近更新时间',
       dataIndex: 'updateTime',
       width: 190,
-      render: (value) => <span className="text-xs text-[#667085]">{value}</span>,
+      render: (value) => <span className="text-[#667085]">{value}</span>,
     },
     {
       title: '状态',
       dataIndex: 'enabled',
       width: 90,
       render: (value) => (
-        <Tag className="!m-0 !border-0" color={value ? 'processing' : 'default'}>
+        <Tag
+          className="!m-0 !border-0"
+        >
           {value ? '启用' : '停用'}
         </Tag>
       ),
@@ -136,84 +230,143 @@ const MonitorListTab = ({
     {
       title: '操作',
       fixed: 'right',
-      width: 160,
+      width: 170,
       render: () => (
-        <div className="flex items-center gap-3 whitespace-nowrap text-xs">
-          <button
-            type="button"
-            className="border-0 bg-transparent p-0 text-[#245bdb]"
+        <div className="flex items-center gap-3">
+          <Button
+            type="link"
+            size="small"
+            loading={running}
             onClick={onRun}
+            className="!h-auto !p-0"
           >
-            {running ? '提交中' : '测试'}
-          </button>
-          <Dropdown
-            trigger={['click']}
-            menu={{
-              items: [
-                { key: 'log', label: '操作日志' },
-                { type: 'divider' },
-                { key: 'remove', label: '删除', danger: true },
-              ],
-              onClick: ({ key }) => {
-                if (key === 'log') onOpenLog();
-                if (key === 'remove') onRemove();
-              },
-            }}
-          >
-            <button
-              type="button"
-              className="inline-flex items-center gap-1 border-0 bg-transparent p-0 text-[#245bdb]"
-            >
-              更多 <MoreHorizontal size={13} />
-            </button>
+            {running ? '提交中' : '测试运行'}
+          </Button>
+
+          <Dropdown trigger={['click']} menu={moreMenu}>
+            <Button
+              type="text"
+              size="small"
+              aria-label="更多操作"
+              icon={<MoreHorizontal size={15} />}
+              className="!h-7 !w-7 !px-0"
+            />
           </Dropdown>
         </div>
       ),
     },
   ];
 
-  return (
-    <div className="min-h-0 flex-1 overflow-auto bg-white px-6 py-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          allowClear
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-          placeholder="请输入关键词搜索"
-          prefix={<Search size={14} className="text-[#98a2b3]" />}
-          className="w-[220px]"
-        />
-        <Select
-          allowClear
-          value={owner}
-          placeholder="责任人"
-          options={[{ value: monitor.owner, label: monitor.owner }]}
-          onChange={setOwner}
-          className="w-[220px]"
-        />
-        <Select
-          allowClear
-          value={runMode}
-          placeholder="触发方式"
-          options={[
-            { value: 'MANUAL', label: '手动触发' },
-            { value: 'SCHEDULE', label: '生产调度触发' },
-          ]}
-          onChange={setRunMode}
-          className="w-[180px]"
-        />
-        <Button
-          type="text"
-          icon={<RefreshCw size={13} />}
-          onClick={() => {
-            setKeyword('');
-            setOwner(undefined);
-            setRunMode(undefined);
-            onRefresh();
-          }}
-        >
+  const advancedSearchContent = (
+    <div className="w-[300px]">
+      <div className="mb-3 text-[13px] font-semibold text-[#161823]">
+        高级搜索
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <div className="mb-1.5 text-xs text-[#667085]">责任人</div>
+          <Select
+            allowClear
+            variant="filled"
+            value={draftFilters.owner}
+            placeholder="全部责任人"
+            options={[
+              {
+                value: monitor.owner,
+                label: monitor.owner,
+              },
+            ]}
+            onChange={(value) =>
+              setDraftFilters((current) => ({
+                ...current,
+                owner: value,
+              }))
+            }
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end gap-2 border-t border-[#f0f1f3] pt-3">
+        <Button size="small" onClick={resetFilters}>
           重置
         </Button>
+
+        <Button
+          size="small"
+          type="primary"
+          onClick={() => {
+            applyFilters();
+            setAdvancedOpen(false);
+          }}
+        >
+          应用
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-w-0 flex-1 bg-white" style={{padding: 16}}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0f3] pb-3 ">
+        <Segmented<MonitorStatusFilter>
+          value={statusFilter}
+          options={[
+            { label: '全部监控', value: 'ALL' },
+            { label: '已启用', value: 'ENABLED' },
+            { label: '已停用', value: 'DISABLED' },
+          ]}
+          onChange={changeStatusFilter}
+        />
+
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          <Input
+            allowClear
+            variant="filled"
+            value={draftFilters.keyword}
+            onChange={(event) =>
+              setDraftFilters((current) => ({
+                ...current,
+                keyword: event.target.value,
+              }))
+            }
+            onPressEnter={applyFilters}
+            placeholder="搜索监控名称或 ID"
+            prefix={<Search size={14} className="text-[#98a2b3]" />}
+            className="w-[220px]"
+          />
+
+          <Select
+            allowClear
+            variant="filled"
+            value={draftFilters.runMode}
+            placeholder="触发方式"
+            options={[
+              { value: 'MANUAL', label: '手动触发' },
+              { value: 'SCHEDULE', label: '生产调度触发' },
+            ]}
+            onChange={(value) =>
+              setDraftFilters((current) => ({
+                ...current,
+                runMode: value,
+              }))
+            }
+            className="w-[160px]"
+          />
+
+          <Button onClick={applyFilters}>查询</Button>
+
+          <Popover
+            trigger="click"
+            placement="bottomRight"
+            open={advancedOpen}
+            onOpenChange={setAdvancedOpen}
+            content={advancedSearchContent}
+          >
+            <Button icon={<ListFilter size={14} />}>高级搜索</Button>
+          </Popover>
+        </div>
       </div>
 
       <Table<MonitorRecord>

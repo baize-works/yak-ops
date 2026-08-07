@@ -2,6 +2,7 @@ import { Button, Tabs } from "antd";
 import { Database, ExternalLink } from "lucide-react";
 import type { MonitorWorkspaceView } from "../../types";
 import type { WorkspaceTab } from "./model";
+import { BRAND_COLOR, BRAND_COLOR_SOFT } from "@/styles/brand";
 
 interface WorkspaceHeaderProps {
   workspace?: MonitorWorkspaceView;
@@ -26,7 +27,16 @@ const WorkspaceHeader = ({
   return (
     <header className="shrink-0 border-b border-[#e5e7eb] bg-white">
       <div className="flex min-h-[86px] items-center gap-4 px-6 py-3">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-[#eef3ff] text-[#3451d1]">
+        <div
+          className="
+    flex h-14 w-14 shrink-0 items-center justify-center
+    rounded-md
+  "
+          style={{
+            backgroundColor: BRAND_COLOR_SOFT,
+            color: BRAND_COLOR,
+          }}
+        >
           <Database size={25} strokeWidth={1.8} />
         </div>
 
