@@ -50,6 +50,7 @@ public class WorkflowRuntimeService {
   private final LongSupplier delayMillisSupplier;
   private final ConcurrentMap<String, ConcurrentLinkedQueue<NodeDispatch>> pendingDispatches =
       new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Object> publishLocks = new ConcurrentHashMap<>();
   private final Set<String> activeExecutions = ConcurrentHashMap.newKeySet();
   private final Map<String, RunMetadata> metadata = new ConcurrentHashMap<>();
   private final ConcurrentLinkedDeque<String> executionOrder = new ConcurrentLinkedDeque<>();
@@ -207,10 +208,7 @@ public class WorkflowRuntimeService {
       NodeDispatch current = dispatch;
       workerPool.execute(() -> executeNode(current));
     }
-
-    if (queue.isEmpty()) {
-      pendingDispatches.remove(executionId, queue);
-    }
+    // 空队列保留到工作流终态再清理，避免并发 enqueue 与 remove 导致 dispatch 丢失。
   }
 
   private void executeNode(NodeDispatch dispatch) {
@@ -282,19 +280,23 @@ public class WorkflowRuntimeService {
   }
 
   private void publishCurrent(String executionId) {
-    RunMetadata runMetadata = metadata.get(executionId);
-    if (runMetadata == null) {
-      return;
+    Object publishLock = publishLocks.computeIfAbsent(executionId, ignored -> new Object());
+    synchronized (publishLock) {
+      RunMetadata runMetadata = metadata.get(executionId);
+      if (runMetadata == null) {
+        return;
+      }
+      engine.findExecution(executionId)
+          .map(execution -> toView(execution, runMetadata))
+          .ifPresent(snapshot -> {
+            eventStreamService.publish(snapshot);
+            if (isTerminal(snapshot.status())) {
+              activeExecutions.remove(executionId);
+              pendingDispatches.remove(executionId);
+              publishLocks.remove(executionId, publishLock);
+            }
+          });
     }
-    engine.findExecution(executionId)
-        .map(execution -> toView(execution, runMetadata))
-        .ifPresent(snapshot -> {
-          eventStreamService.publish(snapshot);
-          if (isTerminal(snapshot.status())) {
-            activeExecutions.remove(executionId);
-            pendingDispatches.remove(executionId);
-          }
-        });
   }
 
   private boolean isTerminal(String status) {
