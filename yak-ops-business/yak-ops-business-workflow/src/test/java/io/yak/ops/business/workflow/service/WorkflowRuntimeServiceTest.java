@@ -13,31 +13,28 @@ import org.junit.jupiter.api.Test;
 
 class WorkflowRuntimeServiceTest {
 
-  private final WorkflowRuntimeService service = new WorkflowRuntimeService(
-      new WorkflowEventStreamService(),
-      () -> 5L);
+  private WorkflowRuntimeService service;
 
   @AfterEach
   void tearDown() {
-    service.shutdown();
+    if (service != null) {
+      service.shutdown();
+    }
   }
 
   @Test
   void shouldExecuteSimpleDagInMemory() throws InterruptedException {
-    WorkflowRunRequest request = new WorkflowRunRequest(
-        "demo",
-        List.of(
-            new NodeRequest("extract", "Extract", "DATA"),
-            new NodeRequest("check", "Check", "CHECK")),
-        List.of(new EdgeRequest("extract", "check")),
-        Map.of());
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 5L);
+
+    WorkflowRunRequest request = simpleSerialWorkflow();
 
     WorkflowInstanceVO started = service.run(request);
-    assertThat(started.nodes())
-        .extracting(WorkflowInstanceVO.NodeInstanceVO::status)
-        .contains("SUBMITTED", "WAITING");
+    assertThat(statusOf(started, "extract")).isEqualTo("SUBMITTED");
+    assertThat(statusOf(started, "check")).isEqualTo("WAITING");
 
-    service.activateExecution(started.id());
+    service.activate(started.id());
     WorkflowInstanceVO completed = waitForTerminal(started.id());
 
     assertThat(completed.status()).isEqualTo("SUCCESS");
@@ -46,15 +43,67 @@ class WorkflowRuntimeServiceTest {
         .containsOnly("SUCCESS");
   }
 
+  @Test
+  void shouldExposeRunningThenSuccessBeforeStartingNextNode()
+      throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 120L);
+
+    WorkflowInstanceVO started = service.run(simpleSerialWorkflow());
+    service.activate(started.id());
+
+    WorkflowInstanceVO firstRunning = waitForNodeStatus(started.id(), "extract", "RUNNING");
+    assertThat(statusOf(firstRunning, "check")).isEqualTo("WAITING");
+
+    WorkflowInstanceVO secondRunning = waitForNodeStatus(started.id(), "check", "RUNNING");
+    assertThat(statusOf(secondRunning, "extract")).isEqualTo("SUCCESS");
+
+    WorkflowInstanceVO completed = waitForTerminal(started.id());
+    assertThat(completed.status()).isEqualTo("SUCCESS");
+  }
+
+  private WorkflowRunRequest simpleSerialWorkflow() {
+    return new WorkflowRunRequest(
+        "demo",
+        List.of(
+            new NodeRequest("extract", "Extract", "DATA"),
+            new NodeRequest("check", "Check", "CHECK")),
+        List.of(new EdgeRequest("extract", "check")),
+        Map.of());
+  }
+
+  private WorkflowInstanceVO waitForNodeStatus(
+      String executionId,
+      String nodeId,
+      String expectedStatus) throws InterruptedException {
+    for (int attempt = 0; attempt < 100; attempt++) {
+      WorkflowInstanceVO current = service.getInstance(executionId);
+      if (expectedStatus.equals(statusOf(current, nodeId))) {
+        return current;
+      }
+      Thread.sleep(10L);
+    }
+    return service.getInstance(executionId);
+  }
+
   private WorkflowInstanceVO waitForTerminal(String executionId)
       throws InterruptedException {
-    for (int attempt = 0; attempt < 100; attempt++) {
+    for (int attempt = 0; attempt < 200; attempt++) {
       WorkflowInstanceVO current = service.getInstance(executionId);
       if (!"RUNNING".equals(current.status()) && !"CREATED".equals(current.status())) {
         return current;
       }
-      Thread.sleep(20L);
+      Thread.sleep(10L);
     }
     return service.getInstance(executionId);
+  }
+
+  private String statusOf(WorkflowInstanceVO instance, String nodeId) {
+    return instance.nodes().stream()
+        .filter(node -> node.id().equals(nodeId))
+        .findFirst()
+        .orElseThrow()
+        .status();
   }
 }
