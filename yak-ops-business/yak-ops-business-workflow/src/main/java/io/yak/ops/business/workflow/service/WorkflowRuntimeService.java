@@ -43,6 +43,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class WorkflowRuntimeService {
 
   private static final Logger log = LoggerFactory.getLogger(WorkflowRuntimeService.class);
+  private static final String MOCK_SUCCESS = "SUCCESS";
+  private static final String MOCK_FAILED = "FAILED";
 
   private final ExecutorService workerPool;
   private final DefaultWorkflowEngine engine;
@@ -170,7 +172,9 @@ public class WorkflowRuntimeService {
         TriggerRule.ALL_SUCCESS,
         RetryPolicy.none(),
         NodeFailurePolicy.FAIL_WORKFLOW,
-        Map.of("type", node.type()));
+        Map.of(
+            "type", node.type(),
+            "mockResult", node.mockResult()));
   }
 
   private EdgeDefinition toEdgeDefinition(EdgeRequest edge) {
@@ -213,13 +217,16 @@ public class WorkflowRuntimeService {
 
   private void executeNode(NodeDispatch dispatch) {
     String type = String.valueOf(dispatch.nodeConfiguration().getOrDefault("type", "TASK"));
+    String mockResult = String.valueOf(
+        dispatch.nodeConfiguration().getOrDefault("mockResult", MOCK_SUCCESS));
     long simulatedDurationMillis = Math.max(0L, delayMillisSupplier.getAsLong());
     log.info(
-        "[workflow] node start execution={}, node={}, type={}, attempt={}, simulatedDurationMs={}",
+        "[workflow] node start execution={}, node={}, type={}, attempt={}, mockResult={}, simulatedDurationMs={}",
         dispatch.workflowExecutionId(),
         dispatch.nodeId(),
         type,
         dispatch.attemptNumber(),
+        mockResult,
         simulatedDurationMillis);
     try {
       engine.acknowledgeNodeStarted(dispatch.workflowExecutionId(), dispatch.nodeId());
@@ -227,12 +234,29 @@ public class WorkflowRuntimeService {
 
       Thread.sleep(simulatedDurationMillis);
 
+      if (MOCK_FAILED.equalsIgnoreCase(mockResult)) {
+        String errorMessage = "Simulated node failure";
+        engine.failNode(
+            dispatch.workflowExecutionId(),
+            dispatch.nodeId(),
+            errorMessage);
+        publishCurrent(dispatch.workflowExecutionId());
+        log.warn(
+            "[workflow] node simulated failure execution={}, node={}, type={}, simulatedDurationMs={}",
+            dispatch.workflowExecutionId(),
+            dispatch.nodeId(),
+            type,
+            simulatedDurationMillis);
+        return;
+      }
+
       engine.completeNode(
           dispatch.workflowExecutionId(),
           dispatch.nodeId(),
           Map.of(
               "type", type,
               "message", "executed in memory",
+              "mockResult", MOCK_SUCCESS,
               "simulatedDurationMs", simulatedDurationMillis));
       publishCurrent(dispatch.workflowExecutionId());
       log.info(
