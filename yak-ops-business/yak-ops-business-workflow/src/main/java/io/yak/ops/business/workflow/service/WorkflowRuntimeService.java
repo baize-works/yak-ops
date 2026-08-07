@@ -114,6 +114,11 @@ public class WorkflowRuntimeService {
     return started;
   }
 
+  public WorkflowInstanceVO activate(String executionId) {
+    activateExecution(executionId);
+    return getInstance(executionId);
+  }
+
   public List<WorkflowInstanceVO> listInstances() {
     List<WorkflowInstanceVO> instances = new ArrayList<>();
     for (String executionId : executionOrder) {
@@ -149,8 +154,10 @@ public class WorkflowRuntimeService {
   }
 
   void activateExecution(String executionId) {
+    // 先校验实例存在，避免把不存在的 executionId 放进 active 集合。
+    getInstance(executionId);
     if (activeExecutions.add(executionId)) {
-      log.info("[workflow] activated execution={} after live subscriber attached", executionId);
+      log.info("[workflow] activated execution={}", executionId);
     }
     drainDispatches(executionId);
   }
