@@ -92,7 +92,7 @@ const RegisteredTablePanel = ({
                 bordered
                 pagination={false}
                 dataSource={assets}
-                scroll={{ x: 1250 }}
+                scroll={{ x: 1250,y: "calc(100vh - 260px)", }}
                 className={dataQualityTableClassName()}
                 locale={{
                   emptyText: (

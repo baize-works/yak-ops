@@ -1,6 +1,23 @@
-import { Button, Dropdown, Empty, Input, Select, Table, Tag } from 'antd';
+import {
+  Button,
+  Dropdown,
+  Empty,
+  Input,
+  Popover,
+  Segmented,
+  Select,
+  Table,
+  Tag,
+} from 'antd';
 import type { MenuProps, TableColumnsType } from 'antd';
-import { MoreHorizontal, Play, RefreshCw, Search } from 'lucide-react';
+import {
+  ListFilter,
+  MoreHorizontal,
+  Play,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useMemo, useState } from 'react';
 import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { MonitorWorkspaceView, RuleView } from '../../types';
@@ -20,6 +37,28 @@ interface RuleManagementTabProps {
   onRemoveMonitor: () => void;
 }
 
+type RuleStatusFilter = 'ALL' | 'ENABLED' | 'DISABLED';
+
+interface RuleFilterState {
+  keyword: string;
+  template?: string;
+  scope?: string;
+  enabled?: boolean;
+  dimension?: string;
+}
+
+const createEmptyFilters = (): RuleFilterState => ({
+  keyword: '',
+  template: undefined,
+  scope: undefined,
+  enabled: undefined,
+  dimension: undefined,
+});
+
+const MIN_LEFT_WIDTH = 220;
+const MAX_LEFT_WIDTH = 420;
+const DEFAULT_LEFT_WIDTH = 286;
+
 const RuleManagementTab = ({
   workspace,
   running,
@@ -29,14 +68,18 @@ const RuleManagementTab = ({
   onRemoveMonitor,
 }: RuleManagementTabProps) => {
   const { monitor, settings, stats } = workspace;
-  const [keyword, setKeyword] = useState('');
-  const [template, setTemplate] = useState<string>();
-  const [scope, setScope] = useState<string>();
-  const [enabled, setEnabled] = useState<boolean>();
-  const [dimension, setDimension] = useState<string>();
+
+  const [monitorKeyword, setMonitorKeyword] = useState('');
+  const [filters, setFilters] = useState<RuleFilterState>(createEmptyFilters);
+  const [draftFilters, setDraftFilters] =
+    useState<RuleFilterState>(createEmptyFilters);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH);
+  const [resizing, setResizing] = useState(false);
 
   const records = useMemo(() => {
-    const normalizedKeyword = keyword.trim().toLowerCase();
+    const normalizedKeyword = filters.keyword.trim().toLowerCase();
+
     return monitor.rules.filter((rule) => {
       if (
         normalizedKeyword &&
@@ -46,13 +89,17 @@ const RuleManagementTab = ({
       ) {
         return false;
       }
-      if (template && rule.templateCode !== template) return false;
-      if (scope && rule.scope !== scope) return false;
-      if (enabled !== undefined && rule.enabled !== enabled) return false;
-      if (dimension && rule.dimension !== dimension) return false;
+
+      if (filters.template && rule.templateCode !== filters.template) return false;
+      if (filters.scope && rule.scope !== filters.scope) return false;
+      if (filters.enabled !== undefined && rule.enabled !== filters.enabled) {
+        return false;
+      }
+      if (filters.dimension && rule.dimension !== filters.dimension) return false;
+
       return true;
     });
-  }, [dimension, enabled, keyword, monitor.rules, scope, template]);
+  }, [filters, monitor.rules]);
 
   const templates = useMemo(
     () =>
@@ -67,12 +114,70 @@ const RuleManagementTab = ({
     [monitor.rules],
   );
 
+  const statusFilter: RuleStatusFilter =
+    filters.enabled === true
+      ? 'ENABLED'
+      : filters.enabled === false
+        ? 'DISABLED'
+        : 'ALL';
+
+  const monitorVisible = useMemo(() => {
+    const normalizedKeyword = monitorKeyword.trim().toLowerCase();
+    if (!normalizedKeyword) return true;
+
+    return `${monitor.id} ${monitor.name}`
+      .toLowerCase()
+      .includes(normalizedKeyword);
+  }, [monitor.id, monitor.name, monitorKeyword]);
+
+  const applyFilters = () => {
+    setFilters({ ...draftFilters });
+  };
+
   const reset = () => {
-    setKeyword('');
-    setTemplate(undefined);
-    setScope(undefined);
-    setEnabled(undefined);
-    setDimension(undefined);
+    const emptyFilters = createEmptyFilters();
+    setDraftFilters(emptyFilters);
+    setFilters(emptyFilters);
+    setAdvancedOpen(false);
+  };
+
+  const changeStatusFilter = (value: RuleStatusFilter) => {
+    const enabled =
+      value === 'ENABLED' ? true : value === 'DISABLED' ? false : undefined;
+
+    setDraftFilters((current) => ({ ...current, enabled }));
+    setFilters((current) => ({ ...current, enabled }));
+  };
+
+  const onResizeStart = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+
+    const startX = event.clientX;
+    const startWidth = leftWidth;
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+
+    setResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const nextWidth = startWidth + moveEvent.clientX - startX;
+      setLeftWidth(
+        Math.min(MAX_LEFT_WIDTH, Math.max(MIN_LEFT_WIDTH, nextWidth)),
+      );
+    };
+
+    const onPointerUp = () => {
+      setResizing(false);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
   };
 
   const columns: TableColumnsType<RuleView> = [
@@ -176,9 +281,71 @@ const RuleManagementTab = ({
     },
   };
 
+  const advancedSearchContent = (
+    <div className="w-[300px]">
+      <div className="mb-3 text-[13px] font-semibold text-[#161823]">
+        高级搜索
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <div className="mb-1.5 text-xs text-[#667085]">关联范围</div>
+          <Select
+            allowClear
+            variant="filled"
+            value={draftFilters.scope}
+            placeholder="全部范围"
+            options={[
+              { value: 'TABLE', label: '表级' },
+              { value: 'COLUMN', label: '字段级' },
+            ]}
+            onChange={(value) =>
+              setDraftFilters((current) => ({ ...current, scope: value }))
+            }
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <div className="mb-1.5 text-xs text-[#667085]">质量维度</div>
+          <Select
+            allowClear
+            variant="filled"
+            value={draftFilters.dimension}
+            placeholder="全部维度"
+            options={DIMENSION_ORDER.map((value) => ({ value, label: value }))}
+            onChange={(value) =>
+              setDraftFilters((current) => ({ ...current, dimension: value }))
+            }
+            className="w-full"
+          />
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end gap-2 border-t border-[#f0f1f3] pt-3">
+        <Button size="small" onClick={reset}>
+          重置
+        </Button>
+        <Button
+          size="small"
+          type="primary"
+          onClick={() => {
+            applyFilters();
+            setAdvancedOpen(false);
+          }}
+        >
+          应用
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex min-h-0 flex-1 bg-white">
-      <aside className="w-[286px] shrink-0 border-r border-[#e5e7eb] bg-[#fbfcfe] px-5 py-5">
+    <div className="flex h-full min-h-0 flex-1 items-stretch bg-white">
+      <aside
+        className="shrink-0 overflow-hidden bg-[#fbfcfe] px-5 py-5"
+        style={{ width: leftWidth }}
+      >
         <div className="text-[14px] font-semibold text-[#172033]">规则详情</div>
         <div className="mt-4 space-y-1 text-[13px]">
           <div className="flex items-center justify-between rounded-md bg-[#f0f3f8] px-3 py-2 font-medium text-[#27344f]">
@@ -210,103 +377,147 @@ const RuleManagementTab = ({
         <Input
           variant="filled"
           allowClear
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
+          value={monitorKeyword}
+          onChange={(event) => setMonitorKeyword(event.target.value)}
           placeholder="请输入关键字搜索"
           prefix={<Search size={14} className="text-[#98a2b3]" />}
           className="mt-3"
         />
 
-        <div className="mt-3 rounded-md border border-[#cfdaf8] bg-[#eef3ff] px-3 py-3">
-          <div className="text-xs text-[#7583a1]">ID: {monitor.id}</div>
-          <div className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-[#172033]">
-            {monitor.name}
-          </div>
-          <div className="mt-2 space-y-1 text-xs text-[#667085]">
-            <div>数据范围：{monitor.whereClause || '全表'}</div>
-            <div>触发方式：{RUN_MODE_LABEL[settings.runMode]}</div>
-            <div>
-              规则数：启用{stats.enabledRuleCount} / 总数{stats.ruleCount}
+        {monitorVisible ? (
+          <div className="mt-3 rounded-md border border-[#cfdaf8] bg-[#eef3ff] px-3 py-3">
+            <div className="text-xs text-[#7583a1]">ID: {monitor.id}</div>
+            <div className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-[#172033]">
+              {monitor.name}
             </div>
-            <div>配置来源：数据质量</div>
+            <div className="mt-2 space-y-1 text-xs text-[#667085]">
+              <div>数据范围：{monitor.whereClause || '全表'}</div>
+              <div>触发方式：{RUN_MODE_LABEL[settings.runMode]}</div>
+              <div>
+                规则数：启用{stats.enabledRuleCount} / 总数{stats.ruleCount}
+              </div>
+              <div>配置来源：数据质量</div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-8 text-center text-xs text-[#98a2b3]">
+            未找到匹配的监控配置
+          </div>
+        )}
       </aside>
 
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="调整左侧规则详情宽度"
+        onPointerDown={onResizeStart}
+        className={[
+          'group relative w-2 shrink-0 cursor-col-resize touch-none select-none self-stretch',
+          resizing ? 'z-10' : '',
+        ].join(' ')}
+      >
+        <div
+          className={[
+            'absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors',
+            resizing ? 'bg-[#98a2b3]' : 'bg-[#e5e7eb] group-hover:bg-[#b8c0cc]',
+          ].join(' ')}
+        />
+        <div className="absolute left-1/2 top-1/2 h-9 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent transition-colors group-hover:bg-[#d0d5dd]" />
+      </div>
+
       <main className="min-w-0 flex-1 overflow-auto px-4 py-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0f3] pb-3">
+        <div className="flex min-h-10 items-center justify-between gap-4 border-b border-[#edf0f3] pb-3">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-[14px] font-medium text-[#172033]">
+            <span className="truncate text-[15px] font-semibold text-[#161823]">
               {monitor.name}
             </span>
-            <Button
-              size="small"
-              icon={<Play size={13} />}
-              loading={running}
-              onClick={onRun}
-            >
-              测试运行
-            </Button>
-            <Dropdown menu={moreMenu} trigger={['click']}>
-              <Button size="small" icon={<MoreHorizontal size={14} />} />
-            </Dropdown>
+            <span className="shrink-0 text-xs text-[#98a2b3]">
+              ID: {monitor.id}
+            </span>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
             {settings.runMode === 'MANUAL' ? (
-              <Tag color="orange" className="!m-0">
+              <Tag color="orange" bordered={false} className="!m-0">
                 未开启调度
               </Tag>
             ) : null}
+
+            <Button
+              type="primary"
+              icon={<Play size={14} />}
+              loading={running}
+              onClick={onRun}
+              className="!h-8 !px-3 !shadow-none"
+            >
+              测试运行
+            </Button>
+
+            <Dropdown menu={moreMenu} trigger={['click']}>
+              <Button
+                aria-label="更多操作"
+                icon={<MoreHorizontal size={15} />}
+                className="!h-8 !w-8 !px-0"
+              />
+            </Dropdown>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 py-3">
-          <Input
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder="名称  输入名称或ID搜索"
-            prefix={<Search size={14} className="text-[#98a2b3]" />}
-            className="w-[220px]"
-          />
-          <Select
-            allowClear
-            value={template}
-            placeholder="规则模板"
-            options={templates}
-            onChange={setTemplate}
-            className="w-[170px]"
-          />
-          <Select
-            allowClear
-            value={scope}
-            placeholder="关联范围"
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0f3] py-3">
+          <Segmented<RuleStatusFilter>
+            value={statusFilter}
             options={[
-              { value: 'TABLE', label: '表级' },
-              { value: 'COLUMN', label: '字段级' },
+              { label: '全部规则', value: 'ALL' },
+              { label: '已启用', value: 'ENABLED' },
+              { label: '已停用', value: 'DISABLED' },
             ]}
-            onChange={setScope}
-            className="w-[140px]"
+            onChange={changeStatusFilter}
           />
-          <Select
-            allowClear
-            value={enabled}
-            placeholder="启用状态"
-            options={[
-              { value: true, label: '启用' },
-              { value: false, label: '停用' },
-            ]}
-            onChange={setEnabled}
-            className="w-[130px]"
-          />
-          <Select
-            allowClear
-            value={dimension}
-            placeholder="质量维度"
-            options={DIMENSION_ORDER.map((value) => ({ value, label: value }))}
-            onChange={setDimension}
-            className="w-[130px]"
-          />
-          <Button type="text" icon={<RefreshCw size={13} />} onClick={reset}>
-            重置
-          </Button>
+
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <Input
+              allowClear
+              variant="filled"
+              value={draftFilters.keyword}
+              onChange={(event) =>
+                setDraftFilters((current) => ({
+                  ...current,
+                  keyword: event.target.value,
+                }))
+              }
+              onPressEnter={applyFilters}
+              placeholder="搜索规则名称或 ID"
+              prefix={<Search size={14} className="text-[#98a2b3]" />}
+              className="w-[220px]"
+            />
+
+            <Select
+              allowClear
+              variant="filled"
+              value={draftFilters.template}
+              placeholder="规则模板"
+              options={templates}
+              onChange={(value) =>
+                setDraftFilters((current) => ({
+                  ...current,
+                  template: value,
+                }))
+              }
+              className="w-[160px]"
+            />
+
+            <Button onClick={applyFilters}>查询</Button>
+
+            <Popover
+              trigger="click"
+              placement="bottomRight"
+              open={advancedOpen}
+              onOpenChange={setAdvancedOpen}
+              content={advancedSearchContent}
+            >
+              <Button icon={<ListFilter size={14} />}>高级搜索</Button>
+            </Popover>
+          </div>
         </div>
 
         <Table<RuleView>

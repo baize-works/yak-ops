@@ -72,20 +72,7 @@ export const BasicConfig = ({
               </div>
             </div>
           ) : (
-            <Alert
-              type="warning"
-              showIcon
-              message="尚未指定监控对象"
-              description="请先从数据表监控页面选择已注册的数据表，再创建质量监控。"
-              action={
-                <Button
-                  size="small"
-                  onClick={() => history.push('/data-quality/table-config')}
-                >
-                  返回数据表监控
-                </Button>
-              }
-            />
+            <div></div>
           )}
         </EditorField>
 

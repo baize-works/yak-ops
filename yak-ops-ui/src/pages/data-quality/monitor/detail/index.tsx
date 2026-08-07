@@ -161,7 +161,7 @@ const MonitorDetailPage = () => {
           onBack={() => history.push('/data-quality/table-config')}
         />
 
-        <Spin spinning={loading} wrapperClassName="min-h-0 flex-1 overflow-hidden">
+        <Spin spinning={loading} wrapperClassName="min-h-0 flex-1 overflow-hidden ">
           {workspace ? (
             <div className="flex h-full min-h-0 flex-col">
               {activeTab === 'rules' ? (
