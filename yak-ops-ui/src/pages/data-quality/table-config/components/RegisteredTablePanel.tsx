@@ -1,18 +1,10 @@
-import YakOpsEmpty from '@/components/YakOpsEmpty';
-import {
-  Button,
-  Input,
-  Pagination,
-  Spin,
-  Table,
-  Tag,
-  Tooltip,
-} from 'antd';
-import { Plus, Search, Settings2 } from 'lucide-react';
-import { CheckResultTag } from '../../components/QualityStatus';
-import { dataQualityTableClassName } from '../../components/tableStyle';
-import type { TableAssetView } from '../../types';
-import { PAGE_SIZE, type DataSourceTreeNode } from '../model';
+import YakOpsEmpty from "@/components/YakOpsEmpty";
+import { Button, Input, Pagination, Spin, Table, Tag, Tooltip } from "antd";
+import { Search } from "lucide-react";
+import { CheckResultTag } from "../../components/QualityStatus";
+import { dataQualityTableClassName } from "../../components/tableStyle";
+import type { TableAssetView } from "../../types";
+import { PAGE_SIZE, type DataSourceTreeNode } from "../model";
 
 interface RegisteredTablePanelProps {
   dataSourceId?: number;
@@ -104,15 +96,15 @@ const RegisteredTablePanel = ({
                 className={dataQualityTableClassName()}
                 locale={{
                   emptyText: (
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
                       <YakOpsEmpty />
                     </div>
                   ),
                 }}
                 columns={[
                   {
-                    title: '表名 / 描述 / 路径',
-                    dataIndex: 'tableName',
+                    title: "表名 / 描述 / 路径",
+                    dataIndex: "tableName",
                     minWidth: 330,
                     render: (_, record) => (
                       <div className="min-w-0 py-1">
@@ -131,13 +123,13 @@ const RegisteredTablePanel = ({
                             record.tableName,
                           ]
                             .filter(Boolean)
-                            .join(' / ')}
+                            .join(" / ")}
                         </div>
                       </div>
                     ),
                   },
                   {
-                    title: '数据源 / 类型',
+                    title: "数据源 / 类型",
                     width: 190,
                     render: (_, record) => (
                       <div className="space-y-1 py-0.5">
@@ -145,13 +137,13 @@ const RegisteredTablePanel = ({
                           {record.dataSourceName}
                         </div>
                         <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[11px] !text-[#667085]">
-                          {record.tableType || 'TABLE'}
+                          {record.tableType || "TABLE"}
                         </Tag>
                       </div>
                     ),
                   },
                   {
-                    title: '监控 / 规则',
+                    title: "监控 / 规则",
                     width: 170,
                     render: (_, record) => (
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
@@ -167,19 +159,18 @@ const RegisteredTablePanel = ({
                     ),
                   },
                   {
-                    title: '最近状态',
+                    title: "最近状态",
                     width: 190,
                     render: (_, record) => (
                       <div className="space-y-1.5 py-0.5">
-                        <CheckResultTag value={record.lastResult} />
                         <div className="text-[11px] text-[#98a2b3]">
-                          {record.lastRunTime || '暂无运行记录'}
+                          {record.lastRunTime || "暂无运行记录"}
                         </div>
                       </div>
                     ),
                   },
                   {
-                    title: '注册信息',
+                    title: "注册信息",
                     width: 190,
                     render: (_, record) => (
                       <div className="space-y-1 text-xs">
@@ -193,9 +184,9 @@ const RegisteredTablePanel = ({
                     ),
                   },
                   {
-                    title: '操作',
+                    title: "操作",
                     width: 210,
-                    fixed: 'right',
+                    fixed: "right",
                     render: (_, record) => (
                       <div
                         className="flex items-center gap-1.5 whitespace-nowrap"
@@ -203,10 +194,11 @@ const RegisteredTablePanel = ({
                       >
                         <Button
                           size="small"
-                          type="primary"
-                          ghost
-                          icon={<Plus size={13} />}
-                          className="!h-7 !rounded-md !px-2.5 !text-xs"
+                          color={"primary"}
+                          variant="filled"
+                          className={["!h-7 !rounded-md !px-2.5 !text-xs"].join(
+                            " "
+                          )}
                           onClick={() => onCreateMonitor(record)}
                         >
                           新增监控
@@ -216,7 +208,7 @@ const RegisteredTablePanel = ({
                           title={
                             record.monitorId
                               ? undefined
-                              : '请先新增监控，再进行规则管理'
+                              : "请先新增监控，再进行规则管理"
                           }
                         >
                           <Button
@@ -224,7 +216,6 @@ const RegisteredTablePanel = ({
                             color="default"
                             variant="filled"
                             disabled={!record.monitorId}
-                            icon={<Settings2 size={13} />}
                             className="!h-7 !rounded-md !px-2.5 !text-xs"
                             onClick={() => onOpenRuleManagement(record)}
                           >
