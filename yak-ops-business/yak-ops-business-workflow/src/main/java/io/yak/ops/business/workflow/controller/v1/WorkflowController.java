@@ -43,6 +43,14 @@ public class WorkflowController {
     return Result.success(workflowRuntimeService.activate(executionId));
   }
 
+  @Operation(summary = "人工放行失败节点并继续执行后续节点")
+  @PostMapping("/instances/{executionId}/nodes/{nodeId}/continue")
+  public Result<WorkflowInstanceVO> continueAfterFailure(
+      @PathVariable("executionId") String executionId,
+      @PathVariable("nodeId") String nodeId) {
+    return Result.success(workflowRuntimeService.continueAfterFailure(executionId, nodeId));
+  }
+
   @Operation(summary = "查询工作流实例")
   @GetMapping("/instances")
   public Result<List<WorkflowInstanceVO>> instances() {
