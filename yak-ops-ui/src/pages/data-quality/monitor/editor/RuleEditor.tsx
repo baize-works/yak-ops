@@ -11,13 +11,14 @@ import {
 } from 'antd';
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import type { CatalogColumn, ComparisonOperator, TemplateView } from '../../types';
+import { dataQualityTableClassName } from '../../components/tableStyle';
+import type {
+  CatalogColumn,
+  ComparisonOperator,
+  TemplateView,
+} from '../../types';
 import { EditorSection } from './EditorLayout';
-import {
-  OPERATORS,
-  ruleDefaults,
-  type EditorRule,
-} from './model';
+import { OPERATORS, ruleDefaults, type EditorRule } from './model';
 
 export const validateRules = (rules: EditorRule[]) => {
   if (!rules.length) throw new Error('至少添加一条质量规则');
@@ -185,21 +186,55 @@ export const QualityRuleEditor = ({
         <Table<TemplateView>
           rowKey="id"
           size="small"
+          bordered
           pagination={false}
           dataSource={templates}
           scroll={{ y: 440 }}
+          className={dataQualityTableClassName()}
           columns={[
-            { title: '模板名称', dataIndex: 'name', width: 180 },
-            { title: '质量维度', dataIndex: 'dimension', width: 100 },
             {
-              title: '范围',
+              title: '模板名称 / 编码',
+              dataIndex: 'name',
+              width: 220,
+              render: (_, template) => (
+                <div className="min-w-0 py-0.5">
+                  <div className="truncate font-medium text-[#172033]">
+                    {template.name}
+                  </div>
+                  <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
+                    {template.code}
+                  </div>
+                </div>
+              ),
+            },
+            {
+              title: '质量维度',
+              dataIndex: 'dimension',
+              width: 110,
+              render: (value) => (
+                <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
+                  {value}
+                </Tag>
+              ),
+            },
+            {
+              title: '关联范围',
               dataIndex: 'scope',
-              width: 90,
+              width: 100,
               render: (value) => (value === 'TABLE' ? '表级' : '字段级'),
             },
-            { title: '说明', dataIndex: 'description' },
+            {
+              title: '模板说明',
+              dataIndex: 'description',
+              render: (value) => (
+                <div className="line-clamp-2 leading-5 text-[#667085]">
+                  {value || '--'}
+                </div>
+              ),
+            },
             {
               title: '操作',
+              fixed: 'right',
               width: 80,
               render: (_, template) => (
                 <Button
