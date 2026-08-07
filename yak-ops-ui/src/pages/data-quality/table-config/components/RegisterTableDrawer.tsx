@@ -1,5 +1,15 @@
-import { Button, Drawer, Empty, Input, Pagination, Spin, Table } from 'antd';
+import {
+  Button,
+  Drawer,
+  Empty,
+  Input,
+  Pagination,
+  Spin,
+  Table,
+  Tag,
+} from 'antd';
 import { Database, Search, X } from 'lucide-react';
+import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { TableCandidateView } from '../../types';
 import { CANDIDATE_PAGE_SIZE, tableTargetKey } from '../model';
 
@@ -19,10 +29,7 @@ interface RegisterTableDrawerProps {
   onCandidateCurrentChange: (current: number) => void;
   onCandidateKeywordChange: (keyword: string) => void;
   onSelect: (record: TableCandidateView, selected: boolean) => void;
-  onSelectAll: (
-    selected: boolean,
-    changedRows: TableCandidateView[],
-  ) => void;
+  onSelectAll: (selected: boolean, changedRows: TableCandidateView[]) => void;
   onClear: () => void;
 }
 
@@ -95,9 +102,7 @@ const RegisterTableDrawer = ({
               数据实时来自当前数据源插件
             </div>
           </div>
-          <span className="text-xs text-[#8a8f99]">
-            共 {candidateTotal} 张
-          </span>
+          <span className="text-xs text-[#8a8f99]">共 {candidateTotal} 张</span>
         </div>
 
         <Input
@@ -115,9 +120,11 @@ const RegisterTableDrawer = ({
             <Table<TableCandidateView>
               rowKey={tableTargetKey}
               size="small"
+              bordered
               pagination={false}
               dataSource={candidates}
               scroll={{ y: 410 }}
+              className={dataQualityTableClassName()}
               rowSelection={{
                 preserveSelectedRowKeys: true,
                 selectedRowKeys: selectedCandidateKeys,
@@ -135,24 +142,21 @@ const RegisterTableDrawer = ({
               }}
               columns={[
                 {
-                  title: '表名/描述',
+                  title: '表名 / 描述 / 路径',
                   dataIndex: 'tableName',
                   render: (_, record) => (
-                    <div className="min-w-0">
-                      <div className="truncate font-medium text-[#161823]">
+                    <div className="min-w-0 py-1">
+                      <div className="truncate font-medium text-[#172033]">
                         {record.tableName}
                       </div>
-                      {record.remarks && (
-                        <div className="mt-0.5 truncate text-xs text-[#8a8f99]">
+                      {record.remarks ? (
+                        <div className="mt-1 truncate text-xs text-[#667085]">
                           {record.remarks}
                         </div>
-                      )}
-                      <div className="mt-0.5 truncate text-xs text-[#98a2b3]">
-                        {[
-                          record.databaseName,
-                          record.schemaName,
-                          record.tableName,
-                        ]
+                      ) : null}
+                      <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
+                        路径：
+                        {[record.databaseName, record.schemaName, record.tableName]
                           .filter(Boolean)
                           .join(' / ')}
                       </div>
@@ -160,17 +164,21 @@ const RegisterTableDrawer = ({
                   ),
                 },
                 {
-                  title: '类型',
+                  title: '表类型',
                   dataIndex: 'tableType',
-                  width: 90,
-                  render: (value) => value || '--',
+                  width: 100,
+                  render: (value) => (
+                    <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
+                      {value || 'TABLE'}
+                    </Tag>
+                  ),
                 },
               ]}
             />
           </Spin>
         </div>
 
-        {candidateTotal > 0 && (
+        {candidateTotal > 0 ? (
           <div className="mt-3 flex shrink-0 justify-end">
             <Pagination
               size="small"
@@ -181,7 +189,7 @@ const RegisterTableDrawer = ({
               onChange={onCandidateCurrentChange}
             />
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="flex min-w-0 flex-col bg-[#fafafa] p-4">
@@ -207,7 +215,7 @@ const RegisterTableDrawer = ({
               {selectedCandidateRecords.map((record) => (
                 <div
                   key={tableTargetKey(record)}
-                  className="flex items-start gap-2 border border-[#e4e7ec] bg-white px-3 py-2.5"
+                  className="flex items-start gap-2 rounded-lg border border-[#e4e7ec] bg-white px-3 py-2.5"
                 >
                   <Database
                     size={14}
@@ -218,11 +226,7 @@ const RegisterTableDrawer = ({
                       {record.tableName}
                     </div>
                     <div className="mt-0.5 truncate text-xs text-[#98a2b3]">
-                      {[
-                        record.databaseName,
-                        record.schemaName,
-                        record.tableName,
-                      ]
+                      {[record.databaseName, record.schemaName, record.tableName]
                         .filter(Boolean)
                         .join(' / ')}
                     </div>
