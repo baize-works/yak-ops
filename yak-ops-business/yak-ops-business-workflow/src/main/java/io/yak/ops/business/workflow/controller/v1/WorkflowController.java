@@ -29,11 +29,18 @@ public class WorkflowController {
     this.workflowRuntimeService = workflowRuntimeService;
   }
 
-  @Operation(summary = "运行工作流")
+  @Operation(summary = "创建工作流运行实例")
   @PostMapping("/run")
   public Result<WorkflowInstanceVO> run(
       @Valid @RequestBody WorkflowRunRequest request) {
     return Result.success(workflowRuntimeService.run(request));
+  }
+
+  @Operation(summary = "激活工作流运行实例")
+  @PostMapping("/instances/{executionId}/activate")
+  public Result<WorkflowInstanceVO> activate(
+      @PathVariable("executionId") String executionId) {
+    return Result.success(workflowRuntimeService.activate(executionId));
   }
 
   @Operation(summary = "查询工作流实例")

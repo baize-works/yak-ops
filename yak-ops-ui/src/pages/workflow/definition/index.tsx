@@ -1,4 +1,5 @@
 import {
+  activateWorkflowInstance,
   isWorkflowTerminal,
   runWorkflow,
   subscribeWorkflowEvents,
@@ -86,7 +87,7 @@ const NODE_TEMPLATES: NodeTemplate[] = [
 const statusLabel: Record<string, string> = {
   WAITING: '等待中',
   READY: '就绪',
-  SUBMITTED: '排队中',
+  SUBMITTED: '待执行',
   RUNNING: '运行中',
   SUCCESS: '成功',
   FAILED: '失败',
@@ -109,38 +110,73 @@ const statusIcon = (status?: string) => {
   return <CircleEllipsis size={13} className="text-[rgba(22,24,35,.42)]" />;
 };
 
-const nodeBorderClass = (status?: string, selected?: boolean) => {
-  if (status === 'RUNNING') return 'border-[#fe2c55] shadow-[0_0_0_2px_rgba(254,44,85,.08)]';
-  if (status === 'FAILED' || status === 'UPSTREAM_FAILED') return 'border-[#d92d20]';
-  if (status === 'SUCCESS') return 'border-[#b8bbc2]';
-  if (selected) return 'border-[#fe2c55]';
-  return 'border-[#dfe1e5]';
+const nodeStateClass = (status?: string, selected?: boolean) => {
+  if (status === 'RUNNING') {
+    return 'border-[#fe2c55] bg-[#fff7f8] shadow-[0_0_0_3px_rgba(254,44,85,.10)]';
+  }
+  if (status === 'FAILED' || status === 'UPSTREAM_FAILED') {
+    return 'border-[#d92d20] bg-[#fff6f4] shadow-[0_0_0_2px_rgba(217,45,32,.06)]';
+  }
+  if (status === 'SUCCESS') {
+    return 'border-[rgba(22,24,35,.45)] bg-[#f7f7f8]';
+  }
+  if (status === 'SUBMITTED' || status === 'READY') {
+    return 'border-[#aeb2ba] bg-[#fafafa]';
+  }
+  if (selected) return 'border-[#fe2c55] bg-white';
+  return 'border-[#dfe1e5] bg-white';
+};
+
+const statusTextClass = (status?: string) => {
+  if (status === 'RUNNING') return 'font-medium text-[#fe2c55]';
+  if (status === 'FAILED' || status === 'UPSTREAM_FAILED') {
+    return 'font-medium text-[#d92d20]';
+  }
+  if (status === 'SUCCESS') return 'font-medium text-[#161823]';
+  return 'text-[rgba(22,24,35,.52)]';
 };
 
 const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => (
   <div
     className={[
-      'relative min-w-[168px] rounded-lg border bg-white px-3 py-2.5 shadow-sm transition-all duration-200',
-      nodeBorderClass(data.executionStatus, selected),
+      'relative min-w-[174px] rounded-lg border px-3 py-2.5 shadow-sm transition-[border-color,background-color,box-shadow] duration-300',
+      nodeStateClass(data.executionStatus, selected),
     ].join(' ')}
   >
+    {data.executionStatus === 'RUNNING' ? (
+      <span className="pointer-events-none absolute -inset-[4px] -z-10 animate-pulse rounded-[11px] border border-[rgba(254,44,85,.18)]" />
+    ) : null}
+
     <Handle
       type="target"
       position={Position.Left}
       className="!h-2.5 !w-2.5 !border-2 !border-white !bg-[#8a8f99]"
     />
-    <div className="text-[11px] font-medium text-[rgba(22,24,35,.45)]">
-      {data.typeLabel}
+
+    <div className="flex items-center justify-between gap-3">
+      <div className="text-[11px] font-medium text-[rgba(22,24,35,.45)]">
+        {data.typeLabel}
+      </div>
+      {data.executionStatus ? (
+        <span className="flex items-center gap-1 text-[10px]">
+          {statusIcon(data.executionStatus)}
+          <span className={statusTextClass(data.executionStatus)}>
+            {statusLabel[data.executionStatus] || data.executionStatus}
+          </span>
+        </span>
+      ) : null}
     </div>
-    <div className="mt-1 text-[13px] font-semibold text-[#161823]">
+
+    <div className="mt-1.5 text-[13px] font-semibold text-[#161823]">
       {data.label}
     </div>
-    {data.executionStatus ? (
-      <div className="mt-2 flex items-center gap-1.5 border-t border-[#f0f0f1] pt-2 text-[11px] text-[rgba(22,24,35,.58)]">
-        {statusIcon(data.executionStatus)}
-        <span>{statusLabel[data.executionStatus] || data.executionStatus}</span>
+
+    {data.executionStatus === 'RUNNING' ? (
+      <div className="mt-2 h-[2px] overflow-hidden rounded-full bg-[rgba(254,44,85,.10)]">
+        <div className="h-full w-1/2 animate-pulse rounded-full bg-[#fe2c55]" />
       </div>
     ) : null}
+
     <Handle
       type="source"
       position={Position.Right}
@@ -170,9 +206,11 @@ const WorkflowDefinitionContent = () => {
 
   const applySnapshot = (snapshot: WorkflowInstance) => {
     setActiveInstance(snapshot);
+
     const statusByNodeId = new Map(
       snapshot.nodes.map((node) => [node.id, node.status]),
     );
+
     setNodes((current) => current.map((node) => ({
       ...node,
       data: {
@@ -180,6 +218,47 @@ const WorkflowDefinitionContent = () => {
         executionStatus: statusByNodeId.get(node.id) ?? node.data.executionStatus,
       },
     })));
+
+    setEdges((current) => current.map((edge) => {
+      const sourceStatus = statusByNodeId.get(edge.source);
+      const targetStatus = statusByNodeId.get(edge.target);
+      const targetRunning = targetStatus === 'RUNNING';
+      const failedPath =
+        sourceStatus === 'FAILED' ||
+        sourceStatus === 'UPSTREAM_FAILED' ||
+        targetStatus === 'FAILED' ||
+        targetStatus === 'UPSTREAM_FAILED';
+      const completedPath =
+        sourceStatus === 'SUCCESS' && targetStatus === 'SUCCESS';
+      const readyPath = sourceStatus === 'SUCCESS';
+
+      let stroke = '#d9dce1';
+      let strokeWidth = 1.4;
+      if (failedPath) {
+        stroke = '#d92d20';
+        strokeWidth = 1.8;
+      } else if (targetRunning) {
+        stroke = '#fe2c55';
+        strokeWidth = 2.2;
+      } else if (completedPath) {
+        stroke = '#555b66';
+        strokeWidth = 1.8;
+      } else if (readyPath) {
+        stroke = '#8a8f99';
+        strokeWidth = 1.7;
+      }
+
+      return {
+        ...edge,
+        animated: targetRunning,
+        style: {
+          ...edge.style,
+          stroke,
+          strokeWidth,
+          transition: 'stroke 240ms ease, stroke-width 240ms ease',
+        },
+      };
+    }));
   };
 
   const handleConnect = (connection: Connection) => {
@@ -188,6 +267,7 @@ const WorkflowDefinitionContent = () => {
         {
           ...connection,
           type: 'smoothstep',
+          style: { stroke: '#d9dce1', strokeWidth: 1.4 },
         },
         current,
       ),
@@ -210,7 +290,7 @@ const WorkflowDefinitionContent = () => {
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    if (!reactFlowInstance || !wrapperRef.current) return;
+    if (workflowRunning || !reactFlowInstance || !wrapperRef.current) return;
 
     const raw = event.dataTransfer.getData('application/yak-workflow-node');
     if (!raw) return;
@@ -221,7 +301,8 @@ const WorkflowDefinitionContent = () => {
       x: event.clientX - bounds.left,
       y: event.clientY - bounds.top,
     });
-    const id = `${template.type.toLowerCase()}-${Date.now()}-${sequenceRef.current++}`;
+    const sequence = sequenceRef.current++;
+    const id = `${template.type.toLowerCase()}-${Date.now()}-${sequence}`;
 
     setNodes((current) => [
       ...current,
@@ -230,12 +311,28 @@ const WorkflowDefinitionContent = () => {
         type: 'workflow',
         position,
         data: {
-          label: `${template.label} ${sequenceRef.current - 1}`,
+          label: `${template.label} ${sequence}`,
           nodeType: template.type,
           typeLabel: template.label,
         },
       },
     ]);
+  };
+
+  const resetExecutionVisuals = () => {
+    setNodes((current) => current.map((node) => ({
+      ...node,
+      data: { ...node.data, executionStatus: 'WAITING' },
+    })));
+    setEdges((current) => current.map((edge) => ({
+      ...edge,
+      animated: false,
+      style: {
+        ...edge.style,
+        stroke: '#d9dce1',
+        strokeWidth: 1.4,
+      },
+    })));
   };
 
   const handleRun = async () => {
@@ -247,13 +344,11 @@ const WorkflowDefinitionContent = () => {
     closeStreamRef.current?.();
     closeStreamRef.current = null;
     setActiveInstance(undefined);
-    setNodes((current) => current.map((node) => ({
-      ...node,
-      data: { ...node.data, executionStatus: 'WAITING' },
-    })));
+    resetExecutionVisuals();
     setSubmitting(true);
 
     try {
+      // 第一步只创建执行实例，不立即消费首批节点。
       const instance = await runWorkflow({
         name: workflowName.trim() || '未命名工作流',
         nodes: nodes.map((node) => ({
@@ -269,9 +364,16 @@ const WorkflowDefinitionContent = () => {
       });
 
       applySnapshot(instance);
+
+      // 第二步先监听，再激活。这样第一个节点 RUNNING 也不会被错过。
       closeStreamRef.current = subscribeWorkflowEvents(instance.id, applySnapshot);
-      message.success('工作流已启动，节点状态将实时更新');
+      const activated = await activateWorkflowInstance(instance.id);
+      applySnapshot(activated);
+
+      message.success('工作流已启动，将按节点实时展示执行状态');
     } catch (error) {
+      closeStreamRef.current?.();
+      closeStreamRef.current = null;
       message.error(error instanceof Error ? error.message : '工作流运行失败');
     } finally {
       setSubmitting(false);
@@ -285,6 +387,25 @@ const WorkflowDefinitionContent = () => {
     setNodes([]);
     setEdges([]);
   };
+
+  const executionCounts = useMemo(() => {
+    const result = {
+      running: 0,
+      success: 0,
+      failed: 0,
+      waiting: 0,
+    };
+    activeInstance?.nodes.forEach((node) => {
+      if (node.status === 'RUNNING') result.running += 1;
+      else if (node.status === 'SUCCESS') result.success += 1;
+      else if (node.status === 'FAILED' || node.status === 'UPSTREAM_FAILED') {
+        result.failed += 1;
+      } else {
+        result.waiting += 1;
+      }
+    });
+    return result;
+  }, [activeInstance]);
 
   return (
     <div className="flex h-[calc(100vh-48px)] min-h-[620px] overflow-hidden bg-white">
@@ -302,7 +423,12 @@ const WorkflowDefinitionContent = () => {
               key={template.type}
               draggable={!workflowRunning}
               onDragStart={(event) => handleDragStart(event, template)}
-              className="cursor-grab rounded-lg border border-[#e3e5e8] bg-white px-3 py-2.5 transition-shadow hover:shadow-sm active:cursor-grabbing"
+              className={[
+                'rounded-lg border border-[#e3e5e8] bg-white px-3 py-2.5 transition-shadow',
+                workflowRunning
+                  ? 'cursor-not-allowed opacity-60'
+                  : 'cursor-grab hover:shadow-sm active:cursor-grabbing',
+              ].join(' ')}
             >
               <div className="flex items-center gap-2 text-[13px] font-semibold text-[#161823]">
                 <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[#f4f4f5] text-[rgba(22,24,35,.66)]">
@@ -333,15 +459,32 @@ const WorkflowDefinitionContent = () => {
             <span className="text-xs text-[rgba(22,24,35,.4)]">
               {nodes.length} 节点 · {edges.length} 连线
             </span>
+
             {activeInstance ? (
-              <span className="flex items-center gap-1.5 text-xs text-[rgba(22,24,35,.58)]">
-                {workflowRunning ? (
-                  <LoaderCircle size={13} className="animate-spin text-[#fe2c55]" />
-                ) : (
-                  statusIcon(activeInstance.status)
-                )}
-                实时 · {statusLabel[activeInstance.status] || activeInstance.status}
-              </span>
+              <div className="flex items-center gap-3 border-l border-[#ececef] pl-3 text-[11px]">
+                <span className="flex items-center gap-1.5 text-[#fe2c55]">
+                  {workflowRunning ? (
+                    <LoaderCircle size={12} className="animate-spin" />
+                  ) : (
+                    statusIcon(activeInstance.status)
+                  )}
+                  {statusLabel[activeInstance.status] || activeInstance.status}
+                </span>
+                <span className="text-[rgba(22,24,35,.48)]">
+                  运行 {executionCounts.running}
+                </span>
+                <span className="text-[rgba(22,24,35,.48)]">
+                  成功 {executionCounts.success}
+                </span>
+                {executionCounts.failed > 0 ? (
+                  <span className="text-[#d92d20]">
+                    失败 {executionCounts.failed}
+                  </span>
+                ) : null}
+                <span className="text-[rgba(22,24,35,.38)]">
+                  等待 {executionCounts.waiting}
+                </span>
+              </div>
             ) : null}
           </div>
 
@@ -387,7 +530,10 @@ const WorkflowDefinitionContent = () => {
             elementsSelectable={!workflowRunning}
             fitView
             deleteKeyCode={workflowRunning ? null : ['Backspace', 'Delete']}
-            defaultEdgeOptions={{ type: 'smoothstep' }}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              style: { stroke: '#d9dce1', strokeWidth: 1.4 },
+            }}
           >
             <Background gap={18} size={1} />
             <Controls position="bottom-right" />

@@ -21,10 +21,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -46,8 +48,10 @@ public class WorkflowRuntimeService {
   private final DefaultWorkflowEngine engine;
   private final WorkflowEventStreamService eventStreamService;
   private final LongSupplier delayMillisSupplier;
-  private final ConcurrentLinkedQueue<NodeDispatch> pendingDispatches =
-      new ConcurrentLinkedQueue<>();
+  private final ConcurrentMap<String, ConcurrentLinkedQueue<NodeDispatch>> pendingDispatches =
+      new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Object> publishLocks = new ConcurrentHashMap<>();
+  private final Set<String> activeExecutions = ConcurrentHashMap.newKeySet();
   private final Map<String, RunMetadata> metadata = new ConcurrentHashMap<>();
   private final ConcurrentLinkedDeque<String> executionOrder = new ConcurrentLinkedDeque<>();
 
@@ -72,7 +76,7 @@ public class WorkflowRuntimeService {
           thread.setDaemon(true);
           return thread;
         });
-    this.engine = DefaultWorkflowEngine.inMemory(pendingDispatches::add);
+    this.engine = DefaultWorkflowEngine.inMemory(this::enqueueDispatch);
   }
 
   public WorkflowInstanceVO run(WorkflowRunRequest request) {
@@ -101,16 +105,19 @@ public class WorkflowRuntimeService {
     executionOrder.addFirst(execution.id());
 
     WorkflowInstanceVO started = toView(execution, runMetadata);
-    eventStreamService.publish(started);
     log.info(
-        "[workflow] started execution={}, definition={}, name={}, nodes={}, edges={}",
+        "[workflow] prepared execution={}, definition={}, name={}, nodes={}, edges={}",
         execution.id(),
         definitionId,
         request.name(),
         request.nodes().size(),
         request.edges().size());
-    drainDispatches();
     return started;
+  }
+
+  public WorkflowInstanceVO activate(String executionId) {
+    activateExecution(executionId);
+    return getInstance(executionId);
   }
 
   public List<WorkflowInstanceVO> listInstances() {
@@ -140,9 +147,20 @@ public class WorkflowRuntimeService {
   public SseEmitter subscribe(String executionId) {
     WorkflowInstanceVO snapshot = getInstance(executionId);
     SseEmitter emitter = eventStreamService.subscribe(executionId, snapshot);
-    // 再推一次最新快照，覆盖“读取快照”和“注册订阅者”之间可能发生的状态变化。
-    eventStreamService.publish(getInstance(executionId));
+
+    // 先把 SSE 客户端挂上，再真正启动首批节点，避免前端错过 RUNNING 状态。
+    activateExecution(executionId);
+    publishCurrent(executionId);
     return emitter;
+  }
+
+  void activateExecution(String executionId) {
+    // 先校验实例存在，避免把不存在的 executionId 放进 active 集合。
+    getInstance(executionId);
+    if (activeExecutions.add(executionId)) {
+      log.info("[workflow] activated execution={}", executionId);
+    }
+    drainDispatches(executionId);
   }
 
   private NodeDefinition toNodeDefinition(NodeRequest node) {
@@ -167,12 +185,30 @@ public class WorkflowRuntimeService {
     return Map.copyOf(result);
   }
 
-  private void drainDispatches() {
+  private void enqueueDispatch(NodeDispatch dispatch) {
+    pendingDispatches
+        .computeIfAbsent(
+            dispatch.workflowExecutionId(),
+            ignored -> new ConcurrentLinkedQueue<>())
+        .offer(dispatch);
+
+    if (activeExecutions.contains(dispatch.workflowExecutionId())) {
+      drainDispatches(dispatch.workflowExecutionId());
+    }
+  }
+
+  private void drainDispatches(String executionId) {
+    ConcurrentLinkedQueue<NodeDispatch> queue = pendingDispatches.get(executionId);
+    if (queue == null) {
+      return;
+    }
+
     NodeDispatch dispatch;
-    while ((dispatch = pendingDispatches.poll()) != null) {
+    while ((dispatch = queue.poll()) != null) {
       NodeDispatch current = dispatch;
       workerPool.execute(() -> executeNode(current));
     }
+    // 空队列保留到工作流终态再清理，避免并发 enqueue 与 remove 导致 dispatch 丢失。
   }
 
   private void executeNode(NodeDispatch dispatch) {
@@ -214,7 +250,7 @@ public class WorkflowRuntimeService {
           exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage(),
           exception);
     } finally {
-      drainDispatches();
+      drainDispatches(dispatch.workflowExecutionId());
     }
   }
 
@@ -244,13 +280,30 @@ public class WorkflowRuntimeService {
   }
 
   private void publishCurrent(String executionId) {
-    RunMetadata runMetadata = metadata.get(executionId);
-    if (runMetadata == null) {
-      return;
+    Object publishLock = publishLocks.computeIfAbsent(executionId, ignored -> new Object());
+    synchronized (publishLock) {
+      RunMetadata runMetadata = metadata.get(executionId);
+      if (runMetadata == null) {
+        return;
+      }
+      engine.findExecution(executionId)
+          .map(execution -> toView(execution, runMetadata))
+          .ifPresent(snapshot -> {
+            eventStreamService.publish(snapshot);
+            if (isTerminal(snapshot.status())) {
+              activeExecutions.remove(executionId);
+              pendingDispatches.remove(executionId);
+              publishLocks.remove(executionId, publishLock);
+            }
+          });
     }
-    engine.findExecution(executionId)
-        .map(execution -> toView(execution, runMetadata))
-        .ifPresent(eventStreamService::publish);
+  }
+
+  private boolean isTerminal(String status) {
+    return "SUCCESS".equals(status)
+        || "FAILED".equals(status)
+        || "WARNING".equals(status)
+        || "CANCELED".equals(status);
   }
 
   private WorkflowInstanceVO toView(WorkflowExecution execution, RunMetadata runMetadata) {
