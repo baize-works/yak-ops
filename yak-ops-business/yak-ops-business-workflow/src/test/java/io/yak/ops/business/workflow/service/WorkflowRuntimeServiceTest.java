@@ -13,7 +13,9 @@ import org.junit.jupiter.api.Test;
 
 class WorkflowRuntimeServiceTest {
 
-  private final WorkflowRuntimeService service = new WorkflowRuntimeService();
+  private final WorkflowRuntimeService service = new WorkflowRuntimeService(
+      new WorkflowEventStreamService(),
+      () -> 5L);
 
   @AfterEach
   void tearDown() {
