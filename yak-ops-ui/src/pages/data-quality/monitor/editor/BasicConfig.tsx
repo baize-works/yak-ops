@@ -14,7 +14,7 @@ export const BasicConfig = ({
   <EditorSection
     id="basic-config"
     title="基本配置"
-    description="配置质量监控的基本信息、监控对象和数据范围。"
+    description=""
   >
     <div className="space-y-5">
       <EditorField label="监控名称" required>

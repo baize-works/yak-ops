@@ -27,9 +27,9 @@ export const EditorSection = ({
         <h2 className="m-0 text-[17px] font-semibold leading-6 text-[#161823]">
           {title}
         </h2>
-        {description ? (
+        {/* {description ? (
           <div className="mt-1 text-xs leading-5 text-[#8a8f99]">{description}</div>
-        ) : null}
+        ) : null} */}
       </div>
       {extra}
     </header>
