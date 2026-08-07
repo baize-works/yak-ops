@@ -7,6 +7,9 @@ export type RuleType =
   | 'COLUMN_ENUM'
   | 'CUSTOM_SQL';
 export type ComparisonOperator = 'GT' | 'GTE' | 'EQ' | 'LTE' | 'LT' | 'BETWEEN';
+export type TemplateSource = 'SYSTEM' | 'CUSTOM';
+export type CustomCheckType = 'NUMERIC';
+export type CustomCheckMethod = 'FIXED_VALUE';
 export type ExecutionStatus = 'WAITING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
 export type CheckResult = 'PASSED' | 'NOT_PASSED' | 'ERROR' | 'RUNNING' | 'NOT_RUN';
 export type TriggerType = 'MANUAL' | 'SCHEDULE';
@@ -37,11 +40,63 @@ export interface TemplateView {
   enabled: boolean;
   ruleCount: number;
   sortOrder: number;
+  folderId?: number;
+  folderName?: string;
+  templateSql?: string;
+  setFlag?: string;
+  checkType?: CustomCheckType;
+  checkMethod?: CustomCheckMethod;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  source?: TemplateSource;
+}
+
+export interface TemplateSummary {
+  total: number;
+  systemTotal: number;
+  customTotal: number;
+  dimensions: Record<string, number>;
 }
 
 export interface TemplateListView {
   records: TemplateView[];
-  summary: { total: number; dimensions: Record<string, number> };
+  summary: TemplateSummary;
+}
+
+export interface TemplateFolderView {
+  id: number;
+  parentId?: number;
+  name: string;
+  sortOrder: number;
+  templateCount: number;
+  childCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SaveTemplateFolderPayload {
+  name: string;
+  parentId?: number;
+}
+
+export interface SaveCustomTemplatePayload {
+  name: string;
+  description?: string;
+  dimension: string;
+  folderId?: number;
+  setFlag?: string;
+  checkType: CustomCheckType;
+  checkMethod: CustomCheckMethod;
+  customSql: string;
+  defaultOperator: ComparisonOperator;
+  defaultThreshold: number;
+  defaultThresholdEnd?: number;
+}
+
+export interface CopyCustomTemplatePayload {
+  name: string;
+  folderId?: number;
 }
 
 export interface SaveRulePayload {
