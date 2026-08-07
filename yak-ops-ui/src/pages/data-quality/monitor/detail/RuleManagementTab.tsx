@@ -463,7 +463,7 @@ const RuleManagementTab = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0f3] py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 py-3">
           <Segmented<RuleStatusFilter>
             value={statusFilter}
             options={[
