@@ -5,7 +5,7 @@ import {
 
 export type NavigationIconKey =
   | 'home' | 'database' | 'sync' | 'realtime' | 'client' | 'connector'
-  | 'instance' | 'quality' | 'report' | 'monitor' | 'alarm'
+  | 'workflow' | 'project' | 'instance' | 'quality' | 'report' | 'monitor' | 'alarm'
   | 'knowledge' | 'api' | 'insight' | 'system';
 export type NavigationSectionKey = 'task' | 'management' | 'system';
 
@@ -27,6 +27,7 @@ export interface NavigationGroupWithRoutes extends NavigationGroup {
 
 export const navigationGroups: readonly NavigationGroup[] = [
   { id: 'integration', title: '数据集成', iconKey: 'sync', section: 'task', order: 10 },
+  { id: 'workflow', title: '工作流', iconKey: 'workflow', section: 'task', order: 20 },
   { id: 'resources', title: '资源管理', iconKey: 'database', section: 'management', order: 20 },
   { id: 'data-quality', title: '数据质量', iconKey: 'quality', section: 'management', order: 30 },
   { id: 'system', title: '系统管理', iconKey: 'system', section: 'system', order: 40 },
@@ -45,6 +46,8 @@ export const appRoutes: readonly NavigationRoute[] = [
   { id: 'batch-link-up-single', path: '/sync/batch-link-up/:id/config/single', title: '单表同步配置', component: './batch-link-up/config/single', hidden: true, parentId: 'batch-link-up' },
   { id: 'batch-link-up-multi', path: '/sync/batch-link-up/:id/config/multi', title: '多表同步配置', component: './batch-link-up/config/multi', hidden: true, parentId: 'batch-link-up' },
   { id: 'batch-link-up-script', path: '/sync/batch-link-up/:id/config/script', title: '脚本同步配置', component: './batch-link-up/config/script', hidden: true, parentId: 'batch-link-up' },
+  { id: 'workflow-definition', mode: 'public', path: '/workflow/definition', title: '工作流定义', component: './workflow/definition', iconKey: 'workflow', menuGroup: 'workflow', order: 10 },
+  { id: 'workflow-instances', mode: 'public', path: '/workflow/instances', title: '工作流实例', component: './workflow/instances', iconKey: 'instance', menuGroup: 'workflow', order: 20 },
   { id: 'resource-management', mode: 'one', permission: 'resource:view', path: '/resource-management', title: '文件资源', component: './resource-management', iconKey: 'database', menuGroup: 'resources', order: 10 },
   { id: 'data-quality-table-config', mode: 'one', permission: 'quality:monitor:read', path: '/data-quality/table-config', title: '数据表监控', component: './data-quality/table-config', iconKey: 'quality', menuGroup: 'data-quality', order: 10 },
   { id: 'data-quality-monitor-create', path: '/data-quality/monitor/create', title: '新增监控', component: './data-quality/monitor/editor', hidden: true, parentId: 'data-quality-table-config' },
