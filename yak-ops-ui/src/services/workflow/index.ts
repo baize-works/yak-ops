@@ -60,6 +60,14 @@ export const runWorkflow = async (payload: WorkflowRunPayload) => {
   return response.data;
 };
 
+export const activateWorkflowInstance = async (executionId: string) => {
+  const response = await request<ApiResponse<WorkflowInstance>>(
+    `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/activate`,
+    { method: 'POST' },
+  );
+  return response.data;
+};
+
 export const getWorkflowInstances = async () => {
   const response = await request<ApiResponse<WorkflowInstance[]>>(
     '/api/v1/workflows/instances',
@@ -74,26 +82,79 @@ export const getWorkflowInstance = async (executionId: string) => {
   return response.data;
 };
 
+const snapshotSignature = (instance: WorkflowInstance) =>
+  [
+    instance.status,
+    ...instance.nodes.map((node) => `${node.id}:${node.status}:${node.errorMessage || ''}`),
+  ].join('|');
+
+/**
+ * SSE 为主，短周期查询作为兜底。
+ *
+ * 原生 EventSource 无法复用 Umi request 的请求拦截器/自定义 Header，
+ * 因此保留 authenticated request 轮询，可避免 SSE 被代理或认证链路阻断时
+ * 画布只能看到最终状态。
+ */
 export const subscribeWorkflowEvents = (
   executionId: string,
   onSnapshot: (instance: WorkflowInstance) => void,
 ) => {
+  let closed = false;
+  let lastSignature = '';
+  let polling = false;
+
+  const deliver = (snapshot: WorkflowInstance) => {
+    if (closed) return;
+    const signature = snapshotSignature(snapshot);
+    if (signature === lastSignature) return;
+    lastSignature = signature;
+    onSnapshot(snapshot);
+    if (isWorkflowTerminal(snapshot.status)) {
+      cleanup();
+    }
+  };
+
   const source = new EventSource(
     `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/events`,
   );
 
   const handleWorkflowEvent = (event: Event) => {
-    const snapshot = JSON.parse((event as MessageEvent<string>).data) as WorkflowInstance;
-    onSnapshot(snapshot);
-    if (isWorkflowTerminal(snapshot.status)) {
-      source.close();
+    try {
+      const snapshot = JSON.parse(
+        (event as MessageEvent<string>).data,
+      ) as WorkflowInstance;
+      deliver(snapshot);
+    } catch {
+      // 单次异常事件不关闭连接，继续等待后续快照。
     }
   };
 
   source.addEventListener('workflow', handleWorkflowEvent);
 
-  return () => {
+  const poll = async () => {
+    if (closed || polling) return;
+    polling = true;
+    try {
+      deliver(await getWorkflowInstance(executionId));
+    } catch {
+      // SSE 正常时无需把兜底查询异常暴露给页面。
+    } finally {
+      polling = false;
+    }
+  };
+
+  const timer = window.setInterval(() => {
+    void poll();
+  }, 500);
+
+  function cleanup() {
+    if (closed) return;
+    closed = true;
+    window.clearInterval(timer);
     source.removeEventListener('workflow', handleWorkflowEvent);
     source.close();
-  };
+  }
+
+  void poll();
+  return cleanup;
 };
