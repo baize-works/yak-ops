@@ -1,10 +1,13 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/services/http/response';
 
+export type WorkflowMockResult = 'SUCCESS' | 'FAILED';
+
 export interface WorkflowNodePayload {
   id: string;
   name: string;
   type: string;
+  mockResult?: WorkflowMockResult;
 }
 
 export interface WorkflowEdgePayload {
