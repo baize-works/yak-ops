@@ -1,5 +1,6 @@
-import { Drawer, Pagination, Table, Tag } from 'antd';
+import { Drawer, Empty, Pagination, Table, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
+import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { OperationLogItem, OperationLogPageView } from '../../types';
 import { ACTION_TYPE_LABEL } from './model';
 
@@ -19,19 +20,37 @@ const OperationLogDrawer = ({
   onPageChange,
 }: OperationLogDrawerProps) => {
   const columns: TableColumnsType<OperationLogItem> = [
-    { title: '操作人', dataIndex: 'operator', width: 130 },
-    { title: '操作时间', dataIndex: 'operationTime', width: 190 },
     {
-      title: '类型',
+      title: '操作人 / 时间',
+      width: 210,
+      render: (_, record) => (
+        <div className="space-y-1 py-0.5">
+          <div className="font-medium text-[#172033]">{record.operator}</div>
+          <div className="text-[11px] text-[#98a2b3]">
+            {record.operationTime}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: '操作类型',
       dataIndex: 'actionType',
-      width: 100,
+      width: 120,
       render: (value) => (
         <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#43506a]">
           {ACTION_TYPE_LABEL[value] || value}
         </Tag>
       ),
     },
-    { title: '操作内容', dataIndex: 'content' },
+    {
+      title: '操作内容',
+      dataIndex: 'content',
+      render: (value) => (
+        <div className="whitespace-pre-wrap leading-5 text-[#475467]">
+          {value}
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -57,12 +76,21 @@ const OperationLogDrawer = ({
       <Table<OperationLogItem>
         rowKey="id"
         size="small"
+        bordered
         loading={loading}
         pagination={false}
-        scroll={{ x: 760 }}
+        scroll={{ x: 700 }}
+        className={dataQualityTableClassName()}
         dataSource={data.records}
         columns={columns}
-        locale={{ emptyText: '暂无操作日志' }}
+        locale={{
+          emptyText: (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="暂无操作日志"
+            />
+          ),
+        }}
       />
     </Drawer>
   );
