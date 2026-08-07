@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @ConditionalOnQualityEnabled
 @RestControllerAdvice(assignableTypes = {
     QualityTemplateController.class,
+    CustomTemplateController.class,
     QualityMonitorController.class,
     QualityExecutionController.class
 })
@@ -22,6 +23,8 @@ public class QualityExceptionHandler {
     String message = exception.getMessage();
     HttpStatus status = message != null
             && (message.startsWith("规则模板不存在")
+                || message.startsWith("自定义规则模板不存在")
+                || message.startsWith("规则模板目录不存在")
                 || message.startsWith("质量监控不存在")
                 || message.startsWith("质量执行记录不存在"))
         ? HttpStatus.NOT_FOUND

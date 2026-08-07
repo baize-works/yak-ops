@@ -63,9 +63,33 @@ export const OPERATORS: Array<{ value: ComparisonOperator; label: string }> = [
   { value: 'BETWEEN', label: '区间' },
 ];
 
+interface ParameterDefaults {
+  defaultOperator?: ComparisonOperator;
+  defaultThreshold?: number;
+  defaultThresholdEnd?: number;
+  defaultSql?: string;
+}
+
+const parseDefaults = (value?: string): ParameterDefaults => {
+  if (!value) return {};
+  try {
+    return JSON.parse(value) as ParameterDefaults;
+  } catch {
+    return {};
+  }
+};
+
 export const ruleDefaults = (template: TemplateView): EditorRule => {
+  const schema = parseDefaults(template.parameterSchema);
   const percentRule =
-    template.ruleType === 'COLUMN_NOT_NULL' || template.ruleType === 'COLUMN_UNIQUE';
+    template.ruleType === 'COLUMN_NOT_NULL'
+    || template.ruleType === 'COLUMN_UNIQUE';
+  const fallbackOperator: ComparisonOperator =
+    template.ruleType === 'TABLE_ROW_COUNT'
+      ? 'GT'
+      : percentRule
+        ? 'GTE'
+        : 'EQ';
   return {
     key: `${template.id}-${Date.now()}-${Math.random()}`,
     templateId: template.id,
@@ -74,12 +98,15 @@ export const ruleDefaults = (template: TemplateView): EditorRule => {
     ruleType: template.ruleType,
     scope: template.scope,
     dimension: template.dimension,
-    operator: template.ruleType === 'TABLE_ROW_COUNT' ? 'GT' : percentRule ? 'GTE' : 'EQ',
-    threshold: percentRule ? 100 : 0,
+    operator: schema.defaultOperator || fallbackOperator,
+    threshold: schema.defaultThreshold ?? (percentRule ? 100 : 0),
+    thresholdEnd: schema.defaultThresholdEnd,
     enumValues: [],
     customSql:
       template.ruleType === 'CUSTOM_SQL'
-        ? 'SELECT COUNT(*) AS metric_value FROM ${table} WHERE ${where}'
+        ? template.templateSql
+          || schema.defaultSql
+          || 'SELECT COUNT(*) AS metric_value FROM ${table} WHERE ${where}'
         : undefined,
     enabled: true,
   };
@@ -103,7 +130,9 @@ export const monitorRules = (monitor: MonitorView): EditorRule[] =>
     enabled: rule.enabled,
   }));
 
-export const runtimeFromSettings = (settings: MonitorSettingsView): RuntimeFormState => ({
+export const runtimeFromSettings = (
+  settings: MonitorSettingsView,
+): RuntimeFormState => ({
   runMode: settings.runMode || 'MANUAL',
   scheduleFrequency: settings.scheduleFrequency || 'DAILY',
   scheduleTime: settings.scheduleTime || '09:00',
@@ -111,7 +140,9 @@ export const runtimeFromSettings = (settings: MonitorSettingsView): RuntimeFormS
   cronExpression: settings.cronExpression || '0 0 9 * * *',
 });
 
-export const strategyFromSettings = (settings: MonitorSettingsView): IssueStrategyState => ({
+export const strategyFromSettings = (
+  settings: MonitorSettingsView,
+): IssueStrategyState => ({
   ruleFailureAction: settings.ruleFailureAction || 'CONTINUE',
   notifyEnabled: Boolean(settings.notifyEnabled),
   notifyChannel: settings.notifyChannel || 'MESSAGE',
@@ -150,17 +181,23 @@ export const validateEditorSettings = (
   strategy: IssueStrategyState,
 ) => {
   if (runtime.runMode === 'SCHEDULE') {
-    if (runtime.scheduleFrequency === 'CRON' && !runtime.cronExpression.trim()) {
+    if (
+      runtime.scheduleFrequency === 'CRON'
+      && !runtime.cronExpression.trim()
+    ) {
       throw new Error('请输入 Cron 表达式');
     }
-    if (runtime.scheduleFrequency !== 'CRON' && !runtime.scheduleTime) {
+    if (
+      runtime.scheduleFrequency !== 'CRON'
+      && !runtime.scheduleTime
+    ) {
       throw new Error('请选择执行时间');
     }
   }
   if (
-    strategy.notifyEnabled &&
-    strategy.notifyChannel !== 'MESSAGE' &&
-    !strategy.notifyTarget.trim()
+    strategy.notifyEnabled
+    && strategy.notifyChannel !== 'MESSAGE'
+    && !strategy.notifyTarget.trim()
   ) {
     throw new Error(
       strategy.notifyChannel === 'EMAIL'
