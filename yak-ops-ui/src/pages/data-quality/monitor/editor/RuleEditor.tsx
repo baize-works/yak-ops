@@ -5,22 +5,25 @@ import {
   Input,
   InputNumber,
   Modal,
+  Segmented,
   Select,
   Switch,
   Table,
-  Tabs,
   Tag,
+  Tree,
   message,
 } from 'antd';
-import type { TableColumnsType } from 'antd';
+import type { TableColumnsType, TreeDataNode, TreeProps } from 'antd';
 import {
   ChevronDown,
   ChevronRight,
   FileText,
+  Folder,
   Plus,
   Search,
   Trash2,
 } from 'lucide-react';
+import type { Key } from 'react';
 import { useMemo, useState } from 'react';
 
 import { dataQualityTableClassName } from '../../components/tableStyle';
@@ -89,12 +92,10 @@ export const QualityRuleEditor = ({
   const [templateTab, setTemplateTab] = useState<TemplateTabKey>('SYSTEM');
   const [templateKeyword, setTemplateKeyword] = useState('');
   const [draftRules, setDraftRules] = useState<EditorRule[]>([]);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [expandedTemplateKeys, setExpandedTemplateKeys] = useState<Key[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<string>();
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
   const editingRule = useMemo(
     () => rules.find((rule) => rule.key === editingKey),
@@ -161,6 +162,83 @@ export const QualityRuleEditor = ({
     });
     return counts;
   }, [draftRules]);
+
+  const templateTreeData = useMemo<TreeDataNode[]>(
+    () =>
+      templateGroups.map((group) => ({
+        key: `group:${group.key}`,
+        selectable: false,
+        title: (
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <Folder
+              size={14}
+              strokeWidth={1.6}
+              className="shrink-0 fill-[#dce8ff] text-[#b8cef8]"
+            />
+            <span className="min-w-0 truncate text-[12px] text-[#30323b]">
+              {group.label}
+            </span>
+            <span className="shrink-0 text-[11px] text-[#8a8f99]">
+              ({group.templates.length})
+            </span>
+          </div>
+        ),
+        children: group.templates.map((template) => {
+          const selectedCount = selectedTemplateCounts.get(template.id) || 0;
+
+          return {
+            key: `template:${template.id}`,
+            isLeaf: true,
+            title: (
+              <div className="group flex min-w-0 flex-1 items-center gap-2">
+                <FileText
+                  size={13}
+                  strokeWidth={1.7}
+                  className="shrink-0 text-[#aeb4be] transition-colors group-hover:text-[var(--yak-brand-color)]"
+                />
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12px] leading-5 text-[#30323b]">
+                    {template.name}
+                  </span>
+                  {template.code ? (
+                    <span className="block truncate text-[10px] leading-4 text-[#a1a5ad]">
+                      {template.code}
+                    </span>
+                  ) : null}
+                </span>
+
+                {selectedCount ? (
+                  <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(254,44,85,.08)] px-1.5 text-[10px] font-medium text-[var(--yak-brand-color)]">
+                    {selectedCount}
+                  </span>
+                ) : (
+                  <Plus
+                    size={12}
+                    className="shrink-0 text-[#b0b4bb] opacity-0 transition-opacity group-hover:opacity-100"
+                  />
+                )}
+              </div>
+            ),
+          };
+        }),
+      })),
+    [selectedTemplateCounts, templateGroups],
+  );
+
+  const visibleExpandedTemplateKeys = useMemo<Key[]>(() => {
+    if (!templateKeyword.trim()) return expandedTemplateKeys;
+    return templateGroups.map((group) => `group:${group.key}`);
+  }, [expandedTemplateKeys, templateGroups, templateKeyword]);
+
+  const handleTemplateTreeSelect: TreeProps['onSelect'] = (_, info) => {
+    const nodeKey = String(info.node.key);
+    if (!nodeKey.startsWith('template:')) return;
+
+    const templateId = Number(nodeKey.slice('template:'.length));
+    const template = templateMap.get(templateId);
+    if (template) addTemplate(template);
+  };
 
   const updateRule = (key: string, values: Partial<EditorRule>) => {
     onChange(
@@ -544,110 +622,84 @@ export const QualityRuleEditor = ({
         }
       >
         <div className="flex h-full min-h-0 bg-white">
-          <aside className="flex w-[320px] shrink-0 flex-col border-r border-[#e8e9ec] bg-[#fbfbfc]">
-            <div className="shrink-0 px-4 pt-4">
-              <div className="mb-2 text-[13px] font-semibold text-[#161823]">
-                规则模板库
-              </div>
-              <Input
-                allowClear
-                variant="filled"
-                value={templateKeyword}
-                prefix={<Search size={14} className="text-[#98a2b3]" />}
-                placeholder="搜索模板名称、编码或描述"
-                onChange={(event) => setTemplateKeyword(event.target.value)}
-              />
-              <Tabs
-                activeKey={templateTab}
-                animated={false}
-                onChange={(key) => setTemplateTab(key as TemplateTabKey)}
-                items={[
+          <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#e8e9ec] bg-white">
+            <div className="shrink-0 border-b border-[#f0f1f3] px-3 pb-3 pt-3">
+              <Segmented
+                block
+                size="small"
+                value={templateTab}
+                onChange={(value) => {
+                  setTemplateTab(value as TemplateTabKey);
+                  setExpandedTemplateKeys([]);
+                }}
+                options={[
                   {
-                    key: 'SYSTEM',
+                    value: 'SYSTEM',
                     label: `系统模板 (${systemTemplateCount})`,
                   },
                   {
-                    key: 'CUSTOM',
+                    value: 'CUSTOM',
                     label: `自定义模板 (${customTemplateCount})`,
                   },
                 ]}
-                className="mt-2 [&_.ant-tabs-nav]:!mb-0 [&_.ant-tabs-tab]:!px-1 [&_.ant-tabs-tab]:!py-2.5 [&_.ant-tabs-tab+_.ant-tabs-tab]:!ml-5 [&_.ant-tabs-tab-btn]:!text-[12px]"
+                className="!bg-[#f5f5f6] !p-[2px] [&_.ant-segmented-item]:!rounded-[3px] [&_.ant-segmented-item-label]:!min-h-[26px] [&_.ant-segmented-item-label]:!px-2 [&_.ant-segmented-item-label]:!text-[12px] [&_.ant-segmented-item-label]:!leading-[26px] [&_.ant-segmented-item-selected]:!shadow-none [&_.ant-segmented-item-selected]:!text-[var(--yak-brand-color)]"
+              />
+
+              <Input
+                allowClear
+                size="small"
+                variant="filled"
+                value={templateKeyword}
+                prefix={<Search size={13} className="text-[#98a2b3]" />}
+                placeholder="搜索模板名称、编码或描述"
+                onChange={(event) => setTemplateKeyword(event.target.value)}
+                className="mt-2.5"
               />
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 pt-2">
-              {templateGroups.length ? (
-                <div className="space-y-1">
-                  {templateGroups.map((group) => {
-                    const expanded = expandedGroups[group.key] !== false;
-                    return (
-                      <div key={group.key}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedGroups((current) => ({
-                              ...current,
-                              [group.key]: !expanded,
-                            }))
-                          }
-                          className="flex h-8 w-full items-center gap-1.5 border-0 bg-transparent px-2 text-left text-[12px] font-medium text-[#475467] hover:bg-[#f2f3f5]"
-                        >
-                          {expanded ? (
-                            <ChevronDown size={14} />
-                          ) : (
-                            <ChevronRight size={14} />
-                          )}
-                          <span className="min-w-0 flex-1 truncate">
-                            {group.label}
-                          </span>
-                          <span className="text-[11px] font-normal text-[#98a2b3]">
-                            {group.templates.length}
-                          </span>
-                        </button>
-
-                        {expanded ? (
-                          <div className="space-y-0.5 pb-1 pl-4">
-                            {group.templates.map((template) => {
-                              const selectedCount =
-                                selectedTemplateCounts.get(template.id) || 0;
-                              return (
-                                <button
-                                  key={template.id}
-                                  type="button"
-                                  onClick={() => addTemplate(template)}
-                                  className="group flex min-h-9 w-full items-center gap-2 border-0 bg-transparent px-2 py-1.5 text-left hover:bg-[rgba(254,44,85,.06)]"
-                                >
-                                  <FileText
-                                    size={14}
-                                    className="shrink-0 text-[#98a2b3] group-hover:text-[var(--yak-brand-color)]"
-                                  />
-                                  <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-[12px] text-[#30323b]">
-                                      {template.name}
-                                    </span>
-                                    <span className="mt-0.5 block truncate text-[10px] text-[#a1a5ad]">
-                                      {template.code}
-                                    </span>
-                                  </span>
-                                  {selectedCount ? (
-                                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[rgba(254,44,85,.1)] px-1.5 text-[10px] font-medium leading-5 text-[var(--yak-brand-color)]">
-                                      {selectedCount}
-                                    </span>
-                                  ) : (
-                                    <Plus
-                                      size={13}
-                                      className="shrink-0 text-[#b0b4bb] opacity-0 group-hover:opacity-100"
-                                    />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
+              {templateTreeData.length ? (
+                <Tree
+                  blockNode
+                  treeData={templateTreeData}
+                  selectedKeys={[]}
+                  expandedKeys={visibleExpandedTemplateKeys}
+                  onExpand={(keys) => setExpandedTemplateKeys(keys as Key[])}
+                  onSelect={handleTemplateTreeSelect}
+                  switcherIcon={({ expanded }) =>
+                    expanded ? (
+                      <ChevronDown size={13} className="text-[#98a2b3]" />
+                    ) : (
+                      <ChevronRight size={13} className="text-[#98a2b3]" />
+                    )
+                  }
+                  className="
+                    !bg-transparent
+                    [&_.ant-tree-list-holder-inner]:!gap-0
+                    [&_.ant-tree-treenode]:!w-full
+                    [&_.ant-tree-treenode]:!items-start
+                    [&_.ant-tree-treenode]:!py-[1px]
+                    [&_.ant-tree-switcher]:!flex
+                    [&_.ant-tree-switcher]:!h-[30px]
+                    [&_.ant-tree-switcher]:!w-[20px]
+                    [&_.ant-tree-switcher]:!shrink-0
+                    [&_.ant-tree-switcher]:!items-center
+                    [&_.ant-tree-switcher]:!justify-center
+                    [&_.ant-tree-switcher-noop]:!opacity-0
+                    [&_.ant-tree-node-content-wrapper]:!flex
+                    [&_.ant-tree-node-content-wrapper]:!min-h-[30px]
+                    [&_.ant-tree-node-content-wrapper]:!min-w-0
+                    [&_.ant-tree-node-content-wrapper]:!flex-1
+                    [&_.ant-tree-node-content-wrapper]:!items-center
+                    [&_.ant-tree-node-content-wrapper]:!rounded-[4px]
+                    [&_.ant-tree-node-content-wrapper]:!px-1.5
+                    [&_.ant-tree-node-content-wrapper]:!py-0
+                    [&_.ant-tree-node-content-wrapper:hover]:!bg-[#f3f4f6]
+                    [&_.ant-tree-node-content-wrapper.ant-tree-node-selected]:!bg-transparent
+                    [&_.ant-tree-title]:!min-w-0
+                    [&_.ant-tree-title]:!flex-1
+                  "
+                />
               ) : (
                 <Empty
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
