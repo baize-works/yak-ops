@@ -33,6 +33,11 @@ class WorkflowRuntimeServiceTest {
         Map.of());
 
     WorkflowInstanceVO started = service.run(request);
+    assertThat(started.nodes())
+        .extracting(WorkflowInstanceVO.NodeInstanceVO::status)
+        .contains("SUBMITTED", "WAITING");
+
+    service.activateExecution(started.id());
     WorkflowInstanceVO completed = waitForTerminal(started.id());
 
     assertThat(completed.status()).isEqualTo("SUCCESS");
