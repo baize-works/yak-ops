@@ -70,22 +70,7 @@ class WorkflowRuntimeServiceTest {
         new WorkflowEventStreamService(),
         () -> 20L);
 
-    WorkflowRunRequest request = new WorkflowRunRequest(
-        "failure-branch-demo",
-        List.of(
-            successNode("a"),
-            failedNode("b"),
-            successNode("c"),
-            successNode("d"),
-            successNode("e"),
-            successNode("f")),
-        List.of(
-            new EdgeRequest("a", "b"),
-            new EdgeRequest("b", "c"),
-            new EdgeRequest("c", "f"),
-            new EdgeRequest("a", "d"),
-            new EdgeRequest("d", "e")),
-        Map.of());
+    WorkflowRunRequest request = failureBranchWorkflow();
 
     WorkflowInstanceVO started = service.run(request);
     service.activate(started.id());
@@ -96,6 +81,40 @@ class WorkflowRuntimeServiceTest {
     assertThat(statusOf(completed, "b")).isEqualTo("FAILED");
     assertThat(statusOf(completed, "c")).isEqualTo("UPSTREAM_FAILED");
     assertThat(statusOf(completed, "f")).isEqualTo("UPSTREAM_FAILED");
+    assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
+  }
+
+  @Test
+  void shouldContinueBlockedDescendantsWithoutRetryingFailedNode()
+      throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 20L);
+
+    WorkflowInstanceVO started = service.run(failureBranchWorkflow());
+    service.activate(started.id());
+    WorkflowInstanceVO failed = waitForTerminal(started.id());
+
+    assertThat(failed.status()).isEqualTo("FAILED");
+    assertThat(statusOf(failed, "b")).isEqualTo("FAILED");
+    assertThat(statusOf(failed, "c")).isEqualTo("UPSTREAM_FAILED");
+    assertThat(statusOf(failed, "f")).isEqualTo("UPSTREAM_FAILED");
+
+    WorkflowInstanceVO continued = service.continueAfterFailure(started.id(), "b");
+    assertThat(continued.status()).isEqualTo("RUNNING");
+    assertThat(statusOf(continued, "b")).isEqualTo("FAILED");
+    assertThat(statusOf(continued, "c")).isEqualTo("SUBMITTED");
+    assertThat(statusOf(continued, "f")).isEqualTo("WAITING");
+
+    // 实际页面重新建立 SSE 后会激活积压的 dispatch；测试中直接调用 activate 模拟该过程。
+    service.activate(started.id());
+    WorkflowInstanceVO completed = waitForTerminal(started.id());
+
+    assertThat(completed.status()).isEqualTo("SUCCESS_WITH_WARNINGS");
+    assertThat(statusOf(completed, "b")).isEqualTo("FAILED");
+    assertThat(statusOf(completed, "c")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "f")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
   }
@@ -141,6 +160,25 @@ class WorkflowRuntimeServiceTest {
             new NodeRequest("extract", "Extract", "DATA"),
             new NodeRequest("check", "Check", "CHECK")),
         List.of(new EdgeRequest("extract", "check")),
+        Map.of());
+  }
+
+  private WorkflowRunRequest failureBranchWorkflow() {
+    return new WorkflowRunRequest(
+        "failure-branch-demo",
+        List.of(
+            successNode("a"),
+            failedNode("b"),
+            successNode("c"),
+            successNode("d"),
+            successNode("e"),
+            successNode("f")),
+        List.of(
+            new EdgeRequest("a", "b"),
+            new EdgeRequest("b", "c"),
+            new EdgeRequest("c", "f"),
+            new EdgeRequest("a", "d"),
+            new EdgeRequest("d", "e")),
         Map.of());
   }
 

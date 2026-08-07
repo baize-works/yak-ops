@@ -122,6 +122,23 @@ public class WorkflowRuntimeService {
     return getInstance(executionId);
   }
 
+  public WorkflowInstanceVO continueAfterFailure(String executionId, String nodeId) {
+    RunMetadata runMetadata = metadata.get(executionId);
+    if (runMetadata == null) {
+      throw new IllegalArgumentException("Workflow execution metadata not found: " + executionId);
+    }
+
+    WorkflowExecution execution = engine.continueAfterFailure(executionId, nodeId);
+    WorkflowInstanceVO snapshot = toView(execution, runMetadata);
+    eventStreamService.publish(snapshot);
+    log.info(
+        "[workflow] manual continue execution={}, failedNode={}, status={}",
+        executionId,
+        nodeId,
+        snapshot.status());
+    return snapshot;
+  }
+
   public List<WorkflowInstanceVO> listInstances() {
     List<WorkflowInstanceVO> instances = new ArrayList<>();
     for (String executionId : executionOrder) {
@@ -325,6 +342,7 @@ public class WorkflowRuntimeService {
 
   private boolean isTerminal(String status) {
     return "SUCCESS".equals(status)
+        || "SUCCESS_WITH_WARNINGS".equals(status)
         || "FAILED".equals(status)
         || "WARNING".equals(status)
         || "CANCELED".equals(status);

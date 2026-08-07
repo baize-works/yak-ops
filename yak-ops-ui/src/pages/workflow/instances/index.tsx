@@ -16,19 +16,23 @@ const statusLabel: Record<string, string> = {
   CREATED: '已创建',
   RUNNING: '运行中',
   SUCCESS: '成功',
+  SUCCESS_WITH_WARNINGS: '完成（有告警）',
   FAILED: '失败',
   WARNING: '告警',
   CANCELED: '已取消',
   WAITING: '等待中',
   READY: '就绪',
   SUBMITTED: '已提交',
-  UPSTREAM_FAILED: '上游失败',
+  UPSTREAM_FAILED: '已阻断',
   SKIPPED: '已跳过',
 };
 
 const statusClassName = (status: string) => {
-  if (status === 'FAILED' || status === 'UPSTREAM_FAILED') {
+  if (status === 'FAILED') {
     return 'text-[#d92d20]';
+  }
+  if (status === 'UPSTREAM_FAILED') {
+    return 'text-[rgba(22,24,35,.42)]';
   }
   if (status === 'RUNNING' || status === 'SUBMITTED' || status === 'READY') {
     return 'font-medium text-[#161823]';
@@ -194,7 +198,8 @@ const WorkflowInstancesPage = () => {
         title: '错误信息',
         dataIndex: 'errorMessage',
         width: 240,
-        render: (value?: string) => value || '-',
+        render: (value?: string, record?: WorkflowNodeInstance) =>
+          record?.status === 'UPSTREAM_FAILED' ? '-' : value || '-',
       },
     ],
     [],

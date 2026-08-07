@@ -44,6 +44,7 @@ export interface WorkflowInstance {
 
 const TERMINAL_STATUSES = new Set([
   'SUCCESS',
+  'SUCCESS_WITH_WARNINGS',
   'FAILED',
   'WARNING',
   'CANCELED',
@@ -66,6 +67,17 @@ export const runWorkflow = async (payload: WorkflowRunPayload) => {
 export const activateWorkflowInstance = async (executionId: string) => {
   const response = await request<ApiResponse<WorkflowInstance>>(
     `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/activate`,
+    { method: 'POST' },
+  );
+  return response.data;
+};
+
+export const continueWorkflowAfterFailure = async (
+  executionId: string,
+  nodeId: string,
+) => {
+  const response = await request<ApiResponse<WorkflowInstance>>(
+    `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/nodes/${encodeURIComponent(nodeId)}/continue`,
     { method: 'POST' },
   );
   return response.data;
