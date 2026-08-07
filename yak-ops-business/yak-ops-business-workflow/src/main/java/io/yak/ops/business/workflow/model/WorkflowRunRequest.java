@@ -3,6 +3,7 @@ package io.yak.ops.business.workflow.model;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,18 @@ public record WorkflowRunRequest(
   public record NodeRequest(
       @NotBlank String id,
       @NotBlank String name,
-      @NotBlank String type) {}
+      @NotBlank String type,
+      @Pattern(regexp = "SUCCESS|FAILED", message = "mockResult must be SUCCESS or FAILED")
+      String mockResult) {
+
+    public NodeRequest {
+      mockResult = mockResult == null || mockResult.isBlank() ? "SUCCESS" : mockResult;
+    }
+
+    public NodeRequest(String id, String name, String type) {
+      this(id, name, type, "SUCCESS");
+    }
+  }
 
   public record EdgeRequest(
       @NotBlank String source,

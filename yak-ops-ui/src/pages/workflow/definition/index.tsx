@@ -4,8 +4,9 @@ import {
   runWorkflow,
   subscribeWorkflowEvents,
   type WorkflowInstance,
+  type WorkflowMockResult,
 } from '@/services/workflow';
-import { Button, Input, Popconfirm, message } from 'antd';
+import { Button, Input, Popconfirm, Segmented, message } from 'antd';
 import {
   Bell,
   CheckCircle2,
@@ -47,6 +48,7 @@ interface WorkflowNodeData {
   label: string;
   nodeType: string;
   typeLabel: string;
+  mockResult: WorkflowMockResult;
   executionStatus?: string;
 }
 
@@ -154,8 +156,15 @@ const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => (
     />
 
     <div className="flex items-center justify-between gap-3">
-      <div className="text-[11px] font-medium text-[rgba(22,24,35,.45)]">
-        {data.typeLabel}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-medium text-[rgba(22,24,35,.45)]">
+          {data.typeLabel}
+        </span>
+        {data.mockResult === 'FAILED' ? (
+          <span className="rounded bg-[#fff0f0] px-1.5 py-0.5 text-[9px] font-medium text-[#d92d20]">
+            模拟失败
+          </span>
+        ) : null}
       </div>
       {data.executionStatus ? (
         <span className="flex items-center gap-1 text-[10px]">
@@ -200,6 +209,10 @@ const WorkflowDefinitionContent = () => {
   const nodeTypes = useMemo(() => ({ workflow: WorkflowNode }), []);
   const workflowRunning = Boolean(
     activeInstance && !isWorkflowTerminal(activeInstance.status),
+  );
+  const selectedNode = useMemo(
+    () => nodes.find((node) => node.selected),
+    [nodes],
   );
 
   useEffect(() => () => closeStreamRef.current?.(), []);
@@ -314,9 +327,25 @@ const WorkflowDefinitionContent = () => {
           label: `${template.label} ${sequence}`,
           nodeType: template.type,
           typeLabel: template.label,
+          mockResult: 'SUCCESS',
         },
       },
     ]);
+  };
+
+  const updateSelectedMockResult = (mockResult: WorkflowMockResult) => {
+    if (!selectedNode || workflowRunning) return;
+    setNodes((current) => current.map((node) =>
+      node.id === selectedNode.id
+        ? {
+            ...node,
+            data: {
+              ...node.data,
+              mockResult,
+            },
+          }
+        : node,
+    ));
   };
 
   const resetExecutionVisuals = () => {
@@ -355,6 +384,7 @@ const WorkflowDefinitionContent = () => {
           id: node.id,
           name: node.data.label,
           type: node.data.nodeType,
+          mockResult: node.data.mockResult,
         })),
         edges: edges.map((edge: Edge) => ({
           source: edge.source,
@@ -512,7 +542,39 @@ const WorkflowDefinitionContent = () => {
           </div>
         </div>
 
-        <div ref={wrapperRef} className="min-h-0 flex-1" onDrop={handleDrop}>
+        <div
+          ref={wrapperRef}
+          className="relative min-h-0 flex-1"
+          onDrop={handleDrop}
+        >
+          {selectedNode && !workflowRunning ? (
+            <div className="absolute right-4 top-4 z-20 w-[250px] rounded-lg border border-[#e3e5e8] bg-white p-3 shadow-md">
+              <div className="text-[12px] font-semibold text-[#161823]">节点测试</div>
+              <div className="mt-1 truncate text-[11px] text-[rgba(22,24,35,.48)]">
+                {selectedNode.data.label}
+              </div>
+              <div className="mt-3 text-[11px] font-medium text-[rgba(22,24,35,.62)]">
+                本次模拟结果
+              </div>
+              <Segmented
+                block
+                size="small"
+                className="mt-2"
+                value={selectedNode.data.mockResult}
+                options={[
+                  { label: '正常成功', value: 'SUCCESS' },
+                  { label: '模拟失败', value: 'FAILED' },
+                ]}
+                onChange={(value) =>
+                  updateSelectedMockResult(value as WorkflowMockResult)
+                }
+              />
+              <div className="mt-2 text-[10px] leading-4 text-[rgba(22,24,35,.4)]">
+                仅用于内存工作流测试。模拟失败会真实触发引擎的失败传播逻辑。
+              </div>
+            </div>
+          ) : null}
+
           <ReactFlow
             nodes={nodes}
             edges={edges}
