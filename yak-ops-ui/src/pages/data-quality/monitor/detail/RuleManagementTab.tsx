@@ -22,6 +22,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useMemo, useState, type Key } from 'react';
+import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { MonitorWorkspaceView, RuleView } from '../../types';
 import {
   DIMENSION_ORDER,
@@ -122,20 +123,24 @@ const RuleManagementTab = ({
       title: '删除质量规则？',
       content: `确认删除“${rule.name}”吗？历史执行结果仍会保留。`,
       okButtonProps: { danger: true },
-      onOk: () => onUpdateRules(monitor.rules.filter((item) => item.id !== rule.id)),
+      onOk: () =>
+        onUpdateRules(monitor.rules.filter((item) => item.id !== rule.id)),
     });
   };
 
   const columns: TableColumnsType<RuleView> = [
     {
-      title: 'ID/规则名称',
+      title: '规则名称 / ID',
       dataIndex: 'name',
       minWidth: 300,
       render: (_, rule) => (
         <div className="min-w-0 py-1">
-          <div className="text-xs text-[#9aa3b2]">{rule.id}</div>
-          <div className="mt-0.5 truncate text-[13px] font-medium text-[#172033]">
+          <div className="truncate text-[13px] font-medium text-[#172033]">
             {rule.name}
+          </div>
+          <div className="mt-1 text-[11px] text-[#98a2b3]">
+            ID：{rule.id}
+            {rule.columnName ? ` · 字段：${rule.columnName}` : ' · 表级规则'}
           </div>
         </div>
       ),
@@ -143,7 +148,11 @@ const RuleManagementTab = ({
     {
       title: '重要程度',
       width: 110,
-      render: () => <span className="text-[#43506a]">弱规则</span>,
+      render: () => (
+        <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
+          弱规则
+        </Tag>
+      ),
     },
     {
       title: '关联范围',
@@ -154,24 +163,29 @@ const RuleManagementTab = ({
       title: '规则模板',
       dataIndex: 'templateCode',
       width: 180,
-      render: (value) => <span className="text-[#43506a]">{value}</span>,
+      render: (value) => <span className="text-[#344054]">{value}</span>,
     },
     {
       title: '监控阈值',
       width: 190,
       render: (_, rule) => (
         <div>
-          <div className="text-[#43506a]">{ruleParameter(rule)}</div>
+          <div className="font-medium text-[#344054]">{ruleParameter(rule)}</div>
           <div className="mt-1 flex items-center gap-1.5 text-[11px]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#ff4d4f]" />
             <span className="text-[#ff4d4f]">异常</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-[#12a150]" />
+            <span className="ml-1 h-1.5 w-1.5 rounded-full bg-[#12a150]" />
             <span className="text-[#12a150]">正常</span>
           </div>
         </div>
       ),
     },
-    { title: '维度', dataIndex: 'dimension', width: 100 },
+    {
+      title: '质量维度',
+      dataIndex: 'dimension',
+      width: 110,
+      render: (value) => <span className="text-[#344054]">{value}</span>,
+    },
     {
       title: '状态',
       dataIndex: 'enabled',
@@ -238,7 +252,9 @@ const RuleManagementTab = ({
         <div className="mt-4 space-y-1 text-[13px]">
           <div className="flex items-center justify-between rounded-md bg-[#f0f3f8] px-3 py-2 font-medium text-[#27344f]">
             <span>全部规则</span>
-            <span className="rounded-full bg-white px-1.5 text-xs">{stats.ruleCount}</span>
+            <span className="rounded-full bg-white px-1.5 text-xs">
+              {stats.ruleCount}
+            </span>
           </div>
           <div className="flex items-center justify-between px-3 py-2 text-[#43506a]">
             <span>已关联质量监控的规则</span>
@@ -258,7 +274,11 @@ const RuleManagementTab = ({
             <Tooltip title="新建质量监控">
               <Plus size={16} />
             </Tooltip>
-            <RefreshCw size={14} className="cursor-pointer" onClick={onRefresh} />
+            <RefreshCw
+              size={14}
+              className="cursor-pointer"
+              onClick={onRefresh}
+            />
           </div>
         </div>
         <Input
@@ -381,9 +401,11 @@ const RuleManagementTab = ({
         <Table<RuleView>
           rowKey="id"
           size="small"
+          bordered
           loading={savingRules}
           pagination={false}
           scroll={{ x: 1280 }}
+          className={dataQualityTableClassName()}
           dataSource={records}
           locale={{
             emptyText: (
@@ -416,14 +438,19 @@ const RuleManagementTab = ({
             </Button>
             <Button disabled={!selectedRowKeys.length}>关联质量监控</Button>
             <Dropdown
-              menu={{ items: [{ key: 'log', label: '查看操作日志' }], onClick: onOpenLog }}
+              menu={{
+                items: [{ key: 'log', label: '查看操作日志' }],
+                onClick: onOpenLog,
+              }}
             >
               <Button disabled={!selectedRowKeys.length}>
                 更多操作 <ChevronDown size={12} />
               </Button>
             </Dropdown>
           </div>
-          <div className="text-xs text-[#8b95a7]">共 {records.length} 条规则</div>
+          <div className="text-xs text-[#8b95a7]">
+            共 {records.length} 条规则
+          </div>
         </div>
       </main>
     </div>

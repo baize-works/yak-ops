@@ -12,6 +12,7 @@ import {
 import type { TableColumnsType } from 'antd';
 import { MoreHorizontal, Plus, RefreshCw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { MonitorWorkspaceView } from '../../types';
 import { RUN_MODE_LABEL } from './model';
 
@@ -81,34 +82,59 @@ const MonitorListTab = ({
 
   const columns: TableColumnsType<MonitorRecord> = [
     {
-      title: 'ID/名称/描述',
+      title: '名称 / ID / 描述',
       minWidth: 360,
       render: (_, record) => (
-        <div className="py-1">
-          <div className="text-xs text-[#8b95a7]">{record.id}</div>
-          <div className="mt-0.5 text-[13px] font-medium text-[#172033]">
+        <div className="min-w-0 py-1">
+          <div className="truncate text-[13px] font-medium text-[#172033]">
             {record.name}
           </div>
+          <div className="mt-1 text-[11px] text-[#98a2b3]">ID：{record.id}</div>
           {record.description ? (
-            <div className="mt-0.5 line-clamp-1 text-xs text-[#8b95a7]">
+            <div className="mt-1 line-clamp-1 text-xs text-[#667085]">
               {record.description}
             </div>
           ) : null}
         </div>
       ),
     },
-    { title: '触发方式', dataIndex: 'trigger', width: 180 },
     {
-      title: '已启用/总规则数',
-      width: 150,
-      render: () => (
-        <span>
-          <span className="text-[#245bdb]">{stats.enabledRuleCount}</span>/{stats.ruleCount}
-        </span>
+      title: '触发方式',
+      width: 190,
+      render: (_, record) => (
+        <div className="space-y-1 py-0.5">
+          <div className="text-[#344054]">{record.trigger}</div>
+          <div className="text-[11px] text-[#98a2b3]">
+            {settings.nextRunTime ? `下次：${settings.nextRunTime}` : '未配置下次运行'}
+          </div>
+        </div>
       ),
     },
-    { title: '责任人', dataIndex: 'owner', width: 180 },
-    { title: '最近更新时间', dataIndex: 'updateTime', width: 190 },
+    {
+      title: '已启用 / 总规则数',
+      width: 160,
+      render: () => (
+        <div className="flex items-baseline gap-1">
+          <span className="text-[15px] font-semibold text-[#245bdb]">
+            {stats.enabledRuleCount}
+          </span>
+          <span className="text-[#98a2b3]">/</span>
+          <span className="text-[#344054]">{stats.ruleCount}</span>
+        </div>
+      ),
+    },
+    {
+      title: '责任人',
+      dataIndex: 'owner',
+      width: 180,
+      render: (value) => <span className="text-[#344054]">{value}</span>,
+    },
+    {
+      title: '最近更新时间',
+      dataIndex: 'updateTime',
+      width: 190,
+      render: (value) => <span className="text-xs text-[#667085]">{value}</span>,
+    },
     {
       title: '状态',
       dataIndex: 'enabled',
@@ -221,9 +247,10 @@ const MonitorListTab = ({
       <Table<MonitorRecord>
         rowKey="id"
         size="small"
-        className="mt-3"
+        bordered
         pagination={false}
-        scroll={{ x: 1250 }}
+        scroll={{ x: 1280 }}
+        className={dataQualityTableClassName('mt-3')}
         dataSource={records}
         columns={columns}
         locale={{

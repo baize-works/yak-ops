@@ -1,6 +1,17 @@
-import { Button, Empty, Input, Pagination, Popconfirm, Spin, Table, Tooltip } from 'antd';
+import {
+  Button,
+  Empty,
+  Input,
+  Pagination,
+  Popconfirm,
+  Spin,
+  Table,
+  Tag,
+  Tooltip,
+} from 'antd';
 import { Play, Plus, Search, Settings2 } from 'lucide-react';
 import { CheckResultTag } from '../../components/QualityStatus';
+import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { TableAssetView } from '../../types';
 import { PAGE_SIZE, type DataSourceTreeNode } from '../model';
 
@@ -39,7 +50,7 @@ const RegisteredTablePanel = ({
     <div className="flex h-full flex-col overflow-hidden">
       <div className="mb-3 flex shrink-0 items-center gap-2">
         {selectedSourceNode && (
-          <div className="flex h-8 shrink-0 items-center gap-3 bg-[#f5f5f6] px-3 text-xs text-[#667085]">
+          <div className="flex h-8 shrink-0 items-center gap-3 rounded-md bg-[#f5f5f6] px-3 text-xs text-[#667085]">
             <span>
               数据源类型：
               <span className="font-medium text-[#30323b]">
@@ -90,9 +101,11 @@ const RegisteredTablePanel = ({
               <Table<TableAssetView>
                 rowKey="id"
                 size="small"
+                bordered
                 pagination={false}
                 dataSource={assets}
-                scroll={{ x: 1080 }}
+                scroll={{ x: 1380 }}
+                className={dataQualityTableClassName()}
                 locale={{
                   emptyText: (
                     <Empty
@@ -111,19 +124,24 @@ const RegisteredTablePanel = ({
                 }}
                 columns={[
                   {
-                    title: '表名/描述/路径',
+                    title: '表名 / ID / 描述',
                     dataIndex: 'tableName',
+                    minWidth: 330,
                     render: (_, record) => (
-                      <div>
-                        <div className="font-medium text-[#161823]">
+                      <div className="min-w-0 py-1">
+                        <div className="truncate font-medium text-[#172033]">
                           {record.tableName}
                         </div>
-                        {record.remarks && (
-                          <div className="mt-0.5 text-xs text-[#8a8f99]">
+                        <div className="mt-1 text-[11px] text-[#98a2b3]">
+                          ID：{record.id}
+                        </div>
+                        {record.remarks ? (
+                          <div className="mt-1 line-clamp-1 text-xs text-[#667085]">
                             {record.remarks}
                           </div>
-                        )}
-                        <div className="mt-0.5 text-xs text-[#98a2b3]">
+                        ) : null}
+                        <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
+                          路径：
                           {[
                             record.databaseName,
                             record.schemaName,
@@ -136,33 +154,63 @@ const RegisteredTablePanel = ({
                     ),
                   },
                   {
-                    title: '监控数',
-                    dataIndex: 'monitorCount',
-                    width: 100,
+                    title: '数据源 / 类型',
+                    width: 190,
+                    render: (_, record) => (
+                      <div className="space-y-1 py-0.5">
+                        <div className="truncate text-[#344054]">
+                          {record.dataSourceName}
+                        </div>
+                        <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[11px] !text-[#667085]">
+                          {record.tableType || 'TABLE'}
+                        </Tag>
+                      </div>
+                    ),
                   },
                   {
-                    title: '规则数',
-                    dataIndex: 'ruleCount',
-                    width: 100,
+                    title: '质量配置',
+                    width: 170,
+                    render: (_, record) => (
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                        <span className="text-[#98a2b3]">监控数：</span>
+                        <span className="font-medium text-[#344054]">
+                          {record.monitorCount}
+                        </span>
+                        <span className="text-[#98a2b3]">规则数：</span>
+                        <span className="font-medium text-[#344054]">
+                          {record.ruleCount}
+                        </span>
+                      </div>
+                    ),
                   },
                   {
-                    title: '最近结果',
-                    dataIndex: 'lastResult',
-                    width: 120,
-                    render: (value) => <CheckResultTag value={value} />,
+                    title: '最近状态',
+                    width: 190,
+                    render: (_, record) => (
+                      <div className="space-y-1.5 py-0.5">
+                        <CheckResultTag value={record.lastResult} />
+                        <div className="text-[11px] text-[#98a2b3]">
+                          {record.lastRunTime || '暂无运行记录'}
+                        </div>
+                      </div>
+                    ),
                   },
                   {
-                    title: '最近运行',
-                    dataIndex: 'lastRunTime',
-                    width: 180,
-                    render: (value) => value || '--',
+                    title: '注册信息',
+                    width: 190,
+                    render: (_, record) => (
+                      <div className="space-y-1 text-xs">
+                        <div className="text-[#344054]">{record.registeredBy}</div>
+                        <div className="text-[#98a2b3]">{record.registeredAt}</div>
+                      </div>
+                    ),
                   },
                   {
                     title: '操作',
-                    width: 300,
+                    width: 280,
                     fixed: 'right',
                     render: (_, record) => (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 whitespace-nowrap">
                         {record.monitorId ? (
                           <>
                             <Button
