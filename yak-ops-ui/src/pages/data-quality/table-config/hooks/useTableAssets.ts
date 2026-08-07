@@ -274,11 +274,23 @@ export const useTableAssets = ({
     }
   };
 
-  const openMonitor = (record: TableAssetView) => {
-    if (record.monitorId) {
-      history.push(`/data-quality/monitor/${record.monitorId}`);
+  const openMonitorDetail = (record: TableAssetView) => {
+    if (!record.monitorId) {
+      message.warning('当前数据表尚未创建质量监控');
       return;
     }
+    history.push(`/data-quality/monitor/${record.monitorId}`);
+  };
+
+  const openMonitorEdit = (record: TableAssetView) => {
+    if (!record.monitorId) {
+      message.warning('当前数据表尚未创建质量监控');
+      return;
+    }
+    history.push(`/data-quality/monitor/${record.monitorId}/edit`);
+  };
+
+  const createMonitor = (record: TableAssetView) => {
     const query = new URLSearchParams({
       dataSourceId: String(record.dataSourceId),
       dataSourceName: record.dataSourceName,
@@ -320,6 +332,8 @@ export const useTableAssets = ({
     handleRegister,
     handleUnregister,
     handleRun,
-    openMonitor,
+    openMonitorDetail,
+    openMonitorEdit,
+    createMonitor,
   };
 };
