@@ -4,22 +4,18 @@ import { history, useParams } from '@umijs/max';
 import { ConfigProvider, Modal, Spin, message } from 'antd';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  qualityMonitorApi,
-  qualityWorkspaceApi,
-} from '../../service';
+import { qualityMonitorApi, qualityWorkspaceApi } from '../../service';
 import type {
   MonitorReportView,
   MonitorWorkspaceView,
   OperationLogPageView,
-  RuleView,
 } from '../../types';
 import MonitorListTab from './MonitorListTab';
 import OperationLogDrawer from './OperationLogDrawer';
 import QualityReportTab from './QualityReportTab';
 import RuleManagementTab from './RuleManagementTab';
 import WorkspaceHeader from './WorkspaceHeader';
-import { toSavePayload, type WorkspaceTab } from './model';
+import type { WorkspaceTab } from './model';
 
 const unwrap = <T,>(response: {
   code: number;
@@ -56,7 +52,6 @@ const MonitorDetailPage = () => {
   const [logLoading, setLogLoading] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [running, setRunning] = useState(false);
-  const [savingRules, setSavingRules] = useState(false);
 
   const loadWorkspace = useCallback(async () => {
     if (!params.id) return;
@@ -133,29 +128,6 @@ const MonitorDetailPage = () => {
     }
   };
 
-  const updateRules = async (rules: RuleView[]) => {
-    if (!workspace || !params.id) return;
-    setSavingRules(true);
-    try {
-      unwrap(
-        await qualityMonitorApi.update(
-          params.id,
-          toSavePayload(workspace.monitor, workspace.settings, rules),
-        ),
-      );
-      message.success('质量规则已更新');
-      await loadWorkspace();
-      if (activeTab === 'report') {
-        await loadReport(reportDate);
-      }
-    } catch (error: any) {
-      message.error(error?.message || '质量规则更新失败');
-      throw error;
-    } finally {
-      setSavingRules(false);
-    }
-  };
-
   const removeMonitor = () => {
     if (!params.id) return;
     Modal.confirm({
@@ -196,15 +168,10 @@ const MonitorDetailPage = () => {
                 <RuleManagementTab
                   workspace={workspace}
                   running={running}
-                  savingRules={savingRules}
                   onRun={run}
-                  onEditMonitor={() =>
-                    history.push(`/data-quality/monitor/${params.id}/edit`)
-                  }
                   onOpenLog={openLog}
                   onRefresh={loadWorkspace}
                   onRemoveMonitor={removeMonitor}
-                  onUpdateRules={updateRules}
                 />
               ) : null}
 
@@ -213,9 +180,6 @@ const MonitorDetailPage = () => {
                   workspace={workspace}
                   running={running}
                   onRun={run}
-                  onEdit={() =>
-                    history.push(`/data-quality/monitor/${params.id}/edit`)
-                  }
                   onRefresh={loadWorkspace}
                   onRemove={removeMonitor}
                   onOpenLog={openLog}
