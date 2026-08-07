@@ -1,5 +1,6 @@
 import {
   Button,
+  Drawer,
   Empty,
   Input,
   InputNumber,
@@ -7,10 +8,19 @@ import {
   Select,
   Switch,
   Table,
+  Tabs,
   Tag,
+  message,
 } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { Plus } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { dataQualityTableClassName } from '../../components/tableStyle';
@@ -21,6 +31,19 @@ import type {
 } from '../../types';
 import { EditorSection } from './EditorLayout';
 import { OPERATORS, ruleDefaults, type EditorRule } from './model';
+
+type TemplateTabKey = 'SYSTEM' | 'CUSTOM';
+
+interface TemplateGroup {
+  key: string;
+  label: string;
+  templates: TemplateView[];
+}
+
+const isSystemTemplate = (template: TemplateView) =>
+  template.builtin || template.source === 'SYSTEM';
+
+const normalizeText = (value?: string) => (value || '').trim().toLowerCase();
 
 export const validateRules = (rules: EditorRule[]) => {
   if (!rules.length) throw new Error('至少添加一条质量规则');
@@ -63,6 +86,12 @@ export const QualityRuleEditor = ({
   templates: TemplateView[];
 }) => {
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateTab, setTemplateTab] = useState<TemplateTabKey>('SYSTEM');
+  const [templateKeyword, setTemplateKeyword] = useState('');
+  const [draftRules, setDraftRules] = useState<EditorRule[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
+    {},
+  );
   const [editOpen, setEditOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<string>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -72,9 +101,83 @@ export const QualityRuleEditor = ({
     [editingKey, rules],
   );
 
+  const templateMap = useMemo(
+    () => new Map(templates.map((template) => [template.id, template])),
+    [templates],
+  );
+
+  const systemTemplateCount = useMemo(
+    () => templates.filter(isSystemTemplate).length,
+    [templates],
+  );
+
+  const customTemplateCount = templates.length - systemTemplateCount;
+
+  const templateGroups = useMemo<TemplateGroup[]>(() => {
+    const keyword = normalizeText(templateKeyword);
+    const filtered = templates.filter((template) => {
+      const matchesTab =
+        templateTab === 'SYSTEM'
+          ? isSystemTemplate(template)
+          : !isSystemTemplate(template);
+      if (!matchesTab) return false;
+      if (!keyword) return true;
+      return [
+        template.name,
+        template.code,
+        template.description,
+        template.dimension,
+        template.folderName,
+      ].some((value) => normalizeText(value).includes(keyword));
+    });
+
+    const grouped = new Map<string, TemplateView[]>();
+    filtered.forEach((template) => {
+      const groupName =
+        templateTab === 'SYSTEM'
+          ? template.dimension || '其他'
+          : template.folderName || template.dimension || '未分类';
+      const items = grouped.get(groupName) || [];
+      items.push(template);
+      grouped.set(groupName, items);
+    });
+
+    return Array.from(grouped.entries())
+      .map(([label, values]) => ({
+        key: `${templateTab}:${label}`,
+        label,
+        templates: values.sort(
+          (left, right) =>
+            left.sortOrder - right.sortOrder || left.name.localeCompare(right.name),
+        ),
+      }))
+      .sort((left, right) => left.label.localeCompare(right.label));
+  }, [templateKeyword, templateTab, templates]);
+
+  const selectedTemplateCounts = useMemo(() => {
+    const counts = new Map<number, number>();
+    draftRules.forEach((rule) => {
+      counts.set(rule.templateId, (counts.get(rule.templateId) || 0) + 1);
+    });
+    return counts;
+  }, [draftRules]);
+
   const updateRule = (key: string, values: Partial<EditorRule>) => {
     onChange(
       rules.map((rule) =>
+        rule.key === key
+          ? {
+              ...rule,
+              ...values,
+            }
+          : rule,
+      ),
+    );
+  };
+
+  const updateDraftRule = (key: string, values: Partial<EditorRule>) => {
+    setDraftRules((current) =>
+      current.map((rule) =>
         rule.key === key
           ? {
               ...rule,
@@ -98,6 +201,33 @@ export const QualityRuleEditor = ({
     setEditOpen(true);
   };
 
+  const openTemplateDrawer = () => {
+    setDraftRules([]);
+    setTemplateKeyword('');
+    setTemplateTab('SYSTEM');
+    setTemplateOpen(true);
+  };
+
+  const closeTemplateDrawer = () => {
+    setTemplateOpen(false);
+    setDraftRules([]);
+    setTemplateKeyword('');
+  };
+
+  const addTemplate = (template: TemplateView) => {
+    setDraftRules((current) => [...current, ruleDefaults(template)]);
+  };
+
+  const confirmDraftRules = () => {
+    try {
+      validateRules(draftRules);
+      onChange([...rules, ...draftRules]);
+      closeTemplateDrawer();
+    } catch (error: any) {
+      message.warning(error?.message || '请完善规则配置');
+    }
+  };
+
   const operatorLabel = (operator?: ComparisonOperator) => {
     if (!operator) return '--';
 
@@ -109,6 +239,12 @@ export const QualityRuleEditor = ({
 
   const renderRuleTemplate = (rule: EditorRule) => {
     switch (rule.ruleType) {
+      case 'TABLE_ROW_COUNT':
+        return '表行数';
+      case 'COLUMN_NOT_NULL':
+        return '字段非空';
+      case 'COLUMN_UNIQUE':
+        return '字段唯一';
       case 'COLUMN_RANGE':
         return '字段范围';
       case 'COLUMN_ENUM':
@@ -246,11 +382,7 @@ export const QualityRuleEditor = ({
           />
 
           <span
-            className={
-              rule.enabled
-                ? 'text-[#344054]'
-                : 'text-[#98a2b3]'
-            }
+            className={rule.enabled ? 'text-[#344054]' : 'text-[#98a2b3]'}
           >
             {rule.enabled ? '启用' : '停用'}
           </span>
@@ -288,39 +420,29 @@ export const QualityRuleEditor = ({
 
   return (
     <>
-      <EditorSection
-        id="quality-rules"
-        title="选择质量规则"
-      >
+      <EditorSection id="quality-rules" title="选择质量规则">
         <div>
-          {/* 顶部操作区域 */}
           <div className="mb-2 flex min-h-8 flex-wrap items-center gap-2">
             <Button
               type="primary"
               size="small"
               icon={<Plus size={14} />}
-              onClick={() => setTemplateOpen(true)}
+              onClick={openTemplateDrawer}
             >
               添加规则
             </Button>
 
-            <Button
-              size="small"
-              onClick={() => setTemplateOpen(true)}
-            >
+            <Button size="small" onClick={openTemplateDrawer}>
               添加已有规则
             </Button>
 
             <span className="ml-2 text-xs font-medium text-[#344054]">
               已选择
-              <span className="mx-0.5">
-                {selectedRowKeys.length}
-              </span>
+              <span className="mx-0.5">{selectedRowKeys.length}</span>
               条
             </span>
           </div>
 
-          {/* 规则 Table */}
           <Table<EditorRule>
             rowKey="key"
             size="small"
@@ -347,7 +469,7 @@ export const QualityRuleEditor = ({
                       type="primary"
                       size="small"
                       icon={<Plus size={14} />}
-                      onClick={() => setTemplateOpen(true)}
+                      onClick={openTemplateDrawer}
                     >
                       添加规则
                     </Button>
@@ -359,7 +481,6 @@ export const QualityRuleEditor = ({
         </div>
       </EditorSection>
 
-      {/* 修改规则 */}
       <Modal
         width={680}
         title="修改质量规则"
@@ -377,173 +498,373 @@ export const QualityRuleEditor = ({
         }}
       >
         {editingRule ? (
-          <div className="space-y-5 pt-2">
-            <div>
-              <div className="mb-1.5 text-xs font-medium text-[#475467]">
-                规则名称
-              </div>
-
-              <Input
-                variant="filled"
-                value={editingRule.name}
-                maxLength={100}
-                onChange={(event) =>
-                  updateRule(editingRule.key, {
-                    name: event.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <div>
-              <div className="mb-1.5 text-xs font-medium text-[#475467]">
-                检查字段
-              </div>
-
-              <Select
-                allowClear
-                variant="filled"
-                disabled={
-                  editingRule.scope === 'TABLE' &&
-                  editingRule.ruleType !== 'CUSTOM_SQL'
-                }
-                value={editingRule.columnName}
-                placeholder={
-                  editingRule.scope === 'COLUMN'
-                    ? '请选择字段'
-                    : '表级规则无需字段'
-                }
-                showSearch
-                optionFilterProp="label"
-                options={columns.map((column) => ({
-                  value: column.name,
-                  label: `${column.name}${
-                    column.typeName
-                      ? ` · ${column.typeName}`
-                      : ''
-                  }`,
-                }))}
-                onChange={(columnName) =>
-                  updateRule(editingRule.key, {
-                    columnName,
-                  })
-                }
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <div className="mb-1.5 text-xs font-medium text-[#475467]">
-                规则参数
-              </div>
-
-              <RuleConfig
-                rule={editingRule}
-                updateRule={updateRule}
-              />
-            </div>
+          <div className="pt-2">
+            <RuleFields
+              rule={editingRule}
+              template={templateMap.get(editingRule.templateId)}
+              columns={columns}
+              updateRule={updateRule}
+            />
           </div>
         ) : null}
       </Modal>
 
-      {/* 选择已有模板 */}
-      <Modal
-        width={820}
-        title="选择规则模板"
+      <Drawer
+        title="从规则模板添加"
+        placement="right"
+        width="min(1120px, calc(100vw - 80px))"
         open={templateOpen}
-        footer={null}
-        onCancel={() => setTemplateOpen(false)}
         destroyOnClose
+        onClose={closeTemplateDrawer}
+        styles={{
+          header: {
+            minHeight: 52,
+            padding: '0 20px',
+            borderBottom: '1px solid #e8e9ec',
+          },
+          body: { padding: 0 },
+          footer: { padding: '12px 20px' },
+        }}
+        footer={
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-xs text-[#8a8f99]">
+              已选择 {draftRules.length} 条规则
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={closeTemplateDrawer}>取消</Button>
+              <Button
+                type="primary"
+                disabled={!draftRules.length}
+                onClick={confirmDraftRules}
+              >
+                确定添加{draftRules.length ? ` (${draftRules.length})` : ''}
+              </Button>
+            </div>
+          </div>
+        }
       >
-        <Table<TemplateView>
-          rowKey="id"
-          size="small"
-          pagination={false}
-          dataSource={templates}
-          scroll={{
-            y: 440,
-          }}
-          className={dataQualityTableClassName()}
-          columns={[
-            {
-              title: '模板名称 / 编码',
-              dataIndex: 'name',
-              width: 220,
-              render: (_, template) => (
-                <div className="min-w-0 py-0.5">
-                  <div className="truncate font-medium text-[#172033]">
-                    {template.name}
-                  </div>
+        <div className="flex h-full min-h-0 bg-white">
+          <aside className="flex w-[320px] shrink-0 flex-col border-r border-[#e8e9ec] bg-[#fbfbfc]">
+            <div className="shrink-0 px-4 pt-4">
+              <div className="mb-2 text-[13px] font-semibold text-[#161823]">
+                规则模板库
+              </div>
+              <Input
+                allowClear
+                variant="filled"
+                value={templateKeyword}
+                prefix={<Search size={14} className="text-[#98a2b3]" />}
+                placeholder="搜索模板名称、编码或描述"
+                onChange={(event) => setTemplateKeyword(event.target.value)}
+              />
+              <Tabs
+                activeKey={templateTab}
+                animated={false}
+                onChange={(key) => setTemplateTab(key as TemplateTabKey)}
+                items={[
+                  {
+                    key: 'SYSTEM',
+                    label: `系统模板 (${systemTemplateCount})`,
+                  },
+                  {
+                    key: 'CUSTOM',
+                    label: `自定义模板 (${customTemplateCount})`,
+                  },
+                ]}
+                className="mt-2 [&_.ant-tabs-nav]:!mb-0 [&_.ant-tabs-tab]:!px-1 [&_.ant-tabs-tab]:!py-2.5 [&_.ant-tabs-tab+_.ant-tabs-tab]:!ml-5 [&_.ant-tabs-tab-btn]:!text-[12px]"
+              />
+            </div>
 
-                  <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
-                    {template.code}
-                  </div>
-                </div>
-              ),
-            },
-            {
-              title: '质量维度',
-              dataIndex: 'dimension',
-              width: 110,
-              render: (value) => (
-                <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
-                  {value}
-                </Tag>
-              ),
-            },
-            {
-              title: '关联范围',
-              dataIndex: 'scope',
-              width: 100,
-              render: (value) =>
-                value === 'TABLE' ? '表级' : '字段级',
-            },
-            {
-              title: '模板说明',
-              dataIndex: 'description',
-              render: (value) => (
-                <div className="line-clamp-2 leading-5 text-[#667085]">
-                  {value || '--'}
-                </div>
-              ),
-            },
-            {
-              title: '操作',
-              fixed: 'right',
-              width: 80,
-              render: (_, template) => (
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => {
-                    onChange([
-                      ...rules,
-                      ruleDefaults(template),
-                    ]);
+            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 pt-2">
+              {templateGroups.length ? (
+                <div className="space-y-1">
+                  {templateGroups.map((group) => {
+                    const expanded = expandedGroups[group.key] !== false;
+                    return (
+                      <div key={group.key}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedGroups((current) => ({
+                              ...current,
+                              [group.key]: !expanded,
+                            }))
+                          }
+                          className="flex h-8 w-full items-center gap-1.5 border-0 bg-transparent px-2 text-left text-[12px] font-medium text-[#475467] hover:bg-[#f2f3f5]"
+                        >
+                          {expanded ? (
+                            <ChevronDown size={14} />
+                          ) : (
+                            <ChevronRight size={14} />
+                          )}
+                          <span className="min-w-0 flex-1 truncate">
+                            {group.label}
+                          </span>
+                          <span className="text-[11px] font-normal text-[#98a2b3]">
+                            {group.templates.length}
+                          </span>
+                        </button>
 
-                    setTemplateOpen(false);
-                  }}
-                >
-                  添加
-                </Button>
-              ),
-            },
-          ]}
-        />
-      </Modal>
+                        {expanded ? (
+                          <div className="space-y-0.5 pb-1 pl-4">
+                            {group.templates.map((template) => {
+                              const selectedCount =
+                                selectedTemplateCounts.get(template.id) || 0;
+                              return (
+                                <button
+                                  key={template.id}
+                                  type="button"
+                                  onClick={() => addTemplate(template)}
+                                  className="group flex min-h-9 w-full items-center gap-2 border-0 bg-transparent px-2 py-1.5 text-left hover:bg-[rgba(254,44,85,.06)]"
+                                >
+                                  <FileText
+                                    size={14}
+                                    className="shrink-0 text-[#98a2b3] group-hover:text-[var(--yak-brand-color)]"
+                                  />
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-[12px] text-[#30323b]">
+                                      {template.name}
+                                    </span>
+                                    <span className="mt-0.5 block truncate text-[10px] text-[#a1a5ad]">
+                                      {template.code}
+                                    </span>
+                                  </span>
+                                  {selectedCount ? (
+                                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[rgba(254,44,85,.1)] px-1.5 text-[10px] font-medium leading-5 text-[var(--yak-brand-color)]">
+                                      {selectedCount}
+                                    </span>
+                                  ) : (
+                                    <Plus
+                                      size={13}
+                                      className="shrink-0 text-[#b0b4bb] opacity-0 group-hover:opacity-100"
+                                    />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="没有匹配的规则模板"
+                  className="mt-16"
+                />
+              )}
+            </div>
+          </aside>
+
+          <main className="min-w-0 flex-1 overflow-y-auto bg-white">
+            <div className="sticky top-0 z-10 flex h-[52px] items-center justify-between border-b border-[#eef0f2] bg-white px-5">
+              <div>
+                <span className="text-[13px] font-semibold text-[#161823]">
+                  已选择规则
+                </span>
+                <span className="ml-2 text-xs text-[#98a2b3]">
+                  点击左侧模板可连续添加，多次点击同一模板可配置不同字段
+                </span>
+              </div>
+              <span className="text-xs text-[#667085]">
+                共 {draftRules.length} 条
+              </span>
+            </div>
+
+            {draftRules.length ? (
+              <div className="space-y-3 p-4">
+                {draftRules.map((rule, index) => {
+                  const template = templateMap.get(rule.templateId);
+                  return (
+                    <section
+                      key={rule.key}
+                      className="overflow-hidden rounded-lg border border-[#e4e7ec] bg-white"
+                    >
+                      <header className="flex min-h-11 items-center justify-between gap-3 border-b border-[#eef0f2] bg-[#fafafa] px-4 py-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-[#161823]">
+                              规则 {index + 1}
+                            </span>
+                            <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
+                              {rule.dimension || '--'}
+                            </Tag>
+                            <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
+                              {rule.scope === 'TABLE' ? '表级' : '字段级'}
+                            </Tag>
+                          </div>
+                          <div className="mt-0.5 truncate text-[11px] text-[#98a2b3]">
+                            {template?.name || renderRuleTemplate(rule)} ·{' '}
+                            {template?.code || rule.templateCode}
+                          </div>
+                        </div>
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<Trash2 size={14} />}
+                          onClick={() =>
+                            setDraftRules((current) =>
+                              current.filter((item) => item.key !== rule.key),
+                            )
+                          }
+                        >
+                          删除
+                        </Button>
+                      </header>
+
+                      <div className="p-4">
+                        <RuleFields
+                          rule={rule}
+                          template={template}
+                          columns={columns}
+                          updateRule={updateDraftRule}
+                        />
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex min-h-[460px] items-center justify-center px-8">
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    <div className="text-center">
+                      <div className="text-[13px] text-[#667085]">
+                        从左侧规则模板库选择规则
+                      </div>
+                      <div className="mt-1 text-xs text-[#98a2b3]">
+                        选择后可在这里配置字段、阈值和启用状态
+                      </div>
+                    </div>
+                  }
+                />
+              </div>
+            )}
+          </main>
+        </div>
+      </Drawer>
     </>
   );
 };
+
+const RuleFields = ({
+  rule,
+  template,
+  columns,
+  updateRule,
+}: {
+  rule: EditorRule;
+  template?: TemplateView;
+  columns: CatalogColumn[];
+  updateRule: (key: string, values: Partial<EditorRule>) => void;
+}) => (
+  <div className="grid grid-cols-1 gap-x-5 gap-y-4 lg:grid-cols-2">
+    <div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">
+        <span className="mr-1 text-[var(--yak-brand-color)]">*</span>
+        规则名称
+      </div>
+      <Input
+        variant="filled"
+        value={rule.name}
+        maxLength={100}
+        onChange={(event) =>
+          updateRule(rule.key, {
+            name: event.target.value,
+          })
+        }
+      />
+    </div>
+
+    <div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">
+        规则模板
+      </div>
+      <Input
+        variant="filled"
+        disabled
+        value={template?.name || rule.templateCode || rule.ruleType}
+      />
+    </div>
+
+    <div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">
+        {rule.scope === 'COLUMN' ? (
+          <span className="mr-1 text-[var(--yak-brand-color)]">*</span>
+        ) : null}
+        检查字段
+      </div>
+      <Select
+        allowClear
+        variant="filled"
+        disabled={rule.scope === 'TABLE' && rule.ruleType !== 'CUSTOM_SQL'}
+        value={rule.columnName}
+        placeholder={
+          rule.scope === 'COLUMN' ? '请选择字段' : '表级规则无需字段'
+        }
+        showSearch
+        optionFilterProp="label"
+        options={columns.map((column) => ({
+          value: column.name,
+          label: `${column.name}${column.typeName ? ` · ${column.typeName}` : ''}`,
+        }))}
+        onChange={(columnName) =>
+          updateRule(rule.key, {
+            columnName,
+          })
+        }
+        className="w-full"
+      />
+    </div>
+
+    <div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">
+        启用状态
+      </div>
+      <div className="flex h-8 items-center gap-2">
+        <Switch
+          size="small"
+          checked={rule.enabled}
+          onChange={(enabled) =>
+            updateRule(rule.key, {
+              enabled,
+            })
+          }
+        />
+        <span className="text-xs text-[#667085]">
+          {rule.enabled ? '启用' : '停用'}
+        </span>
+      </div>
+    </div>
+
+    <div className="lg:col-span-2">
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">
+        规则参数
+      </div>
+      <RuleConfig rule={rule} updateRule={updateRule} />
+    </div>
+
+    <div className="lg:col-span-2">
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">
+        模板说明
+      </div>
+      <div className="min-h-10 rounded-md bg-[#f7f8fa] px-3 py-2 text-xs leading-5 text-[#667085]">
+        {template?.description || '暂无说明'}
+      </div>
+    </div>
+  </div>
+);
 
 const RuleConfig = ({
   rule,
   updateRule,
 }: {
   rule: EditorRule;
-  updateRule: (
-    key: string,
-    values: Partial<EditorRule>,
-  ) => void;
+  updateRule: (key: string, values: Partial<EditorRule>) => void;
 }) => {
   if (rule.ruleType === 'COLUMN_RANGE') {
     return (
@@ -559,9 +880,7 @@ const RuleConfig = ({
           }
         />
 
-        <span className="text-xs text-[#8a8f99]">
-          至
-        </span>
+        <span className="text-xs text-[#8a8f99]">至</span>
 
         <InputNumber
           variant="filled"
@@ -609,20 +928,12 @@ const RuleConfig = ({
           }
         />
 
-        <RuleThreshold
-          rule={rule}
-          updateRule={updateRule}
-        />
+        <RuleThreshold rule={rule} updateRule={updateRule} />
       </div>
     );
   }
 
-  return (
-    <RuleThreshold
-      rule={rule}
-      updateRule={updateRule}
-    />
-  );
+  return <RuleThreshold rule={rule} updateRule={updateRule} />;
 };
 
 const RuleThreshold = ({
@@ -630,10 +941,7 @@ const RuleThreshold = ({
   updateRule,
 }: {
   rule: EditorRule;
-  updateRule: (
-    key: string,
-    values: Partial<EditorRule>,
-  ) => void;
+  updateRule: (key: string, values: Partial<EditorRule>) => void;
 }) => (
   <div className="flex flex-wrap items-center gap-2">
     <Select<ComparisonOperator>
@@ -664,8 +972,7 @@ const RuleThreshold = ({
         value={rule.thresholdEnd}
         onChange={(thresholdEnd) =>
           updateRule(rule.key, {
-            thresholdEnd:
-              thresholdEnd ?? undefined,
+            thresholdEnd: thresholdEnd ?? undefined,
           })
         }
       />
