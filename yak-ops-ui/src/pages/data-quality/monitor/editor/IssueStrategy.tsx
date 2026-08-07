@@ -88,10 +88,6 @@ export const IssueStrategy = ({
         </EditorField>
       ) : null}
 
-      <div className="flex items-start gap-2 rounded-lg bg-[#f7f8fa] px-3 py-2.5 text-[11px] leading-5 text-[#667085]">
-        <ShieldAlert size={15} className="mt-0.5 shrink-0" />
-        <span>邮件与 Webhook 当前完成配置持久化和告警事件入队，实际外部投递由后续通知通道消费。</span>
-      </div>
     </div>
   </EditorSection>
 );

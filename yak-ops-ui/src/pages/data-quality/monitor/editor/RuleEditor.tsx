@@ -1,3 +1,4 @@
+import type { TableColumnsType, TreeDataNode, TreeProps } from "antd";
 import {
   Button,
   Drawer,
@@ -12,8 +13,7 @@ import {
   Tag,
   Tree,
   message,
-} from 'antd';
-import type { TableColumnsType, TreeDataNode, TreeProps } from 'antd';
+} from "antd";
 import {
   ChevronDown,
   ChevronRight,
@@ -22,20 +22,20 @@ import {
   Plus,
   Search,
   Trash2,
-} from 'lucide-react';
-import type { Key } from 'react';
-import { useMemo, useState } from 'react';
+} from "lucide-react";
+import type { Key } from "react";
+import { useMemo, useState } from "react";
 
-import { dataQualityTableClassName } from '../../components/tableStyle';
+import { dataQualityTableClassName } from "../../components/tableStyle";
 import type {
   CatalogColumn,
   ComparisonOperator,
   TemplateView,
-} from '../../types';
-import { EditorSection } from './EditorLayout';
-import { OPERATORS, ruleDefaults, type EditorRule } from './model';
+} from "../../types";
+import { EditorSection } from "./EditorLayout";
+import { OPERATORS, ruleDefaults, type EditorRule } from "./model";
 
-type TemplateTabKey = 'SYSTEM' | 'CUSTOM';
+type TemplateTabKey = "SYSTEM" | "CUSTOM";
 
 interface TemplateGroup {
   key: string;
@@ -44,34 +44,34 @@ interface TemplateGroup {
 }
 
 const isSystemTemplate = (template: TemplateView) =>
-  template.builtin || template.source === 'SYSTEM';
+  template.builtin || template.source === "SYSTEM";
 
-const normalizeText = (value?: string) => (value || '').trim().toLowerCase();
+const normalizeText = (value?: string) => (value || "").trim().toLowerCase();
 
 export const validateRules = (rules: EditorRule[]) => {
-  if (!rules.length) throw new Error('至少添加一条质量规则');
+  if (!rules.length) throw new Error("至少添加一条质量规则");
 
   rules.forEach((rule) => {
     if (!rule.name.trim()) {
-      throw new Error('规则名称不能为空');
+      throw new Error("规则名称不能为空");
     }
 
-    if (rule.scope === 'COLUMN' && !rule.columnName) {
+    if (rule.scope === "COLUMN" && !rule.columnName) {
       throw new Error(`${rule.name} 需要选择字段`);
     }
 
     if (
-      rule.ruleType === 'COLUMN_RANGE' &&
+      rule.ruleType === "COLUMN_RANGE" &&
       (rule.threshold === undefined || rule.thresholdEnd === undefined)
     ) {
       throw new Error(`${rule.name} 需要填写最小值和最大值`);
     }
 
-    if (rule.ruleType === 'COLUMN_ENUM' && !rule.enumValues?.length) {
+    if (rule.ruleType === "COLUMN_ENUM" && !rule.enumValues?.length) {
       throw new Error(`${rule.name} 至少填写一个枚举值`);
     }
 
-    if (rule.ruleType === 'CUSTOM_SQL' && !rule.customSql?.trim()) {
+    if (rule.ruleType === "CUSTOM_SQL" && !rule.customSql?.trim()) {
       throw new Error(`${rule.name} 需要填写 SQL`);
     }
   });
@@ -89,8 +89,8 @@ export const QualityRuleEditor = ({
   templates: TemplateView[];
 }) => {
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [templateTab, setTemplateTab] = useState<TemplateTabKey>('SYSTEM');
-  const [templateKeyword, setTemplateKeyword] = useState('');
+  const [templateTab, setTemplateTab] = useState<TemplateTabKey>("SYSTEM");
+  const [templateKeyword, setTemplateKeyword] = useState("");
   const [draftRules, setDraftRules] = useState<EditorRule[]>([]);
   const [expandedTemplateKeys, setExpandedTemplateKeys] = useState<Key[]>([]);
   const [editOpen, setEditOpen] = useState(false);
@@ -99,17 +99,17 @@ export const QualityRuleEditor = ({
 
   const editingRule = useMemo(
     () => rules.find((rule) => rule.key === editingKey),
-    [editingKey, rules],
+    [editingKey, rules]
   );
 
   const templateMap = useMemo(
     () => new Map(templates.map((template) => [template.id, template])),
-    [templates],
+    [templates]
   );
 
   const systemTemplateCount = useMemo(
     () => templates.filter(isSystemTemplate).length,
-    [templates],
+    [templates]
   );
 
   const customTemplateCount = templates.length - systemTemplateCount;
@@ -118,7 +118,7 @@ export const QualityRuleEditor = ({
     const keyword = normalizeText(templateKeyword);
     const filtered = templates.filter((template) => {
       const matchesTab =
-        templateTab === 'SYSTEM'
+        templateTab === "SYSTEM"
           ? isSystemTemplate(template)
           : !isSystemTemplate(template);
       if (!matchesTab) return false;
@@ -135,9 +135,9 @@ export const QualityRuleEditor = ({
     const grouped = new Map<string, TemplateView[]>();
     filtered.forEach((template) => {
       const groupName =
-        templateTab === 'SYSTEM'
-          ? template.dimension || '其他'
-          : template.folderName || template.dimension || '未分类';
+        templateTab === "SYSTEM"
+          ? template.dimension || "其他"
+          : template.folderName || template.dimension || "未分类";
       const items = grouped.get(groupName) || [];
       items.push(template);
       grouped.set(groupName, items);
@@ -149,7 +149,8 @@ export const QualityRuleEditor = ({
         label,
         templates: values.sort(
           (left, right) =>
-            left.sortOrder - right.sortOrder || left.name.localeCompare(right.name),
+            left.sortOrder - right.sortOrder ||
+            left.name.localeCompare(right.name)
         ),
       }))
       .sort((left, right) => left.label.localeCompare(right.label));
@@ -223,7 +224,7 @@ export const QualityRuleEditor = ({
           };
         }),
       })),
-    [selectedTemplateCounts, templateGroups],
+    [selectedTemplateCounts, templateGroups]
   );
 
   const visibleExpandedTemplateKeys = useMemo<Key[]>(() => {
@@ -231,11 +232,11 @@ export const QualityRuleEditor = ({
     return templateGroups.map((group) => `group:${group.key}`);
   }, [expandedTemplateKeys, templateGroups, templateKeyword]);
 
-  const handleTemplateTreeSelect: TreeProps['onSelect'] = (_, info) => {
+  const handleTemplateTreeSelect: TreeProps["onSelect"] = (_, info) => {
     const nodeKey = String(info.node.key);
-    if (!nodeKey.startsWith('template:')) return;
+    if (!nodeKey.startsWith("template:")) return;
 
-    const templateId = Number(nodeKey.slice('template:'.length));
+    const templateId = Number(nodeKey.slice("template:".length));
     const template = templateMap.get(templateId);
     if (template) addTemplate(template);
   };
@@ -248,8 +249,8 @@ export const QualityRuleEditor = ({
               ...rule,
               ...values,
             }
-          : rule,
-      ),
+          : rule
+      )
     );
   };
 
@@ -261,8 +262,8 @@ export const QualityRuleEditor = ({
               ...rule,
               ...values,
             }
-          : rule,
-      ),
+          : rule
+      )
     );
   };
 
@@ -270,7 +271,7 @@ export const QualityRuleEditor = ({
     onChange(rules.filter((rule) => rule.key !== key));
 
     setSelectedRowKeys((keys) =>
-      keys.filter((selectedKey) => selectedKey !== key),
+      keys.filter((selectedKey) => selectedKey !== key)
     );
   };
 
@@ -281,15 +282,15 @@ export const QualityRuleEditor = ({
 
   const openTemplateDrawer = () => {
     setDraftRules([]);
-    setTemplateKeyword('');
-    setTemplateTab('SYSTEM');
+    setTemplateKeyword("");
+    setTemplateTab("SYSTEM");
     setTemplateOpen(true);
   };
 
   const closeTemplateDrawer = () => {
     setTemplateOpen(false);
     setDraftRules([]);
-    setTemplateKeyword('');
+    setTemplateKeyword("");
   };
 
   const addTemplate = (template: TemplateView) => {
@@ -302,12 +303,12 @@ export const QualityRuleEditor = ({
       onChange([...rules, ...draftRules]);
       closeTemplateDrawer();
     } catch (error: any) {
-      message.warning(error?.message || '请完善规则配置');
+      message.warning(error?.message || "请完善规则配置");
     }
   };
 
   const operatorLabel = (operator?: ComparisonOperator) => {
-    if (!operator) return '--';
+    if (!operator) return "--";
 
     return (
       OPERATORS.find((item) => item.value === operator)?.label ??
@@ -317,41 +318,41 @@ export const QualityRuleEditor = ({
 
   const renderRuleTemplate = (rule: EditorRule) => {
     switch (rule.ruleType) {
-      case 'TABLE_ROW_COUNT':
-        return '表行数';
-      case 'COLUMN_NOT_NULL':
-        return '字段非空';
-      case 'COLUMN_UNIQUE':
-        return '字段唯一';
-      case 'COLUMN_RANGE':
-        return '字段范围';
-      case 'COLUMN_ENUM':
-        return '字段枚举';
-      case 'CUSTOM_SQL':
-        return '自定义 SQL';
+      case "TABLE_ROW_COUNT":
+        return "表行数";
+      case "COLUMN_NOT_NULL":
+        return "字段非空";
+      case "COLUMN_UNIQUE":
+        return "字段唯一";
+      case "COLUMN_RANGE":
+        return "字段范围";
+      case "COLUMN_ENUM":
+        return "字段枚举";
+      case "CUSTOM_SQL":
+        return "自定义 SQL";
       default:
-        return rule.ruleType || '--';
+        return rule.ruleType || "--";
     }
   };
 
   const renderThreshold = (rule: EditorRule) => {
-    if (rule.ruleType === 'COLUMN_RANGE') {
+    if (rule.ruleType === "COLUMN_RANGE") {
       return (
         <div className="leading-5">
           <div className="text-[#344054]">字段值范围</div>
           <div className="mt-0.5 text-xs text-[#667085]">
-            {rule.threshold ?? '--'} 至 {rule.thresholdEnd ?? '--'}
+            {rule.threshold ?? "--"} 至 {rule.thresholdEnd ?? "--"}
           </div>
         </div>
       );
     }
 
-    if (rule.ruleType === 'COLUMN_ENUM') {
+    if (rule.ruleType === "COLUMN_ENUM") {
       return (
         <div className="leading-5">
           <div className="text-[#344054]">允许枚举值</div>
           <div className="mt-0.5 max-w-[280px] truncate text-xs text-[#667085]">
-            {rule.enumValues?.length ? rule.enumValues.join('、') : '--'}
+            {rule.enumValues?.length ? rule.enumValues.join("、") : "--"}
           </div>
         </div>
       );
@@ -366,11 +367,10 @@ export const QualityRuleEditor = ({
 
           <span>
             {operatorLabel(rule.operator)}
-            {rule.threshold !== undefined ? ` ${rule.threshold}` : ''}
+            {rule.threshold !== undefined ? ` ${rule.threshold}` : ""}
           </span>
 
-          {rule.operator === 'BETWEEN' &&
-          rule.thresholdEnd !== undefined ? (
+          {rule.operator === "BETWEEN" && rule.thresholdEnd !== undefined ? (
             <>
               <span className="text-[#98a2b3]">~</span>
               <span>{rule.thresholdEnd}</span>
@@ -383,13 +383,13 @@ export const QualityRuleEditor = ({
 
   const tableColumns: TableColumnsType<EditorRule> = [
     {
-      title: 'ID / 规则名称',
-      dataIndex: 'name',
+      title: "ID / 规则名称",
+      dataIndex: "name",
       width: 260,
       render: (_, rule) => (
         <div className="min-w-0 py-0.5">
           <div className="truncate font-medium text-[#172033]">
-            {rule.name || '未命名规则'}
+            {rule.name || "未命名规则"}
           </div>
 
           <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
@@ -399,21 +399,21 @@ export const QualityRuleEditor = ({
       ),
     },
     {
-      title: '关联范围',
-      dataIndex: 'scope',
+      title: "关联范围",
+      dataIndex: "scope",
       width: 110,
       render: (value) => (
         <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
-          {value === 'TABLE' ? '表级' : '字段级'}
+          {value === "TABLE" ? "表级" : "字段级"}
         </Tag>
       ),
     },
     {
-      title: '检查字段',
-      dataIndex: 'columnName',
+      title: "检查字段",
+      dataIndex: "columnName",
       width: 160,
       render: (value, rule) => {
-        if (rule.scope === 'TABLE' && !value) {
+        if (rule.scope === "TABLE" && !value) {
           return <span className="text-[#98a2b3]">整表</span>;
         }
 
@@ -421,31 +421,31 @@ export const QualityRuleEditor = ({
       },
     },
     {
-      title: '规则模板',
-      dataIndex: 'ruleType',
+      title: "规则模板",
+      dataIndex: "ruleType",
       width: 150,
       render: (_, rule) => (
         <span className="text-[#344054]">{renderRuleTemplate(rule)}</span>
       ),
     },
     {
-      title: '监控阈值',
+      title: "监控阈值",
       width: 260,
       render: (_, rule) => renderThreshold(rule),
     },
     {
-      title: '维度',
-      dataIndex: 'dimension',
+      title: "维度",
+      dataIndex: "dimension",
       width: 120,
       render: (value) => (
         <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#475467]">
-          {value || '--'}
+          {value || "--"}
         </Tag>
       ),
     },
     {
-      title: '启用状态',
-      dataIndex: 'enabled',
+      title: "启用状态",
+      dataIndex: "enabled",
       width: 110,
       render: (_, rule) => (
         <div className="flex items-center gap-2">
@@ -459,17 +459,15 @@ export const QualityRuleEditor = ({
             }
           />
 
-          <span
-            className={rule.enabled ? 'text-[#344054]' : 'text-[#98a2b3]'}
-          >
-            {rule.enabled ? '启用' : '停用'}
+          <span className={rule.enabled ? "text-[#344054]" : "text-[#98a2b3]"}>
+            {rule.enabled ? "启用" : "停用"}
           </span>
         </div>
       ),
     },
     {
-      title: '操作项',
-      fixed: 'right',
+      title: "操作项",
+      fixed: "right",
       width: 120,
       render: (_, rule) => (
         <div className="flex items-center gap-1">
@@ -502,22 +500,28 @@ export const QualityRuleEditor = ({
         <div>
           <div className="mb-2 flex min-h-8 flex-wrap items-center gap-2">
             <Button
-              type="primary"
               size="small"
-              icon={<Plus size={14} />}
+              color={"primary"}
+              variant="filled"
+              className={["!h-7 !rounded-md !px-2.5 !text-xs"].join(" ")}
               onClick={openTemplateDrawer}
             >
               添加规则
             </Button>
 
-            <Button size="small" onClick={openTemplateDrawer}>
+            <Button
+              size="small"
+              color="default"
+              variant="filled"
+              className="!h-7 !rounded-md !px-2.5 !text-xs"
+              onClick={openTemplateDrawer}
+            >
               添加已有规则
             </Button>
 
             <span className="ml-2 text-xs font-medium text-[#344054]">
               已选择
-              <span className="mx-0.5">{selectedRowKeys.length}</span>
-              条
+              <span className="mx-0.5">{selectedRowKeys.length}</span>条
             </span>
           </div>
 
@@ -597,11 +601,11 @@ export const QualityRuleEditor = ({
         styles={{
           header: {
             minHeight: 52,
-            padding: '0 20px',
-            borderBottom: '1px solid #e8e9ec',
+            padding: "0 20px",
+            borderBottom: "1px solid #e8e9ec",
           },
           body: { padding: 0 },
-          footer: { padding: '12px 20px' },
+          footer: { padding: "12px 20px" },
         }}
         footer={
           <div className="flex items-center justify-between gap-4">
@@ -615,7 +619,7 @@ export const QualityRuleEditor = ({
                 disabled={!draftRules.length}
                 onClick={confirmDraftRules}
               >
-                确定添加{draftRules.length ? ` (${draftRules.length})` : ''}
+                确定添加{draftRules.length ? ` (${draftRules.length})` : ""}
               </Button>
             </div>
           </div>
@@ -634,11 +638,11 @@ export const QualityRuleEditor = ({
                 }}
                 options={[
                   {
-                    value: 'SYSTEM',
+                    value: "SYSTEM",
                     label: `系统模板 (${systemTemplateCount})`,
                   },
                   {
-                    value: 'CUSTOM',
+                    value: "CUSTOM",
                     label: `自定义模板 (${customTemplateCount})`,
                   },
                 ]}
@@ -741,14 +745,14 @@ export const QualityRuleEditor = ({
                               规则 {index + 1}
                             </span>
                             <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
-                              {rule.dimension || '--'}
+                              {rule.dimension || "--"}
                             </Tag>
                             <Tag className="!m-0 !border-0 !bg-[#f2f4f7] !text-[#667085]">
-                              {rule.scope === 'TABLE' ? '表级' : '字段级'}
+                              {rule.scope === "TABLE" ? "表级" : "字段级"}
                             </Tag>
                           </div>
                           <div className="mt-0.5 truncate text-[11px] text-[#98a2b3]">
-                            {template?.name || renderRuleTemplate(rule)} ·{' '}
+                            {template?.name || renderRuleTemplate(rule)} ·{" "}
                             {template?.code || rule.templateCode}
                           </div>
                         </div>
@@ -759,7 +763,7 @@ export const QualityRuleEditor = ({
                           icon={<Trash2 size={14} />}
                           onClick={() =>
                             setDraftRules((current) =>
-                              current.filter((item) => item.key !== rule.key),
+                              current.filter((item) => item.key !== rule.key)
                             )
                           }
                         >
@@ -833,11 +837,10 @@ const RuleFields = ({
     </div>
 
     <div>
-      <div className="mb-1.5 text-xs font-medium text-[#475467]">
-        规则模板
-      </div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">规则模板</div>
       <Input
         variant="filled"
+        bordered={false}
         disabled
         value={template?.name || rule.templateCode || rule.ruleType}
       />
@@ -845,7 +848,7 @@ const RuleFields = ({
 
     <div>
       <div className="mb-1.5 text-xs font-medium text-[#475467]">
-        {rule.scope === 'COLUMN' ? (
+        {rule.scope === "COLUMN" ? (
           <span className="mr-1 text-[var(--yak-brand-color)]">*</span>
         ) : null}
         检查字段
@@ -853,16 +856,18 @@ const RuleFields = ({
       <Select
         allowClear
         variant="filled"
-        disabled={rule.scope === 'TABLE' && rule.ruleType !== 'CUSTOM_SQL'}
+        disabled={rule.scope === "TABLE" && rule.ruleType !== "CUSTOM_SQL"}
         value={rule.columnName}
         placeholder={
-          rule.scope === 'COLUMN' ? '请选择字段' : '表级规则无需字段'
+          rule.scope === "COLUMN" ? "请选择字段" : "表级规则无需字段"
         }
         showSearch
         optionFilterProp="label"
         options={columns.map((column) => ({
           value: column.name,
-          label: `${column.name}${column.typeName ? ` · ${column.typeName}` : ''}`,
+          label: `${column.name}${
+            column.typeName ? ` · ${column.typeName}` : ""
+          }`,
         }))}
         onChange={(columnName) =>
           updateRule(rule.key, {
@@ -874,9 +879,7 @@ const RuleFields = ({
     </div>
 
     <div>
-      <div className="mb-1.5 text-xs font-medium text-[#475467]">
-        启用状态
-      </div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">启用状态</div>
       <div className="flex h-8 items-center gap-2">
         <Switch
           size="small"
@@ -888,24 +891,20 @@ const RuleFields = ({
           }
         />
         <span className="text-xs text-[#667085]">
-          {rule.enabled ? '启用' : '停用'}
+          {rule.enabled ? "启用" : "停用"}
         </span>
       </div>
     </div>
 
     <div className="lg:col-span-2">
-      <div className="mb-1.5 text-xs font-medium text-[#475467]">
-        规则参数
-      </div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">规则参数</div>
       <RuleConfig rule={rule} updateRule={updateRule} />
     </div>
 
     <div className="lg:col-span-2">
-      <div className="mb-1.5 text-xs font-medium text-[#475467]">
-        模板说明
-      </div>
+      <div className="mb-1.5 text-xs font-medium text-[#475467]">模板说明</div>
       <div className="min-h-10 rounded-md bg-[#f7f8fa] px-3 py-2 text-xs leading-5 text-[#667085]">
-        {template?.description || '暂无说明'}
+        {template?.description || "暂无说明"}
       </div>
     </div>
   </div>
@@ -918,7 +917,7 @@ const RuleConfig = ({
   rule: EditorRule;
   updateRule: (key: string, values: Partial<EditorRule>) => void;
 }) => {
-  if (rule.ruleType === 'COLUMN_RANGE') {
+  if (rule.ruleType === "COLUMN_RANGE") {
     return (
       <div className="flex flex-wrap items-center gap-2">
         <InputNumber
@@ -948,7 +947,7 @@ const RuleConfig = ({
     );
   }
 
-  if (rule.ruleType === 'COLUMN_ENUM') {
+  if (rule.ruleType === "COLUMN_ENUM") {
     return (
       <Select
         mode="tags"
@@ -965,7 +964,7 @@ const RuleConfig = ({
     );
   }
 
-  if (rule.ruleType === 'CUSTOM_SQL') {
+  if (rule.ruleType === "CUSTOM_SQL") {
     return (
       <div className="space-y-2">
         <Input.TextArea
@@ -1018,7 +1017,7 @@ const RuleThreshold = ({
       }
     />
 
-    {rule.operator === 'BETWEEN' ? (
+    {rule.operator === "BETWEEN" ? (
       <InputNumber
         variant="filled"
         value={rule.thresholdEnd}
