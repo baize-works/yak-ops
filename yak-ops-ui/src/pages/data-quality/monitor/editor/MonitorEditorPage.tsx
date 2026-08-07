@@ -57,9 +57,6 @@ const MonitorEditorPage = () => {
   const { pageRootRef, activeSection, locateSection } = useSectionNavigation();
 
   const [dataSources, setDataSources] = useState<DataSourceRecord[]>([]);
-  const [tables, setTables] = useState<
-    Array<{ name: string; remarks?: string }>
-  >([]);
   const [columns, setColumns] = useState<CatalogColumn[]>([]);
   const [templates, setTemplates] = useState<TemplateView[]>([]);
   const [rules, setRules] = useState<EditorRule[]>([]);
@@ -71,6 +68,7 @@ const MonitorEditorPage = () => {
   const [saving, setSaving] = useState(false);
 
   const dataSourceId = Form.useWatch('dataSourceId', form);
+  const storedDataSourceName = Form.useWatch('dataSourceName', form);
   const databaseName = Form.useWatch('databaseName', form);
   const schemaName = Form.useWatch('schemaName', form);
   const tableName = Form.useWatch('tableName', form);
@@ -143,19 +141,6 @@ const MonitorEditorPage = () => {
   ]);
 
   useEffect(() => {
-    if (!dataSourceId) {
-      setTables([]);
-      return;
-    }
-    dataSourceCatalogApi
-      .listTables(dataSourceId, databaseName, schemaName)
-      .then((response) => setTables(unwrap(response)))
-      .catch((error) =>
-        message.error(error?.message || '数据表加载失败'),
-      );
-  }, [dataSourceId, databaseName, schemaName]);
-
-  useEffect(() => {
     if (!dataSourceId || !tableName) {
       setColumns([]);
       return;
@@ -171,6 +156,9 @@ const MonitorEditorPage = () => {
   const save = async () => {
     try {
       const values = await form.validateFields();
+      if (!values.dataSourceId || !values.tableName) {
+        throw new Error('监控对象无效，请从数据表监控页面重新创建');
+      }
       validateEditorSettings(runtime, strategy);
       validateRules(rules);
       const source = dataSources.find(
@@ -230,12 +218,17 @@ const MonitorEditorPage = () => {
                   <Form.Item name="schemaName" hidden>
                     <Input />
                   </Form.Item>
+                  <Form.Item name="tableName" hidden>
+                    <Input />
+                  </Form.Item>
 
                   <main className="space-y-5 pb-4">
                     <BasicConfig
                       dataSourceId={dataSourceId}
-                      dataSourceName={selectedSource?.name}
-                      tables={tables}
+                      dataSourceName={selectedSource?.name || storedDataSourceName}
+                      databaseName={databaseName}
+                      schemaName={schemaName}
+                      tableName={tableName}
                     />
                     <QualityRuleEditor
                       rules={rules}
@@ -258,6 +251,7 @@ const MonitorEditorPage = () => {
                   <Button
                     type="primary"
                     loading={saving}
+                    disabled={!dataSourceId || !tableName}
                     className="!h-9 !min-w-[120px] !rounded-lg"
                     onClick={save}
                   >
