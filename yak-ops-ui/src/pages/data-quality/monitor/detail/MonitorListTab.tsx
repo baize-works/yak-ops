@@ -1,16 +1,6 @@
-import {
-  Button,
-  Dropdown,
-  Empty,
-  Input,
-  Select,
-  Table,
-  Tag,
-  Tooltip,
-  message,
-} from 'antd';
+import { Button, Dropdown, Empty, Input, Select, Table, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
-import { MoreHorizontal, Plus, RefreshCw, Search } from 'lucide-react';
+import { MoreHorizontal, RefreshCw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { MonitorWorkspaceView } from '../../types';
@@ -20,7 +10,6 @@ interface MonitorListTabProps {
   workspace: MonitorWorkspaceView;
   running: boolean;
   onRun: () => void;
-  onEdit: () => void;
   onRefresh: () => void;
   onRemove: () => void;
   onOpenLog: () => void;
@@ -41,7 +30,6 @@ const MonitorListTab = ({
   workspace,
   running,
   onRun,
-  onEdit,
   onRefresh,
   onRemove,
   onOpenLog,
@@ -148,16 +136,9 @@ const MonitorListTab = ({
     {
       title: '操作',
       fixed: 'right',
-      width: 190,
+      width: 160,
       render: () => (
         <div className="flex items-center gap-3 whitespace-nowrap text-xs">
-          <button
-            type="button"
-            className="border-0 bg-transparent p-0 text-[#245bdb]"
-            onClick={onEdit}
-          >
-            编辑
-          </button>
           <button
             type="button"
             className="border-0 bg-transparent p-0 text-[#245bdb]"
@@ -194,15 +175,6 @@ const MonitorListTab = ({
   return (
     <div className="min-h-0 flex-1 overflow-auto bg-white px-6 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Tooltip title="当前数据表只允许创建一个质量监控">
-          <Button
-            type="primary"
-            icon={<Plus size={14} />}
-            onClick={() => message.info('当前数据表已经存在质量监控')}
-          >
-            新建质量监控
-          </Button>
-        </Tooltip>
         <Input
           allowClear
           value={keyword}
