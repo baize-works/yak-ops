@@ -73,6 +73,11 @@
             </dependency>
             <dependency>
                 <groupId>io.yak.framework</groupId>
+                <artifactId>yak-workflow-engine</artifactId>
+                <version>${yak-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.framework</groupId>
                 <artifactId>yak-file</artifactId>
                 <version>${yak-framework.version}</version>
             </dependency>
@@ -115,6 +120,11 @@
             <dependency>
                 <groupId>io.yak.ops</groupId>
                 <artifactId>yak-ops-business-quality</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.yak.ops</groupId>
+                <artifactId>yak-ops-business-workflow</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
