@@ -237,18 +237,18 @@ const MonitorEditorPage = () => {
                       dataSourceName={selectedSource?.name}
                       tables={tables}
                     />
-                    <RuntimeSettings
-                      value={runtime}
-                      onChange={setRuntime}
-                      nextRunTime={nextRunTime}
-                    />
-                    <IssueStrategy value={strategy} onChange={setStrategy} />
                     <QualityRuleEditor
                       rules={rules}
                       onChange={setRules}
                       columns={columns}
                       templates={templates}
                     />
+                    <RuntimeSettings
+                      value={runtime}
+                      onChange={setRuntime}
+                      nextRunTime={nextRunTime}
+                    />
+                    <IssueStrategy value={strategy} onChange={setStrategy} />
                   </main>
                 </Form>
               </Spin>
