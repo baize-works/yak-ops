@@ -63,6 +63,77 @@ class WorkflowRuntimeServiceTest {
     assertThat(completed.status()).isEqualTo("SUCCESS");
   }
 
+  @Test
+  void shouldBlockFailedBranchAndContinueIndependentBranch()
+      throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 20L);
+
+    WorkflowRunRequest request = new WorkflowRunRequest(
+        "failure-branch-demo",
+        List.of(
+            successNode("a"),
+            failedNode("b"),
+            successNode("c"),
+            successNode("d"),
+            successNode("e"),
+            successNode("f")),
+        List.of(
+            new EdgeRequest("a", "b"),
+            new EdgeRequest("b", "c"),
+            new EdgeRequest("c", "f"),
+            new EdgeRequest("a", "d"),
+            new EdgeRequest("d", "e")),
+        Map.of());
+
+    WorkflowInstanceVO started = service.run(request);
+    service.activate(started.id());
+    WorkflowInstanceVO completed = waitForTerminal(started.id());
+
+    assertThat(completed.status()).isEqualTo("FAILED");
+    assertThat(statusOf(completed, "a")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "b")).isEqualTo("FAILED");
+    assertThat(statusOf(completed, "c")).isEqualTo("UPSTREAM_FAILED");
+    assertThat(statusOf(completed, "f")).isEqualTo("UPSTREAM_FAILED");
+    assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
+  }
+
+  @Test
+  void shouldBlockJoinWhenOneRequiredPredecessorFails()
+      throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 20L);
+
+    WorkflowRunRequest request = new WorkflowRunRequest(
+        "failed-join-demo",
+        List.of(
+            successNode("a"),
+            failedNode("b"),
+            successNode("d"),
+            successNode("e"),
+            successNode("join")),
+        List.of(
+            new EdgeRequest("a", "b"),
+            new EdgeRequest("a", "d"),
+            new EdgeRequest("d", "e"),
+            new EdgeRequest("b", "join"),
+            new EdgeRequest("e", "join")),
+        Map.of());
+
+    WorkflowInstanceVO started = service.run(request);
+    service.activate(started.id());
+    WorkflowInstanceVO completed = waitForTerminal(started.id());
+
+    assertThat(completed.status()).isEqualTo("FAILED");
+    assertThat(statusOf(completed, "b")).isEqualTo("FAILED");
+    assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "join")).isEqualTo("UPSTREAM_FAILED");
+  }
+
   private WorkflowRunRequest simpleSerialWorkflow() {
     return new WorkflowRunRequest(
         "demo",
@@ -71,6 +142,14 @@ class WorkflowRuntimeServiceTest {
             new NodeRequest("check", "Check", "CHECK")),
         List.of(new EdgeRequest("extract", "check")),
         Map.of());
+  }
+
+  private NodeRequest successNode(String id) {
+    return new NodeRequest(id, id.toUpperCase(), "TASK", "SUCCESS");
+  }
+
+  private NodeRequest failedNode(String id) {
+    return new NodeRequest(id, id.toUpperCase(), "TASK", "FAILED");
   }
 
   private WorkflowInstanceVO waitForNodeStatus(
@@ -89,7 +168,7 @@ class WorkflowRuntimeServiceTest {
 
   private WorkflowInstanceVO waitForTerminal(String executionId)
       throws InterruptedException {
-    for (int attempt = 0; attempt < 200; attempt++) {
+    for (int attempt = 0; attempt < 300; attempt++) {
       WorkflowInstanceVO current = service.getInstance(executionId);
       if (!"RUNNING".equals(current.status()) && !"CREATED".equals(current.status())) {
         return current;
