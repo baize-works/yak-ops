@@ -63,7 +63,7 @@ const WorkflowInstancesPage = () => {
     return () => window.clearInterval(timer);
   }, [loadInstances]);
 
-  const openDetail = async (record: WorkflowInstance) => {
+  const openDetail = useCallback(async (record: WorkflowInstance) => {
     setDetail(record);
     setDetailOpen(true);
     setDetailLoading(true);
@@ -74,7 +74,7 @@ const WorkflowInstancesPage = () => {
     } finally {
       setDetailLoading(false);
     }
-  };
+  }, []);
 
   const columns = useMemo<ColumnsType<WorkflowInstance>>(
     () => [
@@ -135,7 +135,7 @@ const WorkflowInstancesPage = () => {
         ),
       },
     ],
-    [],
+    [openDetail],
   );
 
   const nodeColumns = useMemo<ColumnsType<WorkflowNodeInstance>>(
