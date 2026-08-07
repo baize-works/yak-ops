@@ -1,5 +1,6 @@
 import {
   activateWorkflowInstance,
+  continueWorkflowAfterFailure,
   isWorkflowTerminal,
   runWorkflow,
   subscribeWorkflowEvents,
@@ -8,10 +9,12 @@ import {
 } from '@/services/workflow';
 import { Button, Input, Popconfirm, Segmented, message } from 'antd';
 import {
+  ArrowRightCircle,
   Bell,
   CheckCircle2,
   CircleEllipsis,
   CirclePlay,
+  CircleSlash2,
   Database,
   LoaderCircle,
   Play,
@@ -50,6 +53,7 @@ interface WorkflowNodeData {
   typeLabel: string;
   mockResult: WorkflowMockResult;
   executionStatus?: string;
+  continuedAfterFailure?: boolean;
 }
 
 interface NodeTemplate {
@@ -57,6 +61,12 @@ interface NodeTemplate {
   label: string;
   description: string;
   icon: ReactNode;
+}
+
+interface NodeContextMenuState {
+  nodeId: string;
+  x: number;
+  y: number;
 }
 
 const NODE_TEMPLATES: NodeTemplate[] = [
@@ -92,10 +102,11 @@ const statusLabel: Record<string, string> = {
   SUBMITTED: '待执行',
   RUNNING: '运行中',
   SUCCESS: '成功',
+  SUCCESS_WITH_WARNINGS: '完成（有告警）',
   FAILED: '失败',
   WARNING: '告警',
   CANCELED: '已取消',
-  UPSTREAM_FAILED: '上游失败',
+  UPSTREAM_FAILED: '已阻断',
   SKIPPED: '已跳过',
 };
 
@@ -103,11 +114,19 @@ const statusIcon = (status?: string) => {
   if (status === 'RUNNING') {
     return <LoaderCircle size={13} className="animate-spin text-[#fe2c55]" />;
   }
-  if (status === 'SUCCESS') {
+  if (status === 'SUCCESS' || status === 'SUCCESS_WITH_WARNINGS') {
     return <CheckCircle2 size={13} className="text-[#161823]" />;
   }
-  if (status === 'FAILED' || status === 'UPSTREAM_FAILED') {
+  if (status === 'FAILED') {
     return <XCircle size={13} className="text-[#d92d20]" />;
+  }
+  if (status === 'UPSTREAM_FAILED') {
+    return (
+      <CircleSlash2
+        size={13}
+        className="text-[rgba(22,24,35,.42)]"
+      />
+    );
   }
   return <CircleEllipsis size={13} className="text-[rgba(22,24,35,.42)]" />;
 };
@@ -116,8 +135,11 @@ const nodeStateClass = (status?: string, selected?: boolean) => {
   if (status === 'RUNNING') {
     return 'border-[#fe2c55] bg-[#fff7f8] shadow-[0_0_0_3px_rgba(254,44,85,.10)]';
   }
-  if (status === 'FAILED' || status === 'UPSTREAM_FAILED') {
+  if (status === 'FAILED') {
     return 'border-[#d92d20] bg-[#fff6f4] shadow-[0_0_0_2px_rgba(217,45,32,.06)]';
+  }
+  if (status === 'UPSTREAM_FAILED') {
+    return 'border-[#cfd3d8] bg-[#f5f6f7] opacity-70 shadow-none';
   }
   if (status === 'SUCCESS') {
     return 'border-[rgba(22,24,35,.45)] bg-[#f7f7f8]';
@@ -131,8 +153,9 @@ const nodeStateClass = (status?: string, selected?: boolean) => {
 
 const statusTextClass = (status?: string) => {
   if (status === 'RUNNING') return 'font-medium text-[#fe2c55]';
-  if (status === 'FAILED' || status === 'UPSTREAM_FAILED') {
-    return 'font-medium text-[#d92d20]';
+  if (status === 'FAILED') return 'font-medium text-[#d92d20]';
+  if (status === 'UPSTREAM_FAILED') {
+    return 'font-medium text-[rgba(22,24,35,.44)]';
   }
   if (status === 'SUCCESS') return 'font-medium text-[#161823]';
   return 'text-[rgba(22,24,35,.52)]';
@@ -141,7 +164,7 @@ const statusTextClass = (status?: string) => {
 const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => (
   <div
     className={[
-      'relative min-w-[174px] rounded-lg border px-3 py-2.5 shadow-sm transition-[border-color,background-color,box-shadow] duration-300',
+      'relative min-w-[174px] rounded-lg border px-3 py-2.5 shadow-sm transition-[border-color,background-color,box-shadow,opacity] duration-300',
       nodeStateClass(data.executionStatus, selected),
     ].join(' ')}
   >
@@ -165,7 +188,13 @@ const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => (
             模拟失败
           </span>
         ) : null}
+        {data.continuedAfterFailure ? (
+          <span className="rounded bg-[#f0f1f2] px-1.5 py-0.5 text-[9px] font-medium text-[rgba(22,24,35,.58)]">
+            已放行
+          </span>
+        ) : null}
       </div>
+
       {data.executionStatus ? (
         <span className="flex items-center gap-1 text-[10px]">
           {statusIcon(data.executionStatus)}
@@ -198,6 +227,8 @@ const WorkflowDefinitionContent = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const sequenceRef = useRef(1);
   const closeStreamRef = useRef<(() => void) | null>(null);
+  const continuedFailureNodeIdsRef = useRef<Set<string>>(new Set());
+
   const [workflowName, setWorkflowName] = useState('内存工作流');
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -205,6 +236,8 @@ const WorkflowDefinitionContent = () => {
     useState<ReactFlowInstance | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [activeInstance, setActiveInstance] = useState<WorkflowInstance>();
+  const [contextMenu, setContextMenu] = useState<NodeContextMenuState>();
+  const [continuingNodeId, setContinuingNodeId] = useState<string>();
 
   const nodeTypes = useMemo(() => ({ workflow: WorkflowNode }), []);
   const workflowRunning = Boolean(
@@ -235,24 +268,33 @@ const WorkflowDefinitionContent = () => {
     setEdges((current) => current.map((edge) => {
       const sourceStatus = statusByNodeId.get(edge.source);
       const targetStatus = statusByNodeId.get(edge.target);
-      const targetRunning = targetStatus === 'RUNNING';
+      const sourceFailureContinued = continuedFailureNodeIdsRef.current.has(edge.source);
+      const blockedPath =
+        sourceStatus === 'UPSTREAM_FAILED' || targetStatus === 'UPSTREAM_FAILED';
       const failedPath =
-        sourceStatus === 'FAILED' ||
-        sourceStatus === 'UPSTREAM_FAILED' ||
         targetStatus === 'FAILED' ||
-        targetStatus === 'UPSTREAM_FAILED';
-      const completedPath =
-        sourceStatus === 'SUCCESS' && targetStatus === 'SUCCESS';
-      const readyPath = sourceStatus === 'SUCCESS';
+        (sourceStatus === 'FAILED' && !sourceFailureContinued);
+      const targetRunning = targetStatus === 'RUNNING';
+      const sourceEffectiveSuccess =
+        sourceStatus === 'SUCCESS' ||
+        (sourceStatus === 'FAILED' && sourceFailureContinued);
+      const completedPath = sourceEffectiveSuccess && targetStatus === 'SUCCESS';
+      const readyPath = sourceEffectiveSuccess;
 
       let stroke = '#d9dce1';
       let strokeWidth = 1.4;
-      if (failedPath) {
-        stroke = '#d92d20';
-        strokeWidth = 1.8;
+      let strokeDasharray: string | undefined;
+
+      if (blockedPath) {
+        stroke = '#c8ccd3';
+        strokeWidth = 1.4;
+        strokeDasharray = '5 5';
       } else if (targetRunning) {
         stroke = '#fe2c55';
         strokeWidth = 2.2;
+      } else if (failedPath) {
+        stroke = '#d92d20';
+        strokeWidth = 1.8;
       } else if (completedPath) {
         stroke = '#555b66';
         strokeWidth = 1.8;
@@ -268,6 +310,7 @@ const WorkflowDefinitionContent = () => {
           ...edge.style,
           stroke,
           strokeWidth,
+          strokeDasharray,
           transition: 'stroke 240ms ease, stroke-width 240ms ease',
         },
       };
@@ -349,9 +392,15 @@ const WorkflowDefinitionContent = () => {
   };
 
   const resetExecutionVisuals = () => {
+    continuedFailureNodeIdsRef.current.clear();
+    setContextMenu(undefined);
     setNodes((current) => current.map((node) => ({
       ...node,
-      data: { ...node.data, executionStatus: 'WAITING' },
+      data: {
+        ...node.data,
+        executionStatus: 'WAITING',
+        continuedAfterFailure: false,
+      },
     })));
     setEdges((current) => current.map((edge) => ({
       ...edge,
@@ -360,6 +409,7 @@ const WorkflowDefinitionContent = () => {
         ...edge.style,
         stroke: '#d9dce1',
         strokeWidth: 1.4,
+        strokeDasharray: undefined,
       },
     })));
   };
@@ -377,7 +427,6 @@ const WorkflowDefinitionContent = () => {
     setSubmitting(true);
 
     try {
-      // 第一步只创建执行实例，不立即消费首批节点。
       const instance = await runWorkflow({
         name: workflowName.trim() || '未命名工作流',
         nodes: nodes.map((node) => ({
@@ -394,8 +443,6 @@ const WorkflowDefinitionContent = () => {
       });
 
       applySnapshot(instance);
-
-      // 第二步先监听，再激活。这样第一个节点 RUNNING 也不会被错过。
       closeStreamRef.current = subscribeWorkflowEvents(instance.id, applySnapshot);
       const activated = await activateWorkflowInstance(instance.id);
       applySnapshot(activated);
@@ -410,9 +457,48 @@ const WorkflowDefinitionContent = () => {
     }
   };
 
+  const handleContinueAfterFailure = async (nodeId: string) => {
+    if (!activeInstance || continuingNodeId) return;
+
+    const executionId = activeInstance.id;
+    const streamNeedsRestart = isWorkflowTerminal(activeInstance.status);
+    setContinuingNodeId(nodeId);
+    setContextMenu(undefined);
+
+    try {
+      const continued = await continueWorkflowAfterFailure(executionId, nodeId);
+      continuedFailureNodeIdsRef.current.add(nodeId);
+      setNodes((current) => current.map((node) =>
+        node.id === nodeId
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                continuedAfterFailure: true,
+              },
+            }
+          : node,
+      ));
+      applySnapshot(continued);
+
+      if (streamNeedsRestart && !isWorkflowTerminal(continued.status)) {
+        closeStreamRef.current?.();
+        closeStreamRef.current = subscribeWorkflowEvents(executionId, applySnapshot);
+      }
+
+      message.success('已保留当前失败结果，并继续调度后续可执行节点');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '继续执行失败');
+    } finally {
+      setContinuingNodeId(undefined);
+    }
+  };
+
   const clearCanvas = () => {
     closeStreamRef.current?.();
     closeStreamRef.current = null;
+    continuedFailureNodeIdsRef.current.clear();
+    setContextMenu(undefined);
     setActiveInstance(undefined);
     setNodes([]);
     setEdges([]);
@@ -423,16 +509,15 @@ const WorkflowDefinitionContent = () => {
       running: 0,
       success: 0,
       failed: 0,
+      blocked: 0,
       waiting: 0,
     };
     activeInstance?.nodes.forEach((node) => {
       if (node.status === 'RUNNING') result.running += 1;
       else if (node.status === 'SUCCESS') result.success += 1;
-      else if (node.status === 'FAILED' || node.status === 'UPSTREAM_FAILED') {
-        result.failed += 1;
-      } else {
-        result.waiting += 1;
-      }
+      else if (node.status === 'FAILED') result.failed += 1;
+      else if (node.status === 'UPSTREAM_FAILED') result.blocked += 1;
+      else result.waiting += 1;
     });
     return result;
   }, [activeInstance]);
@@ -492,9 +577,9 @@ const WorkflowDefinitionContent = () => {
 
             {activeInstance ? (
               <div className="flex items-center gap-3 border-l border-[#ececef] pl-3 text-[11px]">
-                <span className="flex items-center gap-1.5 text-[#fe2c55]">
+                <span className="flex items-center gap-1.5 text-[rgba(22,24,35,.62)]">
                   {workflowRunning ? (
-                    <LoaderCircle size={12} className="animate-spin" />
+                    <LoaderCircle size={12} className="animate-spin text-[#fe2c55]" />
                   ) : (
                     statusIcon(activeInstance.status)
                   )}
@@ -509,6 +594,11 @@ const WorkflowDefinitionContent = () => {
                 {executionCounts.failed > 0 ? (
                   <span className="text-[#d92d20]">
                     失败 {executionCounts.failed}
+                  </span>
+                ) : null}
+                {executionCounts.blocked > 0 ? (
+                  <span className="text-[rgba(22,24,35,.46)]">
+                    阻断 {executionCounts.blocked}
                   </span>
                 ) : null}
                 <span className="text-[rgba(22,24,35,.38)]">
@@ -575,6 +665,28 @@ const WorkflowDefinitionContent = () => {
             </div>
           ) : null}
 
+          {contextMenu ? (
+            <div
+              className="absolute z-30 w-[220px] rounded-lg border border-[#e1e4e8] bg-white p-1.5 shadow-lg"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <Button
+                type="text"
+                block
+                icon={<ArrowRightCircle size={14} />}
+                loading={continuingNodeId === contextMenu.nodeId}
+                className="!flex !h-8 !items-center !justify-start !px-2 !text-[12px]"
+                onClick={() => void handleContinueAfterFailure(contextMenu.nodeId)}
+              >
+                继续执行后续节点
+              </Button>
+              <div className="px-2 pb-1 pt-0.5 text-[10px] leading-4 text-[rgba(22,24,35,.42)]">
+                保留当前失败结果，仅解除受它影响的后继阻断。
+              </div>
+            </div>
+          ) : null}
+
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -583,6 +695,36 @@ const WorkflowDefinitionContent = () => {
             onEdgesChange={onEdgesChange}
             onConnect={handleConnect}
             onInit={setReactFlowInstance}
+            onPaneClick={() => setContextMenu(undefined)}
+            onNodeClick={() => setContextMenu(undefined)}
+            onNodeContextMenu={(event, node) => {
+              event.preventDefault();
+              const data = node.data as WorkflowNodeData;
+              if (
+                !activeInstance ||
+                data.executionStatus !== 'FAILED' ||
+                data.continuedAfterFailure ||
+                !wrapperRef.current
+              ) {
+                setContextMenu(undefined);
+                return;
+              }
+
+              const bounds = wrapperRef.current.getBoundingClientRect();
+              const menuWidth = 220;
+              const menuHeight = 72;
+              setContextMenu({
+                nodeId: node.id,
+                x: Math.max(
+                  8,
+                  Math.min(event.clientX - bounds.left, bounds.width - menuWidth - 8),
+                ),
+                y: Math.max(
+                  8,
+                  Math.min(event.clientY - bounds.top, bounds.height - menuHeight - 8),
+                ),
+              });
+            }}
             onDragOver={(event) => {
               event.preventDefault();
               event.dataTransfer.dropEffect = workflowRunning ? 'none' : 'move';
