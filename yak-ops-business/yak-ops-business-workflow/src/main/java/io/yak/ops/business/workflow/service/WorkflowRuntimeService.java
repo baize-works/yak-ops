@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.LongSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -50,6 +51,7 @@ public class WorkflowRuntimeService {
   private final Map<String, RunMetadata> metadata = new ConcurrentHashMap<>();
   private final ConcurrentLinkedDeque<String> executionOrder = new ConcurrentLinkedDeque<>();
 
+  @Autowired
   public WorkflowRuntimeService(WorkflowEventStreamService eventStreamService) {
     this(
         eventStreamService,
