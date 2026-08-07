@@ -72,7 +72,7 @@ class QualityTemplateRepository {
     try {
       return Optional.ofNullable(jdbcTemplate.queryForObject(
           SELECT
-              + " WHERE t.id = :id AND t.enabled = 1"
+              + " WHERE t.id = :id"
               + GROUP_BY,
           new MapSqlParameterSource("id", id),
           mapper));
