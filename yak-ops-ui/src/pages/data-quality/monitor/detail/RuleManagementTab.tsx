@@ -1,27 +1,7 @@
-import {
-  Button,
-  Dropdown,
-  Empty,
-  Input,
-  Modal,
-  Select,
-  Table,
-  Tag,
-  Tooltip,
-  message,
-} from 'antd';
+import { Button, Dropdown, Empty, Input, Select, Table, Tag } from 'antd';
 import type { MenuProps, TableColumnsType } from 'antd';
-import {
-  Bell,
-  ChevronDown,
-  MoreHorizontal,
-  Play,
-  Plus,
-  RefreshCw,
-  Search,
-  Sparkles,
-} from 'lucide-react';
-import { useMemo, useState, type Key } from 'react';
+import { MoreHorizontal, Play, RefreshCw, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { dataQualityTableClassName } from '../../components/tableStyle';
 import type { MonitorWorkspaceView, RuleView } from '../../types';
 import {
@@ -34,25 +14,19 @@ import {
 interface RuleManagementTabProps {
   workspace: MonitorWorkspaceView;
   running: boolean;
-  savingRules: boolean;
   onRun: () => void;
-  onEditMonitor: () => void;
   onOpenLog: () => void;
   onRefresh: () => void;
   onRemoveMonitor: () => void;
-  onUpdateRules: (rules: RuleView[]) => Promise<void>;
 }
 
 const RuleManagementTab = ({
   workspace,
   running,
-  savingRules,
   onRun,
-  onEditMonitor,
   onOpenLog,
   onRefresh,
   onRemoveMonitor,
-  onUpdateRules,
 }: RuleManagementTabProps) => {
   const { monitor, settings, stats } = workspace;
   const [keyword, setKeyword] = useState('');
@@ -60,7 +34,6 @@ const RuleManagementTab = ({
   const [scope, setScope] = useState<string>();
   const [enabled, setEnabled] = useState<boolean>();
   const [dimension, setDimension] = useState<string>();
-  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
   const records = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
@@ -100,32 +73,6 @@ const RuleManagementTab = ({
     setScope(undefined);
     setEnabled(undefined);
     setDimension(undefined);
-  };
-
-  const updateSelected = async (nextEnabled: boolean) => {
-    if (!selectedRowKeys.length) return;
-    await onUpdateRules(
-      monitor.rules.map((rule) =>
-        selectedRowKeys.includes(rule.id)
-          ? { ...rule, enabled: nextEnabled }
-          : rule,
-      ),
-    );
-    setSelectedRowKeys([]);
-  };
-
-  const removeRule = (rule: RuleView) => {
-    if (monitor.rules.length <= 1) {
-      message.warning('质量监控至少需要保留一条规则');
-      return;
-    }
-    Modal.confirm({
-      title: '删除质量规则？',
-      content: `确认删除“${rule.name}”吗？历史执行结果仍会保留。`,
-      okButtonProps: { danger: true },
-      onOk: () =>
-        onUpdateRules(monitor.rules.filter((item) => item.id !== rule.id)),
-    });
   };
 
   const columns: TableColumnsType<RuleView> = [
@@ -202,31 +149,15 @@ const RuleManagementTab = ({
     {
       title: '操作',
       fixed: 'right',
-      width: 180,
-      render: (_, rule) => (
-        <div className="flex items-center gap-3 whitespace-nowrap text-xs">
-          <button
-            type="button"
-            className="border-0 bg-transparent p-0 text-[#245bdb]"
-            onClick={onEditMonitor}
-          >
-            修改
-          </button>
-          <button
-            type="button"
-            className="border-0 bg-transparent p-0 text-[#245bdb]"
-            onClick={() => removeRule(rule)}
-          >
-            删除
-          </button>
-          <button
-            type="button"
-            className="border-0 bg-transparent p-0 text-[#245bdb]"
-            onClick={onOpenLog}
-          >
-            操作日志
-          </button>
-        </div>
+      width: 110,
+      render: () => (
+        <button
+          type="button"
+          className="border-0 bg-transparent p-0 text-xs text-[#245bdb]"
+          onClick={onOpenLog}
+        >
+          操作日志
+        </button>
       ),
     },
   ];
@@ -234,13 +165,13 @@ const RuleManagementTab = ({
   const moreMenu: MenuProps = {
     items: [
       { key: 'refresh', label: '刷新数据' },
-      { key: 'edit', label: '编辑质量监控' },
+      { key: 'log', label: '操作日志' },
       { type: 'divider' },
       { key: 'remove', label: '删除质量监控', danger: true },
     ],
     onClick: ({ key }) => {
       if (key === 'refresh') onRefresh();
-      if (key === 'edit') onEditMonitor();
+      if (key === 'log') onOpenLog();
       if (key === 'remove') onRemoveMonitor();
     },
   };
@@ -248,7 +179,7 @@ const RuleManagementTab = ({
   return (
     <div className="flex min-h-0 flex-1 bg-white">
       <aside className="w-[286px] shrink-0 border-r border-[#e5e7eb] bg-[#fbfcfe] px-5 py-5">
-        <div className="text-[14px] font-semibold text-[#172033]">规则管理</div>
+        <div className="text-[14px] font-semibold text-[#172033]">规则详情</div>
         <div className="mt-4 space-y-1 text-[13px]">
           <div className="flex items-center justify-between rounded-md bg-[#f0f3f8] px-3 py-2 font-medium text-[#27344f]">
             <span>全部规则</span>
@@ -257,29 +188,24 @@ const RuleManagementTab = ({
             </span>
           </div>
           <div className="flex items-center justify-between px-3 py-2 text-[#43506a]">
-            <span>已关联质量监控的规则</span>
-            <span>{stats.ruleCount}</span>
+            <span>已启用规则</span>
+            <span>{stats.enabledRuleCount}</span>
           </div>
           <div className="flex items-center justify-between px-3 py-2 text-[#43506a]">
-            <span>未关联质量监控的规则</span>
-            <span>0</span>
+            <span>已停用规则</span>
+            <span>{stats.ruleCount - stats.enabledRuleCount}</span>
           </div>
         </div>
 
         <div className="mt-7 flex items-center justify-between">
           <div className="text-[14px] font-semibold text-[#172033]">
-            质量监控视角
+            质量监控信息
           </div>
-          <div className="flex items-center gap-2 text-[#667085]">
-            <Tooltip title="新建质量监控">
-              <Plus size={16} />
-            </Tooltip>
-            <RefreshCw
-              size={14}
-              className="cursor-pointer"
-              onClick={onRefresh}
-            />
-          </div>
+          <RefreshCw
+            size={14}
+            className="cursor-pointer text-[#667085]"
+            onClick={onRefresh}
+          />
         </div>
         <Input
           variant="filled"
@@ -307,7 +233,7 @@ const RuleManagementTab = ({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 px-4 py-4">
+      <main className="min-w-0 flex-1 overflow-auto px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0f3] pb-3">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[14px] font-medium text-[#172033]">
@@ -321,13 +247,6 @@ const RuleManagementTab = ({
             >
               测试运行
             </Button>
-            <Button
-              size="small"
-              icon={<Bell size={13} />}
-              onClick={() => message.info('告警策略可在编辑质量监控中配置')}
-            >
-              告警订阅
-            </Button>
             <Dropdown menu={moreMenu} trigger={['click']}>
               <Button size="small" icon={<MoreHorizontal size={14} />} />
             </Dropdown>
@@ -340,14 +259,6 @@ const RuleManagementTab = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 py-3">
-          <Button
-            type="primary"
-            icon={<Sparkles size={14} />}
-            onClick={onEditMonitor}
-          >
-            AI生成规则
-          </Button>
-          <Button onClick={onEditMonitor}>新建规则</Button>
           <Input
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
@@ -402,7 +313,6 @@ const RuleManagementTab = ({
           rowKey="id"
           size="small"
           bordered
-          loading={savingRules}
           pagination={false}
           scroll={{ x: 1280 }}
           className={dataQualityTableClassName()}
@@ -415,42 +325,11 @@ const RuleManagementTab = ({
               />
             ),
           }}
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
           columns={columns}
         />
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Button
-              disabled={!selectedRowKeys.length}
-              onClick={() => updateSelected(true)}
-            >
-              启用
-            </Button>
-            <Button
-              disabled={!selectedRowKeys.length}
-              onClick={() => updateSelected(false)}
-            >
-              停用
-            </Button>
-            <Button disabled={!selectedRowKeys.length}>关联质量监控</Button>
-            <Dropdown
-              menu={{
-                items: [{ key: 'log', label: '查看操作日志' }],
-                onClick: onOpenLog,
-              }}
-            >
-              <Button disabled={!selectedRowKeys.length}>
-                更多操作 <ChevronDown size={12} />
-              </Button>
-            </Dropdown>
-          </div>
-          <div className="text-xs text-[#8b95a7]">
-            共 {records.length} 条规则
-          </div>
+        <div className="mt-3 flex justify-end text-xs text-[#8b95a7]">
+          共 {records.length} 条规则
         </div>
       </main>
     </div>
