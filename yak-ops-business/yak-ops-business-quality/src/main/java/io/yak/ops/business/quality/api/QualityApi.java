@@ -138,7 +138,7 @@ public final class QualityApi {
       String scheduleTime,
       ScheduleWeekday scheduleWeekday,
       String cronExpression,
-      LocalDateTime nextRunTime,
+      @QualityDateTimeFormat LocalDateTime nextRunTime,
       RuleFailureAction ruleFailureAction,
       boolean notifyEnabled,
       NotifyChannel notifyChannel,
@@ -191,9 +191,9 @@ public final class QualityApi {
       int ruleCount,
       CheckResult lastResult,
       String lastExecutionNo,
-      LocalDateTime lastRunTime,
-      LocalDateTime createTime,
-      LocalDateTime updateTime) {}
+      @QualityDateTimeFormat LocalDateTime lastRunTime,
+      @QualityDateTimeFormat LocalDateTime createTime,
+      @QualityDateTimeFormat LocalDateTime updateTime) {}
 
   public record MonitorView(
       Long id,
@@ -209,9 +209,9 @@ public final class QualityApi {
       boolean enabled,
       CheckResult lastResult,
       String lastExecutionNo,
-      LocalDateTime lastRunTime,
-      LocalDateTime createTime,
-      LocalDateTime updateTime,
+      @QualityDateTimeFormat LocalDateTime lastRunTime,
+      @QualityDateTimeFormat LocalDateTime createTime,
+      @QualityDateTimeFormat LocalDateTime updateTime,
       List<RuleView> rules) {}
 
   public record MonitorPageView(
@@ -227,7 +227,7 @@ public final class QualityApi {
       int monitorCount,
       int ruleCount,
       CheckResult lastResult,
-      LocalDateTime lastRunTime) {}
+      @QualityDateTimeFormat LocalDateTime lastRunTime) {}
 
   public record TableAssetPageRequest(
       @Min(1) Integer current,
@@ -254,9 +254,9 @@ public final class QualityApi {
       int monitorCount,
       int ruleCount,
       CheckResult lastResult,
-      LocalDateTime lastRunTime,
+      @QualityDateTimeFormat LocalDateTime lastRunTime,
       String registeredBy,
-      LocalDateTime registeredAt) {}
+      @QualityDateTimeFormat LocalDateTime registeredAt) {}
 
   public record TableAssetPageView(
       List<TableAssetView> records,
@@ -335,9 +335,9 @@ public final class QualityApi {
       int failedRules,
       int errorRules,
       String operator,
-      LocalDateTime queuedAt,
-      LocalDateTime startedAt,
-      LocalDateTime finishedAt,
+      @QualityDateTimeFormat LocalDateTime queuedAt,
+      @QualityDateTimeFormat LocalDateTime startedAt,
+      @QualityDateTimeFormat LocalDateTime finishedAt,
       Long durationMs,
       String errorMessage) {}
 
@@ -357,9 +357,9 @@ public final class QualityApi {
       int failedRules,
       int errorRules,
       String operator,
-      LocalDateTime queuedAt,
-      LocalDateTime startedAt,
-      LocalDateTime finishedAt,
+      @QualityDateTimeFormat LocalDateTime queuedAt,
+      @QualityDateTimeFormat LocalDateTime startedAt,
+      @QualityDateTimeFormat LocalDateTime finishedAt,
       Long durationMs,
       String errorMessage,
       List<RuleExecutionView> rules) {}

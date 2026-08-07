@@ -16,7 +16,7 @@ public final class QualityWorkspaceApi {
       int enabledRuleCount,
       int executionCount,
       int issueExecutionCount,
-      LocalDateTime latestExecutionTime) {
+      @QualityDateTimeFormat LocalDateTime latestExecutionTime) {
   }
 
   public record MonitorWorkspaceView(
@@ -73,7 +73,7 @@ public final class QualityWorkspaceApi {
   public record OperationLogItem(
       String id,
       String operator,
-      LocalDateTime operationTime,
+      @QualityDateTimeFormat LocalDateTime operationTime,
       String actionType,
       String content) {
   }
