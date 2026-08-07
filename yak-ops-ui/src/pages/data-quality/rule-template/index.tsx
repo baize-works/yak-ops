@@ -810,9 +810,6 @@ const TemplateLibraryPage = () => {
                               >
                                 {record.name}
                               </button>
-                              <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
-                                {record.code}
-                              </div>
                             </div>
                           ),
                         },
