@@ -27,10 +27,13 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.LongSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /** Yak Framework 工作流引擎的轻量内存适配层。 */
 @Service
@@ -40,12 +43,24 @@ public class WorkflowRuntimeService {
 
   private final ExecutorService workerPool;
   private final DefaultWorkflowEngine engine;
+  private final WorkflowEventStreamService eventStreamService;
+  private final LongSupplier delayMillisSupplier;
   private final ConcurrentLinkedQueue<NodeDispatch> pendingDispatches =
       new ConcurrentLinkedQueue<>();
   private final Map<String, RunMetadata> metadata = new ConcurrentHashMap<>();
   private final ConcurrentLinkedDeque<String> executionOrder = new ConcurrentLinkedDeque<>();
 
-  public WorkflowRuntimeService() {
+  public WorkflowRuntimeService(WorkflowEventStreamService eventStreamService) {
+    this(
+        eventStreamService,
+        () -> ThreadLocalRandom.current().nextLong(1_000L, 10_001L));
+  }
+
+  WorkflowRuntimeService(
+      WorkflowEventStreamService eventStreamService,
+      LongSupplier delayMillisSupplier) {
+    this.eventStreamService = eventStreamService;
+    this.delayMillisSupplier = delayMillisSupplier;
     AtomicInteger workerIndex = new AtomicInteger();
     this.workerPool = Executors.newFixedThreadPool(
         Math.max(2, Runtime.getRuntime().availableProcessors()),
@@ -83,6 +98,8 @@ public class WorkflowRuntimeService {
     metadata.put(execution.id(), runMetadata);
     executionOrder.addFirst(execution.id());
 
+    WorkflowInstanceVO started = toView(execution, runMetadata);
+    eventStreamService.publish(started);
     log.info(
         "[workflow] started execution={}, definition={}, name={}, nodes={}, edges={}",
         execution.id(),
@@ -91,7 +108,7 @@ public class WorkflowRuntimeService {
         request.nodes().size(),
         request.edges().size());
     drainDispatches();
-    return toView(execution, runMetadata);
+    return started;
   }
 
   public List<WorkflowInstanceVO> listInstances() {
@@ -116,6 +133,14 @@ public class WorkflowRuntimeService {
       throw new IllegalArgumentException("Workflow execution metadata not found: " + executionId);
     }
     return toView(execution, runMetadata);
+  }
+
+  public SseEmitter subscribe(String executionId) {
+    WorkflowInstanceVO snapshot = getInstance(executionId);
+    SseEmitter emitter = eventStreamService.subscribe(executionId, snapshot);
+    // 再推一次最新快照，覆盖“读取快照”和“注册订阅者”之间可能发生的状态变化。
+    eventStreamService.publish(getInstance(executionId));
+    return emitter;
   }
 
   private NodeDefinition toNodeDefinition(NodeRequest node) {
@@ -150,45 +175,80 @@ public class WorkflowRuntimeService {
 
   private void executeNode(NodeDispatch dispatch) {
     String type = String.valueOf(dispatch.nodeConfiguration().getOrDefault("type", "TASK"));
+    long simulatedDurationMillis = Math.max(0L, delayMillisSupplier.getAsLong());
     log.info(
-        "[workflow] node start execution={}, node={}, type={}, attempt={}",
+        "[workflow] node start execution={}, node={}, type={}, attempt={}, simulatedDurationMs={}",
         dispatch.workflowExecutionId(),
         dispatch.nodeId(),
         type,
-        dispatch.attemptNumber());
+        dispatch.attemptNumber(),
+        simulatedDurationMillis);
     try {
       engine.acknowledgeNodeStarted(dispatch.workflowExecutionId(), dispatch.nodeId());
+      publishCurrent(dispatch.workflowExecutionId());
+
+      Thread.sleep(simulatedDurationMillis);
+
       engine.completeNode(
           dispatch.workflowExecutionId(),
           dispatch.nodeId(),
-          Map.of("type", type, "message", "executed in memory"));
+          Map.of(
+              "type", type,
+              "message", "executed in memory",
+              "simulatedDurationMs", simulatedDurationMillis));
+      publishCurrent(dispatch.workflowExecutionId());
       log.info(
-          "[workflow] node success execution={}, node={}, type={}",
+          "[workflow] node success execution={}, node={}, type={}, simulatedDurationMs={}",
           dispatch.workflowExecutionId(),
           dispatch.nodeId(),
-          type);
+          type,
+          simulatedDurationMillis);
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      failNode(dispatch, "Node execution interrupted", exception);
     } catch (RuntimeException exception) {
-      log.error(
-          "[workflow] node failed execution={}, node={}, message={}",
-          dispatch.workflowExecutionId(),
-          dispatch.nodeId(),
-          exception.getMessage(),
+      failNode(
+          dispatch,
+          exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage(),
           exception);
-      try {
-        engine.failNode(
-            dispatch.workflowExecutionId(),
-            dispatch.nodeId(),
-            exception.getMessage() == null ? exception.getClass().getSimpleName() : exception.getMessage());
-      } catch (RuntimeException callbackException) {
-        log.warn(
-            "[workflow] failure callback skipped execution={}, node={}, message={}",
-            dispatch.workflowExecutionId(),
-            dispatch.nodeId(),
-            callbackException.getMessage());
-      }
     } finally {
       drainDispatches();
     }
+  }
+
+  private void failNode(
+      NodeDispatch dispatch,
+      String errorMessage,
+      Exception exception) {
+    log.error(
+        "[workflow] node failed execution={}, node={}, message={}",
+        dispatch.workflowExecutionId(),
+        dispatch.nodeId(),
+        errorMessage,
+        exception);
+    try {
+      engine.failNode(
+          dispatch.workflowExecutionId(),
+          dispatch.nodeId(),
+          errorMessage);
+      publishCurrent(dispatch.workflowExecutionId());
+    } catch (RuntimeException callbackException) {
+      log.warn(
+          "[workflow] failure callback skipped execution={}, node={}, message={}",
+          dispatch.workflowExecutionId(),
+          dispatch.nodeId(),
+          callbackException.getMessage());
+    }
+  }
+
+  private void publishCurrent(String executionId) {
+    RunMetadata runMetadata = metadata.get(executionId);
+    if (runMetadata == null) {
+      return;
+    }
+    engine.findExecution(executionId)
+        .map(execution -> toView(execution, runMetadata))
+        .ifPresent(eventStreamService::publish);
   }
 
   private WorkflowInstanceVO toView(WorkflowExecution execution, RunMetadata runMetadata) {

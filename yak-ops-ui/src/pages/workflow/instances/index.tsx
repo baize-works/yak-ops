@@ -1,6 +1,8 @@
 import {
   getWorkflowInstance,
   getWorkflowInstances,
+  isWorkflowTerminal,
+  subscribeWorkflowEvents,
   type WorkflowInstance,
   type WorkflowNodeInstance,
 } from '@/services/workflow';
@@ -8,7 +10,7 @@ import { Button, Drawer, Empty, Table, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import { RefreshCw } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const statusLabel: Record<string, string> = {
   CREATED: '已创建',
@@ -38,6 +40,7 @@ const formatTime = (value?: string) =>
   value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-';
 
 const WorkflowInstancesPage = () => {
+  const detailStreamRef = useRef<(() => void) | null>(null);
   const [instances, setInstances] = useState<WorkflowInstance[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -60,21 +63,46 @@ const WorkflowInstancesPage = () => {
   useEffect(() => {
     void loadInstances(true);
     const timer = window.setInterval(() => void loadInstances(false), 2000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      detailStreamRef.current?.();
+    };
   }, [loadInstances]);
 
+  const applyDetailSnapshot = useCallback((snapshot: WorkflowInstance) => {
+    setDetail(snapshot);
+    setInstances((current) => current.map((item) =>
+      item.id === snapshot.id ? snapshot : item,
+    ));
+  }, []);
+
   const openDetail = useCallback(async (record: WorkflowInstance) => {
+    detailStreamRef.current?.();
+    detailStreamRef.current = null;
     setDetail(record);
     setDetailOpen(true);
     setDetailLoading(true);
     try {
-      setDetail(await getWorkflowInstance(record.id));
+      const current = await getWorkflowInstance(record.id);
+      applyDetailSnapshot(current);
+      if (!isWorkflowTerminal(current.status)) {
+        detailStreamRef.current = subscribeWorkflowEvents(
+          current.id,
+          applyDetailSnapshot,
+        );
+      }
     } catch (error) {
       message.error(error instanceof Error ? error.message : '实例详情加载失败');
     } finally {
       setDetailLoading(false);
     }
-  }, []);
+  }, [applyDetailSnapshot]);
+
+  const closeDetail = () => {
+    detailStreamRef.current?.();
+    detailStreamRef.current = null;
+    setDetailOpen(false);
+  };
 
   const columns = useMemo<ColumnsType<WorkflowInstance>>(
     () => [
@@ -178,7 +206,7 @@ const WorkflowInstancesPage = () => {
         <div>
           <h1 className="m-0 text-[20px] font-semibold text-[#161823]">工作流实例</h1>
           <div className="mt-1 text-xs text-[rgba(22,24,35,.46)]">
-            当前实例仅保存在内存中，服务重启后会清空。
+            当前实例仅保存在内存中；打开实例详情后通过 SSE 实时更新节点状态。
           </div>
         </div>
         <Button
@@ -209,7 +237,7 @@ const WorkflowInstancesPage = () => {
         width={720}
         open={detailOpen}
         loading={detailLoading}
-        onClose={() => setDetailOpen(false)}
+        onClose={closeDetail}
       >
         {detail ? (
           <>

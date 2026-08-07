@@ -8,12 +8,14 @@ import io.yak.ops.business.workflow.model.WorkflowRunRequest;
 import io.yak.ops.business.workflow.service.WorkflowRuntimeService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /** 工作流内存运行接口。 */
 @Tag(name = "工作流接口")
@@ -45,5 +47,14 @@ public class WorkflowController {
   public Result<WorkflowInstanceVO> instance(
       @PathVariable("executionId") String executionId) {
     return Result.success(workflowRuntimeService.getInstance(executionId));
+  }
+
+  @Operation(summary = "订阅工作流实例实时状态")
+  @GetMapping(
+      value = "/instances/{executionId}/events",
+      produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public SseEmitter events(
+      @PathVariable("executionId") String executionId) {
+    return workflowRuntimeService.subscribe(executionId);
   }
 }

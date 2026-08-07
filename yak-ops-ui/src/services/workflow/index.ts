@@ -39,6 +39,16 @@ export interface WorkflowInstance {
   nodes: WorkflowNodeInstance[];
 }
 
+const TERMINAL_STATUSES = new Set([
+  'SUCCESS',
+  'FAILED',
+  'WARNING',
+  'CANCELED',
+]);
+
+export const isWorkflowTerminal = (status?: string) =>
+  Boolean(status && TERMINAL_STATUSES.has(status));
+
 export const runWorkflow = async (payload: WorkflowRunPayload) => {
   const response = await request<ApiResponse<WorkflowInstance>>(
     '/api/v1/workflows/run',
@@ -62,4 +72,28 @@ export const getWorkflowInstance = async (executionId: string) => {
     `/api/v1/workflows/instances/${encodeURIComponent(executionId)}`,
   );
   return response.data;
+};
+
+export const subscribeWorkflowEvents = (
+  executionId: string,
+  onSnapshot: (instance: WorkflowInstance) => void,
+) => {
+  const source = new EventSource(
+    `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/events`,
+  );
+
+  const handleWorkflowEvent = (event: Event) => {
+    const snapshot = JSON.parse((event as MessageEvent<string>).data) as WorkflowInstance;
+    onSnapshot(snapshot);
+    if (isWorkflowTerminal(snapshot.status)) {
+      source.close();
+    }
+  };
+
+  source.addEventListener('workflow', handleWorkflowEvent);
+
+  return () => {
+    source.removeEventListener('workflow', handleWorkflowEvent);
+    source.close();
+  };
 };
