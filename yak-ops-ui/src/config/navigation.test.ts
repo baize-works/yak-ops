@@ -48,6 +48,9 @@ describe('permission-aware navigation', () => {
     expect(getActiveNavigationId('/data-quality/execution', qualityPermissions)).toBe(
       'data-quality-execution',
     );
+    expect(
+      getActiveNavigationId('/data-quality/execution/QM-20260807095619-ABC123', qualityPermissions),
+    ).toBe('data-quality-execution');
   });
 
   it('does not expose removed modules', () => {

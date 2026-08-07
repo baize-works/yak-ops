@@ -51,6 +51,7 @@ export const appRoutes: readonly NavigationRoute[] = [
   { id: 'data-quality-monitor-detail', path: '/data-quality/monitor/:id', title: '质量监控详情', component: './data-quality/monitor/detail', hidden: true, parentId: 'data-quality-table-config' },
   { id: 'data-quality-monitor-edit', path: '/data-quality/monitor/:id/edit', title: '编辑质量监控', component: './data-quality/monitor/editor', hidden: true, parentId: 'data-quality-table-config' },
   { id: 'data-quality-execution', mode: 'one', permission: 'quality:execution:read', path: '/data-quality/execution', title: '运行记录', component: './data-quality/execution', iconKey: 'report', menuGroup: 'data-quality', order: 20 },
+  { id: 'data-quality-execution-detail', path: '/data-quality/execution/:executionNo', title: '运行记录详情', component: './data-quality/execution/detail', hidden: true, parentId: 'data-quality-execution' },
   { id: 'data-quality-rule-template', mode: 'one', permission: 'quality:template:read', path: '/data-quality/rule-template', title: '规则模板库', component: './data-quality/rule-template', iconKey: 'quality', menuGroup: 'data-quality', order: 30 },
   { id: 'system-users', mode: 'one', permission: 'security:user:read', path: '/system/users', title: '用户管理', component: './system/users', iconKey: 'system', menuGroup: 'system', order: 10 },
   { id: 'system-roles', mode: 'one', permission: 'security:role:read', path: '/system/roles', title: '角色管理', component: './system/roles', iconKey: 'system', menuGroup: 'system', order: 20 },
