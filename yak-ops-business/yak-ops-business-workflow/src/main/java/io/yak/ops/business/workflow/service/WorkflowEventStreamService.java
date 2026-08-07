@@ -91,6 +91,7 @@ public class WorkflowEventStreamService {
 
   private boolean isTerminal(String status) {
     return "SUCCESS".equals(status)
+        || "SUCCESS_WITH_WARNINGS".equals(status)
         || "FAILED".equals(status)
         || "WARNING".equals(status)
         || "CANCELED".equals(status);
