@@ -33,7 +33,7 @@ const WorkspaceHeader = ({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h1 className="m-0 truncate text-[18px] font-semibold leading-7 text-[#172033]">
-              {monitor?.tableName || '质量监控详情'}
+              {monitor?.tableName || '规则管理'}
             </h1>
             <Button
               type="link"
@@ -41,7 +41,7 @@ const WorkspaceHeader = ({
               className="!h-6 !px-0 !text-xs"
               onClick={onBack}
             >
-              返回按表配置 <ExternalLink size={12} />
+              返回数据表监控 <ExternalLink size={12} />
             </Button>
           </div>
 
@@ -83,7 +83,7 @@ const WorkspaceHeader = ({
           onChange={(value) => onTabChange(value as WorkspaceTab)}
           items={[
             { key: 'rules', label: '规则管理' },
-            { key: 'monitors', label: '质量监控' },
+            { key: 'monitors', label: '监控信息' },
             { key: 'report', label: '质量报告' },
           ]}
           className="workspace-tabs"

@@ -43,7 +43,7 @@ const TableConfigPage = () => {
       <div className="flex h-[calc(100vh-64px)] min-h-[620px] flex-col overflow-hidden bg-white">
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#e8e9ec] px-5">
           <h1 className="m-0 text-[20px] font-semibold text-[#161823]">
-            按表配置
+            数据表监控
           </h1>
           <Button
             icon={<RefreshCw size={14} />}
@@ -80,11 +80,8 @@ const TableConfigPage = () => {
               table.setAssetCurrent(1);
             }}
             onOpenRegister={table.openRegisterDrawer}
-            onOpenMonitorDetail={table.openMonitorDetail}
-            onOpenMonitorEdit={table.openMonitorEdit}
+            onOpenRuleManagement={table.openRuleManagement}
             onCreateMonitor={table.createMonitor}
-            onRun={table.handleRun}
-            onUnregister={table.handleUnregister}
           />
         </div>
       </div>
