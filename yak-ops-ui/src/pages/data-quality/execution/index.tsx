@@ -1,29 +1,37 @@
 import { API_SUCCESS_CODE } from '@/services/http/response';
 import { BRAND_THEME } from '@/styles/brand';
-import { useLocation } from '@umijs/max';
+import { history } from '@umijs/max';
 import {
   Button,
   ConfigProvider,
-  Empty,
+  DatePicker,
   Input,
   Pagination,
   Select,
-  Spin,
-  Table,
   message,
 } from 'antd';
-import { RefreshCw, Search } from 'lucide-react';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
+import { RefreshCw, RotateCcw, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import ExecutionDetailDrawer from '../components/ExecutionDetailDrawer';
-import { CheckResultTag, ExecutionStatusTag } from '../components/QualityStatus';
-import { dataQualityTableClassName } from '../components/tableStyle';
-import { qualityExecutionApi } from '../service';
+import DataSourceTreePane from '../table-config/components/DataSourceTreePane';
+import { useDataSourceTree } from '../table-config/hooks/useDataSourceTree';
 import type {
   CheckResult,
-  ExecutionListItem,
-  ExecutionPageView,
   ExecutionStatus,
+  RuleScope,
+  TriggerType,
 } from '../types';
+import ExecutionRecordTable, {
+  type ExecutionViewMode,
+} from './components/ExecutionRecordTable';
+import { qualityExecutionWorkspaceApi } from './service';
+import type {
+  ExecutionWorkspaceListItem,
+  RuleExecutionWorkspaceListItem,
+} from './types';
+
+const { RangePicker } = DatePicker;
 
 const unwrap = <T,>(response: {
   code: number;
@@ -37,247 +45,399 @@ const unwrap = <T,>(response: {
   return response.data;
 };
 
+const DIMENSION_OPTIONS = [
+  '完整性',
+  '唯一性',
+  '有效性',
+  '准确性',
+  '自定义',
+].map((value) => ({ value, label: value }));
+
 const ExecutionPage = () => {
-  const location = useLocation();
-  const query = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search],
-  );
-  const monitorId = Number(query.get('monitorId')) || undefined;
-  const [data, setData] = useState<ExecutionPageView>({
-    records: [],
-    total: 0,
-    current: 1,
-    pageSize: 20,
-  });
-  const [keyword, setKeyword] = useState('');
-  const [status, setStatus] = useState<ExecutionStatus>();
-  const [result, setResult] = useState<CheckResult>();
+  const {
+    dataSourceId,
+    selectedDataSource,
+    selectedNodeKey,
+    treeData,
+    treeLoading,
+    leftWidth,
+    collapsed,
+    setCollapsed,
+    loadSourceTree,
+    selectNode,
+    startResize,
+  } = useDataSourceTree();
+
+  const [executionRecords, setExecutionRecords] = useState<
+    ExecutionWorkspaceListItem[]
+  >([]);
+  const [ruleRecords, setRuleRecords] = useState<
+    RuleExecutionWorkspaceListItem[]
+  >([]);
+  const [total, setTotal] = useState(0);
+  const [current, setCurrent] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(false);
-  const [executionNo, setExecutionNo] = useState<string>();
+  const [keywordDraft, setKeywordDraft] = useState('');
+  const [objectKeywordDraft, setObjectKeywordDraft] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [objectKeyword, setObjectKeyword] = useState('');
+  const [executionStatus, setExecutionStatus] = useState<ExecutionStatus>();
+  const [checkResult, setCheckResult] = useState<CheckResult>();
+  const [triggerType, setTriggerType] = useState<TriggerType>();
+  const [hasIssues, setHasIssues] = useState<boolean>();
+  const [dimension, setDimension] = useState<string>();
+  const [scope, setScope] = useState<RuleScope>();
+  const [viewMode, setViewMode] = useState<ExecutionViewMode>('RULE');
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([
+    dayjs().subtract(7, 'day'),
+    dayjs(),
+  ]);
+
+  useEffect(() => {
+    void loadSourceTree();
+  }, [loadSourceTree]);
 
   const load = useCallback(
-    async (current = data.current, pageSize = data.pageSize) => {
+    async (requestedCurrent = 1, requestedPageSize = pageSize) => {
+      if (!dataSourceId) {
+        setExecutionRecords([]);
+        setRuleRecords([]);
+        setTotal(0);
+        setCurrent(1);
+        return;
+      }
+
       setLoading(true);
       try {
-        setData(
-          unwrap(
-            await qualityExecutionApi.page({
-              current,
-              pageSize,
-              keyword,
-              monitorId,
-              executionStatus: status,
-              checkResult: result,
-            }),
-          ),
-        );
+        const query = {
+          current: requestedCurrent,
+          pageSize: requestedPageSize,
+          dataSourceId,
+          keyword: keyword || undefined,
+          objectKeyword: objectKeyword || undefined,
+          executionStatus,
+          checkResult,
+          triggerType,
+          hasIssues,
+          dimension,
+          scope,
+          queuedAfter: dateRange?.[0]
+            ?.startOf('day')
+            .format('YYYY-MM-DD HH:mm:ss'),
+          queuedBefore: dateRange?.[1]
+            ?.endOf('day')
+            .format('YYYY-MM-DD HH:mm:ss'),
+        };
+
+        if (viewMode === 'RULE') {
+          const result = unwrap(
+            await qualityExecutionWorkspaceApi.rulePage(query),
+          );
+          setRuleRecords(result.records);
+          setExecutionRecords([]);
+          setTotal(result.total);
+          setCurrent(result.current);
+          setPageSize(result.pageSize);
+        } else {
+          const result = unwrap(await qualityExecutionWorkspaceApi.page(query));
+          setExecutionRecords(result.records);
+          setRuleRecords([]);
+          setTotal(result.total);
+          setCurrent(result.current);
+          setPageSize(result.pageSize);
+        }
       } catch (error: any) {
-        message.error(error?.message || '执行记录加载失败');
+        message.error(error?.message || '运行记录加载失败');
       } finally {
         setLoading(false);
       }
     },
-    [data.current, data.pageSize, keyword, monitorId, result, status],
+    [
+      checkResult,
+      dataSourceId,
+      dateRange,
+      dimension,
+      executionStatus,
+      hasIssues,
+      keyword,
+      objectKeyword,
+      pageSize,
+      scope,
+      triggerType,
+      viewMode,
+    ],
   );
 
-  useEffect(() => void load(1), [status, result, monitorId]);
   useEffect(() => {
+    void load(1);
+  }, [load]);
+
+  useEffect(() => {
+    const records = viewMode === 'RULE' ? ruleRecords : executionRecords;
     if (
-      !data.records.some((item) =>
-        ['WAITING', 'RUNNING'].includes(item.executionStatus),
+      !records.some((record) =>
+        ['WAITING', 'RUNNING'].includes(record.executionStatus),
       )
     ) {
       return;
     }
-    const timer = window.setInterval(() => load(data.current), 3000);
+    const timer = window.setInterval(
+      () => void load(current, pageSize),
+      3000,
+    );
     return () => window.clearInterval(timer);
-  }, [data.current, data.records, load]);
+  }, [current, executionRecords, load, pageSize, ruleRecords, viewMode]);
+
+  const appliedFilterCount = useMemo(
+    () =>
+      [
+        keyword,
+        objectKeyword,
+        executionStatus,
+        checkResult,
+        triggerType,
+        dimension,
+        scope,
+        hasIssues === undefined ? undefined : String(hasIssues),
+      ].filter(Boolean).length,
+    [
+      checkResult,
+      dimension,
+      executionStatus,
+      hasIssues,
+      keyword,
+      objectKeyword,
+      scope,
+      triggerType,
+    ],
+  );
+
+  const applySearch = () => {
+    setKeyword(keywordDraft.trim());
+    setObjectKeyword(objectKeywordDraft.trim());
+  };
+
+  const reset = () => {
+    setKeywordDraft('');
+    setObjectKeywordDraft('');
+    setKeyword('');
+    setObjectKeyword('');
+    setExecutionStatus(undefined);
+    setCheckResult(undefined);
+    setTriggerType(undefined);
+    setHasIssues(undefined);
+    setDimension(undefined);
+    setScope(undefined);
+    setDateRange([dayjs().subtract(7, 'day'), dayjs()]);
+  };
+
+  const openExecution = (executionNo: string) => {
+    history.push(`/data-quality/execution/${executionNo}`);
+  };
 
   return (
     <ConfigProvider theme={BRAND_THEME}>
-      <div className="flex h-[calc(100vh-64px)] flex-col overflow-hidden bg-white">
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#e8e9ec] px-5">
-          <h1 className="m-0 text-[20px] font-semibold text-[#161823]">
+      <div className="flex h-[calc(100vh-64px)] min-h-[640px] flex-col overflow-hidden bg-white">
+        <header className="shrink-0 border-b border-[#e8e9ec] px-5 py-3">
+          <h1 className="m-0 text-[22px] font-semibold leading-8 text-[#161823]">
             运行记录
           </h1>
-          <Button icon={<RefreshCw size={14} />} onClick={() => load()}>
-            刷新
-          </Button>
-        </div>
-        <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
-          <div className="mb-3 flex shrink-0 items-center gap-2">
-            <Input
-              allowClear
-              variant="filled"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-              onPressEnter={() => load(1)}
-              prefix={<Search size={14} className="text-[#98a2b3]" />}
-              placeholder="搜索执行编号、监控名称、数据对象"
-              className="max-w-[420px]"
-            />
-            <Select
-              allowClear
-              variant="filled"
-              value={status}
-              placeholder="执行状态"
-              className="w-[150px]"
-              onChange={setStatus}
-              options={[
-                { value: 'WAITING', label: '等待中' },
-                { value: 'RUNNING', label: '运行中' },
-                { value: 'SUCCESS', label: '已完成' },
-                { value: 'FAILED', label: '执行失败' },
-              ]}
-            />
-            <Select
-              allowClear
-              variant="filled"
-              value={result}
-              placeholder="检查结果"
-              className="w-[150px]"
-              onChange={setResult}
-              options={[
-                { value: 'PASSED', label: '通过' },
-                { value: 'NOT_PASSED', label: '未通过' },
-                { value: 'ERROR', label: '异常' },
-                { value: 'RUNNING', label: '运行中' },
-              ]}
-            />
-          </div>
-          <div className="min-h-0 flex-1 overflow-auto">
-            <Spin spinning={loading}>
-              <Table<ExecutionListItem>
-                rowKey="executionNo"
-                size="small"
-                bordered
-                pagination={false}
-                scroll={{ x: 1340 }}
-                className={dataQualityTableClassName()}
-                dataSource={data.records}
-                locale={{
-                  emptyText: (
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="暂无运行记录"
-                    />
-                  ),
-                }}
-                onRow={(record) => ({
-                  onClick: () => setExecutionNo(record.executionNo),
-                  className: 'cursor-pointer',
-                })}
-                columns={[
-                  {
-                    title: '执行编号 / 监控名称',
-                    width: 280,
-                    render: (_, record) => (
-                      <div className="min-w-0 py-1">
-                        <div className="truncate font-medium text-[#172033]">
-                          {record.monitorName}
-                        </div>
-                        <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
-                          ID：{record.executionNo}
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: '数据对象',
-                    width: 270,
-                    render: (_, record) => (
-                      <div className="min-w-0 py-1">
-                        <div className="truncate text-[#344054]">
-                          {record.objectName}
-                        </div>
-                        <div className="mt-1 truncate text-[11px] text-[#98a2b3]">
-                          数据源：{record.dataSourceName}
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: '执行状态',
-                    dataIndex: 'executionStatus',
-                    width: 110,
-                    render: (value) => <ExecutionStatusTag value={value} />,
-                  },
-                  {
-                    title: '检查结果',
-                    dataIndex: 'checkResult',
-                    width: 110,
-                    render: (value) => <CheckResultTag value={value} />,
-                  },
-                  {
-                    title: '执行概况',
-                    width: 230,
-                    render: (_, record) => (
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <span className="text-[#98a2b3]">通过：</span>
-                        <span className="text-[#344054]">{record.passedRules}</span>
-                        <span className="text-[#98a2b3]">未通过：</span>
-                        <span className="text-[#344054]">{record.failedRules}</span>
-                        <span className="text-[#98a2b3]">异常：</span>
-                        <span className="text-[#344054]">{record.errorRules}</span>
-                        <span className="text-[#98a2b3]">耗时：</span>
-                        <span className="text-[#344054]">
-                          {record.durationMs === undefined
-                            ? '--'
-                            : `${record.durationMs} ms`}
-                        </span>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: '触发信息',
-                    width: 210,
-                    render: (_, record) => (
-                      <div className="space-y-1 text-xs">
-                        <div className="text-[#344054]">{record.operator}</div>
-                        <div className="text-[#98a2b3]">
-                          {record.startedAt || record.queuedAt || '--'}
-                        </div>
-                      </div>
-                    ),
-                  },
-                  {
-                    title: '操作',
-                    fixed: 'right',
-                    width: 90,
-                    render: (_, record) => (
-                      <Button
-                        type="link"
-                        size="small"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setExecutionNo(record.executionNo);
-                        }}
-                      >
-                        查看
-                      </Button>
-                    ),
-                  },
-                ]}
+          <p className="m-0 mt-0.5 text-xs text-[#98a2b3]">
+            以质量监控粒度和规则粒度，查询和展示质量规则的运行结果。
+          </p>
+        </header>
+
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <DataSourceTreePane
+            treeData={treeData}
+            treeLoading={treeLoading}
+            selectedNodeKey={selectedNodeKey}
+            leftWidth={leftWidth}
+            collapsed={collapsed}
+            onSelect={(keys) => {
+              const key = keys[0];
+              if (key) selectNode(String(key));
+            }}
+            onResizeStart={startResize}
+            onCollapsedChange={setCollapsed}
+          />
+
+          <main className="flex min-w-0 flex-1 flex-col overflow-hidden px-4 py-3">
+            <div className="shrink-0 border-b border-[#eceef0] pb-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  allowClear
+                  variant="filled"
+                  value={keywordDraft}
+                  onChange={(event) => setKeywordDraft(event.target.value)}
+                  onPressEnter={applySearch}
+                  prefix={<Search size={14} className="text-[#98a2b3]" />}
+                  placeholder="请输入规则或监控名称"
+                  className="w-[210px]"
+                />
+                <Input
+                  allowClear
+                  variant="filled"
+                  value={objectKeywordDraft}
+                  onChange={(event) => setObjectKeywordDraft(event.target.value)}
+                  onPressEnter={applySearch}
+                  prefix={<Search size={14} className="text-[#98a2b3]" />}
+                  placeholder="请输入表名或数据对象"
+                  className="w-[250px]"
+                />
+                <RangePicker
+                  variant="filled"
+                  value={dateRange}
+                  showTime={false}
+                  format="YYYY-MM-DD"
+                  className="w-[280px]"
+                  onChange={(value) => {
+                    if (value?.[0] && value?.[1]) {
+                      setDateRange([value[0], value[1]]);
+                    } else {
+                      setDateRange(null);
+                    }
+                  }}
+                />
+                <Select
+                  allowClear
+                  variant="filled"
+                  value={checkResult}
+                  placeholder="质量结果"
+                  className="w-[126px]"
+                  onChange={setCheckResult}
+                  options={[
+                    { value: 'PASSED', label: '通过' },
+                    { value: 'NOT_PASSED', label: '未通过' },
+                    { value: 'ERROR', label: '异常' },
+                    { value: 'RUNNING', label: '运行中' },
+                  ]}
+                />
+                <Select
+                  allowClear
+                  variant="filled"
+                  value={hasIssues}
+                  placeholder="问题数量"
+                  className="w-[126px]"
+                  onChange={setHasIssues}
+                  options={[
+                    { value: true, label: '存在问题' },
+                    { value: false, label: '无问题' },
+                  ]}
+                />
+                <Button type="primary" onClick={applySearch}>
+                  查询
+                </Button>
+                <Button icon={<RotateCcw size={14} />} onClick={reset}>
+                  重置{appliedFilterCount ? ` (${appliedFilterCount})` : ''}
+                </Button>
+              </div>
+
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select
+                    allowClear
+                    variant="filled"
+                    value={dimension}
+                    placeholder="质量维度"
+                    className="w-[126px]"
+                    onChange={setDimension}
+                    options={DIMENSION_OPTIONS}
+                  />
+                  <Select
+                    allowClear
+                    variant="filled"
+                    value={scope}
+                    placeholder="关联范围"
+                    className="w-[126px]"
+                    onChange={setScope}
+                    options={[
+                      { value: 'TABLE', label: '表级' },
+                      { value: 'COLUMN', label: '字段级' },
+                    ]}
+                  />
+                  <Select
+                    allowClear
+                    variant="filled"
+                    value={executionStatus}
+                    placeholder="校验状态"
+                    className="w-[126px]"
+                    onChange={setExecutionStatus}
+                    options={[
+                      { value: 'WAITING', label: '等待中' },
+                      { value: 'RUNNING', label: '运行中' },
+                      { value: 'SUCCESS', label: '已完成' },
+                      { value: 'FAILED', label: '执行失败' },
+                    ]}
+                  />
+                  <Select
+                    allowClear
+                    variant="filled"
+                    value={triggerType}
+                    placeholder="触发方式"
+                    className="w-[126px]"
+                    onChange={setTriggerType}
+                    options={[
+                      { value: 'MANUAL', label: '手动触发' },
+                      { value: 'SCHEDULE', label: '调度触发' },
+                    ]}
+                  />
+                  <span className="text-xs text-[#98a2b3]">
+                    数据源类型：{selectedDataSource?.dbType || '--'}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Select
+                    variant="filled"
+                    value={viewMode}
+                    className="w-[126px]"
+                    onChange={setViewMode}
+                    options={[
+                      { value: 'RULE', label: '规则视角' },
+                      { value: 'EXECUTION', label: '监控视角' },
+                    ]}
+                  />
+                  <Button
+                    icon={<RefreshCw size={14} />}
+                    onClick={() => void load(current, pageSize)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-auto pt-2">
+              <ExecutionRecordTable
+                executionRecords={executionRecords}
+                ruleRecords={ruleRecords}
+                loading={loading}
+                mode={viewMode}
+                onOpenExecution={openExecution}
+                onOpenMonitor={(monitorId) =>
+                  history.push(`/data-quality/monitor/${monitorId}`)
+                }
               />
-            </Spin>
-          </div>
-          <div className="mt-3 flex shrink-0 justify-end">
-            <Pagination
-              size="small"
-              current={data.current}
-              pageSize={data.pageSize}
-              total={data.total}
-              showSizeChanger
-              onChange={(current, pageSize) => load(current, pageSize)}
-            />
-          </div>
+            </div>
+
+            <div className="flex shrink-0 justify-end border-t border-[#f0f2f5] pt-3">
+              <Pagination
+                size="small"
+                current={current}
+                pageSize={pageSize}
+                total={total}
+                showSizeChanger
+                showTotal={(value) => `共 ${value} 条`}
+                onChange={(nextCurrent, nextPageSize) => {
+                  if (nextPageSize !== pageSize) {
+                    setPageSize(nextPageSize);
+                    return;
+                  }
+                  void load(nextCurrent, nextPageSize);
+                }}
+              />
+            </div>
+          </main>
         </div>
-        <ExecutionDetailDrawer
-          executionNo={executionNo}
-          open={Boolean(executionNo)}
-          onClose={() => setExecutionNo(undefined)}
-        />
       </div>
     </ConfigProvider>
   );
