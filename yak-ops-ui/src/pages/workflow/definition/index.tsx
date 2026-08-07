@@ -8,7 +8,13 @@ import {
   RotateCcw,
   ShieldCheck,
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import {
+  type DragEvent,
+  type ReactNode,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -19,7 +25,6 @@ import ReactFlow, {
   addEdge,
   type Connection,
   type Edge,
-  type Node,
   type NodeProps,
   type ReactFlowInstance,
   useEdgesState,
@@ -37,7 +42,7 @@ interface NodeTemplate {
   type: string;
   label: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 const NODE_TEMPLATES: NodeTemplate[] = [
@@ -118,7 +123,7 @@ const WorkflowDefinitionContent = () => {
   };
 
   const handleDragStart = (
-    event: React.DragEvent<HTMLDivElement>,
+    event: DragEvent<HTMLDivElement>,
     template: NodeTemplate,
   ) => {
     event.dataTransfer.setData(
@@ -131,7 +136,7 @@ const WorkflowDefinitionContent = () => {
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     if (!reactFlowInstance || !wrapperRef.current) return;
 
