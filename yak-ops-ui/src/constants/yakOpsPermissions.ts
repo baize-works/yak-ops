@@ -16,6 +16,9 @@ export const YAK_OPS_PERMISSIONS = {
   },
   quality: {
     templateRead: 'quality:template:read',
+    templateCreate: 'quality:template:create',
+    templateUpdate: 'quality:template:update',
+    templateDelete: 'quality:template:delete',
     monitorRead: 'quality:monitor:read',
     monitorCreate: 'quality:monitor:create',
     monitorUpdate: 'quality:monitor:update',
