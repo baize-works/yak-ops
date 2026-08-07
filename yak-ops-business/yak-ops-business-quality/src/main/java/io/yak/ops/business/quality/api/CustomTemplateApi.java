@@ -41,8 +41,8 @@ public final class CustomTemplateApi {
       CheckType checkType,
       CheckMethod checkMethod,
       String createdBy,
-      LocalDateTime createdAt,
-      LocalDateTime updatedAt) {}
+      @QualityDateTimeFormat LocalDateTime createdAt,
+      @QualityDateTimeFormat LocalDateTime updatedAt) {}
 
   public record Summary(
       long total,
@@ -59,8 +59,8 @@ public final class CustomTemplateApi {
       int sortOrder,
       long templateCount,
       long childCount,
-      LocalDateTime createdAt,
-      LocalDateTime updatedAt) {}
+      @QualityDateTimeFormat LocalDateTime createdAt,
+      @QualityDateTimeFormat LocalDateTime updatedAt) {}
 
   public record SaveFolderRequest(
       @NotBlank @Size(max = 100) String name,
