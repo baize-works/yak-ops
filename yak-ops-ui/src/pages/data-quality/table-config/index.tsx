@@ -80,7 +80,7 @@ const TableConfigPage = () => {
               table.setAssetCurrent(1);
             }}
             onOpenRegister={table.openRegisterDrawer}
-            onOpenRuleManagement={table.openMonitorDetail}
+            onOpenRuleManagement={table.openRuleManagement}
             onCreateMonitor={table.createMonitor}
           />
         </div>
