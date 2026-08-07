@@ -19,6 +19,5 @@ public record WorkflowInstanceVO(
       String name,
       String type,
       String status,
-      String errorMessage,
-      boolean continuedAfterFailure) {}
+      String errorMessage) {}
 }
