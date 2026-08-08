@@ -14,12 +14,34 @@ public record WorkflowRunRequest(
     @NotEmpty List<@Valid NodeRequest> nodes,
     List<@Valid EdgeRequest> edges,
     Map<String, Object> input,
-    @Min(0) Long workflowTimeoutSeconds) {
+    @Min(0) Long workflowTimeoutSeconds,
+    @Pattern(
+        regexp = "FAIL_FAST|CONTINUE_INDEPENDENT_BRANCHES|TERMINATE_ALL",
+        message = "unsupported workflow failureStrategy")
+    String failureStrategy) {
 
   public WorkflowRunRequest {
     edges = edges == null ? List.of() : List.copyOf(edges);
     input = input == null ? Map.of() : Map.copyOf(new LinkedHashMap<>(input));
     workflowTimeoutSeconds = workflowTimeoutSeconds == null ? 0L : workflowTimeoutSeconds;
+    failureStrategy = failureStrategy == null || failureStrategy.isBlank()
+        ? "CONTINUE_INDEPENDENT_BRANCHES"
+        : failureStrategy;
+  }
+
+  public WorkflowRunRequest(
+      String name,
+      List<NodeRequest> nodes,
+      List<EdgeRequest> edges,
+      Map<String, Object> input,
+      Long workflowTimeoutSeconds) {
+    this(
+        name,
+        nodes,
+        edges,
+        input,
+        workflowTimeoutSeconds,
+        "CONTINUE_INDEPENDENT_BRANCHES");
   }
 
   public WorkflowRunRequest(
@@ -40,7 +62,15 @@ public record WorkflowRunRequest(
       @Min(0) Long retryDelaySeconds,
       @Min(0) Long dispatchTimeoutSeconds,
       @Min(0) Long executionTimeoutSeconds,
-      Map<String, String> inputMapping) {
+      Map<String, String> inputMapping,
+      @Pattern(
+          regexp = "ALL_SUCCESS|ALL_DONE|NONE_FAILED|ONE_SUCCESS|ALWAYS",
+          message = "unsupported triggerRule")
+      String triggerRule,
+      @Pattern(
+          regexp = "FAIL_WORKFLOW|BLOCK_BRANCH|IGNORE_FAILURE",
+          message = "unsupported failurePolicy")
+      String failurePolicy) {
 
     public NodeRequest {
       mockResult = mockResult == null || mockResult.isBlank() ? "SUCCESS" : mockResult;
@@ -51,6 +81,36 @@ public record WorkflowRunRequest(
       inputMapping = inputMapping == null
           ? Map.of()
           : Map.copyOf(new LinkedHashMap<>(inputMapping));
+      triggerRule = triggerRule == null || triggerRule.isBlank()
+          ? "ALL_SUCCESS"
+          : triggerRule;
+      failurePolicy = failurePolicy == null || failurePolicy.isBlank()
+          ? "FAIL_WORKFLOW"
+          : failurePolicy;
+    }
+
+    public NodeRequest(
+        String id,
+        String name,
+        String type,
+        String mockResult,
+        Integer maxAttempts,
+        Long retryDelaySeconds,
+        Long dispatchTimeoutSeconds,
+        Long executionTimeoutSeconds,
+        Map<String, String> inputMapping) {
+      this(
+          id,
+          name,
+          type,
+          mockResult,
+          maxAttempts,
+          retryDelaySeconds,
+          dispatchTimeoutSeconds,
+          executionTimeoutSeconds,
+          inputMapping,
+          "ALL_SUCCESS",
+          "FAIL_WORKFLOW");
     }
 
     public NodeRequest(String id, String name, String type, String mockResult) {
