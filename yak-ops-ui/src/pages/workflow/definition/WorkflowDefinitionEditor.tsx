@@ -434,7 +434,7 @@ const WorkflowDefinitionContent = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-48px)] min-h-[620px] overflow-hidden bg-white">
+    <div className="flex h-[calc(100vh-48px)] min-h-[620px] overflow-hidden " style={{backgroundColor: "#F2F4F7"}}>
       <WorkflowTaskLibrary tasks={syncTasks} loading={tasksLoading} locked={locked} onDragStart={handleDragStart} />
       <section className="flex min-w-0 flex-1 flex-col">
         <WorkflowToolbar
