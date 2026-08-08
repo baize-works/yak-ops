@@ -83,6 +83,17 @@ export const continueWorkflowAfterFailure = async (
   return response.data;
 };
 
+export const retryWorkflowFailedNode = async (
+  executionId: string,
+  nodeId: string,
+) => {
+  const response = await request<ApiResponse<WorkflowInstance>>(
+    `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/nodes/${encodeURIComponent(nodeId)}/retry`,
+    { method: 'POST' },
+  );
+  return response.data;
+};
+
 export const getWorkflowInstances = async () => {
   const response = await request<ApiResponse<WorkflowInstance[]>>(
     '/api/v1/workflows/instances',
