@@ -6,6 +6,7 @@ import {
   getBezierPath,
   type EdgeProps,
 } from 'reactflow';
+import { WORKFLOW_EDGE_HANDLE_OVERLAP } from '../constants';
 import type { WorkflowEdgeData } from '../types';
 import WorkflowEdgeInsert from './WorkflowEdgeInsert';
 
@@ -25,10 +26,10 @@ const WorkflowEdge = ({
 
   const [edgePath, labelX, labelY] = useMemo(
     () => getBezierPath({
-      sourceX: sourceX - 8,
+      sourceX: sourceX - WORKFLOW_EDGE_HANDLE_OVERLAP,
       sourceY,
       sourcePosition: Position.Right,
-      targetX: targetX + 8,
+      targetX: targetX + WORKFLOW_EDGE_HANDLE_OVERLAP,
       targetY,
       targetPosition: Position.Left,
       curvature: 0.16,
