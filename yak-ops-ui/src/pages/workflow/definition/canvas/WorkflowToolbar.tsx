@@ -63,6 +63,9 @@ const WorkflowToolbar = ({
   onOffline,
 }: WorkflowToolbarProps) => {
   const status = definition?.status || 'DRAFT';
+  const statusLabel = STATUS_LABEL[status] || status;
+  const statusColor = status === 'ONLINE' ? '#fe2c55' : '#98a2b3';
+
   const runtimeConfig = (
     <div className="w-[360px] space-y-4 p-0.5">
       <div>
@@ -109,99 +112,116 @@ const WorkflowToolbar = ({
   );
 
   return (
-    <header className="grid h-[52px] shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-[#ebecef] bg-white px-3">
-      <div className="flex min-w-0 items-center gap-1.5">
+    <header className="flex h-[58px] shrink-0 items-center border-b border-[#e7e9ed] bg-white px-3.5 shadow-[0_1px_0_rgba(22,24,35,.02)]">
+      <div className="flex min-w-0 items-center">
         <Tooltip title="返回工作流定义">
           <Button
             type="text"
             size="small"
             aria-label="返回工作流定义"
             icon={<ArrowLeft size={15} />}
+            className="!h-8 !w-8 !rounded-lg"
             onClick={() => history.push('/workflow/definitions')}
           />
         </Tooltip>
 
-        <div className="h-4 w-px bg-[#eceef1]" />
+        <div className="mx-2 h-6 w-px bg-[#eceef1]" />
 
-        <Input
-          value={name}
-          disabled={locked}
-          variant="borderless"
-          onChange={(event) => onNameChange(event.target.value)}
-          className="max-w-[300px] min-w-[120px] !px-2 !text-[14px] !font-semibold !text-[#161823] transition-colors hover:!bg-[#f7f8fa] focus-within:!bg-[#f7f8fa]"
-        />
-
-        <span
-          className={[
-            'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[10px] font-medium',
-            status === 'ONLINE'
-              ? 'bg-[rgba(254,44,85,.08)] text-[#d92d50]'
-              : 'bg-[#f2f4f7] text-[#667085]',
-          ].join(' ')}
-        >
-          <span
-            className={[
-              'h-1.5 w-1.5 rounded-full',
-              status === 'ONLINE' ? 'bg-[#fe2c55]' : 'bg-[#98a2b3]',
-            ].join(' ')}
+        <div className="min-w-[180px] max-w-[320px]">
+          <Input
+            value={name}
+            disabled={locked}
+            variant="borderless"
+            onChange={(event) => onNameChange(event.target.value)}
+            className="h-7 !px-1.5 !text-[15px] !font-semibold !text-[#161823] transition-colors hover:!bg-[#f7f8fa] focus-within:!bg-[#f7f8fa]"
           />
-          {saving ? '保存中' : STATUS_LABEL[status] || status}
-        </span>
-      </div>
+          <div className="flex h-4 items-center gap-1.5 px-1.5 text-[10px] text-[#98a2b3]">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusColor }} />
+            <span>{statusLabel}</span>
+            <span className="text-[#d0d5dd]">·</span>
+            <span>{saving ? '正在保存...' : locked ? '只读模式' : '可编辑'}</span>
+          </div>
+        </div>
 
-      <div className="flex items-center gap-2">
-        <Popover content={runtimeConfig} title="运行配置" trigger="click" placement="bottom">
-          <Button
-            size="small"
-            icon={<Settings2 size={13} />}
-            className="!h-8 !rounded-lg !border-[#e4e7ec] !bg-white !px-3 !text-[12px] !text-[#475467] shadow-none"
-          >
-            运行配置
-          </Button>
-        </Popover>
+        <div className="ml-4 flex h-9 items-center gap-1 rounded-xl border border-[#e8eaee] bg-[#f8f9fb] p-1 shadow-[0_1px_2px_rgba(22,24,35,.03)]">
+          <Popover content={runtimeConfig} title="运行配置" trigger="click" placement="bottom">
+            <Button
+              type="text"
+              size="small"
+              icon={<Settings2 size={13} />}
+              className="!h-7 !rounded-lg !px-2.5 !text-[12px] !text-[#475467] hover:!bg-white"
+            >
+              运行配置
+            </Button>
+          </Popover>
 
-        <span className="whitespace-nowrap text-[11px] text-[#98a2b3]">
-          {nodesCount} 节点 · {edgesCount} 连线
-        </span>
+          <div className="h-4 w-px bg-[#e4e7ec]" />
+
+          <span className="whitespace-nowrap px-2 text-[11px] text-[#98a2b3]">
+            {nodesCount} 节点 · {edgesCount} 连线
+          </span>
+        </div>
 
         {locked ? (
-          <span className="whitespace-nowrap text-[10px] text-[#98a2b3]">已上线，需下线后修改</span>
+          <span className="ml-2 whitespace-nowrap text-[10px] text-[#98a2b3]">需下线后修改</span>
         ) : null}
       </div>
 
-      <div className="flex items-center justify-end gap-1.5">
+      <div className="flex-1" />
+
+      <div className="flex shrink-0 items-center gap-2">
         <Popconfirm
           title="清空任务节点？开始节点与全局输入会保留。"
           disabled={locked}
           onConfirm={onClear}
         >
-          <Button size="small" icon={<RotateCcw size={14} />} disabled={locked}>
+          <Button
+            size="small"
+            icon={<RotateCcw size={14} />}
+            disabled={locked}
+            className="!h-8 !rounded-lg !border-[#e4e7ec] !px-3"
+          >
             清空
           </Button>
         </Popconfirm>
 
-        {!locked ? (
-          <Button size="small" icon={<Save size={14} />} loading={saving} onClick={onSave}>
-            保存
-          </Button>
-        ) : null}
+        <div className="flex h-10 items-center gap-1 rounded-xl border border-[#e4e7ec] bg-[#f8f9fb] p-1 shadow-[0_4px_14px_rgba(22,24,35,.05),0_1px_2px_rgba(22,24,35,.03)]">
+          {!locked ? (
+            <Button
+              type="text"
+              size="small"
+              icon={<Save size={14} />}
+              loading={saving}
+              onClick={onSave}
+              className="!h-8 !rounded-lg !px-3 !text-[#475467] hover:!bg-white"
+            >
+              保存
+            </Button>
+          ) : null}
 
-        {status === 'ONLINE' ? (
-          <Button size="small" icon={<CloudOff size={14} />} loading={statusAction} onClick={onOffline}>
-            下线
-          </Button>
-        ) : (
-          <Button
-            type="primary"
-            size="small"
-            icon={<CloudUpload size={14} />}
-            loading={statusAction || saving}
-            onClick={onOnline}
-            className="!px-3.5"
-          >
-            保存并上线
-          </Button>
-        )}
+          {status === 'ONLINE' ? (
+            <Button
+              size="small"
+              icon={<CloudOff size={14} />}
+              loading={statusAction}
+              onClick={onOffline}
+              className="!h-8 !rounded-lg !px-3"
+            >
+              下线
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              size="small"
+              icon={<CloudUpload size={14} />}
+              loading={statusAction || saving}
+              onClick={onOnline}
+              className="!h-8 !rounded-lg !px-3.5"
+            >
+              保存并上线
+            </Button>
+          )}
+        </div>
       </div>
     </header>
   );
