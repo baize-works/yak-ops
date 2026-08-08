@@ -562,7 +562,6 @@ public class WorkflowRuntimeService {
   private void cleanupTerminalRuntime(String executionId) {
     activeExecutions.remove(executionId);
     pendingDispatches.remove(executionId);
-    latestDispatches.remove(executionId);
     taskControls.entrySet().removeIf(
         entry -> executionId.equals(entry.getValue().workflowExecutionId()));
   }
