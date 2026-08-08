@@ -3,6 +3,7 @@ import {
   getBezierPath,
   type ConnectionLineComponentProps,
 } from 'reactflow';
+import { WORKFLOW_EDGE_HANDLE_OVERLAP } from '../constants';
 
 const WorkflowConnectionLine = ({
   fromX,
@@ -13,10 +14,10 @@ const WorkflowConnectionLine = ({
   toPosition = Position.Left,
 }: ConnectionLineComponentProps) => {
   const [path] = getBezierPath({
-    sourceX: fromX - 8,
+    sourceX: fromX - WORKFLOW_EDGE_HANDLE_OVERLAP,
     sourceY: fromY,
     sourcePosition: fromPosition,
-    targetX: toX + 8,
+    targetX: toX + WORKFLOW_EDGE_HANDLE_OVERLAP,
     targetY: toY,
     targetPosition: toPosition,
     curvature: 0.16,
