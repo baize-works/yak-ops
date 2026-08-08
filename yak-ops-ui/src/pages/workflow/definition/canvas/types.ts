@@ -6,6 +6,7 @@ import type {
 export interface WorkflowCanvasTaskOption {
   id: string;
   label: string;
+  taskType: string;
   typeLabel: string;
 }
 
