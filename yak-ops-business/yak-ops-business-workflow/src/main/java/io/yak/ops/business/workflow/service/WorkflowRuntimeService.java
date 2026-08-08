@@ -78,9 +78,7 @@ public class WorkflowRuntimeService {
 
   @Autowired
   public WorkflowRuntimeService(WorkflowEventStreamService eventStreamService) {
-    this(
-        eventStreamService,
-        () -> ThreadLocalRandom.current().nextLong(1_000L, 10_001L));
+    this(eventStreamService, () -> ThreadLocalRandom.current().nextLong(1_000L, 10_001L));
   }
 
   WorkflowRuntimeService(
@@ -343,7 +341,6 @@ public class WorkflowRuntimeService {
     latestDispatches
         .computeIfAbsent(dispatch.workflowExecutionId(), ignored -> new ConcurrentHashMap<>())
         .put(dispatch.nodeId(), dispatch);
-    taskControls.put(dispatch.attemptId(), new NodeTaskControl());
     pendingDispatches
         .computeIfAbsent(
             dispatch.workflowExecutionId(),
@@ -371,6 +368,7 @@ public class WorkflowRuntimeService {
   private void executeNode(NodeDispatch dispatch) {
     NodeTaskControl control = taskControls.computeIfAbsent(
         dispatch.attemptId(), ignored -> new NodeTaskControl());
+    control.bind(dispatch.workflowExecutionId());
     control.attach(Thread.currentThread());
     String type = String.valueOf(dispatch.nodeConfiguration().getOrDefault("type", "TASK"));
     String configuredMockResult = String.valueOf(
@@ -389,26 +387,27 @@ public class WorkflowRuntimeService {
         mockResult,
         simulatedDurationMillis);
     try {
-      if (!awaitRunnable(dispatch, control)) {
+      if (!awaitRunnable(control)) {
         return;
       }
-      engine.acknowledgeNodeStarted(
-          dispatch.workflowExecutionId(), dispatch.nodeId(), dispatch.attemptId());
-      publishCurrent(dispatch.workflowExecutionId());
+      acknowledgeStarted(dispatch);
 
       long remaining = simulatedDurationMillis;
       while (remaining > 0L) {
-        if (!awaitRunnable(dispatch, control)) {
+        if (!awaitRunnable(control)) {
           return;
         }
+        // 如果 Pause 恰好发生在首次 START ACK 前，恢复后这里会幂等补回 START。
+        acknowledgeStarted(dispatch);
         long slice = Math.min(EXECUTION_SLICE_MILLIS, remaining);
         Thread.sleep(slice);
         remaining -= slice;
       }
 
-      if (!awaitRunnable(dispatch, control)) {
+      if (!awaitRunnable(control)) {
         return;
       }
+      acknowledgeStarted(dispatch);
       if (MOCK_FAILED.equalsIgnoreCase(mockResult)) {
         engine.failNode(
             dispatch.workflowExecutionId(),
@@ -453,8 +452,13 @@ public class WorkflowRuntimeService {
     }
   }
 
-  private boolean awaitRunnable(NodeDispatch dispatch, NodeTaskControl control)
-      throws InterruptedException {
+  private void acknowledgeStarted(NodeDispatch dispatch) {
+    engine.acknowledgeNodeStarted(
+        dispatch.workflowExecutionId(), dispatch.nodeId(), dispatch.attemptId());
+    publishCurrent(dispatch.workflowExecutionId());
+  }
+
+  private boolean awaitRunnable(NodeTaskControl control) throws InterruptedException {
     NodePauseRequest pauseRequest = control.claimPauseAcknowledgement();
     if (pauseRequest != null) {
       acknowledgePaused(pauseRequest);
@@ -510,9 +514,9 @@ public class WorkflowRuntimeService {
     for (String executionId : List.copyOf(activeExecutions)) {
       try {
         WorkflowExecution before = requireExecution(executionId);
-        String beforeStatus = before.status().name();
+        String beforeSignature = runtimeSignature(before);
         WorkflowExecution after = engine.checkTimeouts(executionId);
-        if (!beforeStatus.equals(after.status().name()) || after.status().isTerminal()) {
+        if (!beforeSignature.equals(runtimeSignature(after))) {
           publishCurrent(executionId);
         }
       } catch (RuntimeException exception) {
@@ -522,6 +526,18 @@ public class WorkflowRuntimeService {
             exception.getMessage());
       }
     }
+  }
+
+  private String runtimeSignature(WorkflowExecution execution) {
+    StringBuilder signature = new StringBuilder(execution.status().name());
+    execution.nodes().values().forEach(node -> {
+      signature.append('|').append(node.nodeId()).append(':').append(node.status().name());
+      if (!node.attempts().isEmpty()) {
+        NodeAttempt attempt = node.attempts().get(node.attempts().size() - 1);
+        signature.append(':').append(attempt.id()).append(':').append(attempt.status().name());
+      }
+    });
+    return signature.toString();
   }
 
   private WorkflowInstanceVO publishAndView(WorkflowExecution execution) {
@@ -556,14 +572,8 @@ public class WorkflowRuntimeService {
   private void cleanupTerminalRuntime(String executionId) {
     activeExecutions.remove(executionId);
     pendingDispatches.remove(executionId);
-    taskControls.entrySet().removeIf(entry -> {
-      NodeTaskControl control = entry.getValue();
-      if (executionId.equals(control.workflowExecutionId())) {
-        control.cancel();
-        return true;
-      }
-      return false;
-    });
+    taskControls.entrySet().removeIf(
+        entry -> executionId.equals(entry.getValue().workflowExecutionId()));
   }
 
   private boolean isTerminal(String status) {
@@ -612,9 +622,10 @@ public class WorkflowRuntimeService {
     String failureReason = currentAttempt == null || currentAttempt.failureReason() == null
         ? null
         : currentAttempt.failureReason().name();
-    NodeDispatch dispatch = latestDispatches
-        .getOrDefault(executionId, new ConcurrentHashMap<>())
-        .get(node.nodeId());
+    ConcurrentMap<String, NodeDispatch> executionDispatches = latestDispatches.get(executionId);
+    NodeDispatch dispatch = executionDispatches == null
+        ? null
+        : executionDispatches.get(node.nodeId());
 
     return new NodeInstanceVO(
         node.nodeId(),
