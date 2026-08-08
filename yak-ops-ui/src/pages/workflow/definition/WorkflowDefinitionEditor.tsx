@@ -20,6 +20,7 @@ import ReactFlow, {
   MiniMap,
   ReactFlowProvider,
   addEdge,
+  getOutgoers,
   type Connection,
   type Edge,
   type NodeMouseHandler,
@@ -30,6 +31,11 @@ import ReactFlow, {
 import WorkflowNodeInspector from './canvas/WorkflowNodeInspector';
 import WorkflowTaskLibrary from './canvas/WorkflowTaskLibrary';
 import WorkflowToolbar from './canvas/WorkflowToolbar';
+import {
+  WORKFLOW_NODE_HORIZONTAL_GAP,
+  WORKFLOW_NODE_VERTICAL_GAP,
+  WORKFLOW_NODE_WIDTH,
+} from './canvas/constants';
 import WorkflowConnectionLine from './canvas/edge/WorkflowConnectionLine';
 import WorkflowEdge from './canvas/edge/WorkflowEdge';
 import WorkflowNode from './canvas/node/WorkflowNode';
@@ -226,9 +232,25 @@ const WorkflowDefinitionContent = () => {
     const sourceNode = nodes.find((node) => node.id === sourceNodeId);
     if (!task || !sourceNode) return;
 
+    const outgoers = getOutgoers(sourceNode, nodes, edges)
+      .sort((left, right) => left.position.y - right.position.y);
+    const lastOutgoer = outgoers[outgoers.length - 1];
+    const sourceWidth = sourceNode.width ?? WORKFLOW_NODE_WIDTH;
+    const fallbackHeight = sourceNode.height ?? 96;
+
     const sequence = sequenceRef.current++;
     const nodeId = `task-${Date.now()}-${sequence}`;
-    const outgoingCount = edges.filter((edge) => edge.source === sourceNodeId).length;
+    const position = lastOutgoer
+      ? {
+          x: lastOutgoer.position.x,
+          y: lastOutgoer.position.y
+            + (lastOutgoer.height ?? fallbackHeight)
+            + WORKFLOW_NODE_VERTICAL_GAP,
+        }
+      : {
+          x: sourceNode.position.x + sourceWidth + WORKFLOW_NODE_HORIZONTAL_GAP,
+          y: sourceNode.position.y,
+        };
 
     setNodes((current) => [
       ...current.map((node) => ({ ...node, selected: false })),
@@ -236,10 +258,7 @@ const WorkflowDefinitionContent = () => {
         id: nodeId,
         type: 'workflow',
         selected: true,
-        position: {
-          x: sourceNode.position.x + 320,
-          y: sourceNode.position.y + outgoingCount * 120,
-        },
+        position,
         data: createNodeData(task),
       },
     ]);
