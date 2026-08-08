@@ -7,6 +7,7 @@ export interface WorkflowCanvasTaskOption {
   id: string;
   label: string;
   typeLabel: string;
+  taskType?: string;
 }
 
 export interface WorkflowNodeData {

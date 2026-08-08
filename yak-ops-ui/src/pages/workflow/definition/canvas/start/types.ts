@@ -1,3 +1,5 @@
+import type { WorkflowCanvasTaskOption } from '../types';
+
 export const WORKFLOW_START_NODE_ID = '__yak_workflow_start__';
 export const WORKFLOW_START_META_KEY = '__yak_start__';
 
@@ -30,6 +32,6 @@ export interface WorkflowStartNodeData {
   label: string;
   locked?: boolean;
   inputs: WorkflowStartInputField[];
-  appendOptions?: Array<{ id: string; label: string; typeLabel: string }>;
+  appendOptions?: WorkflowCanvasTaskOption[];
   onAppend?: (nodeId: string, taskId: string) => void;
 }
