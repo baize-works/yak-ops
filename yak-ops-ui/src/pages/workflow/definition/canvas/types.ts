@@ -3,6 +3,12 @@ import type {
   WorkflowTriggerRule,
 } from '@/services/workflow';
 
+export interface WorkflowCanvasTaskOption {
+  id: string;
+  label: string;
+  typeLabel: string;
+}
+
 export interface WorkflowNodeData {
   label: string;
   taskId: string;
@@ -15,17 +21,19 @@ export interface WorkflowNodeData {
   dispatchTimeoutSeconds: number;
   executionTimeoutSeconds: number;
   inputMappingText: string;
+  locked?: boolean;
+  appendOptions?: WorkflowCanvasTaskOption[];
+  onAppend?: (nodeId: string, taskId: string) => void;
+  onDuplicate?: (nodeId: string) => void;
+  onDelete?: (nodeId: string) => void;
 }
 
-export interface WorkflowEdgeInsertOption {
-  id: string;
-  label: string;
-  typeLabel: string;
-}
+export type WorkflowEdgeInsertOption = WorkflowCanvasTaskOption;
 
 export interface WorkflowEdgeData {
   locked?: boolean;
-  insertOptions?: WorkflowEdgeInsertOption[];
+  connectedNodeHovered?: boolean;
+  insertOptions?: WorkflowCanvasTaskOption[];
   onInsert?: (
     edgeId: string,
     source: string,
