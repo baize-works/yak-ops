@@ -28,8 +28,12 @@ const CATEGORY_META: Array<{
   { key: 'quality', label: '数据质量' },
 ];
 
-const resolveTaskCategory = (taskType?: string): WorkflowTaskCategory => {
-  const normalized = (taskType || '').trim().toUpperCase();
+const resolveTaskCategory = (option: WorkflowCanvasTaskOption): WorkflowTaskCategory => {
+  if (option.typeLabel.includes('质量')) return 'quality';
+  if (option.typeLabel.includes('同步')) return 'sync';
+  if (option.typeLabel.includes('开发')) return 'development';
+
+  const normalized = (option.taskType || option.typeLabel || '').trim().toUpperCase();
 
   if (
     normalized.includes('QUALITY')
@@ -49,6 +53,12 @@ const resolveTaskCategory = (taskType?: string): WorkflowTaskCategory => {
   }
 
   return 'development';
+};
+
+const resolveIconTaskType = (option: WorkflowCanvasTaskOption) => {
+  if (option.taskType) return option.taskType;
+  if (resolveTaskCategory(option) === 'sync') return 'SYNC';
+  return undefined;
 };
 
 const createSearchState = (): Record<WorkflowTaskCategory, string> => ({
@@ -86,7 +96,7 @@ const WorkflowTaskPicker = ({
     };
 
     options.forEach((option) => {
-      grouped[resolveTaskCategory(option.taskType)].push(option);
+      grouped[resolveTaskCategory(option)].push(option);
     });
 
     return grouped;
@@ -156,7 +166,7 @@ const WorkflowTaskPicker = ({
                 handleOpenChange(false);
               }}
             >
-              <WorkflowNodeIcon taskType={option.taskType} size="xs" />
+              <WorkflowNodeIcon taskType={resolveIconTaskType(option)} size="xs" />
               <span className="ml-2 min-w-0 flex-1 truncate text-[13px] font-medium text-[#475467]">
                 {option.label}
               </span>
