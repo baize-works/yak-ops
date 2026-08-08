@@ -21,7 +21,6 @@ interface WorkflowToolbarProps {
   definition?: WorkflowDefinition;
   name: string;
   description: string;
-  workflowInputText: string;
   workflowTimeoutSeconds: number;
   failureStrategy: WorkflowFailureStrategy;
   nodesCount: number;
@@ -31,7 +30,6 @@ interface WorkflowToolbarProps {
   statusAction: boolean;
   onNameChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
-  onWorkflowInputChange: (value: string) => void;
   onWorkflowTimeoutChange: (value: number) => void;
   onFailureStrategyChange: (value: WorkflowFailureStrategy) => void;
   onClear: () => void;
@@ -48,7 +46,6 @@ const WorkflowToolbar = ({
   definition,
   name,
   description,
-  workflowInputText,
   workflowTimeoutSeconds,
   failureStrategy,
   nodesCount,
@@ -58,7 +55,6 @@ const WorkflowToolbar = ({
   statusAction,
   onNameChange,
   onDescriptionChange,
-  onWorkflowInputChange,
   onWorkflowTimeoutChange,
   onFailureStrategyChange,
   onClear,
@@ -83,11 +79,8 @@ const WorkflowToolbar = ({
           <span className="text-[11px] text-[rgba(22,24,35,.44)]">秒，0 表示不限制</span>
         </div>
       </div>
-      <div>
-        <ConfigLabel>Workflow Input</ConfigLabel>
-        <Input.TextArea rows={5} value={workflowInputText}
-          onChange={(event) => onWorkflowInputChange(event.target.value)}
-          disabled={locked} className="mt-1 font-mono !text-[11px]" />
+      <div className="rounded-lg bg-[#f7f8fa] px-3 py-2 text-[10px] leading-5 text-[rgba(22,24,35,.46)]">
+        工作流输入与全局变量已统一移动到画布中的“开始”节点维护。
       </div>
       <div>
         <ConfigLabel>描述</ConfigLabel>
@@ -121,7 +114,7 @@ const WorkflowToolbar = ({
         {locked ? <span className="text-[10px] text-[rgba(22,24,35,.38)]">已上线，需下线后修改</span> : null}
       </div>
       <div className="flex items-center gap-2">
-        <Popconfirm title="清空当前画布？" disabled={locked} onConfirm={onClear}>
+        <Popconfirm title="清空任务节点？开始节点与全局输入会保留。" disabled={locked} onConfirm={onClear}>
           <Button icon={<RotateCcw size={14} />} disabled={locked}>清空</Button>
         </Popconfirm>
         {!locked ? <Button icon={<Save size={14} />} loading={saving} onClick={onSave}>保存</Button> : null}
