@@ -1,3 +1,4 @@
+import { WORKFLOW_EDITOR_META_KEY } from '../note/types';
 import {
   WORKFLOW_START_META_KEY,
   type WorkflowStartConfig,
@@ -51,7 +52,11 @@ export const hydrateWorkflowStartConfig = (
     }));
   } else {
     const legacyValues = inputValues || Object.fromEntries(
-      Object.entries(input).filter(([key]) => key !== WORKFLOW_START_META_KEY && key !== 'vars' && key !== 'sys'),
+      Object.entries(input).filter(([key]) =>
+        key !== WORKFLOW_START_META_KEY
+        && key !== WORKFLOW_EDITOR_META_KEY
+        && key !== 'vars'
+        && key !== 'sys'),
     );
     inputs = Object.entries(legacyValues).map(([name, value], index) => ({
       id: createId('input', name, index),
@@ -107,6 +112,7 @@ const serializeValue = (type: WorkflowStartValueType, value: unknown) => {
 export const serializeWorkflowStartContext = (
   config: WorkflowStartConfig,
   system: { definitionId: string; workflowName: string },
+  editorMeta: Record<string, unknown> = {},
 ): Record<string, unknown> => ({
   sys: {
     definitionId: system.definitionId,
@@ -118,6 +124,7 @@ export const serializeWorkflowStartContext = (
   vars: Object.fromEntries(
     config.variables.map((variable) => [variable.name, serializeValue(variable.type, variable.value)]),
   ),
+  ...editorMeta,
   [WORKFLOW_START_META_KEY]: {
     version: 1,
     position: config.position,

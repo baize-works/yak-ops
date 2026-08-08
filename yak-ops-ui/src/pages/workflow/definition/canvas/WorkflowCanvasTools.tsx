@@ -1,7 +1,19 @@
 import { Popover, Tooltip } from 'antd';
-import { Hand, History, Maximize2, MousePointer2, Redo2, Undo2, X } from 'lucide-react';
+import {
+  CirclePlus,
+  Hand,
+  History,
+  Maximize2,
+  MousePointer2,
+  Redo2,
+  StickyNote,
+  Undo2,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useReactFlow } from 'reactflow';
+import WorkflowTaskPicker from './WorkflowTaskPicker';
+import type { WorkflowCanvasTaskOption } from './types';
 import type { WorkflowCanvasHistoryEntry } from './useWorkflowCanvasHistory';
 
 export type WorkflowCanvasMode = 'pointer' | 'hand';
@@ -9,11 +21,14 @@ export type WorkflowCanvasMode = 'pointer' | 'hand';
 interface WorkflowCanvasToolsProps<T> {
   mode: WorkflowCanvasMode;
   locked: boolean;
+  taskOptions: WorkflowCanvasTaskOption[];
   historyEntries: Array<WorkflowCanvasHistoryEntry<T>>;
   currentHistoryIndex: number;
   canUndo: boolean;
   canRedo: boolean;
   onModeChange: (mode: WorkflowCanvasMode) => void;
+  onAddTask: (taskId: string) => void;
+  onAddNote: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onJumpToHistory: (index: number) => void;
@@ -39,11 +54,14 @@ const isEditableTarget = (target: EventTarget | null) => {
 const WorkflowCanvasTools = <T,>({
   mode,
   locked,
+  taskOptions,
   historyEntries,
   currentHistoryIndex,
   canUndo,
   canRedo,
   onModeChange,
+  onAddTask,
+  onAddNote,
   onUndo,
   onRedo,
   onJumpToHistory,
@@ -176,6 +194,40 @@ const WorkflowCanvasTools = <T,>({
       `}</style>
 
       <div className="pointer-events-auto absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
+        <WorkflowTaskPicker
+          options={taskOptions}
+          disabled={locked || !taskOptions.length}
+          placement="rightTop"
+          onSelect={onAddTask}
+        >
+          <span>
+            <Tooltip title="新增节点" placement="right">
+              <button
+                type="button"
+                aria-label="新增节点"
+                disabled={locked || !taskOptions.length}
+                className={`${iconButtonClass()} ${disabledButtonClass}`}
+              >
+                <CirclePlus size={16} strokeWidth={1.9} />
+              </button>
+            </Tooltip>
+          </span>
+        </WorkflowTaskPicker>
+
+        <Tooltip title="添加注释" placement="right">
+          <button
+            type="button"
+            aria-label="添加注释"
+            disabled={locked}
+            className={`${iconButtonClass()} ${disabledButtonClass}`}
+            onClick={onAddNote}
+          >
+            <StickyNote size={16} strokeWidth={1.9} />
+          </button>
+        </Tooltip>
+
+        <div className="my-1 h-px w-5 bg-[#eceef1]" />
+
         <Tooltip title="选择模式（V）" placement="right">
           <button
             type="button"
