@@ -78,7 +78,8 @@ class WorkflowDefinitionServiceTest {
     WorkflowInstanceVO paused = instance("exec-1", "PAUSED");
     when(runtimeService.run(any())).thenReturn(prepared);
     when(runtimeService.activate("exec-1")).thenReturn(running);
-    when(runtimeService.getInstance("exec-1")).thenReturn(running, running, paused);
+    when(runtimeService.getInstance("exec-1"))
+        .thenReturn(running, running, paused, paused, running);
     when(runtimeService.pause("exec-1")).thenReturn(paused);
     when(runtimeService.resume("exec-1")).thenReturn(running);
 
