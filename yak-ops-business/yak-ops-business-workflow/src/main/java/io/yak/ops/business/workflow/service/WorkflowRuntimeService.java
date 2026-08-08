@@ -124,7 +124,7 @@ public class WorkflowRuntimeService {
     WorkflowDefinition definition = new WorkflowDefinition(
         definitionId,
         request.name(),
-        WorkflowFailureStrategy.CONTINUE_INDEPENDENT_BRANCHES,
+        WorkflowFailureStrategy.valueOf(request.failureStrategy()),
         request.workflowTimeoutSeconds() > 0
             ? WorkflowTimeoutPolicy.of(Duration.ofSeconds(request.workflowTimeoutSeconds()))
             : WorkflowTimeoutPolicy.none(),
@@ -137,18 +137,20 @@ public class WorkflowRuntimeService {
         request.name(),
         request.edges().size(),
         request.workflowTimeoutSeconds(),
+        request.failureStrategy(),
         nodeMetadata(request.nodes()));
     registerExecution(execution, runMetadata);
 
     WorkflowInstanceVO started = toView(execution, runMetadata);
     log.info(
-        "[workflow] prepared execution={}, definition={}, name={}, nodes={}, edges={}, timeoutSeconds={}",
+        "[workflow] prepared execution={}, definition={}, name={}, nodes={}, edges={}, timeoutSeconds={}, failureStrategy={}",
         execution.id(),
         definitionId,
         request.name(),
         request.nodes().size(),
         request.edges().size(),
-        request.workflowTimeoutSeconds());
+        request.workflowTimeoutSeconds(),
+        request.failureStrategy());
     return started;
   }
 
@@ -195,11 +197,6 @@ public class WorkflowRuntimeService {
       WorkflowExecution execution = engine.retryFailedNode(executionId, nodeId);
       WorkflowInstanceVO snapshot = publishAndView(execution);
       reactivateExecution(executionId);
-      log.info(
-          "[workflow] manual retry execution={}, failedNode={}, status={}",
-          executionId,
-          nodeId,
-          snapshot.status());
       return snapshot;
     } catch (RuntimeException exception) {
       manualRetrySuccessNodes.remove(retryKey);
@@ -308,9 +305,9 @@ public class WorkflowRuntimeService {
     return new NodeDefinition(
         node.id(),
         node.name(),
-        TriggerRule.ALL_SUCCESS,
+        TriggerRule.valueOf(node.triggerRule()),
         retryPolicy,
-        NodeFailurePolicy.FAIL_WORKFLOW,
+        NodeFailurePolicy.valueOf(node.failurePolicy()),
         timeoutPolicy,
         NodeInputMapping.of(node.inputMapping()),
         Map.of(
@@ -328,6 +325,8 @@ public class WorkflowRuntimeService {
       result.put(node.id(), new NodeMetadata(
           node.name(),
           node.type(),
+          node.triggerRule(),
+          node.failurePolicy(),
           node.maxAttempts(),
           node.retryDelaySeconds(),
           node.dispatchTimeoutSeconds(),
@@ -357,7 +356,6 @@ public class WorkflowRuntimeService {
     if (queue == null) {
       return;
     }
-
     NodeDispatch dispatch;
     while ((dispatch = queue.poll()) != null) {
       NodeDispatch current = dispatch;
@@ -378,32 +376,21 @@ public class WorkflowRuntimeService {
             retryKey(dispatch.workflowExecutionId(), dispatch.nodeId()));
     String mockResult = manualRetrySuccess ? MOCK_SUCCESS : configuredMockResult;
     long simulatedDurationMillis = Math.max(0L, delayMillisSupplier.getAsLong());
-    log.info(
-        "[workflow] node start execution={}, node={}, attemptId={}, attempt={}, mockResult={}, durationMs={}",
-        dispatch.workflowExecutionId(),
-        dispatch.nodeId(),
-        dispatch.attemptId(),
-        dispatch.attemptNumber(),
-        mockResult,
-        simulatedDurationMillis);
     try {
       if (!awaitRunnable(control)) {
         return;
       }
       acknowledgeStarted(dispatch);
-
       long remaining = simulatedDurationMillis;
       while (remaining > 0L) {
         if (!awaitRunnable(control)) {
           return;
         }
-        // 如果 Pause 恰好发生在首次 START ACK 前，恢复后这里会幂等补回 START。
         acknowledgeStarted(dispatch);
         long slice = Math.min(EXECUTION_SLICE_MILLIS, remaining);
         Thread.sleep(slice);
         remaining -= slice;
       }
-
       if (!awaitRunnable(control)) {
         return;
       }
@@ -417,7 +404,6 @@ public class WorkflowRuntimeService {
         publishCurrent(dispatch.workflowExecutionId());
         return;
       }
-
       engine.completeNode(
           dispatch.workflowExecutionId(),
           dispatch.nodeId(),
@@ -475,38 +461,22 @@ public class WorkflowRuntimeService {
     } catch (RuntimeException exception) {
       log.debug(
           "[workflow] pause acknowledgement ignored execution={}, node={}, attempt={}, message={}",
-          request.workflowExecutionId(),
-          request.nodeId(),
-          request.attemptId(),
-          exception.getMessage());
+          request.workflowExecutionId(), request.nodeId(), request.attemptId(), exception.getMessage());
     }
   }
 
-  private void failNode(
-      NodeDispatch dispatch,
-      String errorMessage,
-      Exception exception) {
+  private void failNode(NodeDispatch dispatch, String errorMessage, Exception exception) {
     log.error(
         "[workflow] node failed execution={}, node={}, attempt={}, message={}",
-        dispatch.workflowExecutionId(),
-        dispatch.nodeId(),
-        dispatch.attemptId(),
-        errorMessage,
-        exception);
+        dispatch.workflowExecutionId(), dispatch.nodeId(), dispatch.attemptId(), errorMessage, exception);
     try {
       engine.failNode(
-          dispatch.workflowExecutionId(),
-          dispatch.nodeId(),
-          dispatch.attemptId(),
-          errorMessage);
+          dispatch.workflowExecutionId(), dispatch.nodeId(), dispatch.attemptId(), errorMessage);
       publishCurrent(dispatch.workflowExecutionId());
     } catch (RuntimeException callbackException) {
       log.warn(
           "[workflow] failure callback skipped execution={}, node={}, attempt={}, message={}",
-          dispatch.workflowExecutionId(),
-          dispatch.nodeId(),
-          dispatch.attemptId(),
-          callbackException.getMessage());
+          dispatch.workflowExecutionId(), dispatch.nodeId(), dispatch.attemptId(), callbackException.getMessage());
     }
   }
 
@@ -522,8 +492,7 @@ public class WorkflowRuntimeService {
       } catch (RuntimeException exception) {
         log.debug(
             "[workflow] timeout scan skipped execution={}, message={}",
-            executionId,
-            exception.getMessage());
+            executionId, exception.getMessage());
       }
     }
   }
@@ -599,6 +568,7 @@ public class WorkflowRuntimeService {
         execution.sourceExecutionId(),
         runMetadata.name(),
         execution.status().name(),
+        runMetadata.failureStrategy(),
         execution.createdAt(),
         execution.runStartedAt(),
         execution.endedAt(),
@@ -632,6 +602,8 @@ public class WorkflowRuntimeService {
         name,
         type,
         node.status().name(),
+        nodeMetadata == null ? TriggerRule.ALL_SUCCESS.name() : nodeMetadata.triggerRule(),
+        nodeMetadata == null ? NodeFailurePolicy.FAIL_WORKFLOW.name() : nodeMetadata.failurePolicy(),
         node.errorMessage(),
         failureReason,
         node.downstreamContinuationAllowed(),
@@ -673,11 +645,14 @@ public class WorkflowRuntimeService {
       String name,
       int edgeCount,
       long workflowTimeoutSeconds,
+      String failureStrategy,
       Map<String, NodeMetadata> nodes) {}
 
   private record NodeMetadata(
       String name,
       String type,
+      String triggerRule,
+      String failurePolicy,
       int maxAttempts,
       long retryDelaySeconds,
       long dispatchTimeoutSeconds,
@@ -735,10 +710,7 @@ public class WorkflowRuntimeService {
         } catch (RuntimeException exception) {
           log.debug(
               "[workflow] resume acknowledgement ignored execution={}, node={}, attempt={}, message={}",
-              request.workflowExecutionId(),
-              request.nodeId(),
-              request.attemptId(),
-              exception.getMessage());
+              request.workflowExecutionId(), request.nodeId(), request.attemptId(), exception.getMessage());
         }
       });
     }
