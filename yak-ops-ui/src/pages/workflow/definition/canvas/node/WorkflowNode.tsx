@@ -2,6 +2,7 @@ import type { NodeProps } from 'reactflow';
 import type { WorkflowNodeData } from '../types';
 import WorkflowNodeControl from './WorkflowNodeControl';
 import WorkflowNodeHandle from './WorkflowNodeHandle';
+import WorkflowNodeRetry from './WorkflowNodeRetry';
 import WorkflowNodeIcon from './icons/WorkflowNodeIcon';
 
 const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => (
@@ -34,6 +35,8 @@ const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => (
           {data.label}
         </div>
       </div>
+
+      <WorkflowNodeRetry data={data} />
     </div>
 
     <WorkflowNodeHandle

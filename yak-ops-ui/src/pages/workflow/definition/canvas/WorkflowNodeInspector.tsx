@@ -109,7 +109,7 @@ const WorkflowNodeInspector = ({
         </div>
 
         <div className="px-4 pb-2 text-[11px] leading-5 text-[rgba(22,24,35,.36)]">
-          配置此任务节点在工作流中的编排、重试、超时和异常处理行为。
+          配置节点失败后的重试和异常处理方式。
         </div>
 
         <nav className="flex h-10 items-end gap-5 px-4" aria-label="节点配置页签">
