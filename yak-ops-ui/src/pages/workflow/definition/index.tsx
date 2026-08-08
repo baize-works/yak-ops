@@ -72,6 +72,10 @@ interface WorkflowNodeData {
   executionTimeoutSeconds: number;
   inputMappingText: string;
   executionStatus?: string;
+  executionError?: string;
+  failureReason?: string;
+  attemptCount?: number;
+  currentAttemptNumber?: number;
   continuedAfterFailure?: boolean;
 }
 
@@ -132,7 +136,7 @@ const nodeStateClass = (status?: string, selected?: boolean) => {
 
 const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => (
   <div className={[
-    'relative min-w-[190px] rounded-lg border px-3 py-2.5 shadow-sm transition-all',
+    'relative min-w-[190px] max-w-[280px] rounded-lg border px-3 py-2.5 shadow-sm transition-all',
     nodeStateClass(data.executionStatus, selected),
   ].join(' ')}>
     <Handle type="target" position={Position.Left} className="!h-2.5 !w-2.5 !border-2 !border-white !bg-[#8a8f99]" />
@@ -147,6 +151,14 @@ const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => (
     </div>
     <div className="mt-1.5 text-[13px] font-semibold text-[#161823]">{data.label}</div>
     <div className="mt-1 truncate text-[9px] text-[rgba(22,24,35,.34)]">Task ID: {data.taskId}</div>
+    {data.executionStatus === 'FAILED' && data.executionError ? (
+      <div
+        className="mt-2 max-h-10 overflow-hidden rounded-md bg-[#fff0f0] px-2 py-1.5 text-[10px] leading-4 text-[#d92d20]"
+        title={data.executionError}
+      >
+        {data.executionError}
+      </div>
+    ) : null}
     {data.maxAttempts > 1 || data.executionTimeoutSeconds > 0 ? (
       <div className="mt-1.5 text-[9px] text-[rgba(22,24,35,.38)]">
         {data.maxAttempts > 1 ? `最多 ${data.maxAttempts} 次` : ''}
@@ -215,15 +227,23 @@ const WorkflowDefinitionContent = () => {
     snapshot.nodes.forEach((node) => {
       if (node.continuedAfterFailure) continuedFailureNodeIdsRef.current.add(node.id);
     });
+    const runtimeNodeById = new Map(snapshot.nodes.map((node) => [node.id, node]));
     const statusByNodeId = new Map(snapshot.nodes.map((node) => [node.id, node.status]));
-    setNodes((current) => current.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        executionStatus: statusByNodeId.get(node.id) ?? node.data.executionStatus,
-        continuedAfterFailure: continuedFailureNodeIdsRef.current.has(node.id),
-      },
-    })));
+    setNodes((current) => current.map((node) => {
+      const runtimeNode = runtimeNodeById.get(node.id);
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          executionStatus: runtimeNode?.status ?? node.data.executionStatus,
+          executionError: runtimeNode?.errorMessage,
+          failureReason: runtimeNode?.failureReason,
+          attemptCount: runtimeNode?.attemptCount,
+          currentAttemptNumber: runtimeNode?.currentAttemptNumber,
+          continuedAfterFailure: continuedFailureNodeIdsRef.current.has(node.id),
+        },
+      };
+    }));
     setEdges((current) => current.map((edge) => {
       const sourceStatus = statusByNodeId.get(edge.source);
       const targetStatus = statusByNodeId.get(edge.target);
@@ -291,7 +311,15 @@ const WorkflowDefinitionContent = () => {
     setContextMenu(undefined);
     setNodes((current) => current.map((node) => ({
       ...node,
-      data: { ...node.data, executionStatus: 'WAITING', continuedAfterFailure: false },
+      data: {
+        ...node.data,
+        executionStatus: 'WAITING',
+        executionError: undefined,
+        failureReason: undefined,
+        attemptCount: undefined,
+        currentAttemptNumber: undefined,
+        continuedAfterFailure: false,
+      },
     })));
   };
 
@@ -483,23 +511,72 @@ const WorkflowDefinitionContent = () => {
         </div>
 
         <div ref={wrapperRef} className="relative min-h-0 flex-1" onDrop={handleDrop}>
-          {selectedNode && !workflowLocked ? (
-            <div className="absolute right-4 top-4 z-20 w-[330px] rounded-lg border border-[#e3e5e8] bg-white p-3 shadow-md">
+          {selectedNode ? (
+            <div className="absolute right-4 top-4 z-20 w-[350px] rounded-lg border border-[#e3e5e8] bg-white p-3 shadow-md">
               <div className="text-[12px] font-semibold text-[#161823]">任务节点</div>
               <div className="mt-3 grid grid-cols-2 gap-2 rounded-md bg-[#f7f7f8] p-2.5">
                 <div><div className="text-[10px] text-[rgba(22,24,35,.4)]">任务名称</div><div className="mt-1 truncate text-[12px] font-medium">{selectedNode.data.label}</div></div>
                 <div><div className="text-[10px] text-[rgba(22,24,35,.4)]">任务类型</div><div className="mt-1 text-[12px] font-medium">{selectedNode.data.typeLabel}</div></div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">触发规则</div><Select className="mt-1 w-full" size="small" value={selectedNode.data.triggerRule} options={TRIGGER_RULE_OPTIONS} onChange={(value) => updateSelectedNode({ triggerRule: value as WorkflowTriggerRule })} /></div>
-                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">失败策略</div><Select className="mt-1 w-full" size="small" value={selectedNode.data.failurePolicy} options={NODE_FAILURE_OPTIONS} onChange={(value) => updateSelectedNode({ failurePolicy: value as WorkflowNodeFailurePolicy })} /></div>
-                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">最大 Attempt</div><InputNumber min={1} value={selectedNode.data.maxAttempts} onChange={(value) => updateSelectedNode({ maxAttempts: Number(value || 1) })} className="mt-1 w-full" /></div>
-                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">重试延迟（秒）</div><InputNumber min={0} value={selectedNode.data.retryDelaySeconds} onChange={(value) => updateSelectedNode({ retryDelaySeconds: Number(value || 0) })} className="mt-1 w-full" /></div>
-                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">派发超时（秒）</div><InputNumber min={0} value={selectedNode.data.dispatchTimeoutSeconds} onChange={(value) => updateSelectedNode({ dispatchTimeoutSeconds: Number(value || 0) })} className="mt-1 w-full" /></div>
-                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">执行超时（秒）</div><InputNumber min={0} value={selectedNode.data.executionTimeoutSeconds} onChange={(value) => updateSelectedNode({ executionTimeoutSeconds: Number(value || 0) })} className="mt-1 w-full" /></div>
+
+              {selectedNode.data.executionStatus ? (
+                <div className="mt-3 rounded-md border border-[#ececef] bg-[#fafafa] p-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] font-medium text-[rgba(22,24,35,.5)]">运行结果</div>
+                    <div className={[
+                      'flex items-center gap-1 text-[11px] font-medium',
+                      selectedNode.data.executionStatus === 'FAILED' || selectedNode.data.executionStatus === 'TIMED_OUT'
+                        ? 'text-[#d92d20]'
+                        : 'text-[rgba(22,24,35,.68)]',
+                    ].join(' ')}>
+                      {statusIcon(selectedNode.data.executionStatus)}
+                      {statusLabel[selectedNode.data.executionStatus] || selectedNode.data.executionStatus}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-[10px] text-[rgba(22,24,35,.42)]">
+                    Attempt {selectedNode.data.currentAttemptNumber ?? selectedNode.data.attemptCount ?? '-'}
+                  </div>
+                  {selectedNode.data.executionError ? (
+                    <div className="mt-2">
+                      <div className="text-[10px] font-medium text-[#d92d20]">失败原因</div>
+                      <div className="mt-1 break-all rounded bg-[#fff0f0] px-2 py-1.5 text-[11px] leading-5 text-[#d92d20]">
+                        {selectedNode.data.executionError}
+                      </div>
+                    </div>
+                  ) : null}
+                  {selectedNode.data.failureReason ? (
+                    <div className="mt-1.5 text-[9px] text-[rgba(22,24,35,.34)]">
+                      Failure reason: {selectedNode.data.failureReason}
+                    </div>
+                  ) : null}
+                  {activeInstance
+                    && isWorkflowTerminal(activeInstance.status)
+                    && selectedNode.data.executionStatus === 'FAILED'
+                    && !selectedNode.data.continuedAfterFailure ? (
+                      <Button
+                        className="mt-2"
+                        size="small"
+                        icon={<RefreshCw size={13} />}
+                        loading={recoveringNodeId === selectedNode.id}
+                        onClick={() => void handleRetryFailedNode(selectedNode.id)}
+                      >
+                        重新执行
+                      </Button>
+                    ) : null}
+                </div>
+              ) : null}
+
+              <div className="mt-3 text-[10px] font-medium text-[rgba(22,24,35,.5)]">运行配置</div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">触发规则</div><Select disabled={workflowLocked} className="mt-1 w-full" size="small" value={selectedNode.data.triggerRule} options={TRIGGER_RULE_OPTIONS} onChange={(value) => updateSelectedNode({ triggerRule: value as WorkflowTriggerRule })} /></div>
+                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">失败策略</div><Select disabled={workflowLocked} className="mt-1 w-full" size="small" value={selectedNode.data.failurePolicy} options={NODE_FAILURE_OPTIONS} onChange={(value) => updateSelectedNode({ failurePolicy: value as WorkflowNodeFailurePolicy })} /></div>
+                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">最大 Attempt</div><InputNumber disabled={workflowLocked} min={1} value={selectedNode.data.maxAttempts} onChange={(value) => updateSelectedNode({ maxAttempts: Number(value || 1) })} className="mt-1 w-full" /></div>
+                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">重试延迟（秒）</div><InputNumber disabled={workflowLocked} min={0} value={selectedNode.data.retryDelaySeconds} onChange={(value) => updateSelectedNode({ retryDelaySeconds: Number(value || 0) })} className="mt-1 w-full" /></div>
+                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">派发超时（秒）</div><InputNumber disabled={workflowLocked} min={0} value={selectedNode.data.dispatchTimeoutSeconds} onChange={(value) => updateSelectedNode({ dispatchTimeoutSeconds: Number(value || 0) })} className="mt-1 w-full" /></div>
+                <div><div className="text-[10px] text-[rgba(22,24,35,.48)]">执行超时（秒）</div><InputNumber disabled={workflowLocked} min={0} value={selectedNode.data.executionTimeoutSeconds} onChange={(value) => updateSelectedNode({ executionTimeoutSeconds: Number(value || 0) })} className="mt-1 w-full" /></div>
               </div>
               <div className="mt-3 text-[10px] text-[rgba(22,24,35,.48)]">Input Mapping</div>
-              <Input.TextArea rows={4} className="mt-1 font-mono !text-[10px]"
+              <Input.TextArea disabled={workflowLocked} rows={4} className="mt-1 font-mono !text-[10px]"
                 value={selectedNode.data.inputMappingText}
                 onChange={(event) => updateSelectedNode({ inputMappingText: event.target.value })} />
               <div className="mt-1.5 text-[9px] leading-4 text-[rgba(22,24,35,.38)]">任务自身配置不在工作流中编辑；这里只配置编排行为。</div>
@@ -548,7 +625,7 @@ const WorkflowDefinitionContent = () => {
             }}
             nodesDraggable={!workflowLocked}
             nodesConnectable={!workflowLocked}
-            elementsSelectable={!workflowLocked}
+            elementsSelectable
             fitView
             deleteKeyCode={workflowLocked ? null : ['Backspace', 'Delete']}
             defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#d9dce1', strokeWidth: 1.4 } }}
