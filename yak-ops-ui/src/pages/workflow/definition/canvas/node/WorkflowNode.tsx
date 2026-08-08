@@ -20,12 +20,12 @@ const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => (
     <div
       className={[
         'relative rounded-[15px] border bg-white px-3 py-3',
-        'shadow-[0_4px_14px_rgba(22,24,35,.07),0_1px_2px_rgba(22,24,35,.04)]',
+        'shadow-[0_1px_2px_rgba(22,24,35,.06)]',
         'transition-[border-color,box-shadow] duration-150',
-        'group-hover:shadow-[0_10px_30px_rgba(22,24,35,.10),0_2px_6px_rgba(22,24,35,.04)]',
+        'group-hover:shadow-[0_6px_18px_rgba(22,24,35,.10)]',
         selected
-          ? 'border-[#fe2c55] shadow-[0_0_0_2px_rgba(254,44,85,.07),0_8px_22px_rgba(22,24,35,.09)]'
-          : 'border-[#e5e8ec] group-hover:border-[#d4d8de]',
+          ? 'border-[#fe2c55] shadow-[0_0_0_2px_rgba(254,44,85,.06)]'
+          : 'border-[#e8e9ec] group-hover:border-[#d7d9de]',
       ].join(' ')}
     >
       <div className="flex min-h-9 items-center gap-2.5">
