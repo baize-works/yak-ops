@@ -139,7 +139,7 @@ const WorkflowCanvasTools = <T,>({
         </div>
       ) : null}
 
-      <div className="border-t border-[#f0f1f3] px-3.5 py-3 text-[10px] leading-4.5 text-[#98a2b3]">
+      <div className="border-t border-[#f0f1f3] px-3.5 py-3 text-[10px] leading-[18px] text-[#98a2b3]">
         <div className="mb-1 font-medium text-[#667085]">提示</div>
         编辑历史仅保存在当前浏览器会话中，用于撤销、重做和快速回到之前的编辑状态。
       </div>
