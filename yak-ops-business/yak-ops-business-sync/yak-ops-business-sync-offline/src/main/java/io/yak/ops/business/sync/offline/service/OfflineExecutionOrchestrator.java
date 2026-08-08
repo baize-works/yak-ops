@@ -10,6 +10,7 @@ import io.yak.ops.business.sync.offline.dao.OfflineJobExecutionDao;
 import io.yak.ops.business.sync.offline.domain.OfflineExecutionStatus;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpJobResponse;
+import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpNodeResponse;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpRequestException;
 import io.yak.ops.business.sync.offline.engine.LinkUpClient.LinkUpTransportException;
 import io.yak.ops.business.sync.offline.repository.OfflineExecutionControlRepository;
@@ -76,6 +77,11 @@ public class OfflineExecutionOrchestrator {
         "使用 application.yml 中的固定 Link-Up 地址",
         null);
     try {
+      LinkUpNodeResponse node = linkUpClient.node();
+      execution.setWorkerInstanceId(node.getInstanceId());
+      execution.setUpdateTime(LocalDateTime.now());
+      executionDao.updateById(execution);
+
       String resolved = definitionService.resolveExecutionJobSpec(claim.getDefinition());
       JsonNode jobSpec = readJobSpec(resolved);
       transition(
