@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 public class InMemoryTaskRegistry implements TaskRegistry {
 
   private static final int PAGE_SIZE = 200;
+  private static final String RELEASE_STATE_ONLINE = "ONLINE";
+  private static final String SCHEDULE_STATUS_PAUSED = "PAUSED";
 
   private final ObjectProvider<OfflineJobDefinitionService> definitionServiceProvider;
   private final ConcurrentMap<String, TaskDefinition> tasks = new ConcurrentHashMap<>();
@@ -68,7 +70,7 @@ public class InMemoryTaskRegistry implements TaskRegistry {
       query.setPageSize(PAGE_SIZE);
       PagingData<OfflineJobDefinitionVO> page = service.page(query);
       for (OfflineJobDefinitionVO definition : page.getBizData()) {
-        if (definition.getId() == null || definition.getJobName() == null) {
+        if (!isWorkflowEligible(definition)) {
           continue;
         }
         try {
@@ -87,5 +89,13 @@ public class InMemoryTaskRegistry implements TaskRegistry {
 
     tasks.clear();
     tasks.putAll(snapshot);
+  }
+
+  static boolean isWorkflowEligible(OfflineJobDefinitionVO definition) {
+    return definition != null
+        && definition.getId() != null
+        && definition.getJobName() != null
+        && RELEASE_STATE_ONLINE.equalsIgnoreCase(definition.getReleaseState())
+        && SCHEDULE_STATUS_PAUSED.equalsIgnoreCase(definition.getScheduleStatus());
   }
 }
