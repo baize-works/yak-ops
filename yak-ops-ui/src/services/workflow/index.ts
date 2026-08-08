@@ -2,6 +2,20 @@ import { request } from '@umijs/max';
 import type { ApiResponse } from '@/services/http/response';
 
 export type WorkflowMockResult = 'SUCCESS' | 'FAILED';
+export type WorkflowFailureStrategy =
+  | 'FAIL_FAST'
+  | 'CONTINUE_INDEPENDENT_BRANCHES'
+  | 'TERMINATE_ALL';
+export type WorkflowTriggerRule =
+  | 'ALL_SUCCESS'
+  | 'ALL_DONE'
+  | 'NONE_FAILED'
+  | 'ONE_SUCCESS'
+  | 'ALWAYS';
+export type WorkflowNodeFailurePolicy =
+  | 'FAIL_WORKFLOW'
+  | 'BLOCK_BRANCH'
+  | 'IGNORE_FAILURE';
 
 export interface WorkflowNodePayload {
   id: string;
@@ -13,6 +27,8 @@ export interface WorkflowNodePayload {
   dispatchTimeoutSeconds?: number;
   executionTimeoutSeconds?: number;
   inputMapping?: Record<string, string>;
+  triggerRule?: WorkflowTriggerRule;
+  failurePolicy?: WorkflowNodeFailurePolicy;
 }
 
 export interface WorkflowEdgePayload {
@@ -26,6 +42,7 @@ export interface WorkflowRunPayload {
   edges: WorkflowEdgePayload[];
   input?: Record<string, unknown>;
   workflowTimeoutSeconds?: number;
+  failureStrategy?: WorkflowFailureStrategy;
 }
 
 export interface WorkflowAttempt {
@@ -46,6 +63,8 @@ export interface WorkflowNodeInstance {
   name: string;
   type: string;
   status: string;
+  triggerRule: WorkflowTriggerRule;
+  failurePolicy: WorkflowNodeFailurePolicy;
   errorMessage?: string;
   failureReason?: string;
   continuedAfterFailure: boolean;
@@ -69,6 +88,7 @@ export interface WorkflowInstance {
   sourceExecutionId?: string;
   name: string;
   status: string;
+  failureStrategy: WorkflowFailureStrategy;
   startedAt: string;
   runStartedAt?: string;
   endedAt?: string;
