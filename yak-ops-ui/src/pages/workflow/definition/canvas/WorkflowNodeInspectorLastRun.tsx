@@ -1,4 +1,5 @@
 import {
+  getWorkflowInstance,
   getWorkflowInstances,
   type WorkflowInstance,
   type WorkflowNodeInstance,
@@ -92,10 +93,17 @@ const WorkflowNodeInspectorLastRun = ({
       const instances = (await getWorkflowInstances()) || [];
       const latest = instances
         .filter((item) => item.definitionId === definitionId)
-        .sort((left, right) => dayjs(right.startedAt).valueOf() - dayjs(left.startedAt).valueOf())
-        .find((item) => item.nodes?.some((node) => node.id === nodeId));
-      setInstance(latest);
-      setNodeRun(latest?.nodes?.find((node) => node.id === nodeId));
+        .sort((left, right) => dayjs(right.startedAt).valueOf() - dayjs(left.startedAt).valueOf())[0];
+
+      if (!latest) {
+        setInstance(undefined);
+        setNodeRun(undefined);
+        return;
+      }
+
+      const detail = await getWorkflowInstance(latest.id);
+      setInstance(detail);
+      setNodeRun(detail.nodes?.find((node) => node.id === nodeId));
     } catch (error) {
       setInstance(undefined);
       setNodeRun(undefined);
