@@ -66,13 +66,15 @@ const WorkflowNodeHandle = ({
       ].join(' ')}
     >
       {canAppend ? (
-        <div className="pointer-events-none absolute -top-1 left-1/2 z-30 hidden -translate-x-1/2 -translate-y-full rounded-lg border border-[#e8e9ec] bg-white px-2 py-1.5 shadow-[0_4px_12px_rgba(22,24,35,.10)] group-hover/handle:block">
-          <div className="whitespace-nowrap text-[9px] leading-4 text-[rgba(22,24,35,.52)]">
+        <div className="pointer-events-none absolute -top-2 left-1/2 z-30 hidden origin-bottom -translate-x-1/2 -translate-y-full scale-[.8] rounded-lg border border-[#e8e9ec] bg-white px-2.5 py-2 shadow-[0_4px_12px_rgba(22,24,35,.10)] group-hover/handle:block">
+          <div className="whitespace-nowrap text-[11px] leading-[18px] text-[rgba(22,24,35,.52)]">
             <div>
-              <span className="font-medium text-[#52525b]">点击</span> 添加节点
+              <span className="font-medium text-[#161823]">点击</span>
+              <span className="ml-1">添加节点</span>
             </div>
             <div>
-              <span className="font-medium text-[#52525b]">拖拽</span> 连接节点
+              <span className="font-medium text-[#161823]">拖拽</span>
+              <span className="ml-1">连接节点</span>
             </div>
           </div>
         </div>
