@@ -1,26 +1,25 @@
 import { Popover } from 'antd';
 import { Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { WorkflowCanvasTaskOption } from '../types';
 
 interface WorkflowNodeAppendProps {
   nodeId: string;
+  open: boolean;
   selected?: boolean;
-  locked?: boolean;
-  options?: WorkflowCanvasTaskOption[];
-  onAppend?: (nodeId: string, taskId: string) => void;
+  options: WorkflowCanvasTaskOption[];
+  onOpenChange: (open: boolean) => void;
+  onAppend: (nodeId: string, taskId: string) => void;
 }
 
 const WorkflowNodeAppend = ({
   nodeId,
+  open,
   selected,
-  locked,
-  options = [],
+  options,
+  onOpenChange,
   onAppend,
 }: WorkflowNodeAppendProps) => {
-  const [open, setOpen] = useState(false);
-  const canAppend = !locked && options.length > 0 && Boolean(onAppend);
-
   const content = useMemo(
     () => (
       <div className="w-[220px] p-1">
@@ -34,8 +33,8 @@ const WorkflowNodeAppend = ({
               type="button"
               className="flex w-full items-center gap-2 rounded-md border-0 bg-transparent px-2 py-2 text-left hover:bg-[#f5f5f6]"
               onClick={() => {
-                onAppend?.(nodeId, option.id);
-                setOpen(false);
+                onAppend(nodeId, option.id);
+                onOpenChange(false);
               }}
             >
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#f2f4f7] text-[11px] font-semibold text-[#52525b]">
@@ -54,37 +53,31 @@ const WorkflowNodeAppend = ({
         </div>
       </div>
     ),
-    [nodeId, onAppend, options],
+    [nodeId, onAppend, onOpenChange, options],
   );
-
-  if (!canAppend) return null;
 
   return (
     <Popover
       trigger="click"
-      placement="rightTop"
+      placement="right"
+      arrow={false}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={onOpenChange}
       content={content}
       overlayInnerStyle={{ padding: 0 }}
     >
-      <button
-        type="button"
-        aria-label="添加后续任务"
+      <span
+        aria-hidden
         className={[
-          'nodrag nopan absolute top-[18px] -right-[19px] z-20',
-          'flex h-[18px] w-[18px] items-center justify-center rounded-full border',
-          'border-[#fe2c55] bg-[#fe2c55] text-white shadow-[0_1px_4px_rgba(254,44,85,.28)]',
-          'transition-all duration-150 hover:scale-110',
-          selected || open
-            ? 'pointer-events-auto scale-100 opacity-100'
-            : 'pointer-events-none scale-90 opacity-0 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100',
+          'nodrag nopan pointer-events-none absolute inset-0 z-20',
+          'flex h-4 w-4 items-center justify-center rounded-full',
+          'bg-[#fe2c55] text-white shadow-[0_1px_3px_rgba(254,44,85,.22)]',
+          'transition-opacity duration-150',
+          selected || open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
         ].join(' ')}
-        onMouseDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
       >
-        <Plus size={11} strokeWidth={2.4} />
-      </button>
+        <Plus size={10} strokeWidth={2.4} />
+      </span>
     </Popover>
   );
 };
