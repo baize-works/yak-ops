@@ -20,6 +20,7 @@ import ReactFlow, {
   MiniMap,
   ReactFlowProvider,
   addEdge,
+  applyNodeChanges,
   getOutgoers,
   type Connection,
   type Edge,
@@ -99,6 +100,17 @@ const WorkflowDefinitionContent = () => {
   const [failureStrategy, setFailureStrategy] = useState<WorkflowFailureStrategy>('CONTINUE_INDEPENDENT_BRANCHES');
   const [startConfig, setStartConfig] = useState<WorkflowStartConfig>(DEFAULT_START_CONFIG);
   const [startSelected, setStartSelected] = useState(false);
+  const [startNodeState, setStartNodeState] = useState<Node<WorkflowStartNodeData>>({
+    id: WORKFLOW_START_NODE_ID,
+    type: 'start',
+    position: DEFAULT_START_CONFIG.position,
+    selected: false,
+    deletable: false,
+    data: {
+      label: '开始',
+      inputs: [],
+    },
+  });
   const [hoveredNodeId, setHoveredNodeId] = useState<string>();
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdgeData>([]);
@@ -117,13 +129,20 @@ const WorkflowDefinitionContent = () => {
 
   const hydrateDefinition = useCallback((value: WorkflowDefinition, taskList: WorkflowTaskDefinition[]) => {
     const taskMap = new Map(taskList.map((task) => [task.id, task]));
+    const hydratedStartConfig = hydrateWorkflowStartConfig(value.input || {});
     setDefinition(value);
     setWorkflowName(value.name);
     setWorkflowDescription(value.description || '');
     setWorkflowTimeoutSeconds(value.workflowTimeoutSeconds || 0);
     setFailureStrategy(value.failureStrategy || 'CONTINUE_INDEPENDENT_BRANCHES');
-    setStartConfig(hydrateWorkflowStartConfig(value.input || {}));
+    setStartConfig(hydratedStartConfig);
     setStartSelected(false);
+    setStartNodeState((current) => ({
+      ...current,
+      position: hydratedStartConfig.position,
+      selected: false,
+      dragging: false,
+    }));
     setNodes(value.nodes.map((node) => {
       const task = taskMap.get(node.taskId);
       return {
@@ -387,18 +406,39 @@ const WorkflowDefinitionContent = () => {
   }, [locked, nodes, setEdges, setNodes]);
 
   const handleCanvasNodesChange = useCallback((changes: NodeChange[]) => {
-    const taskChanges: NodeChange[] = [];
-    changes.forEach((change) => {
-      if (change.id === WORKFLOW_START_NODE_ID) {
+    const startChanges = changes.filter((change) => change.id === WORKFLOW_START_NODE_ID);
+    const taskChanges = changes.filter((change) => change.id !== WORKFLOW_START_NODE_ID);
+
+    if (startChanges.length) {
+      // Start is virtual for the backend, but it must still keep ReactFlow's complete
+      // client-side node state (dimensions, dragging, selection, absolute position, etc.).
+      // Explicitly ignore remove changes so Start remains immutable on the canvas too.
+      const safeStartChanges = startChanges.filter((change) => change.type !== 'remove');
+      if (safeStartChanges.length) {
+        setStartNodeState((current) => {
+          const [next] = applyNodeChanges(safeStartChanges, [current]);
+          return next
+            ? {
+                ...next,
+                id: WORKFLOW_START_NODE_ID,
+                type: 'start',
+                deletable: false,
+              }
+            : current;
+        });
+      }
+
+      startChanges.forEach((change) => {
         if (change.type === 'position' && change.position && !locked) {
           setStartConfig((current) => ({ ...current, position: change.position! }));
         }
         if (change.type === 'select') setStartSelected(change.selected);
-        return;
-      }
-      if (change.type === 'select' && change.selected) setStartSelected(false);
-      taskChanges.push(change);
-    });
+      });
+    }
+
+    if (taskChanges.some((change) => change.type === 'select' && change.selected)) {
+      setStartSelected(false);
+    }
     if (taskChanges.length) onNodesChange(taskChanges);
   }, [locked, onNodesChange]);
 
@@ -452,6 +492,7 @@ const WorkflowDefinitionContent = () => {
   })), [handleAppendTask, handleDeleteNode, handleDuplicateNode, locked, nodes, taskOptions]);
 
   const startCanvasNode = useMemo<Node<WorkflowStartNodeData>>(() => ({
+    ...startNodeState,
     id: WORKFLOW_START_NODE_ID,
     type: 'start',
     position: startConfig.position,
@@ -465,7 +506,7 @@ const WorkflowDefinitionContent = () => {
       appendOptions: taskOptions,
       onAppend: handleAppendFromStart,
     },
-  }), [handleAppendFromStart, locked, startConfig.inputs, startConfig.position, startSelected, taskOptions]);
+  }), [handleAppendFromStart, locked, startConfig.inputs, startConfig.position, startNodeState, startSelected, taskOptions]);
 
   const canvasNodes = useMemo(() => [startCanvasNode, ...taskCanvasNodes], [startCanvasNode, taskCanvasNodes]);
 
@@ -531,8 +572,13 @@ const WorkflowDefinitionContent = () => {
     setSaving(true);
     try {
       const saved = await updateWorkflowDefinition(id, buildPayload());
+      const hydratedStartConfig = hydrateWorkflowStartConfig(saved.input || {});
       setDefinition(saved);
-      setStartConfig(hydrateWorkflowStartConfig(saved.input || {}));
+      setStartConfig(hydratedStartConfig);
+      setStartNodeState((current) => ({
+        ...current,
+        position: hydratedStartConfig.position,
+      }));
       if (showMessage) message.success('工作流配置已保存');
       return saved;
     } finally {
