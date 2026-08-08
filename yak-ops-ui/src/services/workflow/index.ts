@@ -2,12 +2,33 @@ import { request } from '@umijs/max';
 import type { ApiResponse } from '@/services/http/response';
 
 export type WorkflowMockResult = 'SUCCESS' | 'FAILED';
+export type WorkflowFailureStrategy =
+  | 'FAIL_FAST'
+  | 'CONTINUE_INDEPENDENT_BRANCHES'
+  | 'TERMINATE_ALL';
+export type WorkflowTriggerRule =
+  | 'ALL_SUCCESS'
+  | 'ALL_DONE'
+  | 'NONE_FAILED'
+  | 'ONE_SUCCESS'
+  | 'ALWAYS';
+export type WorkflowNodeFailurePolicy =
+  | 'FAIL_WORKFLOW'
+  | 'BLOCK_BRANCH'
+  | 'IGNORE_FAILURE';
 
 export interface WorkflowNodePayload {
   id: string;
   name: string;
   type: string;
   mockResult?: WorkflowMockResult;
+  maxAttempts?: number;
+  retryDelaySeconds?: number;
+  dispatchTimeoutSeconds?: number;
+  executionTimeoutSeconds?: number;
+  inputMapping?: Record<string, string>;
+  triggerRule?: WorkflowTriggerRule;
+  failurePolicy?: WorkflowNodeFailurePolicy;
 }
 
 export interface WorkflowEdgePayload {
@@ -20,6 +41,21 @@ export interface WorkflowRunPayload {
   nodes: WorkflowNodePayload[];
   edges: WorkflowEdgePayload[];
   input?: Record<string, unknown>;
+  workflowTimeoutSeconds?: number;
+  failureStrategy?: WorkflowFailureStrategy;
+}
+
+export interface WorkflowAttempt {
+  id: string;
+  attemptNumber: number;
+  status: string;
+  failureReason?: string;
+  errorMessage?: string;
+  availableAt?: string;
+  startedAt?: string;
+  pausedAt?: string;
+  pausedMillis: number;
+  endedAt?: string;
 }
 
 export interface WorkflowNodeInstance {
@@ -27,16 +63,37 @@ export interface WorkflowNodeInstance {
   name: string;
   type: string;
   status: string;
+  triggerRule: WorkflowTriggerRule;
+  failurePolicy: WorkflowNodeFailurePolicy;
   errorMessage?: string;
+  failureReason?: string;
+  continuedAfterFailure: boolean;
+  attemptCount: number;
+  currentAttemptId?: string;
+  currentAttemptNumber?: number;
+  retryMaxAttempts: number;
+  retryDelaySeconds: number;
+  dispatchTimeoutSeconds: number;
+  executionTimeoutSeconds: number;
+  inputMapping: Record<string, string>;
+  input: Record<string, unknown>;
+  predecessorOutputs: Record<string, Record<string, unknown>>;
+  output: Record<string, unknown>;
+  attempts: WorkflowAttempt[];
 }
 
 export interface WorkflowInstance {
   id: string;
   definitionId: string;
+  sourceExecutionId?: string;
   name: string;
   status: string;
+  failureStrategy: WorkflowFailureStrategy;
   startedAt: string;
+  runStartedAt?: string;
   endedAt?: string;
+  workflowTimeoutSeconds: number;
+  input: Record<string, unknown>;
   nodeCount: number;
   edgeCount: number;
   nodes: WorkflowNodeInstance[];
@@ -48,6 +105,7 @@ const TERMINAL_STATUSES = new Set([
   'FAILED',
   'WARNING',
   'CANCELED',
+  'TIMED_OUT',
 ]);
 
 export const isWorkflowTerminal = (status?: string) =>
@@ -64,13 +122,34 @@ export const runWorkflow = async (payload: WorkflowRunPayload) => {
   return response.data;
 };
 
-export const activateWorkflowInstance = async (executionId: string) => {
+const postInstanceAction = async (
+  executionId: string,
+  action: string,
+) => {
   const response = await request<ApiResponse<WorkflowInstance>>(
-    `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/activate`,
+    `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/${action}`,
     { method: 'POST' },
   );
   return response.data;
 };
+
+export const activateWorkflowInstance = (executionId: string) =>
+  postInstanceAction(executionId, 'activate');
+
+export const pauseWorkflowInstance = (executionId: string) =>
+  postInstanceAction(executionId, 'pause');
+
+export const resumeWorkflowInstance = (executionId: string) =>
+  postInstanceAction(executionId, 'resume');
+
+export const cancelWorkflowInstance = (executionId: string) =>
+  postInstanceAction(executionId, 'cancel');
+
+export const retryWorkflowFailedNodes = (executionId: string) =>
+  postInstanceAction(executionId, 'retry-failed');
+
+export const restartWorkflowInstance = (executionId: string) =>
+  postInstanceAction(executionId, 'restart');
 
 export const continueWorkflowAfterFailure = async (
   executionId: string,
@@ -94,6 +173,17 @@ export const retryWorkflowFailedNode = async (
   return response.data;
 };
 
+export const rerunWorkflowFromNode = async (
+  executionId: string,
+  nodeId: string,
+) => {
+  const response = await request<ApiResponse<WorkflowInstance>>(
+    `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/nodes/${encodeURIComponent(nodeId)}/rerun`,
+    { method: 'POST' },
+  );
+  return response.data;
+};
+
 export const getWorkflowInstances = async () => {
   const response = await request<ApiResponse<WorkflowInstance[]>>(
     '/api/v1/workflows/instances',
@@ -111,16 +201,19 @@ export const getWorkflowInstance = async (executionId: string) => {
 const snapshotSignature = (instance: WorkflowInstance) =>
   [
     instance.status,
-    ...instance.nodes.map((node) => `${node.id}:${node.status}:${node.errorMessage || ''}`),
+    ...instance.nodes.map((node) =>
+      [
+        node.id,
+        node.status,
+        node.currentAttemptId || '',
+        node.attemptCount,
+        node.failureReason || '',
+        node.errorMessage || '',
+      ].join(':'),
+    ),
   ].join('|');
 
-/**
- * SSE 为主，短周期查询作为兜底。
- *
- * 原生 EventSource 无法复用 Umi request 的请求拦截器/自定义 Header，
- * 因此保留 authenticated request 轮询，可避免 SSE 被代理或认证链路阻断时
- * 画布只能看到最终状态。
- */
+/** SSE 为主，500ms authenticated request 作为代理/认证链路下的状态同步兜底。 */
 export const subscribeWorkflowEvents = (
   executionId: string,
   onSnapshot: (instance: WorkflowInstance) => void,
@@ -146,12 +239,11 @@ export const subscribeWorkflowEvents = (
 
   const handleWorkflowEvent = (event: Event) => {
     try {
-      const snapshot = JSON.parse(
-        (event as MessageEvent<string>).data,
-      ) as WorkflowInstance;
-      deliver(snapshot);
+      deliver(
+        JSON.parse((event as MessageEvent<string>).data) as WorkflowInstance,
+      );
     } catch {
-      // 单次异常事件不关闭连接，继续等待后续快照。
+      // 单次异常事件不关闭连接。
     }
   };
 
@@ -163,7 +255,7 @@ export const subscribeWorkflowEvents = (
     try {
       deliver(await getWorkflowInstance(executionId));
     } catch {
-      // SSE 正常时无需把兜底查询异常暴露给页面。
+      // SSE 正常时不把兜底查询异常暴露给页面。
     } finally {
       polling = false;
     }

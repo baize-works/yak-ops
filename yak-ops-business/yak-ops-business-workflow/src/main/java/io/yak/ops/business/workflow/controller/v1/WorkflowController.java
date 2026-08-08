@@ -43,6 +43,27 @@ public class WorkflowController {
     return Result.success(workflowRuntimeService.activate(executionId));
   }
 
+  @Operation(summary = "暂停工作流实例")
+  @PostMapping("/instances/{executionId}/pause")
+  public Result<WorkflowInstanceVO> pause(
+      @PathVariable("executionId") String executionId) {
+    return Result.success(workflowRuntimeService.pause(executionId));
+  }
+
+  @Operation(summary = "恢复工作流实例")
+  @PostMapping("/instances/{executionId}/resume")
+  public Result<WorkflowInstanceVO> resume(
+      @PathVariable("executionId") String executionId) {
+    return Result.success(workflowRuntimeService.resume(executionId));
+  }
+
+  @Operation(summary = "取消工作流实例")
+  @PostMapping("/instances/{executionId}/cancel")
+  public Result<WorkflowInstanceVO> cancel(
+      @PathVariable("executionId") String executionId) {
+    return Result.success(workflowRuntimeService.cancel(executionId));
+  }
+
   @Operation(summary = "人工放行失败节点并继续执行后续节点")
   @PostMapping("/instances/{executionId}/nodes/{nodeId}/continue")
   public Result<WorkflowInstanceVO> continueAfterFailure(
@@ -57,6 +78,28 @@ public class WorkflowController {
       @PathVariable("executionId") String executionId,
       @PathVariable("nodeId") String nodeId) {
     return Result.success(workflowRuntimeService.retryFailedNode(executionId, nodeId));
+  }
+
+  @Operation(summary = "重试实例中的失败节点")
+  @PostMapping("/instances/{executionId}/retry-failed")
+  public Result<WorkflowInstanceVO> retryFailedNodes(
+      @PathVariable("executionId") String executionId) {
+    return Result.success(workflowRuntimeService.retryFailedNodes(executionId));
+  }
+
+  @Operation(summary = "重新运行整个工作流")
+  @PostMapping("/instances/{executionId}/restart")
+  public Result<WorkflowInstanceVO> restart(
+      @PathVariable("executionId") String executionId) {
+    return Result.success(workflowRuntimeService.restart(executionId));
+  }
+
+  @Operation(summary = "从指定节点重新运行")
+  @PostMapping("/instances/{executionId}/nodes/{nodeId}/rerun")
+  public Result<WorkflowInstanceVO> rerunFromNode(
+      @PathVariable("executionId") String executionId,
+      @PathVariable("nodeId") String nodeId) {
+    return Result.success(workflowRuntimeService.rerunFromNode(executionId, nodeId));
   }
 
   @Operation(summary = "查询工作流实例")

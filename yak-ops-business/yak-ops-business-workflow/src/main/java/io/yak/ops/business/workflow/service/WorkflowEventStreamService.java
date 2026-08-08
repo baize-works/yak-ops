@@ -94,6 +94,7 @@ public class WorkflowEventStreamService {
         || "SUCCESS_WITH_WARNINGS".equals(status)
         || "FAILED".equals(status)
         || "WARNING".equals(status)
-        || "CANCELED".equals(status);
+        || "CANCELED".equals(status)
+        || "TIMED_OUT".equals(status);
   }
 }
