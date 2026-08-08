@@ -1,7 +1,12 @@
 import { Popover, Tooltip } from 'antd';
-import { Hand, History, Maximize2, MousePointer2, Redo2, Undo2, X } from 'lucide-react';
+import { Hand, History, Maximize2, MousePointer2, Plus, Redo2, Undo2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useReactFlow } from 'reactflow';
+import WorkflowTaskPicker from './WorkflowTaskPicker';
+import {
+  WORKFLOW_START_NODE_ID,
+  type WorkflowStartNodeData,
+} from './start/types';
 import type { WorkflowCanvasHistoryEntry } from './useWorkflowCanvasHistory';
 
 export type WorkflowCanvasMode = 'pointer' | 'hand';
@@ -21,9 +26,9 @@ interface WorkflowCanvasToolsProps<T> {
 }
 
 const iconButtonClass = (active = false) => [
-  'flex h-8 w-8 items-center justify-center rounded-md border-0 transition-colors',
+  'flex h-8 w-8 items-center justify-center rounded-lg border-0 transition-[background-color,color,transform] duration-150',
   active
-    ? 'bg-[rgba(254,44,85,.08)] text-[#fe2c55]'
+    ? 'bg-[rgba(254,44,85,.09)] text-[#fe2c55]'
     : 'bg-transparent text-[#667085] hover:bg-[#f2f4f7] hover:text-[#344054]',
 ].join(' ');
 
@@ -51,6 +56,10 @@ const WorkflowCanvasTools = <T,>({
 }: WorkflowCanvasToolsProps<T>) => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const reactFlow = useReactFlow();
+  const startNode = reactFlow.getNode(WORKFLOW_START_NODE_ID);
+  const startData = startNode?.data as WorkflowStartNodeData | undefined;
+  const appendOptions = startData?.appendOptions || [];
+  const canAddNode = !locked && appendOptions.length > 0 && Boolean(startData?.onAppend);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -79,7 +88,7 @@ const WorkflowCanvasTools = <T,>({
   }, [locked, onModeChange, onRedo, onUndo]);
 
   const historyContent = (
-    <div className="w-[320px] overflow-hidden rounded-xl border border-[#e4e7ec] bg-white shadow-[0_12px_36px_rgba(22,24,35,.14)]">
+    <div className="w-[320px] overflow-hidden rounded-xl border border-[#e4e7ec] bg-white shadow-[0_10px_30px_rgba(22,24,35,.10),0_2px_6px_rgba(22,24,35,.04)]">
       <div className="flex h-11 items-center justify-between px-3.5">
         <div className="text-[14px] font-medium text-[#344054]">变更历史</div>
         <button
@@ -155,20 +164,60 @@ const WorkflowCanvasTools = <T,>({
   return (
     <>
       <style>{`
+        .react-flow {
+          background: #F5F6F8 !important;
+        }
+        .react-flow__background circle,
+        .react-flow__background-pattern circle {
+          fill: #D5DAE3 !important;
+        }
         .react-flow__controls {
           display: none !important;
         }
         .react-flow__minimap {
-          right: 12px !important;
-          bottom: 12px !important;
-          transition: right 180ms ease;
+          right: 14px !important;
+          bottom: 14px !important;
+          width: 154px !important;
+          height: 96px !important;
+          overflow: hidden !important;
+          border: 1px solid rgba(22, 24, 35, .08) !important;
+          border-radius: 12px !important;
+          background: rgba(255, 255, 255, .88) !important;
+          box-shadow: 0 4px 14px rgba(22, 24, 35, .07), 0 1px 2px rgba(22, 24, 35, .04) !important;
+          opacity: .74;
+          transition: right 180ms ease, opacity 150ms ease, box-shadow 150ms ease;
+        }
+        .react-flow__minimap:hover {
+          opacity: 1;
+          box-shadow: 0 8px 22px rgba(22, 24, 35, .10), 0 2px 4px rgba(22, 24, 35, .04) !important;
         }
         div:has(> aside) > .react-flow .react-flow__minimap {
           right: 424px !important;
         }
+        div:has(> .react-flow) > aside {
+          box-shadow: 0 10px 30px rgba(22, 24, 35, .10), 0 2px 6px rgba(22, 24, 35, .04) !important;
+        }
       `}</style>
 
-      <div className="pointer-events-auto absolute left-3 top-3 z-10 flex flex-col items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
+      <div className="pointer-events-auto absolute left-3.5 top-3.5 z-10 flex flex-col items-center rounded-xl border border-[#e3e6ea] bg-[rgba(255,255,255,.94)] p-1 shadow-[0_4px_14px_rgba(22,24,35,.07),0_1px_2px_rgba(22,24,35,.04)] backdrop-blur-sm">
+        <WorkflowTaskPicker
+          options={appendOptions}
+          disabled={!canAddNode}
+          placement="rightTop"
+          onSelect={(taskId) => startData?.onAppend?.(WORKFLOW_START_NODE_ID, taskId)}
+        >
+          <button
+            type="button"
+            aria-label="添加节点"
+            disabled={!canAddNode}
+            className={`${iconButtonClass()} ${disabledButtonClass} text-[#fe2c55] hover:bg-[rgba(254,44,85,.08)] hover:text-[#fe2c55]`}
+          >
+            <Plus size={17} strokeWidth={2} />
+          </button>
+        </WorkflowTaskPicker>
+
+        <div className="my-1 h-px w-5 bg-[#e8eaee]" />
+
         <Tooltip title="选择模式（V）" placement="right">
           <button
             type="button"
@@ -193,7 +242,7 @@ const WorkflowCanvasTools = <T,>({
           </button>
         </Tooltip>
 
-        <div className="my-1 h-px w-5 bg-[#eceef1]" />
+        <div className="my-1 h-px w-5 bg-[#e8eaee]" />
 
         <Tooltip title="适应画布" placement="right">
           <button
@@ -207,7 +256,7 @@ const WorkflowCanvasTools = <T,>({
         </Tooltip>
       </div>
 
-      <div className="pointer-events-auto absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
+      <div className="pointer-events-auto absolute bottom-3.5 left-1/2 z-10 flex -translate-x-1/2 items-center rounded-xl border border-[#e3e6ea] bg-[rgba(255,255,255,.94)] p-1 shadow-[0_4px_14px_rgba(22,24,35,.07),0_1px_2px_rgba(22,24,35,.04)] backdrop-blur-sm">
         <Tooltip title="撤销（Ctrl/Cmd + Z）">
           <button
             type="button"
