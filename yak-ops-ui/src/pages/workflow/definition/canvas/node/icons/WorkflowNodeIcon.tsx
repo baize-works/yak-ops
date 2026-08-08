@@ -3,7 +3,7 @@ import SyncNodeIcon from './SyncNodeIcon';
 
 interface WorkflowNodeIconProps {
   taskType?: string;
-  size?: 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md';
 }
 
 interface NodeIconMeta {
@@ -41,16 +41,27 @@ const WorkflowNodeIcon = ({ taskType, size = 'md' }: WorkflowNodeIconProps) => {
   const meta = NODE_ICON_META[(taskType || '').toUpperCase()] || DEFAULT_ICON_META;
   const Icon = meta.icon;
   const compact = size === 'sm';
+  const tiny = size === 'xs';
 
   return (
     <span
       className={[
         'flex shrink-0 items-center justify-center',
-        compact ? 'h-7 w-7 rounded-[8px]' : 'h-9 w-9 rounded-[10px]',
+        tiny
+          ? 'h-6 w-6 rounded-[7px]'
+          : compact
+            ? 'h-7 w-7 rounded-[8px]'
+            : 'h-9 w-9 rounded-[10px]',
         meta.className,
       ].join(' ')}
     >
-      <Icon className={compact ? 'h-[15px] w-[15px]' : 'h-[19px] w-[19px]'} />
+      <Icon
+        className={tiny
+          ? 'h-[13px] w-[13px]'
+          : compact
+            ? 'h-[15px] w-[15px]'
+            : 'h-[19px] w-[19px]'}
+      />
     </span>
   );
 };
