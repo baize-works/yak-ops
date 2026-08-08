@@ -22,6 +22,10 @@
             <artifactId>yak-ops-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.yak.ops</groupId>
+            <artifactId>yak-ops-business-job</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.yak.framework</groupId>
             <artifactId>yak-workflow-engine</artifactId>
         </dependency>

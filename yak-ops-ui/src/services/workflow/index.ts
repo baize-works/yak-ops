@@ -1,7 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/services/http/response';
 
-export type WorkflowMockResult = 'SUCCESS' | 'FAILED';
 export type WorkflowFailureStrategy =
   | 'FAIL_FAST'
   | 'CONTINUE_INDEPENDENT_BRANCHES'
@@ -17,11 +16,15 @@ export type WorkflowNodeFailurePolicy =
   | 'BLOCK_BRANCH'
   | 'IGNORE_FAILURE';
 
-export interface WorkflowNodePayload {
+export interface WorkflowTaskDefinition {
   id: string;
   name: string;
   type: string;
-  mockResult?: WorkflowMockResult;
+}
+
+export interface WorkflowNodePayload {
+  id: string;
+  taskId: string;
   maxAttempts?: number;
   retryDelaySeconds?: number;
   dispatchTimeoutSeconds?: number;
@@ -60,6 +63,7 @@ export interface WorkflowAttempt {
 
 export interface WorkflowNodeInstance {
   id: string;
+  taskId: string;
   name: string;
   type: string;
   status: string;
@@ -99,6 +103,13 @@ export interface WorkflowInstance {
   nodes: WorkflowNodeInstance[];
 }
 
+interface WorkflowEventSubscription {
+  onSnapshot: (instance: WorkflowInstance) => void;
+  lastSignature: string;
+  stopped: boolean;
+  closeActive?: () => void;
+}
+
 const TERMINAL_STATUSES = new Set([
   'SUCCESS',
   'SUCCESS_WITH_WARNINGS',
@@ -108,8 +119,20 @@ const TERMINAL_STATUSES = new Set([
   'TIMED_OUT',
 ]);
 
+const workflowEventSubscriptions = new Map<
+  string,
+  WorkflowEventSubscription
+>();
+
 export const isWorkflowTerminal = (status?: string) =>
   Boolean(status && TERMINAL_STATUSES.has(status));
+
+export const getWorkflowTasks = async () => {
+  const response = await request<ApiResponse<WorkflowTaskDefinition[]>>(
+    '/api/v1/tasks',
+  );
+  return response.data;
+};
 
 export const runWorkflow = async (payload: WorkflowRunPayload) => {
   const response = await request<ApiResponse<WorkflowInstance>>(
@@ -130,6 +153,7 @@ const postInstanceAction = async (
     `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/${action}`,
     { method: 'POST' },
   );
+  resumeWorkflowEventsIfNeeded(executionId, response.data);
   return response.data;
 };
 
@@ -159,6 +183,7 @@ export const continueWorkflowAfterFailure = async (
     `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/nodes/${encodeURIComponent(nodeId)}/continue`,
     { method: 'POST' },
   );
+  resumeWorkflowEventsIfNeeded(executionId, response.data);
   return response.data;
 };
 
@@ -170,6 +195,7 @@ export const retryWorkflowFailedNode = async (
     `/api/v1/workflows/instances/${encodeURIComponent(executionId)}/nodes/${encodeURIComponent(nodeId)}/retry`,
     { method: 'POST' },
   );
+  resumeWorkflowEventsIfNeeded(executionId, response.data);
   return response.data;
 };
 
@@ -213,23 +239,24 @@ const snapshotSignature = (instance: WorkflowInstance) =>
     ),
   ].join('|');
 
-/** SSE 为主，500ms authenticated request 作为代理/认证链路下的状态同步兜底。 */
-export const subscribeWorkflowEvents = (
+const openWorkflowEventSubscription = (
   executionId: string,
-  onSnapshot: (instance: WorkflowInstance) => void,
+  subscription: WorkflowEventSubscription,
 ) => {
-  let closed = false;
-  let lastSignature = '';
+  if (subscription.stopped) return;
+  subscription.closeActive?.();
+
+  let activeClosed = false;
   let polling = false;
 
   const deliver = (snapshot: WorkflowInstance) => {
-    if (closed) return;
+    if (activeClosed || subscription.stopped) return;
     const signature = snapshotSignature(snapshot);
-    if (signature === lastSignature) return;
-    lastSignature = signature;
-    onSnapshot(snapshot);
+    if (signature === subscription.lastSignature) return;
+    subscription.lastSignature = signature;
+    subscription.onSnapshot(snapshot);
     if (isWorkflowTerminal(snapshot.status)) {
-      cleanup();
+      cleanupActive();
     }
   };
 
@@ -250,7 +277,7 @@ export const subscribeWorkflowEvents = (
   source.addEventListener('workflow', handleWorkflowEvent);
 
   const poll = async () => {
-    if (closed || polling) return;
+    if (activeClosed || subscription.stopped || polling) return;
     polling = true;
     try {
       deliver(await getWorkflowInstance(executionId));
@@ -265,14 +292,60 @@ export const subscribeWorkflowEvents = (
     void poll();
   }, 500);
 
-  function cleanup() {
-    if (closed) return;
-    closed = true;
+  function cleanupActive() {
+    if (activeClosed) return;
+    activeClosed = true;
     window.clearInterval(timer);
     source.removeEventListener('workflow', handleWorkflowEvent);
     source.close();
+    if (subscription.closeActive === cleanupActive) {
+      subscription.closeActive = undefined;
+    }
   }
 
+  subscription.closeActive = cleanupActive;
   void poll();
-  return cleanup;
+};
+
+function resumeWorkflowEventsIfNeeded(
+  executionId: string,
+  snapshot: WorkflowInstance,
+) {
+  if (snapshot.id !== executionId || isWorkflowTerminal(snapshot.status)) return;
+  const subscription = workflowEventSubscriptions.get(executionId);
+  if (!subscription || subscription.stopped || subscription.closeActive) return;
+  openWorkflowEventSubscription(executionId, subscription);
+}
+
+/**
+ * SSE 为主，500ms authenticated request 作为代理/认证链路下的状态同步兜底。
+ *
+ * 终态只关闭当前网络连接，保留订阅句柄；失败节点被人工重试或放行后，
+ * service 层会自动恢复同一个 executionId 的 SSE + polling。
+ */
+export const subscribeWorkflowEvents = (
+  executionId: string,
+  onSnapshot: (instance: WorkflowInstance) => void,
+) => {
+  const existing = workflowEventSubscriptions.get(executionId);
+  if (existing) {
+    existing.stopped = true;
+    existing.closeActive?.();
+  }
+
+  const subscription: WorkflowEventSubscription = {
+    onSnapshot,
+    lastSignature: '',
+    stopped: false,
+  };
+  workflowEventSubscriptions.set(executionId, subscription);
+  openWorkflowEventSubscription(executionId, subscription);
+
+  return () => {
+    subscription.stopped = true;
+    subscription.closeActive?.();
+    if (workflowEventSubscriptions.get(executionId) === subscription) {
+      workflowEventSubscriptions.delete(executionId);
+    }
+  };
 };

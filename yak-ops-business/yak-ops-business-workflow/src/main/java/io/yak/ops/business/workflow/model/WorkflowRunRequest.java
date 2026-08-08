@@ -54,10 +54,7 @@ public record WorkflowRunRequest(
 
   public record NodeRequest(
       @NotBlank String id,
-      @NotBlank String name,
-      @NotBlank String type,
-      @Pattern(regexp = "SUCCESS|FAILED", message = "mockResult must be SUCCESS or FAILED")
-      String mockResult,
+      @NotBlank String taskId,
       @Min(1) Integer maxAttempts,
       @Min(0) Long retryDelaySeconds,
       @Min(0) Long dispatchTimeoutSeconds,
@@ -73,7 +70,6 @@ public record WorkflowRunRequest(
       String failurePolicy) {
 
     public NodeRequest {
-      mockResult = mockResult == null || mockResult.isBlank() ? "SUCCESS" : mockResult;
       maxAttempts = maxAttempts == null ? 1 : maxAttempts;
       retryDelaySeconds = retryDelaySeconds == null ? 0L : retryDelaySeconds;
       dispatchTimeoutSeconds = dispatchTimeoutSeconds == null ? 0L : dispatchTimeoutSeconds;
@@ -91,9 +87,7 @@ public record WorkflowRunRequest(
 
     public NodeRequest(
         String id,
-        String name,
-        String type,
-        String mockResult,
+        String taskId,
         Integer maxAttempts,
         Long retryDelaySeconds,
         Long dispatchTimeoutSeconds,
@@ -101,9 +95,7 @@ public record WorkflowRunRequest(
         Map<String, String> inputMapping) {
       this(
           id,
-          name,
-          type,
-          mockResult,
+          taskId,
           maxAttempts,
           retryDelaySeconds,
           dispatchTimeoutSeconds,
@@ -113,12 +105,8 @@ public record WorkflowRunRequest(
           "FAIL_WORKFLOW");
     }
 
-    public NodeRequest(String id, String name, String type, String mockResult) {
-      this(id, name, type, mockResult, 1, 0L, 0L, 0L, Map.of());
-    }
-
-    public NodeRequest(String id, String name, String type) {
-      this(id, name, type, "SUCCESS");
+    public NodeRequest(String id, String taskId) {
+      this(id, taskId, 1, 0L, 0L, 0L, Map.of());
     }
   }
 

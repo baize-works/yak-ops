@@ -22,6 +22,7 @@ public record WorkflowInstanceVO(
 
   public record NodeInstanceVO(
       String id,
+      String taskId,
       String name,
       String type,
       String status,
