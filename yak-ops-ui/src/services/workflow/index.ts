@@ -145,16 +145,6 @@ export const runWorkflow = async (payload: WorkflowRunPayload) => {
   return response.data;
 };
 
-const resumeWorkflowEventsIfNeeded = (
-  executionId: string,
-  snapshot: WorkflowInstance,
-) => {
-  if (isWorkflowTerminal(snapshot.status)) return;
-  const subscription = workflowEventSubscriptions.get(executionId);
-  if (!subscription || subscription.stopped || subscription.closeActive) return;
-  openWorkflowEventSubscription(executionId, subscription);
-};
-
 const postInstanceAction = async (
   executionId: string,
   action: string,
@@ -317,11 +307,21 @@ const openWorkflowEventSubscription = (
   void poll();
 };
 
+function resumeWorkflowEventsIfNeeded(
+  executionId: string,
+  snapshot: WorkflowInstance,
+) {
+  if (snapshot.id !== executionId || isWorkflowTerminal(snapshot.status)) return;
+  const subscription = workflowEventSubscriptions.get(executionId);
+  if (!subscription || subscription.stopped || subscription.closeActive) return;
+  openWorkflowEventSubscription(executionId, subscription);
+}
+
 /**
  * SSE 为主，500ms authenticated request 作为代理/认证链路下的状态同步兜底。
  *
- * <p>终态只关闭当前网络连接，保留订阅句柄；失败节点被人工重试或放行后，
- * service 层会自动恢复同一个 executionId 的 SSE + polling。</p>
+ * 终态只关闭当前网络连接，保留订阅句柄；失败节点被人工重试或放行后，
+ * service 层会自动恢复同一个 executionId 的 SSE + polling。
  */
 export const subscribeWorkflowEvents = (
   executionId: string,
