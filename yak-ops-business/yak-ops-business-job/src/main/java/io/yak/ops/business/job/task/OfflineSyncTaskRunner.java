@@ -54,10 +54,10 @@ public class OfflineSyncTaskRunner implements SyncTaskRunner {
     Map<String, Object> output = new LinkedHashMap<>();
     put(output, "engineJobId", execution.getEngineJobId());
     put(output, "externalExecutionId", execution.getExternalExecutionId());
-    output.put("sourceRecordCount", execution.getSourceRecordCount());
-    output.put("sinkCommittedRecordCount", execution.getSinkCommittedRecordCount());
-    output.put("failedRecordCount", execution.getFailedRecordCount());
-    output.put("durationMillis", execution.getDurationMillis());
+    put(output, "sourceRecordCount", execution.getSourceRecordCount());
+    put(output, "sinkCommittedRecordCount", execution.getSinkCommittedRecordCount());
+    put(output, "failedRecordCount", execution.getFailedRecordCount());
+    put(output, "durationMillis", execution.getDurationMillis());
     return new SyncTaskExecution(
         String.valueOf(execution.getId()),
         execution.getStatus(),
