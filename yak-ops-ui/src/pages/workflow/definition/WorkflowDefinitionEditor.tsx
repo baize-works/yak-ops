@@ -459,7 +459,7 @@ const WorkflowDefinitionContent = () => {
           onOnline={() => void handleOnline()}
           onOffline={() => void handleOffline()}
         />
-        <div ref={wrapperRef} className="relative min-h-0 flex-1" onDrop={handleDrop}>
+        <div ref={wrapperRef} className="relative min-h-0 flex-1 bg-[#f2f4f7]" onDrop={handleDrop}>
           {selectedNode ? <WorkflowNodeInspector node={selectedNode} locked={locked} onChange={updateSelectedNode} /> : null}
           <ReactFlow
             nodes={canvasNodes}
@@ -484,7 +484,7 @@ const WorkflowDefinitionContent = () => {
             deleteKeyCode={locked ? null : ['Backspace', 'Delete']}
             defaultEdgeOptions={{ type: 'workflow' }}
           >
-            <Background gap={20} size={1} color="#e4e7ec" />
+            <Background gap={[14, 14]} size={2} color="#e6e7ef" />
             <Controls position="bottom-right" />
             <MiniMap pannable zoomable className="!border !border-[#e8e9ec] !bg-white" />
           </ReactFlow>
