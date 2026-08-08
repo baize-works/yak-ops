@@ -28,13 +28,12 @@ const WorkflowStartNode = ({ id, data, selected }: NodeProps<WorkflowStartNodeDa
             : 'border-[#e8e9ec] group-hover:border-[#d7d9de]',
         ].join(' ')}
       >
-        <div className="flex min-h-[60px] items-center gap-2.5 px-3 py-3">
+        <div className="flex min-h-9 items-center gap-2.5 px-3 py-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#eaf2ff] text-[#155eef]">
             <GitBranch size={18} strokeWidth={2.2} />
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[14px] font-semibold leading-5 text-[#161823]">开始</div>
-            <div className="mt-0.5 text-[10px] text-[rgba(22,24,35,.38)]">工作流输入与上下文</div>
+          <div className="min-w-0 flex-1 truncate text-[14px] font-semibold leading-5 text-[#161823]">
+            开始
           </div>
         </div>
 
