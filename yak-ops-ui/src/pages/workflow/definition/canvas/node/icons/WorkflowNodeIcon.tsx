@@ -32,7 +32,7 @@ const DEFAULT_ICON_META: NodeIconMeta = {
 const NODE_ICON_META: Record<string, NodeIconMeta> = {
   SYNC: {
     icon: SyncNodeIcon,
-    className: 'bg-[#f4f4f5] text-[#52525b]',
+    className: 'bg-[rgba(254,44,85,.08)] text-[#fe2c55]',
   },
 };
 

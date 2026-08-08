@@ -30,13 +30,8 @@ const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => (
       <div className="flex min-h-9 items-center gap-2.5">
         <WorkflowNodeIcon taskType={data.taskType} />
 
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-[10px] font-medium leading-4 text-[rgba(22,24,35,.38)]">
-            {data.typeLabel}
-          </div>
-          <div className="mt-0.5 truncate text-[14px] font-semibold leading-5 text-[#161823]">
-            {data.label}
-          </div>
+        <div className="min-w-0 flex-1 truncate text-[14px] font-semibold leading-5 text-[#161823]">
+          {data.label}
         </div>
       </div>
     </div>
