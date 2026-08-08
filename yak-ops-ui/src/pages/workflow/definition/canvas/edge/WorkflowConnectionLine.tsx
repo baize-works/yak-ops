@@ -14,7 +14,7 @@ const WorkflowConnectionLine = ({
   toPosition = Position.Left,
 }: ConnectionLineComponentProps) => {
   const [path] = getBezierPath({
-    sourceX: fromX - WORKFLOW_EDGE_HANDLE_OVERLAP,
+    sourceX: fromX + WORKFLOW_EDGE_HANDLE_OVERLAP,
     sourceY: fromY,
     sourcePosition: fromPosition,
     targetX: toX,
