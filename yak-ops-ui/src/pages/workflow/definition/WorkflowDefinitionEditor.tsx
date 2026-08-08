@@ -23,6 +23,8 @@ import ReactFlow, {
   getOutgoers,
   type Connection,
   type Edge,
+  type Node,
+  type NodeChange,
   type NodeMouseHandler,
   type ReactFlowInstance,
   useEdgesState,
@@ -39,6 +41,17 @@ import {
 import WorkflowConnectionLine from './canvas/edge/WorkflowConnectionLine';
 import WorkflowEdge from './canvas/edge/WorkflowEdge';
 import WorkflowNode from './canvas/node/WorkflowNode';
+import WorkflowStartInspector from './canvas/start/WorkflowStartInspector';
+import WorkflowStartNode from './canvas/start/WorkflowStartNode';
+import {
+  hydrateWorkflowStartConfig,
+  serializeWorkflowStartContext,
+} from './canvas/start/context';
+import {
+  WORKFLOW_START_NODE_ID,
+  type WorkflowStartConfig,
+  type WorkflowStartNodeData,
+} from './canvas/start/types';
 import type { WorkflowEdgeData, WorkflowNodeData } from './canvas/types';
 import 'reactflow/dist/style.css';
 
@@ -64,6 +77,12 @@ const createNodeData = (task: WorkflowTaskDefinition): WorkflowNodeData => ({
   inputMappingText: '{}',
 });
 
+const DEFAULT_START_CONFIG: WorkflowStartConfig = {
+  position: { x: 80, y: 160 },
+  inputs: [],
+  variables: [],
+};
+
 const WorkflowDefinitionContent = () => {
   const { id = '' } = useParams<{ id: string }>();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -77,17 +96,24 @@ const WorkflowDefinitionContent = () => {
   const [workflowName, setWorkflowName] = useState('');
   const [workflowDescription, setWorkflowDescription] = useState('');
   const [workflowTimeoutSeconds, setWorkflowTimeoutSeconds] = useState(0);
-  const [workflowInputText, setWorkflowInputText] = useState('{}');
   const [failureStrategy, setFailureStrategy] = useState<WorkflowFailureStrategy>('CONTINUE_INDEPENDENT_BRANCHES');
+  const [startConfig, setStartConfig] = useState<WorkflowStartConfig>(DEFAULT_START_CONFIG);
+  const [startSelected, setStartSelected] = useState(false);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string>();
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdgeData>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
 
-  const nodeTypes = useMemo(() => ({ workflow: WorkflowNode }), []);
+  const nodeTypes = useMemo(() => ({ workflow: WorkflowNode, start: WorkflowStartNode }), []);
   const edgeTypes = useMemo(() => ({ workflow: WorkflowEdge }), []);
   const selectedNode = useMemo(() => nodes.find((node) => node.selected), [nodes]);
   const syncTasks = useMemo(() => tasks.filter((task) => task.type === 'SYNC'), [tasks]);
   const locked = definition?.status === 'ONLINE';
+
+  const rootNodes = useMemo(() => {
+    const targets = new Set(edges.map((edge) => edge.target));
+    return nodes.filter((node) => !targets.has(node.id));
+  }, [edges, nodes]);
 
   const hydrateDefinition = useCallback((value: WorkflowDefinition, taskList: WorkflowTaskDefinition[]) => {
     const taskMap = new Map(taskList.map((task) => [task.id, task]));
@@ -95,8 +121,9 @@ const WorkflowDefinitionContent = () => {
     setWorkflowName(value.name);
     setWorkflowDescription(value.description || '');
     setWorkflowTimeoutSeconds(value.workflowTimeoutSeconds || 0);
-    setWorkflowInputText(JSON.stringify(value.input || {}, null, 2));
     setFailureStrategy(value.failureStrategy || 'CONTINUE_INDEPENDENT_BRANCHES');
+    setStartConfig(hydrateWorkflowStartConfig(value.input || {}));
+    setStartSelected(false);
     setNodes(value.nodes.map((node) => {
       const task = taskMap.get(node.taskId);
       return {
@@ -157,7 +184,16 @@ const WorkflowDefinitionContent = () => {
   }, [hydrateDefinition, id]);
 
   const handleConnect = (connection: Connection) => {
-    if (!locked) setEdges((current) => addEdge({ ...connection, type: 'workflow' }, current));
+    if (locked) return;
+    if (connection.source === WORKFLOW_START_NODE_ID) {
+      if (!connection.target) return;
+      const hasTaskPredecessor = edges.some((edge) => edge.target === connection.target);
+      if (hasTaskPredecessor) {
+        message.warning('开始节点只能连接没有前置任务的根节点');
+      }
+      return;
+    }
+    setEdges((current) => addEdge({ ...connection, type: 'workflow' }, current));
   };
 
   const handleDragStart = (event: DragEvent<HTMLDivElement>, task: WorkflowTaskDefinition) => {
@@ -173,6 +209,7 @@ const WorkflowDefinitionContent = () => {
     const task = JSON.parse(raw) as WorkflowTaskDefinition;
     const bounds = wrapperRef.current.getBoundingClientRect();
     const sequence = sequenceRef.current++;
+    setStartSelected(false);
     setNodes((current) => [...current, {
       id: `task-${Date.now()}-${sequence}`,
       type: 'workflow',
@@ -194,6 +231,7 @@ const WorkflowDefinitionContent = () => {
 
     const sequence = sequenceRef.current++;
     const nodeId = `task-${Date.now()}-${sequence}`;
+    setStartSelected(false);
     setNodes((current) => [
       ...current.map((node) => ({ ...node, selected: false })),
       {
@@ -237,7 +275,6 @@ const WorkflowDefinitionContent = () => {
     const lastOutgoer = outgoers[outgoers.length - 1];
     const sourceWidth = sourceNode.width ?? WORKFLOW_NODE_WIDTH;
     const fallbackHeight = sourceNode.height ?? 96;
-
     const sequence = sequenceRef.current++;
     const nodeId = `task-${Date.now()}-${sequence}`;
     const position = lastOutgoer
@@ -252,6 +289,7 @@ const WorkflowDefinitionContent = () => {
           y: sourceNode.position.y,
         };
 
+    setStartSelected(false);
     setNodes((current) => [
       ...current.map((node) => ({ ...node, selected: false })),
       {
@@ -273,13 +311,48 @@ const WorkflowDefinitionContent = () => {
     ]);
   }, [edges, locked, nodes, setEdges, setNodes, syncTasks]);
 
+  const handleAppendFromStart = useCallback((_startNodeId: string, taskId: string) => {
+    if (locked) return;
+    const task = syncTasks.find((item) => item.id === taskId);
+    if (!task) return;
+
+    const taskTargets = new Set(edges.map((edge) => edge.target));
+    const currentRoots = nodes
+      .filter((node) => !taskTargets.has(node.id))
+      .sort((left, right) => left.position.y - right.position.y);
+    const lastRoot = currentRoots[currentRoots.length - 1];
+    const sequence = sequenceRef.current++;
+    const nodeId = `task-${Date.now()}-${sequence}`;
+    const position = lastRoot
+      ? {
+          x: lastRoot.position.x,
+          y: lastRoot.position.y + (lastRoot.height ?? 72) + WORKFLOW_NODE_VERTICAL_GAP,
+        }
+      : {
+          x: startConfig.position.x + WORKFLOW_NODE_WIDTH + WORKFLOW_NODE_HORIZONTAL_GAP,
+          y: startConfig.position.y,
+        };
+
+    setStartSelected(false);
+    setNodes((current) => [
+      ...current.map((node) => ({ ...node, selected: false })),
+      {
+        id: nodeId,
+        type: 'workflow',
+        selected: true,
+        position,
+        data: createNodeData(task),
+      },
+    ]);
+  }, [edges, locked, nodes, setNodes, startConfig.position.x, startConfig.position.y, syncTasks]);
+
   const handleDuplicateNode = useCallback((nodeId: string) => {
     if (locked) return;
     const sourceNode = nodes.find((node) => node.id === nodeId);
     if (!sourceNode) return;
-
     const sequence = sequenceRef.current++;
     const duplicatedId = `task-${Date.now()}-${sequence}`;
+    setStartSelected(false);
     setNodes((current) => [
       ...current.map((node) => ({ ...node, selected: false })),
       {
@@ -296,10 +369,9 @@ const WorkflowDefinitionContent = () => {
   }, [locked, nodes, setNodes]);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
-    if (locked) return;
+    if (locked || nodeId === WORKFLOW_START_NODE_ID) return;
     const node = nodes.find((item) => item.id === nodeId);
     if (!node) return;
-
     Modal.confirm({
       centered: true,
       title: '删除节点？',
@@ -314,31 +386,29 @@ const WorkflowDefinitionContent = () => {
     });
   }, [locked, nodes, setEdges, setNodes]);
 
+  const handleCanvasNodesChange = useCallback((changes: NodeChange[]) => {
+    const taskChanges: NodeChange[] = [];
+    changes.forEach((change) => {
+      if (change.id === WORKFLOW_START_NODE_ID) {
+        if (change.type === 'position' && change.position && !locked) {
+          setStartConfig((current) => ({ ...current, position: change.position! }));
+        }
+        if (change.type === 'select') setStartSelected(change.selected);
+        return;
+      }
+      if (change.type === 'select' && change.selected) setStartSelected(false);
+      taskChanges.push(change);
+    });
+    if (taskChanges.length) onNodesChange(taskChanges);
+  }, [locked, onNodesChange]);
+
   const handleNodeMouseEnter = useCallback<NodeMouseHandler>((_, node) => {
-    setEdges((current) => current.map((edge) => {
-      if (edge.source !== node.id && edge.target !== node.id) return edge;
-      return {
-        ...edge,
-        data: {
-          ...edge.data,
-          connectedNodeHovered: true,
-        },
-      };
-    }));
-  }, [setEdges]);
+    setHoveredNodeId(node.id);
+  }, []);
 
   const handleNodeMouseLeave = useCallback<NodeMouseHandler>(() => {
-    setEdges((current) => current.map((edge) => {
-      if (!edge.data?.connectedNodeHovered) return edge;
-      return {
-        ...edge,
-        data: {
-          ...edge.data,
-          connectedNodeHovered: false,
-        },
-      };
-    }));
-  }, [setEdges]);
+    setHoveredNodeId(undefined);
+  }, []);
 
   const taskOptions = useMemo(() => syncTasks.map((task) => ({
     id: task.id,
@@ -353,19 +423,23 @@ const WorkflowDefinitionContent = () => {
     );
     return nodes
       .filter((node) => targetIds.has(node.id))
-      .map((node) => ({
-        id: node.id,
-        label: node.data.label,
-        taskType: node.data.taskType,
-      }));
+      .map((node) => ({ id: node.id, label: node.data.label, taskType: node.data.taskType }));
   }, [edges, nodes, selectedNode]);
+
+  const startNextNodes = useMemo(() => rootNodes.map((node) => ({
+    id: node.id,
+    label: node.data.label,
+    taskType: node.data.taskType,
+  })), [rootNodes]);
 
   const closeNodeInspector = useCallback(() => {
     setNodes((current) => current.map((node) =>
       node.selected ? { ...node, selected: false } : node));
   }, [setNodes]);
 
-  const canvasNodes = useMemo(() => nodes.map((node) => ({
+  const closeStartInspector = useCallback(() => setStartSelected(false), []);
+
+  const taskCanvasNodes = useMemo(() => nodes.map((node) => ({
     ...node,
     data: {
       ...node.data,
@@ -377,16 +451,48 @@ const WorkflowDefinitionContent = () => {
     },
   })), [handleAppendTask, handleDeleteNode, handleDuplicateNode, locked, nodes, taskOptions]);
 
-  const canvasEdges = useMemo(() => edges.map((edge) => ({
+  const startCanvasNode = useMemo<Node<WorkflowStartNodeData>>(() => ({
+    id: WORKFLOW_START_NODE_ID,
+    type: 'start',
+    position: startConfig.position,
+    selected: startSelected,
+    deletable: false,
+    draggable: !locked,
+    data: {
+      label: '开始',
+      locked,
+      inputs: startConfig.inputs,
+      appendOptions: taskOptions,
+      onAppend: handleAppendFromStart,
+    },
+  }), [handleAppendFromStart, locked, startConfig.inputs, startConfig.position, startSelected, taskOptions]);
+
+  const canvasNodes = useMemo(() => [startCanvasNode, ...taskCanvasNodes], [startCanvasNode, taskCanvasNodes]);
+
+  const taskCanvasEdges = useMemo(() => edges.map((edge) => ({
     ...edge,
     type: 'workflow',
     data: {
       ...edge.data,
       locked,
+      connectedNodeHovered: edge.source === hoveredNodeId || edge.target === hoveredNodeId,
       insertOptions: taskOptions,
       onInsert: handleInsertTaskIntoEdge,
     },
-  })), [edges, handleInsertTaskIntoEdge, locked, taskOptions]);
+  })), [edges, handleInsertTaskIntoEdge, hoveredNodeId, locked, taskOptions]);
+
+  const startCanvasEdges = useMemo(() => rootNodes.map((node, index) => ({
+    id: `edge-start-${node.id}-${index}`,
+    source: WORKFLOW_START_NODE_ID,
+    target: node.id,
+    type: 'workflow',
+    data: {
+      locked: true,
+      connectedNodeHovered: hoveredNodeId === WORKFLOW_START_NODE_ID || hoveredNodeId === node.id,
+    },
+  })), [hoveredNodeId, rootNodes]);
+
+  const canvasEdges = useMemo(() => [...startCanvasEdges, ...taskCanvasEdges], [startCanvasEdges, taskCanvasEdges]);
 
   const updateSelectedNode = (patch: Partial<WorkflowNodeData>) => {
     if (!selectedNode || locked) return;
@@ -411,7 +517,10 @@ const WorkflowDefinitionContent = () => {
       inputMapping: parseObject<Record<string, string>>(node.data.inputMappingText, `${node.data.label} 输入映射`),
     })),
     edges: edges.map((edge: Edge) => ({ source: edge.source, target: edge.target })),
-    input: parseObject<Record<string, unknown>>(workflowInputText, '工作流输入'),
+    input: serializeWorkflowStartContext(startConfig, {
+      definitionId: id,
+      workflowName: workflowName.trim(),
+    }),
     workflowTimeoutSeconds,
     failureStrategy,
   });
@@ -423,6 +532,7 @@ const WorkflowDefinitionContent = () => {
     try {
       const saved = await updateWorkflowDefinition(id, buildPayload());
       setDefinition(saved);
+      setStartConfig(hydrateWorkflowStartConfig(saved.input || {}));
       if (showMessage) message.success('工作流配置已保存');
       return saved;
     } finally {
@@ -440,7 +550,7 @@ const WorkflowDefinitionContent = () => {
 
   const handleOnline = async () => {
     if (!nodes.length) {
-      message.warning('请先拖入至少一个任务节点');
+      message.warning('请先添加至少一个任务节点');
       return;
     }
     setStatusAction(true);
@@ -472,33 +582,49 @@ const WorkflowDefinitionContent = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-48px)] min-h-[620px] overflow-hidden " style={{backgroundColor: "#F2F4F7"}}>
+    <div className="flex h-[calc(100vh-48px)] min-h-[620px] overflow-hidden" style={{ backgroundColor: '#F2F4F7' }}>
       <WorkflowTaskLibrary tasks={syncTasks} loading={tasksLoading} locked={locked} onDragStart={handleDragStart} />
       <section className="flex min-w-0 flex-1 flex-col">
         <WorkflowToolbar
           definition={definition}
           name={workflowName}
           description={workflowDescription}
-          workflowInputText={workflowInputText}
           workflowTimeoutSeconds={workflowTimeoutSeconds}
           failureStrategy={failureStrategy}
-          nodesCount={nodes.length}
-          edgesCount={edges.length}
+          nodesCount={nodes.length + 1}
+          edgesCount={edges.length + rootNodes.length}
           locked={locked}
           saving={saving}
           statusAction={statusAction}
           onNameChange={setWorkflowName}
           onDescriptionChange={setWorkflowDescription}
-          onWorkflowInputChange={setWorkflowInputText}
           onWorkflowTimeoutChange={setWorkflowTimeoutSeconds}
           onFailureStrategyChange={setFailureStrategy}
-          onClear={() => { if (!locked) { setNodes([]); setEdges([]); } }}
+          onClear={() => {
+            if (!locked) {
+              setNodes([]);
+              setEdges([]);
+              setStartSelected(true);
+            }
+          }}
           onSave={() => void handleSave()}
           onOnline={() => void handleOnline()}
           onOffline={() => void handleOffline()}
         />
         <div ref={wrapperRef} className="relative min-h-0 flex-1 bg-[#f2f4f7]" onDrop={handleDrop}>
-          {selectedNode ? (
+          {startSelected ? (
+            <WorkflowStartInspector
+              definitionId={id}
+              workflowName={workflowName}
+              config={startConfig}
+              locked={locked}
+              nextNodes={startNextNodes}
+              appendOptions={taskOptions}
+              onChange={setStartConfig}
+              onClose={closeStartInspector}
+              onAppend={(taskId) => handleAppendFromStart(WORKFLOW_START_NODE_ID, taskId)}
+            />
+          ) : selectedNode ? (
             <WorkflowNodeInspector
               node={selectedNode}
               locked={locked}
@@ -518,9 +644,21 @@ const WorkflowDefinitionContent = () => {
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
             connectionLineComponent={WorkflowConnectionLine}
-            onNodesChange={onNodesChange}
+            onNodesChange={handleCanvasNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={handleConnect}
+            onNodeClick={(_, node) => {
+              if (node.id === WORKFLOW_START_NODE_ID) {
+                setStartSelected(true);
+                setNodes((current) => current.map((item) => item.selected ? { ...item, selected: false } : item));
+              } else {
+                setStartSelected(false);
+              }
+            }}
+            onPaneClick={() => {
+              setStartSelected(false);
+              closeNodeInspector();
+            }}
             onNodeMouseEnter={handleNodeMouseEnter}
             onNodeMouseLeave={handleNodeMouseLeave}
             onInit={setReactFlowInstance}
