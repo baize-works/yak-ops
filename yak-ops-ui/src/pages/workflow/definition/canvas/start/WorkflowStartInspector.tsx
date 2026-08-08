@@ -3,8 +3,8 @@ import { Input, Modal, Select, Switch, message } from 'antd';
 import dayjs from 'dayjs';
 import { GitBranch, Plus, RefreshCw, Trash2, Variable, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import WorkflowNextStep from '../WorkflowNextStep';
 import type { WorkflowCanvasTaskOption } from '../types';
-import WorkflowNodeIcon from '../node/icons/WorkflowNodeIcon';
 import type {
   WorkflowStartConfig,
   WorkflowStartInputField,
@@ -85,6 +85,7 @@ const ValueEditor = ({
   if (type === 'FILE') {
     return <div className="text-[11px] leading-5 text-[#98a2b3]">File 类型由工作流运行时提供，不配置默认值。</div>;
   }
+
   return (
     <Input
       value={Array.isArray(value) ? value.join(', ') : String(value ?? '')}
@@ -93,6 +94,8 @@ const ValueEditor = ({
     />
   );
 };
+
+const Divider = () => <div className="mx-4 border-t border-[#f0f1f3]" />;
 
 const WorkflowStartInspector = ({
   definitionId,
@@ -110,8 +113,6 @@ const WorkflowStartInspector = ({
   const [draft, setDraft] = useState<EditorDraft>(newDraft());
   const [lastRunLoading, setLastRunLoading] = useState(false);
   const [lastRun, setLastRun] = useState<Awaited<ReturnType<typeof getWorkflowInstances>>[number]>();
-
-  const appendSelectOptions = appendOptions.map((item) => ({ value: item.id, label: item.label }));
 
   const loadLastRun = useCallback(async () => {
     setLastRunLoading(true);
@@ -169,6 +170,7 @@ const WorkflowStartInspector = ({
       message.warning('变量名需以字母或下划线开头，只能包含字母、数字和下划线');
       return;
     }
+
     const duplicate = editorKind === 'input'
       ? config.inputs.some((item) => item.name === name && item.id !== draft.id)
       : config.variables.some((item) => item.name === name && item.id !== draft.id);
@@ -207,13 +209,28 @@ const WorkflowStartInspector = ({
           : [...config.variables, item],
       });
     }
+
     closeEditor();
+  };
+
+  const removeInput = (id: string) => {
+    onChange({ ...config, inputs: config.inputs.filter((item) => item.id !== id) });
+  };
+
+  const removeVariable = (id: string) => {
+    onChange({ ...config, variables: config.variables.filter((item) => item.id !== id) });
   };
 
   const systemVariables = useMemo(() => [
     { name: 'sys.definitionId', value: definitionId },
     { name: 'sys.workflowName', value: workflowName || '--' },
   ], [definitionId, workflowName]);
+
+  const startStepIcon = (
+    <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#155eef] text-white shadow-[0_1px_2px_rgba(21,94,239,.18)]">
+      <GitBranch size={14} strokeWidth={2.2} />
+    </span>
+  );
 
   return (
     <aside className="absolute bottom-3 right-3 top-3 z-20 flex w-[400px] flex-col overflow-hidden rounded-2xl border border-[#e2e5e9] bg-white shadow-[0_12px_36px_rgba(22,24,35,.12)]">
@@ -242,12 +259,12 @@ const WorkflowStartInspector = ({
               type="button"
               className={[
                 'relative h-10 border-0 bg-transparent px-0 text-[12px] font-semibold',
-                tab === key ? 'text-[#344054]' : 'text-[#667085]',
+                tab === key ? 'text-[#344054]' : 'text-[#667085] hover:text-[#344054]',
               ].join(' ')}
               onClick={() => setTab(key)}
             >
               {key === 'settings' ? '设置' : '上次运行'}
-              {tab === key ? <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#155eef]" /> : null}
+              {tab === key ? <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#fe2c55]" /> : null}
             </button>
           ))}
         </nav>
@@ -274,21 +291,33 @@ const WorkflowStartInspector = ({
 
               <div className="space-y-1.5">
                 {config.inputs.map((field) => (
-                  <button
+                  <div
                     key={field.id}
-                    type="button"
-                    disabled={locked}
-                    className="flex w-full items-center gap-2 rounded-xl border border-[#e7e9ed] bg-white px-2.5 py-2 text-left hover:bg-[#fafafa] disabled:cursor-default"
-                    onClick={() => openInputEditor(field)}
+                    className="group flex items-center gap-2 rounded-xl border border-[#e7e9ed] bg-white px-2.5 py-2 hover:bg-[#fafafa]"
                   >
                     <Variable size={14} className="shrink-0 text-[#155eef]" />
-                    <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      disabled={locked}
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left"
+                      onClick={() => openInputEditor(field)}
+                    >
                       <div className="truncate text-[11px] font-medium text-[#344054]">inputs.{field.name}</div>
                       {field.description ? <div className="truncate text-[9px] text-[#98a2b3]">{field.description}</div> : null}
-                    </div>
+                    </button>
                     {field.required ? <span className="text-[9px] text-[#98a2b3]">必填</span> : null}
                     <span className="text-[10px] text-[#98a2b3]">{INPUT_TYPE_OPTIONS.find((item) => item.value === field.type)?.label}</span>
-                  </button>
+                    {!locked ? (
+                      <button
+                        type="button"
+                        className="hidden h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-[#98a2b3] hover:bg-[#fff1f3] hover:text-[#d92d4f] group-hover:flex"
+                        onClick={() => removeInput(field.id)}
+                        aria-label="删除输入字段"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    ) : null}
+                  </div>
                 ))}
                 {!config.inputs.length ? (
                   <div className="rounded-xl border border-dashed border-[#dfe3e8] bg-[#fafafa] px-4 py-6 text-center text-[10px] leading-5 text-[#98a2b3]">
@@ -298,7 +327,7 @@ const WorkflowStartInspector = ({
               </div>
             </section>
 
-            <div className="mx-4 border-t border-[#f0f1f3]" />
+            <Divider />
 
             <section className="px-4 py-4">
               <div className="mb-1 flex items-center justify-between">
@@ -332,7 +361,7 @@ const WorkflowStartInspector = ({
                       <button
                         type="button"
                         className="flex h-6 w-6 items-center justify-center rounded-md border-0 bg-transparent text-[#98a2b3] hover:bg-[#fff1f3] hover:text-[#d92d4f]"
-                        onClick={() => onChange({ ...config, variables: config.variables.filter((item) => item.id !== variable.id) })}
+                        onClick={() => removeVariable(variable.id)}
                         aria-label="删除变量"
                       >
                         <Trash2 size={13} />
@@ -343,7 +372,7 @@ const WorkflowStartInspector = ({
               </div>
             </section>
 
-            <div className="mx-4 border-t border-[#f0f1f3]" />
+            <Divider />
 
             <section className="px-4 py-4">
               <div className="mb-1 text-[12px] font-semibold text-[#344054]">系统变量</div>
@@ -362,45 +391,44 @@ const WorkflowStartInspector = ({
               </div>
             </section>
 
-            <div className="mx-4 border-t border-[#f0f1f3]" />
+            <Divider />
 
             <section className="px-4 py-4">
               <div className="mb-1 text-[12px] font-semibold text-[#344054]">下一步</div>
-              <div className="mb-3 text-[10px] text-[rgba(22,24,35,.38)]">没有前置节点的任务会自动连接到开始节点</div>
-              <div className="space-y-1.5">
-                {nextNodes.map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 rounded-xl border border-[#e7e9ed] px-2.5 py-2">
-                    <WorkflowNodeIcon taskType={item.taskType} size="sm" />
-                    <div className="min-w-0 flex-1 truncate text-[11px] font-medium text-[#344054]">{item.label}</div>
-                  </div>
-                ))}
-                {!nextNodes.length ? <div className="rounded-xl border border-dashed border-[#dfe3e8] bg-[#fafafa] px-3 py-3 text-center text-[10px] text-[#98a2b3]">暂无后续节点</div> : null}
-              </div>
-              {!locked && appendSelectOptions.length ? (
-                <Select
-                  className="mt-2 w-full"
-                  variant="filled"
-                  value={undefined}
-                  placeholder={<span className="inline-flex items-center gap-1.5"><Plus size={13} /> 添加后续任务</span>}
-                  options={appendSelectOptions}
-                  onChange={onAppend}
-                />
-              ) : null}
+              <div className="mb-3 text-[10px] leading-4 text-[rgba(22,24,35,.38)]">添加此工作流程中的下一个节点</div>
+              <WorkflowNextStep
+                currentIcon={startStepIcon}
+                nextNodes={nextNodes}
+                appendOptions={appendOptions}
+                locked={locked}
+                onAppend={onAppend}
+              />
             </section>
           </div>
         ) : (
           <div className="px-4 py-4">
             <div className="mb-3 flex items-center justify-between">
               <div className="text-[12px] font-semibold text-[#344054]">最近一次运行</div>
-              <button type="button" className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-[#98a2b3] hover:bg-[#f2f4f7]" onClick={() => void loadLastRun()}>
+              <button
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-[#98a2b3] hover:bg-[#f2f4f7]"
+                onClick={() => void loadLastRun()}
+                aria-label="刷新上次运行"
+              >
                 <RefreshCw size={14} className={lastRunLoading ? 'animate-spin' : ''} />
               </button>
             </div>
             {lastRun ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 rounded-xl border border-[#d9e6ff] bg-[#f3f7ff]">
-                  <div className="px-3 py-2.5"><div className="text-[9px] text-[#667085]">状态</div><div className="mt-1 text-[11px] font-semibold text-[#155eef]">{lastRun.status}</div></div>
-                  <div className="border-l border-[#d9e6ff] px-3 py-2.5"><div className="text-[9px] text-[#667085]">开始时间</div><div className="mt-1 text-[11px] font-semibold text-[#344054]">{dayjs(lastRun.startedAt).format('YYYY-MM-DD HH:mm:ss')}</div></div>
+                <div className="grid grid-cols-2 rounded-xl border border-[#f5c2cc] bg-[#fff6f8]">
+                  <div className="px-3 py-2.5">
+                    <div className="text-[9px] text-[#667085]">状态</div>
+                    <div className="mt-1 text-[11px] font-semibold text-[#fe2c55]">{lastRun.status}</div>
+                  </div>
+                  <div className="border-l border-[#f5c2cc] px-3 py-2.5">
+                    <div className="text-[9px] text-[#667085]">开始时间</div>
+                    <div className="mt-1 text-[11px] font-semibold text-[#344054]">{dayjs(lastRun.startedAt).format('YYYY-MM-DD HH:mm:ss')}</div>
+                  </div>
                 </div>
                 <div>
                   <div className="mb-2 text-[12px] font-semibold text-[#344054]">工作流输入</div>
@@ -429,38 +457,69 @@ const WorkflowStartInspector = ({
         <div className="space-y-4 pt-2">
           <div>
             <div className="mb-1.5 text-[12px] font-medium text-[#344054]">变量名</div>
-            <Input value={draft.name} placeholder="例如 bizDate" onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} />
+            <Input
+              value={draft.name}
+              placeholder="例如 bizDate"
+              onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+            />
             <div className="mt-1 text-[10px] text-[#98a2b3]">引用方式：{editorKind === 'input' ? 'inputs' : 'vars'}.{draft.name || '变量名'}</div>
           </div>
+
           {editorKind === 'input' ? (
             <div>
               <div className="mb-1.5 text-[12px] font-medium text-[#344054]">显示名称</div>
-              <Input value={draft.label} placeholder="默认与变量名相同" onChange={(event) => setDraft((current) => ({ ...current, label: event.target.value }))} />
+              <Input
+                value={draft.label}
+                placeholder="默认与变量名相同"
+                onChange={(event) => setDraft((current) => ({ ...current, label: event.target.value }))}
+              />
             </div>
           ) : null}
+
           <div>
             <div className="mb-1.5 text-[12px] font-medium text-[#344054]">类型</div>
             <Select
               className="w-full"
               value={draft.type}
               options={editorKind === 'input' ? INPUT_TYPE_OPTIONS : VARIABLE_TYPE_OPTIONS}
-              onChange={(value) => setDraft((current) => ({ ...current, type: value, value: value === 'BOOLEAN' ? false : '' }))}
+              onChange={(value) => setDraft((current) => ({
+                ...current,
+                type: value,
+                value: value === 'BOOLEAN' ? false : '',
+              }))}
             />
           </div>
+
           {editorKind === 'input' ? (
             <div className="flex items-center justify-between">
-              <div><div className="text-[12px] font-medium text-[#344054]">必填</div><div className="text-[10px] text-[#98a2b3]">运行工作流时必须提供</div></div>
-              <Switch checked={draft.required} onChange={(checked) => setDraft((current) => ({ ...current, required: checked }))} />
+              <div>
+                <div className="text-[12px] font-medium text-[#344054]">必填</div>
+                <div className="text-[10px] text-[#98a2b3]">运行工作流时必须提供</div>
+              </div>
+              <Switch
+                checked={draft.required}
+                onChange={(checked) => setDraft((current) => ({ ...current, required: checked }))}
+              />
             </div>
           ) : null}
+
           <div>
             <div className="mb-1.5 text-[12px] font-medium text-[#344054]">{editorKind === 'input' ? '默认值' : '变量值'}</div>
-            <ValueEditor type={draft.type} value={draft.value} onChange={(value) => setDraft((current) => ({ ...current, value }))} />
+            <ValueEditor
+              type={draft.type}
+              value={draft.value}
+              onChange={(value) => setDraft((current) => ({ ...current, value }))}
+            />
           </div>
+
           {editorKind === 'input' ? (
             <div>
               <div className="mb-1.5 text-[12px] font-medium text-[#344054]">说明</div>
-              <Input.TextArea rows={3} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} />
+              <Input.TextArea
+                rows={3}
+                value={draft.description}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+              />
             </div>
           ) : null}
         </div>

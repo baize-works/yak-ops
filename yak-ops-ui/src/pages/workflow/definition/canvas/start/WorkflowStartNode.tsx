@@ -24,7 +24,7 @@ const WorkflowStartNode = ({ id, data, selected }: NodeProps<WorkflowStartNodeDa
           'transition-[border-color,box-shadow] duration-150',
           'group-hover:shadow-[0_6px_18px_rgba(22,24,35,.10)]',
           selected
-            ? 'border-[#155eef] shadow-[0_0_0_2px_rgba(21,94,239,.08)]'
+            ? 'border-[#fe2c55] shadow-[0_0_0_2px_rgba(254,44,85,.08)]'
             : 'border-[#e8e9ec] group-hover:border-[#d7d9de]',
         ].join(' ')}
       >

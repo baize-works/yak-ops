@@ -1,7 +1,8 @@
 import type { WorkflowNodeFailurePolicy } from '@/services/workflow';
 import { InputNumber, Select, Slider, Switch, Tooltip } from 'antd';
-import { CircleHelp, Plus } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import type { Node } from 'reactflow';
+import WorkflowNextStep from './WorkflowNextStep';
 import type { WorkflowCanvasTaskOption, WorkflowNodeData } from './types';
 import WorkflowNodeIcon from './node/icons/WorkflowNodeIcon';
 
@@ -30,7 +31,7 @@ interface WorkflowNodeInspectorSettingsProps {
 }
 
 const SectionTitle = ({ children }: { children: string }) => (
-  <div className="mb-2 text-[11px] font-semibold text-[#344054]">{children}</div>
+  <div className="mb-1 text-[12px] font-semibold text-[#344054]">{children}</div>
 );
 
 const Divider = () => <div className="mx-4 border-t border-[#f0f1f3]" />;
@@ -51,11 +52,6 @@ const WorkflowNodeInspectorSettings = ({
 }: WorkflowNodeInspectorSettingsProps) => {
   const retryTimes = Math.max(0, (node.data.maxAttempts || 1) - 1);
   const retryEnabled = retryTimes > 0;
-
-  const appendSelectOptions = appendOptions.map((item) => ({
-    value: item.id,
-    label: item.label,
-  }));
 
   const handleRetryEnabledChange = (checked: boolean) => {
     if (!checked) {
@@ -166,40 +162,14 @@ const WorkflowNodeInspectorSettings = ({
 
       <section className="px-4 py-4">
         <SectionTitle>下一步</SectionTitle>
-        <div className="mb-3 text-[10px] leading-4 text-[rgba(22,24,35,.38)]">添加此节点执行完成后的下一个任务</div>
-
-        <div className="space-y-1.5">
-          {nextNodes.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-2 rounded-xl border border-[#e7e9ed] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(22,24,35,.03)]"
-            >
-              <WorkflowNodeIcon taskType={item.taskType} size="sm" />
-              <div className="min-w-0 flex-1 truncate text-[11px] font-medium text-[#344054]">{item.label}</div>
-            </div>
-          ))}
-
-          {!nextNodes.length ? (
-            <div className="rounded-xl border border-dashed border-[#dfe3e8] bg-[#fafafa] px-3 py-3 text-center text-[10px] text-[rgba(22,24,35,.36)]">
-              暂无后续节点
-            </div>
-          ) : null}
-        </div>
-
-        {!locked && appendSelectOptions.length ? (
-          <Select
-            className="mt-2 w-full"
-            variant="filled"
-            value={undefined}
-            placeholder={
-              <span className="inline-flex items-center gap-1.5 text-[rgba(22,24,35,.42)]">
-                <Plus size={13} /> 添加后续任务
-              </span>
-            }
-            options={appendSelectOptions}
-            onChange={(value) => onAppend(value)}
-          />
-        ) : null}
+        <div className="mb-3 text-[10px] leading-4 text-[rgba(22,24,35,.38)]">添加此工作流程中的下一个节点</div>
+        <WorkflowNextStep
+          currentIcon={<WorkflowNodeIcon taskType={node.data.taskType} size="sm" />}
+          nextNodes={nextNodes}
+          appendOptions={appendOptions}
+          locked={locked}
+          onAppend={onAppend}
+        />
       </section>
     </div>
   );
