@@ -86,6 +86,40 @@ class WorkflowRuntimeServiceTest {
   }
 
   @Test
+  void shouldRetryCurrentFailedNodeThenContinueItsDescendants()
+      throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 40L);
+
+    WorkflowInstanceVO started = service.run(failureBranchWorkflow());
+    service.activate(started.id());
+    WorkflowInstanceVO failed = waitForTerminal(started.id());
+
+    assertThat(failed.status()).isEqualTo("FAILED");
+    assertThat(statusOf(failed, "b")).isEqualTo("FAILED");
+    assertThat(statusOf(failed, "c")).isEqualTo("UPSTREAM_FAILED");
+    assertThat(statusOf(failed, "f")).isEqualTo("UPSTREAM_FAILED");
+
+    WorkflowInstanceVO retried = service.retryFailedNode(started.id(), "b");
+    assertThat(retried.status()).isEqualTo("RUNNING");
+    assertThat(statusOf(retried, "b")).isEqualTo("SUBMITTED");
+    assertThat(statusOf(retried, "c")).isEqualTo("WAITING");
+    assertThat(statusOf(retried, "f")).isEqualTo("WAITING");
+
+    WorkflowInstanceVO retryRunning = waitForNodeStatus(started.id(), "b", "RUNNING");
+    assertThat(statusOf(retryRunning, "c")).isEqualTo("WAITING");
+
+    WorkflowInstanceVO completed = waitForTerminal(started.id());
+    assertThat(completed.status()).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "b")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "c")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "f")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
+    assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
+  }
+
+  @Test
   void shouldContinueBlockedDescendantsWithoutRetryingFailedNode()
       throws InterruptedException {
     service = new WorkflowRuntimeService(
@@ -107,8 +141,6 @@ class WorkflowRuntimeServiceTest {
     assertThat(statusOf(continued, "c")).isEqualTo("SUBMITTED");
     assertThat(statusOf(continued, "f")).isEqualTo("WAITING");
 
-    // 实际页面重新建立 SSE 后会激活积压的 dispatch；测试中直接调用 activate 模拟该过程。
-    service.activate(started.id());
     WorkflowInstanceVO completed = waitForTerminal(started.id());
 
     assertThat(completed.status()).isEqualTo("SUCCESS_WITH_WARNINGS");
