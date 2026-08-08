@@ -346,6 +346,25 @@ const WorkflowDefinitionContent = () => {
     typeLabel: task.type === 'SYNC' ? '数据同步' : task.type,
   })), [syncTasks]);
 
+  const inspectorNextNodes = useMemo(() => {
+    if (!selectedNode) return [];
+    const targetIds = new Set(
+      edges.filter((edge) => edge.source === selectedNode.id).map((edge) => edge.target),
+    );
+    return nodes
+      .filter((node) => targetIds.has(node.id))
+      .map((node) => ({
+        id: node.id,
+        label: node.data.label,
+        taskType: node.data.taskType,
+      }));
+  }, [edges, nodes, selectedNode]);
+
+  const closeNodeInspector = useCallback(() => {
+    setNodes((current) => current.map((node) =>
+      node.selected ? { ...node, selected: false } : node));
+  }, [setNodes]);
+
   const canvasNodes = useMemo(() => nodes.map((node) => ({
     ...node,
     data: {
@@ -479,7 +498,20 @@ const WorkflowDefinitionContent = () => {
           onOffline={() => void handleOffline()}
         />
         <div ref={wrapperRef} className="relative min-h-0 flex-1 bg-[#f2f4f7]" onDrop={handleDrop}>
-          {selectedNode ? <WorkflowNodeInspector node={selectedNode} locked={locked} onChange={updateSelectedNode} /> : null}
+          {selectedNode ? (
+            <WorkflowNodeInspector
+              node={selectedNode}
+              locked={locked}
+              definitionId={id}
+              nextNodes={inspectorNextNodes}
+              appendOptions={taskOptions}
+              onChange={updateSelectedNode}
+              onClose={closeNodeInspector}
+              onDuplicate={() => handleDuplicateNode(selectedNode.id)}
+              onDelete={() => handleDeleteNode(selectedNode.id)}
+              onAppend={(taskId) => handleAppendTask(selectedNode.id, taskId)}
+            />
+          ) : null}
           <ReactFlow
             nodes={canvasNodes}
             edges={canvasEdges}
