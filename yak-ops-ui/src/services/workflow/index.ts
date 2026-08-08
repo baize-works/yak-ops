@@ -1,7 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/services/http/response';
 
-export type WorkflowMockResult = 'SUCCESS' | 'FAILED';
 export type WorkflowFailureStrategy =
   | 'FAIL_FAST'
   | 'CONTINUE_INDEPENDENT_BRANCHES'
@@ -17,11 +16,15 @@ export type WorkflowNodeFailurePolicy =
   | 'BLOCK_BRANCH'
   | 'IGNORE_FAILURE';
 
-export interface WorkflowNodePayload {
+export interface WorkflowTaskDefinition {
   id: string;
   name: string;
   type: string;
-  mockResult?: WorkflowMockResult;
+}
+
+export interface WorkflowNodePayload {
+  id: string;
+  taskId: string;
   maxAttempts?: number;
   retryDelaySeconds?: number;
   dispatchTimeoutSeconds?: number;
@@ -60,6 +63,7 @@ export interface WorkflowAttempt {
 
 export interface WorkflowNodeInstance {
   id: string;
+  taskId: string;
   name: string;
   type: string;
   status: string;
@@ -110,6 +114,13 @@ const TERMINAL_STATUSES = new Set([
 
 export const isWorkflowTerminal = (status?: string) =>
   Boolean(status && TERMINAL_STATUSES.has(status));
+
+export const getWorkflowTasks = async () => {
+  const response = await request<ApiResponse<WorkflowTaskDefinition[]>>(
+    '/api/v1/tasks',
+  );
+  return response.data;
+};
 
 export const runWorkflow = async (payload: WorkflowRunPayload) => {
   const response = await request<ApiResponse<WorkflowInstance>>(
