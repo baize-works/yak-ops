@@ -1,5 +1,7 @@
-import { GitBranch, Variable } from 'lucide-react';
+import { GitBranch, Plus, Variable } from 'lucide-react';
 import type { NodeProps } from 'reactflow';
+import { useStore } from 'reactflow';
+import WorkflowTaskPicker from '../WorkflowTaskPicker';
 import WorkflowNodeHandle from '../node/WorkflowNodeHandle';
 import type { WorkflowStartNodeData } from './types';
 
@@ -14,18 +16,23 @@ const TYPE_LABEL: Record<string, string> = {
 const WorkflowStartNode = ({ id, data, selected }: NodeProps<WorkflowStartNodeData>) => {
   const visibleInputs = data.inputs.slice(0, 3);
   const moreCount = Math.max(0, data.inputs.length - visibleInputs.length);
+  const hasNextNode = useStore((state) => state.edges.some((edge) => edge.source === id));
+  const canAddFirstNode = !data.locked
+    && !hasNextNode
+    && Boolean(data.onAppend)
+    && Boolean(data.appendOptions?.length);
 
   return (
     <div className="group relative w-60">
       <div
         className={[
           'relative overflow-hidden rounded-[15px] border bg-white',
-          'shadow-[0_1px_2px_rgba(22,24,35,.06)]',
+          'shadow-[0_4px_14px_rgba(22,24,35,.07),0_1px_2px_rgba(22,24,35,.04)]',
           'transition-[border-color,box-shadow] duration-150',
-          'group-hover:shadow-[0_6px_18px_rgba(22,24,35,.10)]',
+          'group-hover:shadow-[0_10px_30px_rgba(22,24,35,.10),0_2px_6px_rgba(22,24,35,.04)]',
           selected
-            ? 'border-[#fe2c55] shadow-[0_0_0_2px_rgba(254,44,85,.08)]'
-            : 'border-[#e8e9ec] group-hover:border-[#d7d9de]',
+            ? 'border-[#fe2c55] shadow-[0_0_0_2px_rgba(254,44,85,.08),0_8px_22px_rgba(22,24,35,.09)]'
+            : 'border-[#e5e8ec] group-hover:border-[#d4d8de]',
         ].join(' ')}
       >
         <div className="flex min-h-9 items-center gap-2.5 px-3 py-3">
@@ -57,6 +64,26 @@ const WorkflowStartNode = ({ id, data, selected }: NodeProps<WorkflowStartNodeDa
                 <div className="px-1 text-[9px] text-[#98a2b3]">还有 {moreCount} 个输入字段</div>
               ) : null}
             </div>
+          </div>
+        ) : null}
+
+        {canAddFirstNode && data.onAppend ? (
+          <div className="border-t border-[#f0f1f3] bg-[#fafbfc] p-2">
+            <WorkflowTaskPicker
+              options={data.appendOptions || []}
+              placement="rightTop"
+              onSelect={(taskId) => data.onAppend?.(id, taskId)}
+            >
+              <button
+                type="button"
+                className="nodrag nopan flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#d8dce3] bg-white text-[11px] font-medium text-[#667085] transition-colors hover:border-[rgba(254,44,85,.35)] hover:bg-[rgba(254,44,85,.035)] hover:text-[#fe2c55]"
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <Plus size={13} strokeWidth={2} />
+                添加第一个节点
+              </button>
+            </WorkflowTaskPicker>
           </div>
         ) : null}
       </div>
