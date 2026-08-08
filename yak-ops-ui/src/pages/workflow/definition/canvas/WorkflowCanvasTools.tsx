@@ -53,6 +53,13 @@ const WorkflowCanvasTools = <T,>({
   const reactFlow = useReactFlow();
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      void reactFlow.fitView({ padding: 0.18, maxZoom: 1, duration: 0 });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [reactFlow]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (locked || isEditableTarget(event.target)) return;
 
@@ -168,7 +175,7 @@ const WorkflowCanvasTools = <T,>({
         }
       `}</style>
 
-      <div className="pointer-events-auto absolute left-3 top-3 z-10 flex flex-col items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
+      <div className="pointer-events-auto absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
         <Tooltip title="选择模式（V）" placement="right">
           <button
             type="button"
@@ -200,14 +207,14 @@ const WorkflowCanvasTools = <T,>({
             type="button"
             aria-label="适应画布"
             className={iconButtonClass()}
-            onClick={() => void reactFlow.fitView({ padding: 0.18, duration: 250 })}
+            onClick={() => void reactFlow.fitView({ padding: 0.18, maxZoom: 1, duration: 250 })}
           >
             <Maximize2 size={15} strokeWidth={1.9} />
           </button>
         </Tooltip>
       </div>
 
-      <div className="pointer-events-auto absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
+      <div className="pointer-events-auto absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
         <Tooltip title="撤销（Ctrl/Cmd + Z）">
           <button
             type="button"
