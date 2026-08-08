@@ -1,8 +1,8 @@
-import { Select } from 'antd';
 import { Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { WorkflowCanvasTaskOption } from './types';
 import WorkflowNodeIcon from './node/icons/WorkflowNodeIcon';
+import WorkflowTaskPicker from './WorkflowTaskPicker';
+import type { WorkflowCanvasTaskOption } from './types';
 
 export interface WorkflowNextStepNode {
   id: string;
@@ -25,11 +25,7 @@ const WorkflowNextStep = ({
   locked,
   onAppend,
 }: WorkflowNextStepProps) => {
-  const options = appendOptions.map((item) => ({
-    value: item.id,
-    label: item.label,
-  }));
-  const canAppend = !locked && options.length > 0;
+  const canAppend = !locked && appendOptions.length > 0;
   const addLabel = nextNodes.length ? '添加并行节点' : '选择下一步';
 
   return (
@@ -58,24 +54,23 @@ const WorkflowNextStep = ({
         ))}
 
         {canAppend ? (
-          <div className="rounded-lg border border-dashed border-[#d0d5dd] bg-[rgba(255,255,255,.42)] transition-colors hover:bg-white">
-            <Select
-              className="w-full"
-              variant="borderless"
-              value={undefined}
-              options={options}
-              popupMatchSelectWidth
-              onChange={onAppend}
-              placeholder={(
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#98a2b3]">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-[#e9eaec] text-[#98a2b3]">
-                    <Plus size={12} />
-                  </span>
-                  {addLabel}
-                </span>
-              )}
-            />
-          </div>
+          <WorkflowTaskPicker
+            placement="leftTop"
+            options={appendOptions}
+            onSelect={onAppend}
+          >
+            <button
+              type="button"
+              className="flex h-9 w-full items-center rounded-lg border border-dashed border-[#d0d5dd] bg-[rgba(255,255,255,.42)] px-2 text-left transition-colors hover:bg-white"
+            >
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[5px] bg-[#e9eaec] text-[#98a2b3]">
+                <Plus size={12} />
+              </span>
+              <span className="ml-1.5 text-[11px] font-medium text-[#98a2b3]">
+                {addLabel}
+              </span>
+            </button>
+          </WorkflowTaskPicker>
         ) : null}
 
         {!nextNodes.length && !canAppend ? (
