@@ -1,6 +1,7 @@
 import { Popover, Tooltip } from 'antd';
-import { Hand, History, MousePointer2, Redo2, Undo2, X } from 'lucide-react';
+import { Hand, History, Maximize2, MousePointer2, Redo2, Undo2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useReactFlow } from 'reactflow';
 import type { WorkflowCanvasHistoryEntry } from './useWorkflowCanvasHistory';
 
 export type WorkflowCanvasMode = 'pointer' | 'hand';
@@ -49,6 +50,7 @@ const WorkflowCanvasTools = <T,>({
   onClearHistory,
 }: WorkflowCanvasToolsProps<T>) => {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const reactFlow = useReactFlow();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -94,33 +96,37 @@ const WorkflowCanvasTools = <T,>({
         {historyEntries.length <= 1 ? (
           <div className="py-10 text-center text-[12px] text-[#98a2b3]">暂无变更记录</div>
         ) : (
-          [...historyEntries].map((entry, index) => ({ entry, index })).reverse().map(({ entry, index }) => {
-            const diff = index - currentHistoryIndex;
-            const stepText = diff === 0
-              ? '当前状态'
-              : diff < 0
-                ? `${Math.abs(diff)} 步后退`
-                : `${diff} 步前进`;
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                className={[
-                  'mb-0.5 flex w-full items-center rounded-lg border-0 px-2.5 py-2 text-left transition-colors',
-                  diff === 0 ? 'bg-[#f2f4f7]' : 'bg-transparent hover:bg-[#f7f8fa]',
-                ].join(' ')}
-                onClick={() => {
-                  onJumpToHistory(index);
-                  setHistoryOpen(false);
-                }}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[12px] font-medium text-[#475467]">{entry.label}</div>
-                  <div className="mt-0.5 text-[10px] text-[#98a2b3]">{stepText}</div>
-                </div>
-              </button>
-            );
-          })
+          [...historyEntries]
+            .map((entry, index) => ({ entry, index }))
+            .reverse()
+            .map(({ entry, index }) => {
+              const diff = index - currentHistoryIndex;
+              const stepText = diff === 0
+                ? '当前状态'
+                : diff < 0
+                  ? `${Math.abs(diff)} 步后退`
+                  : `${diff} 步前进`;
+
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={[
+                    'mb-0.5 flex w-full items-center rounded-lg border-0 px-2.5 py-2 text-left transition-colors',
+                    diff === 0 ? 'bg-[#f2f4f7]' : 'bg-transparent hover:bg-[#f7f8fa]',
+                  ].join(' ')}
+                  onClick={() => {
+                    onJumpToHistory(index);
+                    setHistoryOpen(false);
+                  }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[12px] font-medium text-[#475467]">{entry.label}</div>
+                    <div className="mt-0.5 text-[10px] text-[#98a2b3]">{stepText}</div>
+                  </div>
+                </button>
+              );
+            })
         )}
       </div>
 
@@ -148,6 +154,20 @@ const WorkflowCanvasTools = <T,>({
 
   return (
     <>
+      <style>{`
+        .react-flow__controls {
+          display: none !important;
+        }
+        .react-flow__minimap {
+          right: 12px !important;
+          bottom: 12px !important;
+          transition: right 180ms ease;
+        }
+        div:has(> aside) > .react-flow .react-flow__minimap {
+          right: 424px !important;
+        }
+      `}</style>
+
       <div className="pointer-events-auto absolute left-3 top-3 z-10 flex flex-col items-center rounded-lg border border-[#e4e7ec] bg-white p-0.5 shadow-[0_4px_14px_rgba(22,24,35,.08)]">
         <Tooltip title="选择模式（V）" placement="right">
           <button
@@ -160,6 +180,7 @@ const WorkflowCanvasTools = <T,>({
             <MousePointer2 size={16} strokeWidth={1.9} />
           </button>
         </Tooltip>
+
         <Tooltip title="画布拖拽模式（H）" placement="right">
           <button
             type="button"
@@ -169,6 +190,19 @@ const WorkflowCanvasTools = <T,>({
             onClick={() => onModeChange('hand')}
           >
             <Hand size={16} strokeWidth={1.9} />
+          </button>
+        </Tooltip>
+
+        <div className="my-1 h-px w-5 bg-[#eceef1]" />
+
+        <Tooltip title="适应画布" placement="right">
+          <button
+            type="button"
+            aria-label="适应画布"
+            className={iconButtonClass()}
+            onClick={() => void reactFlow.fitView({ padding: 0.18, duration: 250 })}
+          >
+            <Maximize2 size={15} strokeWidth={1.9} />
           </button>
         </Tooltip>
       </div>
@@ -185,6 +219,7 @@ const WorkflowCanvasTools = <T,>({
             <Undo2 size={16} strokeWidth={1.9} />
           </button>
         </Tooltip>
+
         <Tooltip title="重做（Ctrl/Cmd + Shift + Z）">
           <button
             type="button"
@@ -196,7 +231,9 @@ const WorkflowCanvasTools = <T,>({
             <Redo2 size={16} strokeWidth={1.9} />
           </button>
         </Tooltip>
+
         <div className="mx-1 h-4 w-px bg-[#e4e7ec]" />
+
         <Popover
           open={historyOpen}
           onOpenChange={(open) => !locked && setHistoryOpen(open)}
