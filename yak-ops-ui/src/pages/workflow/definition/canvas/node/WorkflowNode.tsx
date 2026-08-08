@@ -26,10 +26,9 @@ const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => {
       />
 
       <WorkflowNodeHandle nodeId={id} type="target" selected={selected} locked={data.locked} />
-{/* group relative pb-1 shadow-xs rounded-[15px] border border-transparent w-[240px] bg-workflow-block-bg hover:shadow-lg */}
       <div
         className={[
-          'relative overflow-hidden rounded-[14px] w-[240px] bg-workflow-block-bg hover:shadow-lg  bg-white',
+          'relative overflow-hidden rounded-[14px] bg-workflow-block-bg hover:shadow-lg  bg-white',
           'shadow-[0_1px_2px_rgba(22,24,35,.05)]',
           'transition-all duration-150 group-hover:border-[#d7d9de]',
           'group-hover:shadow-[0_6px_18px_rgba(22,24,35,.10)]',
