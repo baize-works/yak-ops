@@ -73,7 +73,7 @@ public class LinkUpClient {
                     write(body),
                     StandardCharsets.UTF_8))
             .build();
-    return send(request, LinkUpJobResponse.class);
+    return send(request, LinkUpJobResponse.class, true);
   }
 
   public LinkUpJobResponse getJob(String id) {
@@ -94,7 +94,7 @@ public class LinkUpClient {
             .header("Accept", "application/json")
             .DELETE()
             .build();
-    return send(request, LinkUpJobResponse.class);
+    return send(request, LinkUpJobResponse.class, true);
   }
 
   public JsonNode pipelines(String id) {
@@ -143,10 +143,13 @@ public class LinkUpClient {
             .header("Accept", "application/json")
             .GET()
             .build();
-    return send(request, type);
+    return send(request, type, false);
   }
 
-  private <T> T send(HttpRequest request, Class<T> type) {
+  private <T> T send(
+      HttpRequest request,
+      Class<T> type,
+      boolean uncertainOnTransportFailure) {
     try {
       HttpResponse<String> response =
           httpClient.send(
@@ -167,10 +170,13 @@ public class LinkUpClient {
           exception,
           false);
     } catch (IOException exception) {
+      String message = uncertainOnTransportFailure
+          ? "无法确认 Link-Up 是否已接收请求：" + baseUrl()
+          : "无法连接 Link-Up Server：" + baseUrl();
       throw new LinkUpTransportException(
-          "无法确认 Link-Up 是否已接收请求：" + baseUrl(),
+          message,
           exception,
-          true);
+          uncertainOnTransportFailure);
     }
   }
 
