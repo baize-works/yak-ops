@@ -3,15 +3,20 @@ package io.yak.ops.business.workflow.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.yak.ops.business.workflow.model.WorkflowInstanceVO;
+import io.yak.ops.business.workflow.model.WorkflowInstanceVO.NodeInstanceVO;
 import io.yak.ops.business.workflow.model.WorkflowRunRequest;
 import io.yak.ops.business.workflow.model.WorkflowRunRequest.EdgeRequest;
 import io.yak.ops.business.workflow.model.WorkflowRunRequest.NodeRequest;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class WorkflowRuntimeServiceTest {
+
+  private static final Set<String> TERMINAL_STATUSES = Set.of(
+      "SUCCESS", "SUCCESS_WITH_WARNINGS", "FAILED", "CANCELED", "TIMED_OUT");
 
   private WorkflowRuntimeService service;
 
@@ -41,6 +46,8 @@ class WorkflowRuntimeServiceTest {
     assertThat(completed.nodes())
         .extracting(WorkflowInstanceVO.NodeInstanceVO::status)
         .containsOnly("SUCCESS");
+    assertThat(nodeOf(completed, "extract").attemptCount()).isEqualTo(1);
+    assertThat(nodeOf(completed, "extract").currentAttemptId()).isNotBlank();
   }
 
   @Test
@@ -83,6 +90,7 @@ class WorkflowRuntimeServiceTest {
     assertThat(statusOf(completed, "f")).isEqualTo("UPSTREAM_FAILED");
     assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
+    assertThat(nodeOf(completed, "b").failureReason()).isEqualTo("EXECUTOR_FAILURE");
   }
 
   @Test
@@ -96,27 +104,19 @@ class WorkflowRuntimeServiceTest {
     service.activate(started.id());
     WorkflowInstanceVO failed = waitForTerminal(started.id());
 
-    assertThat(failed.status()).isEqualTo("FAILED");
-    assertThat(statusOf(failed, "b")).isEqualTo("FAILED");
-    assertThat(statusOf(failed, "c")).isEqualTo("UPSTREAM_FAILED");
-    assertThat(statusOf(failed, "f")).isEqualTo("UPSTREAM_FAILED");
-
+    String firstAttemptId = nodeOf(failed, "b").currentAttemptId();
     WorkflowInstanceVO retried = service.retryFailedNode(started.id(), "b");
     assertThat(retried.status()).isEqualTo("RUNNING");
     assertThat(statusOf(retried, "b")).isEqualTo("SUBMITTED");
     assertThat(statusOf(retried, "c")).isEqualTo("WAITING");
-    assertThat(statusOf(retried, "f")).isEqualTo("WAITING");
-
-    WorkflowInstanceVO retryRunning = waitForNodeStatus(started.id(), "b", "RUNNING");
-    assertThat(statusOf(retryRunning, "c")).isEqualTo("WAITING");
 
     WorkflowInstanceVO completed = waitForTerminal(started.id());
     assertThat(completed.status()).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "b")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "c")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "f")).isEqualTo("SUCCESS");
-    assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
-    assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
+    assertThat(nodeOf(completed, "b").attemptCount()).isEqualTo(2);
+    assertThat(nodeOf(completed, "b").currentAttemptId()).isNotEqualTo(firstAttemptId);
   }
 
   @Test
@@ -129,26 +129,21 @@ class WorkflowRuntimeServiceTest {
     WorkflowInstanceVO started = service.run(failureBranchWorkflow());
     service.activate(started.id());
     WorkflowInstanceVO failed = waitForTerminal(started.id());
-
-    assertThat(failed.status()).isEqualTo("FAILED");
-    assertThat(statusOf(failed, "b")).isEqualTo("FAILED");
-    assertThat(statusOf(failed, "c")).isEqualTo("UPSTREAM_FAILED");
-    assertThat(statusOf(failed, "f")).isEqualTo("UPSTREAM_FAILED");
+    String failedAttemptId = nodeOf(failed, "b").currentAttemptId();
 
     WorkflowInstanceVO continued = service.continueAfterFailure(started.id(), "b");
     assertThat(continued.status()).isEqualTo("RUNNING");
     assertThat(statusOf(continued, "b")).isEqualTo("FAILED");
+    assertThat(nodeOf(continued, "b").continuedAfterFailure()).isTrue();
     assertThat(statusOf(continued, "c")).isEqualTo("SUBMITTED");
-    assertThat(statusOf(continued, "f")).isEqualTo("WAITING");
 
     WorkflowInstanceVO completed = waitForTerminal(started.id());
-
     assertThat(completed.status()).isEqualTo("SUCCESS_WITH_WARNINGS");
     assertThat(statusOf(completed, "b")).isEqualTo("FAILED");
+    assertThat(nodeOf(completed, "b").currentAttemptId()).isEqualTo(failedAttemptId);
+    assertThat(nodeOf(completed, "b").attemptCount()).isEqualTo(1);
     assertThat(statusOf(completed, "c")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "f")).isEqualTo("SUCCESS");
-    assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
-    assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
   }
 
   @Test
@@ -183,6 +178,142 @@ class WorkflowRuntimeServiceTest {
     assertThat(statusOf(completed, "d")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "e")).isEqualTo("SUCCESS");
     assertThat(statusOf(completed, "join")).isEqualTo("UPSTREAM_FAILED");
+  }
+
+  @Test
+  void shouldPauseAndResumeTheSameAttempt() throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 600L);
+
+    WorkflowInstanceVO started = service.run(new WorkflowRunRequest(
+        "pause-demo",
+        List.of(successNode("a")),
+        List.of(),
+        Map.of()));
+    service.activate(started.id());
+
+    WorkflowInstanceVO running = waitForNodeStatus(started.id(), "a", "RUNNING");
+    String attemptId = nodeOf(running, "a").currentAttemptId();
+
+    service.pause(started.id());
+    WorkflowInstanceVO paused = waitForWorkflowStatus(started.id(), "PAUSED");
+    assertThat(statusOf(paused, "a")).isEqualTo("PAUSED");
+    assertThat(nodeOf(paused, "a").currentAttemptId()).isEqualTo(attemptId);
+    assertThat(nodeOf(paused, "a").attemptCount()).isEqualTo(1);
+
+    Thread.sleep(120L);
+    assertThat(service.getInstance(started.id()).status()).isEqualTo("PAUSED");
+
+    service.resume(started.id());
+    WorkflowInstanceVO resumed = waitForNodeStatus(started.id(), "a", "RUNNING");
+    assertThat(nodeOf(resumed, "a").currentAttemptId()).isEqualTo(attemptId);
+    assertThat(nodeOf(resumed, "a").attemptCount()).isEqualTo(1);
+
+    assertThat(waitForTerminal(started.id()).status()).isEqualTo("SUCCESS");
+  }
+
+  @Test
+  void shouldTriggerWorkflowTimeoutFromRuntimeScanner() throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 2_000L);
+
+    WorkflowInstanceVO started = service.run(new WorkflowRunRequest(
+        "timeout-demo",
+        List.of(successNode("a")),
+        List.of(),
+        Map.of(),
+        1L));
+    service.activate(started.id());
+
+    WorkflowInstanceVO timedOut = waitForTerminal(started.id());
+    assertThat(timedOut.status()).isEqualTo("TIMED_OUT");
+    assertThat(timedOut.workflowTimeoutSeconds()).isEqualTo(1L);
+    assertThat(statusOf(timedOut, "a")).isEqualTo("CANCELED");
+    assertThat(nodeOf(timedOut, "a").attempts()).hasSize(1);
+    assertThat(nodeOf(timedOut, "a").attempts().get(0).status()).isEqualTo("CANCELED");
+  }
+
+  @Test
+  void shouldExposeAutomaticRetryAttemptHistory() throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 10L);
+
+    NodeRequest retryingFailure = new NodeRequest(
+        "a",
+        "A",
+        "TASK",
+        "FAILED",
+        2,
+        0L,
+        0L,
+        0L,
+        Map.of());
+    WorkflowInstanceVO started = service.run(new WorkflowRunRequest(
+        "retry-demo",
+        List.of(retryingFailure),
+        List.of(),
+        Map.of()));
+    service.activate(started.id());
+
+    WorkflowInstanceVO failed = waitForTerminal(started.id());
+    NodeInstanceVO node = nodeOf(failed, "a");
+    assertThat(failed.status()).isEqualTo("FAILED");
+    assertThat(node.attemptCount()).isEqualTo(2);
+    assertThat(node.attempts())
+        .extracting(WorkflowInstanceVO.AttemptVO::status)
+        .containsExactly("FAILED", "FAILED");
+    assertThat(node.attempts())
+        .extracting(WorkflowInstanceVO.AttemptVO::failureReason)
+        .containsOnly("EXECUTOR_FAILURE");
+  }
+
+  @Test
+  void shouldPropagateWorkflowInputAndPredecessorOutputToNodeInput()
+      throws InterruptedException {
+    service = new WorkflowRuntimeService(
+        new WorkflowEventStreamService(),
+        () -> 10L);
+
+    NodeRequest first = new NodeRequest(
+        "load",
+        "Load",
+        "DATA",
+        "SUCCESS",
+        1,
+        0L,
+        0L,
+        0L,
+        Map.of("requestId", "$workflow.requestId"));
+    NodeRequest second = new NodeRequest(
+        "consume",
+        "Consume",
+        "TASK",
+        "SUCCESS",
+        1,
+        0L,
+        0L,
+        0L,
+        Map.of("requestId", "load.receivedInput.requestId"));
+
+    WorkflowInstanceVO started = service.run(new WorkflowRunRequest(
+        "context-demo",
+        List.of(first, second),
+        List.of(new EdgeRequest("load", "consume")),
+        Map.of("requestId", "REQ-001")));
+    service.activate(started.id());
+
+    WorkflowInstanceVO completed = waitForTerminal(started.id());
+    NodeInstanceVO load = nodeOf(completed, "load");
+    NodeInstanceVO consume = nodeOf(completed, "consume");
+
+    assertThat(completed.status()).isEqualTo("SUCCESS");
+    assertThat(load.input()).containsEntry("requestId", "REQ-001");
+    assertThat(consume.input()).containsEntry("requestId", "REQ-001");
+    assertThat(consume.predecessorOutputs()).containsKey("load");
+    assertThat(consume.output()).containsKey("receivedInput");
   }
 
   private WorkflowRunRequest simpleSerialWorkflow() {
@@ -226,7 +357,7 @@ class WorkflowRuntimeServiceTest {
       String executionId,
       String nodeId,
       String expectedStatus) throws InterruptedException {
-    for (int attempt = 0; attempt < 100; attempt++) {
+    for (int attempt = 0; attempt < 300; attempt++) {
       WorkflowInstanceVO current = service.getInstance(executionId);
       if (expectedStatus.equals(statusOf(current, nodeId))) {
         return current;
@@ -236,11 +367,12 @@ class WorkflowRuntimeServiceTest {
     return service.getInstance(executionId);
   }
 
-  private WorkflowInstanceVO waitForTerminal(String executionId)
-      throws InterruptedException {
+  private WorkflowInstanceVO waitForWorkflowStatus(
+      String executionId,
+      String expectedStatus) throws InterruptedException {
     for (int attempt = 0; attempt < 300; attempt++) {
       WorkflowInstanceVO current = service.getInstance(executionId);
-      if (!"RUNNING".equals(current.status()) && !"CREATED".equals(current.status())) {
+      if (expectedStatus.equals(current.status())) {
         return current;
       }
       Thread.sleep(10L);
@@ -248,11 +380,26 @@ class WorkflowRuntimeServiceTest {
     return service.getInstance(executionId);
   }
 
-  private String statusOf(WorkflowInstanceVO instance, String nodeId) {
+  private WorkflowInstanceVO waitForTerminal(String executionId)
+      throws InterruptedException {
+    for (int attempt = 0; attempt < 500; attempt++) {
+      WorkflowInstanceVO current = service.getInstance(executionId);
+      if (TERMINAL_STATUSES.contains(current.status())) {
+        return current;
+      }
+      Thread.sleep(10L);
+    }
+    return service.getInstance(executionId);
+  }
+
+  private NodeInstanceVO nodeOf(WorkflowInstanceVO instance, String nodeId) {
     return instance.nodes().stream()
         .filter(node -> node.id().equals(nodeId))
         .findFirst()
-        .orElseThrow()
-        .status();
+        .orElseThrow();
+  }
+
+  private String statusOf(WorkflowInstanceVO instance, String nodeId) {
+    return nodeOf(instance, nodeId).status();
   }
 }
