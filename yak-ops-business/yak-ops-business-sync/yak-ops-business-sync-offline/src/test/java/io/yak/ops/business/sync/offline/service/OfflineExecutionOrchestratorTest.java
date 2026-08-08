@@ -3,6 +3,7 @@ package io.yak.ops.business.sync.offline.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -85,11 +86,11 @@ class OfflineExecutionOrchestratorTest {
     verify(executionRepository).recordExecutionEvent(
         eq(99L),
         eq(1L),
-        eq(null),
+        isNull(),
         eq("CREATED"),
         eq("EXECUTION_CREATED"),
         eq("使用 application.yml 中的固定 Link-Up 地址"),
-        eq(null));
+        isNull());
     verify(executionRepository).recordExecutionEvent(
         eq(99L),
         eq(2L),
@@ -97,6 +98,6 @@ class OfflineExecutionOrchestratorTest {
         eq("FAILED"),
         eq("FAILED"),
         eq("无法连接 Link-Up Server：http://127.0.0.1:18080"),
-        eq(null));
+        isNull());
   }
 }
