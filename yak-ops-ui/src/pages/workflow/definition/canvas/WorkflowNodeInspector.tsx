@@ -2,6 +2,7 @@ import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import { Copy, Ellipsis, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Node } from 'reactflow';
 import type { WorkflowCanvasTaskOption, WorkflowNodeData } from './types';
 import WorkflowNodeIcon from './node/icons/WorkflowNodeIcon';
@@ -30,7 +31,7 @@ const ActionButton = ({
   onClick,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
   onClick?: () => void;
 }) => (
   <button
