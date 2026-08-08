@@ -1,9 +1,10 @@
 import { Database, RefreshCcw, Timer } from 'lucide-react';
 import type { NodeProps } from 'reactflow';
 import type { WorkflowNodeData } from '../types';
+import WorkflowNodeControl from './WorkflowNodeControl';
 import WorkflowNodeHandle from './WorkflowNodeHandle';
 
-const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => {
+const WorkflowNode = ({ id, data, selected }: NodeProps<WorkflowNodeData>) => {
   const hasRetry = data.maxAttempts > 1;
   const hasTimeout = data.executionTimeoutSeconds > 0;
 
@@ -16,7 +17,15 @@ const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => {
           : 'border-transparent',
       ].join(' ')}
     >
-      <WorkflowNodeHandle type="target" selected={selected} />
+      <WorkflowNodeControl
+        nodeId={id}
+        selected={selected}
+        locked={data.locked}
+        onDuplicate={data.onDuplicate}
+        onDelete={data.onDelete}
+      />
+
+      <WorkflowNodeHandle nodeId={id} type="target" selected={selected} locked={data.locked} />
 
       <div
         className={[
@@ -63,7 +72,14 @@ const WorkflowNode = ({ data, selected }: NodeProps<WorkflowNodeData>) => {
         </div>
       </div>
 
-      <WorkflowNodeHandle type="source" selected={selected} />
+      <WorkflowNodeHandle
+        nodeId={id}
+        type="source"
+        selected={selected}
+        locked={data.locked}
+        appendOptions={data.appendOptions}
+        onAppend={data.onAppend}
+      />
     </div>
   );
 };

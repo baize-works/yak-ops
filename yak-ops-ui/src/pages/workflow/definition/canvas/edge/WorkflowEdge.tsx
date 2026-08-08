@@ -36,7 +36,9 @@ const WorkflowEdge = ({
     [sourceX, sourceY, targetX, targetY],
   );
 
-  const stroke = selected
+  const connectedNodeHovered = Boolean(data?.connectedNodeHovered);
+  const highlighted = selected || connectedNodeHovered;
+  const stroke = highlighted
     ? '#fe2c55'
     : hovered || insertOpen
       ? '#8a8f99'
@@ -67,7 +69,7 @@ const WorkflowEdge = ({
         path={edgePath}
         style={{
           stroke,
-          strokeWidth: selected ? 2.2 : 2,
+          strokeWidth: highlighted ? 2.2 : 2,
           transition: 'stroke 150ms ease, stroke-width 150ms ease',
         }}
       />

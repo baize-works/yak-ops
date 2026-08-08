@@ -11,7 +11,7 @@ import {
   type WorkflowDefinition,
 } from '@/services/workflow/definitions';
 import { history, useParams } from '@umijs/max';
-import { Spin, message } from 'antd';
+import { Modal, Spin, message } from 'antd';
 import type { DragEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, {
@@ -22,6 +22,7 @@ import ReactFlow, {
   addEdge,
   type Connection,
   type Edge,
+  type NodeMouseHandler,
   type ReactFlowInstance,
   useEdgesState,
   useNodesState,
@@ -219,11 +220,124 @@ const WorkflowDefinitionContent = () => {
     ]);
   }, [edges, locked, nodes, setEdges, setNodes, syncTasks]);
 
-  const edgeInsertOptions = useMemo(() => syncTasks.map((task) => ({
+  const handleAppendTask = useCallback((sourceNodeId: string, taskId: string) => {
+    if (locked) return;
+    const task = syncTasks.find((item) => item.id === taskId);
+    const sourceNode = nodes.find((node) => node.id === sourceNodeId);
+    if (!task || !sourceNode) return;
+
+    const sequence = sequenceRef.current++;
+    const nodeId = `task-${Date.now()}-${sequence}`;
+    const outgoingCount = edges.filter((edge) => edge.source === sourceNodeId).length;
+
+    setNodes((current) => [
+      ...current.map((node) => ({ ...node, selected: false })),
+      {
+        id: nodeId,
+        type: 'workflow',
+        selected: true,
+        position: {
+          x: sourceNode.position.x + 320,
+          y: sourceNode.position.y + outgoingCount * 120,
+        },
+        data: createNodeData(task),
+      },
+    ]);
+    setEdges((current) => [
+      ...current,
+      {
+        id: `edge-${sourceNodeId}-${nodeId}-${sequence}`,
+        source: sourceNodeId,
+        target: nodeId,
+        type: 'workflow',
+      },
+    ]);
+  }, [edges, locked, nodes, setEdges, setNodes, syncTasks]);
+
+  const handleDuplicateNode = useCallback((nodeId: string) => {
+    if (locked) return;
+    const sourceNode = nodes.find((node) => node.id === nodeId);
+    if (!sourceNode) return;
+
+    const sequence = sequenceRef.current++;
+    const duplicatedId = `task-${Date.now()}-${sequence}`;
+    setNodes((current) => [
+      ...current.map((node) => ({ ...node, selected: false })),
+      {
+        ...sourceNode,
+        id: duplicatedId,
+        selected: true,
+        position: {
+          x: sourceNode.position.x + 36,
+          y: sourceNode.position.y + 36,
+        },
+        data: { ...sourceNode.data },
+      },
+    ]);
+  }, [locked, nodes, setNodes]);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    if (locked) return;
+    const node = nodes.find((item) => item.id === nodeId);
+    if (!node) return;
+
+    Modal.confirm({
+      centered: true,
+      title: '删除节点？',
+      content: `即将删除「${node.data.label}」及其关联连线。`,
+      okText: '删除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        setNodes((current) => current.filter((item) => item.id !== nodeId));
+        setEdges((current) => current.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+      },
+    });
+  }, [locked, nodes, setEdges, setNodes]);
+
+  const handleNodeMouseEnter = useCallback<NodeMouseHandler>((_, node) => {
+    setEdges((current) => current.map((edge) => {
+      if (edge.source !== node.id && edge.target !== node.id) return edge;
+      return {
+        ...edge,
+        data: {
+          ...edge.data,
+          connectedNodeHovered: true,
+        },
+      };
+    }));
+  }, [setEdges]);
+
+  const handleNodeMouseLeave = useCallback<NodeMouseHandler>(() => {
+    setEdges((current) => current.map((edge) => {
+      if (!edge.data?.connectedNodeHovered) return edge;
+      return {
+        ...edge,
+        data: {
+          ...edge.data,
+          connectedNodeHovered: false,
+        },
+      };
+    }));
+  }, [setEdges]);
+
+  const taskOptions = useMemo(() => syncTasks.map((task) => ({
     id: task.id,
     label: task.name,
     typeLabel: task.type === 'SYNC' ? '数据同步' : task.type,
   })), [syncTasks]);
+
+  const canvasNodes = useMemo(() => nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      locked,
+      appendOptions: taskOptions,
+      onAppend: handleAppendTask,
+      onDuplicate: handleDuplicateNode,
+      onDelete: handleDeleteNode,
+    },
+  })), [handleAppendTask, handleDeleteNode, handleDuplicateNode, locked, nodes, taskOptions]);
 
   const canvasEdges = useMemo(() => edges.map((edge) => ({
     ...edge,
@@ -231,10 +345,10 @@ const WorkflowDefinitionContent = () => {
     data: {
       ...edge.data,
       locked,
-      insertOptions: edgeInsertOptions,
+      insertOptions: taskOptions,
       onInsert: handleInsertTaskIntoEdge,
     },
-  })), [edgeInsertOptions, edges, handleInsertTaskIntoEdge, locked]);
+  })), [edges, handleInsertTaskIntoEdge, locked, taskOptions]);
 
   const updateSelectedNode = (patch: Partial<WorkflowNodeData>) => {
     if (!selectedNode || locked) return;
@@ -348,7 +462,7 @@ const WorkflowDefinitionContent = () => {
         <div ref={wrapperRef} className="relative min-h-0 flex-1" onDrop={handleDrop}>
           {selectedNode ? <WorkflowNodeInspector node={selectedNode} locked={locked} onChange={updateSelectedNode} /> : null}
           <ReactFlow
-            nodes={nodes}
+            nodes={canvasNodes}
             edges={canvasEdges}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
@@ -356,6 +470,8 @@ const WorkflowDefinitionContent = () => {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={handleConnect}
+            onNodeMouseEnter={handleNodeMouseEnter}
+            onNodeMouseLeave={handleNodeMouseLeave}
             onInit={setReactFlowInstance}
             onDragOver={(event) => {
               event.preventDefault();
