@@ -19,7 +19,6 @@ interface WorkflowNodeHandleProps {
 
 const HANDLE_STYLE: CSSProperties = {
   top: WORKFLOW_HANDLE_TOP,
-  transform: 'none',
 };
 
 const WorkflowNodeHandle = ({
@@ -57,15 +56,28 @@ const WorkflowNodeHandle = ({
       isConnectable={!locked}
       onClick={handleClick}
       className={[
-        'group/handle !h-4 !w-4 !rounded-none !border-0 !bg-transparent !outline-none',
+        'group/handle !h-4 !w-4 !translate-y-0 !rounded-none !border-0 !bg-transparent !outline-none',
         "after:absolute after:top-1 after:h-2 after:w-0.5 after:rounded-full after:content-['']",
         isTarget ? 'after:left-[7px]' : 'after:right-[7px]',
         selected || appendOpen
           ? 'after:bg-[#fe2c55]'
           : 'after:bg-[#c7c9ce] group-hover:after:bg-[#fe2c55]',
-        'after:transition-colors after:duration-150 hover:after:bg-[#fe2c55]',
+        'transition-all duration-150 hover:scale-125 hover:after:bg-[#fe2c55]',
       ].join(' ')}
     >
+      {canAppend ? (
+        <div className="pointer-events-none absolute -top-1 left-1/2 z-30 hidden -translate-x-1/2 -translate-y-full rounded-lg border border-[#e8e9ec] bg-white px-2 py-1.5 shadow-[0_4px_12px_rgba(22,24,35,.10)] group-hover/handle:block">
+          <div className="whitespace-nowrap text-[9px] leading-4 text-[rgba(22,24,35,.52)]">
+            <div>
+              <span className="font-medium text-[#52525b]">点击</span> 添加节点
+            </div>
+            <div>
+              <span className="font-medium text-[#52525b]">拖拽</span> 连接节点
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {canAppend && onAppend ? (
         <WorkflowNodeAppend
           nodeId={nodeId}
