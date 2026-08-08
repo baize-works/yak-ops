@@ -2,6 +2,7 @@ import {
   activateWorkflowInstance,
   continueWorkflowAfterFailure,
   isWorkflowTerminal,
+  retryWorkflowFailedNode,
   runWorkflow,
   subscribeWorkflowEvents,
   type WorkflowInstance,
@@ -18,6 +19,7 @@ import {
   Database,
   LoaderCircle,
   Play,
+  RefreshCw,
   RotateCcw,
   ShieldCheck,
   XCircle,
@@ -237,7 +239,7 @@ const WorkflowDefinitionContent = () => {
   const [submitting, setSubmitting] = useState(false);
   const [activeInstance, setActiveInstance] = useState<WorkflowInstance>();
   const [contextMenu, setContextMenu] = useState<NodeContextMenuState>();
-  const [continuingNodeId, setContinuingNodeId] = useState<string>();
+  const [recoveringNodeId, setRecoveringNodeId] = useState<string>();
 
   const nodeTypes = useMemo(() => ({ workflow: WorkflowNode }), []);
   const workflowRunning = Boolean(
@@ -457,12 +459,55 @@ const WorkflowDefinitionContent = () => {
     }
   };
 
-  const handleContinueAfterFailure = async (nodeId: string) => {
-    if (!activeInstance || continuingNodeId) return;
+  const restartStreamIfNeeded = (
+    executionId: string,
+    previousStatus: string,
+    snapshot: WorkflowInstance,
+  ) => {
+    if (isWorkflowTerminal(previousStatus) && !isWorkflowTerminal(snapshot.status)) {
+      closeStreamRef.current?.();
+      closeStreamRef.current = subscribeWorkflowEvents(executionId, applySnapshot);
+    }
+  };
+
+  const handleRetryFailedNode = async (nodeId: string) => {
+    if (!activeInstance || recoveringNodeId) return;
 
     const executionId = activeInstance.id;
-    const streamNeedsRestart = isWorkflowTerminal(activeInstance.status);
-    setContinuingNodeId(nodeId);
+    const previousStatus = activeInstance.status;
+    setRecoveringNodeId(nodeId);
+    setContextMenu(undefined);
+
+    try {
+      const retried = await retryWorkflowFailedNode(executionId, nodeId);
+      continuedFailureNodeIdsRef.current.delete(nodeId);
+      setNodes((current) => current.map((node) =>
+        node.id === nodeId
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                continuedAfterFailure: false,
+              },
+            }
+          : node,
+      ));
+      applySnapshot(retried);
+      restartStreamIfNeeded(executionId, previousStatus, retried);
+      message.success('已从当前失败节点重新执行，成功后将继续调度后续节点');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '重新执行当前节点失败');
+    } finally {
+      setRecoveringNodeId(undefined);
+    }
+  };
+
+  const handleContinueAfterFailure = async (nodeId: string) => {
+    if (!activeInstance || recoveringNodeId) return;
+
+    const executionId = activeInstance.id;
+    const previousStatus = activeInstance.status;
+    setRecoveringNodeId(nodeId);
     setContextMenu(undefined);
 
     try {
@@ -480,17 +525,12 @@ const WorkflowDefinitionContent = () => {
           : node,
       ));
       applySnapshot(continued);
-
-      if (streamNeedsRestart && !isWorkflowTerminal(continued.status)) {
-        closeStreamRef.current?.();
-        closeStreamRef.current = subscribeWorkflowEvents(executionId, applySnapshot);
-      }
-
-      message.success('已保留当前失败结果，并继续调度后续可执行节点');
+      restartStreamIfNeeded(executionId, previousStatus, continued);
+      message.success('已保留当前失败结果，并从下一个可执行节点继续');
     } catch (error) {
       message.error(error instanceof Error ? error.message : '继续执行失败');
     } finally {
-      setContinuingNodeId(undefined);
+      setRecoveringNodeId(undefined);
     }
   };
 
@@ -667,22 +707,38 @@ const WorkflowDefinitionContent = () => {
 
           {contextMenu ? (
             <div
-              className="absolute z-30 w-[220px] rounded-lg border border-[#e1e4e8] bg-white p-1.5 shadow-lg"
+              className="absolute z-30 w-[248px] rounded-lg border border-[#e1e4e8] bg-white p-1.5 shadow-lg"
               style={{ left: contextMenu.x, top: contextMenu.y }}
               onMouseDown={(event) => event.stopPropagation()}
             >
               <Button
                 type="text"
                 block
+                icon={<RefreshCw size={14} />}
+                loading={recoveringNodeId === contextMenu.nodeId}
+                className="!flex !h-8 !items-center !justify-start !px-2 !text-[12px]"
+                onClick={() => void handleRetryFailedNode(contextMenu.nodeId)}
+              >
+                重新执行当前节点
+              </Button>
+              <div className="px-2 pb-1 text-[10px] leading-4 text-[rgba(22,24,35,.42)]">
+                当前节点重新执行，成功后再继续后续节点。
+              </div>
+
+              <div className="mx-2 my-1 border-t border-[#f0f0f1]" />
+
+              <Button
+                type="text"
+                block
                 icon={<ArrowRightCircle size={14} />}
-                loading={continuingNodeId === contextMenu.nodeId}
+                disabled={Boolean(recoveringNodeId)}
                 className="!flex !h-8 !items-center !justify-start !px-2 !text-[12px]"
                 onClick={() => void handleContinueAfterFailure(contextMenu.nodeId)}
               >
-                继续执行后续节点
+                跳过当前失败，继续后续节点
               </Button>
-              <div className="px-2 pb-1 pt-0.5 text-[10px] leading-4 text-[rgba(22,24,35,.42)]">
-                保留当前失败结果，仅解除受它影响的后继阻断。
+              <div className="px-2 pb-1 text-[10px] leading-4 text-[rgba(22,24,35,.42)]">
+                保留当前失败结果，直接解除受它影响的后继阻断。
               </div>
             </div>
           ) : null}
@@ -711,8 +767,8 @@ const WorkflowDefinitionContent = () => {
               }
 
               const bounds = wrapperRef.current.getBoundingClientRect();
-              const menuWidth = 220;
-              const menuHeight = 72;
+              const menuWidth = 248;
+              const menuHeight = 142;
               setContextMenu({
                 nodeId: node.id,
                 x: Math.max(
