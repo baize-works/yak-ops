@@ -54,6 +54,7 @@ public class WorkflowRuntimeService {
       new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Object> publishLocks = new ConcurrentHashMap<>();
   private final Set<String> activeExecutions = ConcurrentHashMap.newKeySet();
+  private final Set<String> manualRetrySuccessNodes = ConcurrentHashMap.newKeySet();
   private final Map<String, RunMetadata> metadata = new ConcurrentHashMap<>();
   private final ConcurrentLinkedDeque<String> executionOrder = new ConcurrentLinkedDeque<>();
 
@@ -123,20 +124,38 @@ public class WorkflowRuntimeService {
   }
 
   public WorkflowInstanceVO continueAfterFailure(String executionId, String nodeId) {
-    RunMetadata runMetadata = metadata.get(executionId);
-    if (runMetadata == null) {
-      throw new IllegalArgumentException("Workflow execution metadata not found: " + executionId);
-    }
-
+    RunMetadata runMetadata = requireMetadata(executionId);
     WorkflowExecution execution = engine.continueAfterFailure(executionId, nodeId);
     WorkflowInstanceVO snapshot = toView(execution, runMetadata);
     eventStreamService.publish(snapshot);
+    reactivateExecution(executionId);
     log.info(
         "[workflow] manual continue execution={}, failedNode={}, status={}",
         executionId,
         nodeId,
         snapshot.status());
     return snapshot;
+  }
+
+  public WorkflowInstanceVO retryFailedNode(String executionId, String nodeId) {
+    RunMetadata runMetadata = requireMetadata(executionId);
+    String retryKey = retryKey(executionId, nodeId);
+    manualRetrySuccessNodes.add(retryKey);
+    try {
+      WorkflowExecution execution = engine.retryFailedNode(executionId, nodeId);
+      WorkflowInstanceVO snapshot = toView(execution, runMetadata);
+      eventStreamService.publish(snapshot);
+      reactivateExecution(executionId);
+      log.info(
+          "[workflow] manual retry execution={}, failedNode={}, status={}",
+          executionId,
+          nodeId,
+          snapshot.status());
+      return snapshot;
+    } catch (RuntimeException exception) {
+      manualRetrySuccessNodes.remove(retryKey);
+      throw exception;
+    }
   }
 
   public List<WorkflowInstanceVO> listInstances() {
@@ -154,12 +173,9 @@ public class WorkflowRuntimeService {
   }
 
   public WorkflowInstanceVO getInstance(String executionId) {
-    RunMetadata runMetadata = metadata.get(executionId);
+    RunMetadata runMetadata = requireMetadata(executionId);
     WorkflowExecution execution = engine.findExecution(executionId)
         .orElseThrow(() -> new IllegalArgumentException("Workflow execution not found: " + executionId));
-    if (runMetadata == null) {
-      throw new IllegalArgumentException("Workflow execution metadata not found: " + executionId);
-    }
     return toView(execution, runMetadata);
   }
 
@@ -174,12 +190,26 @@ public class WorkflowRuntimeService {
   }
 
   void activateExecution(String executionId) {
-    // 先校验实例存在，避免把不存在的 executionId 放进 active 集合。
     getInstance(executionId);
     if (activeExecutions.add(executionId)) {
       log.info("[workflow] activated execution={}", executionId);
     }
     drainDispatches(executionId);
+  }
+
+  private void reactivateExecution(String executionId) {
+    if (activeExecutions.add(executionId)) {
+      log.info("[workflow] reactivated execution={}", executionId);
+    }
+    drainDispatches(executionId);
+  }
+
+  private RunMetadata requireMetadata(String executionId) {
+    RunMetadata runMetadata = metadata.get(executionId);
+    if (runMetadata == null) {
+      throw new IllegalArgumentException("Workflow execution metadata not found: " + executionId);
+    }
+    return runMetadata;
   }
 
   private NodeDefinition toNodeDefinition(NodeRequest node) {
@@ -229,21 +259,25 @@ public class WorkflowRuntimeService {
       NodeDispatch current = dispatch;
       workerPool.execute(() -> executeNode(current));
     }
-    // 空队列保留到工作流终态再清理，避免并发 enqueue 与 remove 导致 dispatch 丢失。
   }
 
   private void executeNode(NodeDispatch dispatch) {
     String type = String.valueOf(dispatch.nodeConfiguration().getOrDefault("type", "TASK"));
-    String mockResult = String.valueOf(
+    String configuredMockResult = String.valueOf(
         dispatch.nodeConfiguration().getOrDefault("mockResult", MOCK_SUCCESS));
+    boolean manualRetrySuccess = dispatch.attemptNumber() > 1
+        && manualRetrySuccessNodes.remove(
+            retryKey(dispatch.workflowExecutionId(), dispatch.nodeId()));
+    String mockResult = manualRetrySuccess ? MOCK_SUCCESS : configuredMockResult;
     long simulatedDurationMillis = Math.max(0L, delayMillisSupplier.getAsLong());
     log.info(
-        "[workflow] node start execution={}, node={}, type={}, attempt={}, mockResult={}, simulatedDurationMs={}",
+        "[workflow] node start execution={}, node={}, type={}, attempt={}, mockResult={}, manualRetry={}, simulatedDurationMs={}",
         dispatch.workflowExecutionId(),
         dispatch.nodeId(),
         type,
         dispatch.attemptNumber(),
         mockResult,
+        manualRetrySuccess,
         simulatedDurationMillis);
     try {
       engine.acknowledgeNodeStarted(dispatch.workflowExecutionId(), dispatch.nodeId());
@@ -272,15 +306,18 @@ public class WorkflowRuntimeService {
           dispatch.nodeId(),
           Map.of(
               "type", type,
-              "message", "executed in memory",
+              "message", manualRetrySuccess
+                  ? "manually retried in memory"
+                  : "executed in memory",
               "mockResult", MOCK_SUCCESS,
               "simulatedDurationMs", simulatedDurationMillis));
       publishCurrent(dispatch.workflowExecutionId());
       log.info(
-          "[workflow] node success execution={}, node={}, type={}, simulatedDurationMs={}",
+          "[workflow] node success execution={}, node={}, type={}, manualRetry={}, simulatedDurationMs={}",
           dispatch.workflowExecutionId(),
           dispatch.nodeId(),
           type,
+          manualRetrySuccess,
           simulatedDurationMillis);
     } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
@@ -346,6 +383,10 @@ public class WorkflowRuntimeService {
         || "FAILED".equals(status)
         || "WARNING".equals(status)
         || "CANCELED".equals(status);
+  }
+
+  private String retryKey(String executionId, String nodeId) {
+    return executionId + "::" + nodeId;
   }
 
   private WorkflowInstanceVO toView(WorkflowExecution execution, RunMetadata runMetadata) {
