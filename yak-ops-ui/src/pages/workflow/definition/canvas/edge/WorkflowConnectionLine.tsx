@@ -17,7 +17,7 @@ const WorkflowConnectionLine = ({
     sourceX: fromX - WORKFLOW_EDGE_HANDLE_OVERLAP,
     sourceY: fromY,
     sourcePosition: fromPosition,
-    targetX: toX + WORKFLOW_EDGE_HANDLE_OVERLAP,
+    targetX: toX,
     targetY: toY,
     targetPosition: toPosition,
     curvature: 0.16,
@@ -30,10 +30,7 @@ const WorkflowConnectionLine = ({
         fill="none"
         stroke="#fe2c55"
         strokeWidth={2}
-        strokeDasharray="5 5"
-        opacity={0.78}
       />
-      <circle cx={toX} cy={toY} r={3.5} fill="#fe2c55" />
     </g>
   );
 };
